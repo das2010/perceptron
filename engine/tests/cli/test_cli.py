@@ -21,8 +21,18 @@ def test_project_create_and_list(workspace_dir: Path) -> None:
     ws = str(workspace_dir)
     r = runner.invoke(
         app,
-        ["project", "create", "Demanda semanal", "-w", ws, "--modality", "timeseries",
-         "--task", "forecasting", "--json"],
+        [
+            "project",
+            "create",
+            "Demanda semanal",
+            "-w",
+            ws,
+            "--modality",
+            "timeseries",
+            "--task",
+            "forecasting",
+            "--json",
+        ],
     )
     assert r.exit_code == 0, r.stdout
     created = json.loads(r.stdout)

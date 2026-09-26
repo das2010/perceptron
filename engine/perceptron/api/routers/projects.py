@@ -77,8 +77,10 @@ def update_project(project_id: str, body: ProjectPatch, ctx: Ctx) -> Project:
     return updated
 
 
-@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT, operation_id="deleteProject")
+@router.delete(
+    "/{project_id}", status_code=status.HTTP_204_NO_CONTENT, operation_id="deleteProject"
+)
 def delete_project(project_id: str, ctx: Ctx) -> None:
-    # Borra la metadata; los archivos del proyecto se conservan (borrado físico: Capa 3, con confirmación).
+    # Borra la metadata; los archivos se conservan (borrado físico con confirmación: Capa 3).
     ctx.projects.delete(project_id)
     ctx.events.publish("project.deleted", project_id=project_id)

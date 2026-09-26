@@ -22,7 +22,9 @@ class FeatureDef:
 def load_feature_defs() -> dict[str, FeatureDef]:
     text = resources.files("perceptron.licensing").joinpath("features.yaml").read_text("utf-8")
     raw: dict[str, Any] = yaml.safe_load(text)["features"]
-    return {k: FeatureDef(key=k, tier=v["tier"], description=v["description"]) for k, v in raw.items()}
+    return {
+        k: FeatureDef(key=k, tier=v["tier"], description=v["description"]) for k, v in raw.items()
+    }
 
 
 class FeatureRegistry:

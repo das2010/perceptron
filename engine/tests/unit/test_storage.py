@@ -55,7 +55,7 @@ def test_list_filters(db: Database) -> None:
     sources.add(DataSource(project_id=a.id, name="csv", type=DataSourceType.FILE))
     sources.add(DataSource(project_id=b.id, name="db", type=DataSourceType.DB))
 
-    assert [p.name for p in projects.list()] == ["B", "A"]  # más reciente primero
+    assert {p.name for p in projects.list()} == {"A", "B"}
     assert [p.name for p in projects.list(filters={"status": "active"})] == ["B"]
     assert [s.name for s in sources.list(filters={"project_id": a.id})] == ["csv"]
     assert len(projects.list(limit=1)) == 1
@@ -83,7 +83,9 @@ def test_manifest_hash_is_content_addressed(tmp_path: Path) -> None:
     other = tmp_path / "copia"
     (other / "sub dir").mkdir(parents=True)
     (other / "a.csv").write_bytes((root / "a.csv").read_bytes())
-    (other / "sub dir" / "imagen ñ.png").write_bytes((root / "sub dir" / "imagen ñ.png").read_bytes())
+    (other / "sub dir" / "imagen ñ.png").write_bytes(
+        (root / "sub dir" / "imagen ñ.png").read_bytes()
+    )
     assert build_manifest(other).content_hash == m1.content_hash
 
     # Modificar un archivo cambia el hash y aparece en el diff

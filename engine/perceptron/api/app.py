@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import secrets
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from perceptron import __version__
 from perceptron.api.context import EngineContext
@@ -17,7 +17,7 @@ from perceptron.core.config import Settings, get_settings
 from perceptron.core.errors import AuthError, PerceptronError
 
 API_PREFIX = "/api/v1"
-TOKEN_HEADER = "X-Perceptron-Token"
+TOKEN_HEADER = "X-Perceptron-Token"  # noqa: S105 - nombre de cabecera, no un secreto
 _PUBLIC_PATHS = {f"{API_PREFIX}/system/health"}
 
 
@@ -54,7 +54,9 @@ def create_app(settings: Settings | None = None, ctx: EngineContext | None = Non
     expected = settings.api.token.get_secret_value() if settings.api.token else None
 
     @app.middleware("http")
-    async def token_auth(request: Request, call_next):  # type: ignore[no-untyped-def]
+    async def token_auth(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         # Token efímero del sidecar (SPEC §13.2). CORS preflight y health son públicos.
         if (
             expected

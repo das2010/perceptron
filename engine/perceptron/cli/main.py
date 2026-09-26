@@ -44,7 +44,9 @@ def _version_callback(value: bool) -> None:
 def main(
     _version: Annotated[
         bool,
-        typer.Option("--version", callback=_version_callback, is_eager=True, help="Muestra la versión"),
+        typer.Option(
+            "--version", callback=_version_callback, is_eager=True, help="Muestra la versión"
+        ),
     ] = False,
 ) -> None:
     """Perceptron: entrenar redes neuronales localmente, guiado por un LLM."""
@@ -128,7 +130,9 @@ def project_create(
     goal: Annotated[str, typer.Option(help="Objetivo en lenguaje natural")] = "",
     modality: Annotated[list[Modality] | None, typer.Option(help="Modalidad (repetible)")] = None,
     task: Annotated[TaskType | None, typer.Option(help="Tipo de tarea")] = None,
-    privacy: Annotated[PrivacyLevel, typer.Option(help="Nivel de privacidad LLM")] = PrivacyLevel.L1,
+    privacy: Annotated[
+        PrivacyLevel, typer.Option(help="Nivel de privacidad LLM")
+    ] = PrivacyLevel.L1,
     as_json: JsonOpt = False,
 ) -> None:
     from perceptron.api.context import EngineContext
@@ -137,7 +141,9 @@ def project_create(
     ctx = EngineContext.create(_settings(workspace))
     try:
         project = ctx.projects.add(
-            Project(name=name, goal=goal, modalities=modality or [], task=task, privacy_level=privacy)
+            Project(
+                name=name, goal=goal, modalities=modality or [], task=task, privacy_level=privacy
+            )
         )
         ctx.files.init_project(project)
         if as_json:

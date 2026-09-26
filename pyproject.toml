@@ -39,12 +39,14 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "PTH", "S", "N", "C4", "P
 ignore = [
   "PLR0913",  # muchos argumentos: habitual en factories/config
   "PLR2004",  # valores mágicos en comparaciones
+  "PLC0415",  # imports diferidos: arranque rápido de la CLI
+  "PLR0917",  # comandos Typer: cada opción es un parámetro
   "RUF001", "RUF002", "RUF003",  # caracteres ambiguos: textos en español
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "engine/tests/**" = ["S101", "S105", "S106", "PLR2004", "PLC0415"]
-"fixtures/**" = ["S311"]
+"fixtures/**" = ["S311", "E501", "PLR0912", "PLR0914", "PLR0915"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["perceptron", "perceptron_server"]

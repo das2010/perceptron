@@ -43,7 +43,12 @@ def png_bytes(pixels: list[list[tuple[int, int, int]]]) -> bytes:
         return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data))
 
     ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(raw, 9))
+        + chunk(b"IEND", b"")
+    )
 
 
 def png_gray(mask: list[list[int]]) -> bytes:
@@ -56,7 +61,9 @@ def wav_bytes(samples: list[float], rate: int) -> bytes:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(rate)
-        w.writeframes(b"".join(struct.pack("<h", int(max(-1.0, min(1.0, s)) * 32767)) for s in samples))
+        w.writeframes(
+            b"".join(struct.pack("<h", int(max(-1.0, min(1.0, s)) * 32767)) for s in samples)
+        )
     return buf.getvalue()
 
 
@@ -69,7 +76,9 @@ def csv_bytes(header: list[str], rows: list[list[object]]) -> bytes:
 
 
 def jsonl_bytes(records: list[dict[str, object]]) -> bytes:
-    return "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in records).encode("utf-8")
+    return "".join(
+        json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in records
+    ).encode("utf-8")
 
 
 # ----------------------------------------------------------------- casos de uso
@@ -83,28 +92,63 @@ def uc01_churn(rng: random.Random) -> Files:
     for i in range(400):
         tenure = rng.randint(1, 72)
         plan = rng.choice(plans)
-        monthly = round({"básico": 20, "estándar": 45, "premium": 80}[plan] * rng.uniform(0.8, 1.2), 2)
+        monthly = round(
+            {"básico": 20, "estándar": 45, "premium": 80}[plan] * rng.uniform(0.8, 1.2), 2
+        )
         tickets = rng.randint(0, 8)
-        logit = -1.2 - 0.05 * tenure + 0.35 * tickets + (0.8 if plan == "básico" else 0) + rng.gauss(0, 0.6)
+        logit = (
+            -1.2
+            - 0.05 * tenure
+            + 0.35 * tickets
+            + (0.8 if plan == "básico" else 0)
+            + rng.gauss(0, 0.6)
+        )
         churn = int(1 / (1 + math.exp(-logit)) > 0.5)
         age = "" if rng.random() < 0.05 else rng.randint(18, 80)
         rows.append([f"C{i:05d}", age, rng.choice(regions), plan, tenure, monthly, tickets, churn])
-    header = ["customer_id", "edad", "region", "plan", "antiguedad_meses", "cargo_mensual", "tickets_90d", "churn"]
+    header = [
+        "customer_id",
+        "edad",
+        "region",
+        "plan",
+        "antiguedad_meses",
+        "cargo_mensual",
+        "tickets_90d",
+        "churn",
+    ]
     return {"uc01_churn/churn.csv": csv_bytes(header, rows)}
 
 
 _TICKET_TEMPLATES = {
-    "facturación": ["No puedo descargar la factura de {m}", "Me cobraron dos veces en {m}", "Error en el importe de la factura"],
-    "acceso": ["No puedo iniciar sesión desde {d}", "Olvidé mi contraseña", "La cuenta quedó bloqueada"],
-    "rendimiento": ["El sistema está muy lento en {d}", "La página tarda en cargar", "Se congela al exportar reportes"],
-    "funcionalidad": ["Quisiera agregar usuarios al equipo", "¿Cómo configuro alertas por email?", "Falta la opción de exportar a Excel"],
+    "facturación": [
+        "No puedo descargar la factura de {m}",
+        "Me cobraron dos veces en {m}",
+        "Error en el importe de la factura",
+    ],
+    "acceso": [
+        "No puedo iniciar sesión desde {d}",
+        "Olvidé mi contraseña",
+        "La cuenta quedó bloqueada",
+    ],
+    "rendimiento": [
+        "El sistema está muy lento en {d}",
+        "La página tarda en cargar",
+        "Se congela al exportar reportes",
+    ],
+    "funcionalidad": [
+        "Quisiera agregar usuarios al equipo",
+        "¿Cómo configuro alertas por email?",
+        "Falta la opción de exportar a Excel",
+    ],
 }
 _MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio"]
 _DEVICES = ["el celular", "la notebook", "Chrome", "la app de escritorio"]
 
 
 def _ticket_text(rng: random.Random, category: str) -> str:
-    return rng.choice(_TICKET_TEMPLATES[category]).format(m=rng.choice(_MONTHS), d=rng.choice(_DEVICES))
+    return rng.choice(_TICKET_TEMPLATES[category]).format(
+        m=rng.choice(_MONTHS), d=rng.choice(_DEVICES)
+    )
 
 
 def uc02_tickets_time(rng: random.Random) -> Files:
@@ -114,9 +158,22 @@ def uc02_tickets_time(rng: random.Random) -> Files:
     for i in range(300):
         cat = rng.choice(list(base))
         priority = rng.choice(["baja", "media", "alta"])
-        hours = base[cat] * {"baja": 1.5, "media": 1.0, "alta": 0.6}[priority] * rng.lognormvariate(0, 0.3)
-        rows.append([f"T{i:05d}", _ticket_text(rng, cat), cat, priority, rng.randint(1, 5), round(hours, 2)])
-    header = ["ticket_id", "descripcion", "categoria", "prioridad", "nivel_cliente", "horas_resolucion"]
+        hours = (
+            base[cat]
+            * {"baja": 1.5, "media": 1.0, "alta": 0.6}[priority]
+            * rng.lognormvariate(0, 0.3)
+        )
+        rows.append(
+            [f"T{i:05d}", _ticket_text(rng, cat), cat, priority, rng.randint(1, 5), round(hours, 2)]
+        )
+    header = [
+        "ticket_id",
+        "descripcion",
+        "categoria",
+        "prioridad",
+        "nivel_cliente",
+        "horas_resolucion",
+    ]
     return {"uc02_tickets_time/tickets.csv": csv_bytes(header, rows)}
 
 
@@ -130,7 +187,9 @@ def uc03_tickets_es(rng: random.Random) -> Files:
     return {"uc03_tickets_es/tickets.jsonl": jsonl_bytes(records)}
 
 
-def _part_image(rng: random.Random, defect: bool, size: int = 32) -> tuple[list[list[tuple[int, int, int]]], tuple[int, int, int, int] | None]:
+def _part_image(
+    rng: random.Random, defect: bool, size: int = 32
+) -> tuple[list[list[tuple[int, int, int]]], tuple[int, int, int, int] | None]:
     g = [[(150 + rng.randint(-8, 8),) * 3 for _ in range(size)] for _ in range(size)]
     pixels = [[(v[0], v[1], v[2]) for v in row] for row in g]
     box = None
@@ -155,9 +214,24 @@ def uc04_defects(rng: random.Random) -> Files:
         files[f"uc04_defects/{name}"] = png_bytes(pixels)
         images.append({"id": i, "file_name": name, "width": 32, "height": 32})
         if box:
-            annotations.append({"id": len(annotations), "image_id": i, "category_id": 1, "bbox": list(box), "area": box[2] * box[3], "iscrowd": 0})
-    coco = {"images": images, "annotations": annotations, "categories": [{"id": 1, "name": "defecto"}]}
-    files["uc04_defects/annotations_coco.json"] = (json.dumps(coco, indent=2, sort_keys=True) + "\n").encode("utf-8")
+            annotations.append(
+                {
+                    "id": len(annotations),
+                    "image_id": i,
+                    "category_id": 1,
+                    "bbox": list(box),
+                    "area": box[2] * box[3],
+                    "iscrowd": 0,
+                }
+            )
+    coco = {
+        "images": images,
+        "annotations": annotations,
+        "categories": [{"id": 1, "name": "defecto"}],
+    }
+    files["uc04_defects/annotations_coco.json"] = (
+        json.dumps(coco, indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
     return files
 
 
@@ -167,8 +241,17 @@ def uc05_masks(rng: random.Random) -> Files:
     for i in range(20):
         size = 32
         cx, cy, r = rng.randint(8, 24), rng.randint(8, 24), rng.randint(3, 7)
-        mask = [[255 if (x - cx) ** 2 + (y - cy) ** 2 <= r * r else 0 for x in range(size)] for y in range(size)]
-        img = [[(90, 60, 40) if mask[y][x] else (170 + rng.randint(-10, 10), 170, 175) for x in range(size)] for y in range(size)]
+        mask = [
+            [255 if (x - cx) ** 2 + (y - cy) ** 2 <= r * r else 0 for x in range(size)]
+            for y in range(size)
+        ]
+        img = [
+            [
+                (90, 60, 40) if mask[y][x] else (170 + rng.randint(-10, 10), 170, 175)
+                for x in range(size)
+            ]
+            for y in range(size)
+        ]
         files[f"uc05_masks/images/foto_{i:03d}.png"] = png_bytes(img)
         files[f"uc05_masks/masks/foto_{i:03d}.png"] = png_gray(mask)
     return files
@@ -176,11 +259,16 @@ def uc05_masks(rng: random.Random) -> Files:
 
 # Fuente 3x5 para dígitos (OCR sintético de remitos).
 _DIGITS = {
-    "0": ["111", "101", "101", "101", "111"], "1": ["010", "110", "010", "010", "111"],
-    "2": ["111", "001", "111", "100", "111"], "3": ["111", "001", "111", "001", "111"],
-    "4": ["101", "101", "111", "001", "001"], "5": ["111", "100", "111", "001", "111"],
-    "6": ["111", "100", "111", "101", "111"], "7": ["111", "001", "010", "010", "010"],
-    "8": ["111", "101", "111", "101", "111"], "9": ["111", "101", "111", "001", "111"],
+    "0": ["111", "101", "101", "101", "111"],
+    "1": ["010", "110", "010", "010", "111"],
+    "2": ["111", "001", "111", "100", "111"],
+    "3": ["111", "001", "111", "001", "111"],
+    "4": ["101", "101", "111", "001", "001"],
+    "5": ["111", "100", "111", "001", "111"],
+    "6": ["111", "100", "111", "101", "111"],
+    "7": ["111", "001", "010", "010", "010"],
+    "8": ["111", "101", "111", "101", "111"],
+    "9": ["111", "101", "111", "001", "111"],
     "-": ["000", "000", "111", "000", "000"],
 }
 
@@ -200,7 +288,11 @@ def uc06_ocr(rng: random.Random) -> Files:
                     if bit == "1":
                         for sy in range(scale):
                             for sx in range(scale):
-                                img[(2 + gy) * scale + sy][(1 + k * 4 + gx) * scale + sx] = (20, 20, 30)
+                                img[(2 + gy) * scale + sy][(1 + k * 4 + gx) * scale + sx] = (
+                                    20,
+                                    20,
+                                    30,
+                                )
         name = f"remito_{i:03d}.png"
         files[f"uc06_ocr/images/{name}"] = png_bytes(img)
         labels.append([name, text])
@@ -216,7 +308,9 @@ def uc07_demand(rng: random.Random) -> Files:
         base, trend, amp = rng.uniform(80, 200), rng.uniform(-0.2, 0.6), rng.uniform(10, 30)
         for w in range(104):
             value = base + trend * w + amp * math.sin(2 * math.pi * w / 52) + rng.gauss(0, 5)
-            rows.append([f"SKU-{s:03d}", (start + timedelta(weeks=w)).isoformat(), max(0, round(value))])
+            rows.append(
+                [f"SKU-{s:03d}", (start + timedelta(weeks=w)).isoformat(), max(0, round(value))]
+            )
     return {"uc07_demand/demanda.csv": csv_bytes(["sku", "semana", "unidades"], rows)}
 
 
@@ -233,7 +327,11 @@ def uc08_telemetry(rng: random.Random) -> Files:
             anomaly = 1
         ts = f"2026-01-15T{t // 60:02d}:{t % 60:02d}:00"
         rows.append([ts, "S1", round(temp, 3), round(vib, 4), anomaly])
-    return {"uc08_telemetry/telemetria.csv": csv_bytes(["timestamp", "sensor", "temperatura", "vibracion", "anomalia"], rows)}
+    return {
+        "uc08_telemetry/telemetria.csv": csv_bytes(
+            ["timestamp", "sensor", "temperatura", "vibracion", "anomalia"], rows
+        )
+    }
 
 
 def uc09_motor_audio(rng: random.Random) -> Files:
@@ -260,7 +358,9 @@ def uc09_motor_audio(rng: random.Random) -> Files:
         files[f"uc09_motor_audio/{name}"] = wav_bytes(samples, rate)
         if cls != "normal":
             events.append([name, 0.0, 1.0, cls])
-    files["uc09_motor_audio/eventos.csv"] = csv_bytes(["file_name", "inicio_s", "fin_s", "etiqueta"], events)
+    files["uc09_motor_audio/eventos.csv"] = csv_bytes(
+        ["file_name", "inicio_s", "fin_s", "etiqueta"], events
+    )
     return files
 
 
@@ -272,20 +372,30 @@ def uc10_stream(rng: random.Random) -> Files:
         for j in range(50):
             tenure = rng.randint(1, 24 if drift else 72)
             tickets = rng.randint(3, 10) if drift else rng.randint(0, 8)
-            records.append({
-                "batch": batch,
-                "customer_id": f"N{batch:02d}{j:03d}",
-                "plan": rng.choice(["básico", "estándar", "premium"]),
-                "antiguedad_meses": tenure,
-                "tickets_90d": tickets,
-                "cargo_mensual": round(rng.uniform(15, 100), 2),
-            })
+            records.append(
+                {
+                    "batch": batch,
+                    "customer_id": f"N{batch:02d}{j:03d}",
+                    "plan": rng.choice(["básico", "estándar", "premium"]),
+                    "antiguedad_meses": tenure,
+                    "tickets_90d": tickets,
+                    "cargo_mensual": round(rng.uniform(15, 100), 2),
+                }
+            )
     return {"uc10_stream/stream.jsonl": jsonl_bytes(records)}
 
 
 GENERATORS: list[Callable[[random.Random], Files]] = [
-    uc01_churn, uc02_tickets_time, uc03_tickets_es, uc04_defects, uc05_masks,
-    uc06_ocr, uc07_demand, uc08_telemetry, uc09_motor_audio, uc10_stream,
+    uc01_churn,
+    uc02_tickets_time,
+    uc03_tickets_es,
+    uc04_defects,
+    uc05_masks,
+    uc06_ocr,
+    uc07_demand,
+    uc08_telemetry,
+    uc09_motor_audio,
+    uc10_stream,
 ]
 
 
@@ -314,7 +424,9 @@ def main(argv: list[str] | None = None) -> int:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
     if mismatched:
-        print(f"{len(mismatched)} fixtures desactualizados, p. ej.: {mismatched[:5]}", file=sys.stderr)
+        print(
+            f"{len(mismatched)} fixtures desactualizados, p. ej.: {mismatched[:5]}", file=sys.stderr
+        )
         return 1
     print(f"{len(files)} archivos {'verificados' if args.check else 'generados'} en {ROOT}")
     return 0

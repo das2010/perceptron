@@ -76,13 +76,13 @@ def build_manifest(root: Path, files: Iterable[Path] | None = None) -> Manifest:
     root = root.resolve()
     candidates = files if files is not None else (p for p in root.rglob("*") if p.is_file())
     entries = []
-    for p in candidates:
-        p = p.resolve()
+    for candidate in candidates:
+        path = candidate.resolve()
         entries.append(
             ManifestEntry(
-                path=p.relative_to(root).as_posix(),
-                size=p.stat().st_size,
-                sha256=sha256_file(p),
+                path=path.relative_to(root).as_posix(),
+                size=path.stat().st_size,
+                sha256=sha256_file(path),
             )
         )
     return Manifest(tuple(sorted(entries)))

@@ -69,7 +69,11 @@ class SqlRepository[E: Entity]:
                 stmt = stmt.where(EntityRow.data[key].as_string() == str(value))
             else:
                 raise ValidationError(f"filtro desconocido para {self.kind}: {key}")
-        stmt = stmt.order_by(EntityRow.created_at.desc()).limit(limit).offset(offset)
+        stmt = (
+            stmt.order_by(EntityRow.created_at.desc(), EntityRow.id.desc())
+            .limit(limit)
+            .offset(offset)
+        )
         with self.db.session() as s:
             return [self._from_row(r) for r in s.scalars(stmt)]
 
@@ -83,7 +87,9 @@ class SqlRepository[E: Entity]:
                     f"{self.kind} {entity.id}: versión {entity.version} obsoleta",
                     details={"expected": row.version, "got": entity.version},
                 )
-            updated = entity.model_copy(update={"version": entity.version + 1, "updated_at": utcnow()})
+            updated = entity.model_copy(
+                update={"version": entity.version + 1, "updated_at": utcnow()}
+            )
             new_row = self._to_row(updated)
             row.version = new_row.version
             row.updated_at = new_row.updated_at
