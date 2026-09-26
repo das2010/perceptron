@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+ui/dist/
+*.tsbuildinfo
+coverage/
+
+# Rust / Tauri
+desktop/src-tauri/target/
+
+# Perceptron local runtime
+.perceptron/
+mlruns/
+*.db
+*.db-wal
+*.db-shm
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
