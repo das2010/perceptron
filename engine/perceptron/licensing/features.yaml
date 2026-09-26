@@ -1,0 +1,13 @@
+# Claves de feature de Perceptron (RF-LIC-02). Única fuente de verdad.
+# `tier` es orientativo: el modelo de licenciamiento está abierto (SPEC §17, D1).
+features:
+  llm.copilot:           { tier: core,    description: "Copiloto LLM del wizard" }
+  llm.agent:             { tier: premium, description: "Ciclo iterativo autónomo" }
+  arch.expert_code:      { tier: premium, description: "Código PyTorch libre en sandbox" }
+  hpo.multi_objective:   { tier: premium, description: "HPO multi-objetivo (NSGA-II)" }
+  eval.fairness:         { tier: premium, description: "Métricas de fairness" }
+  export.rest_api:       { tier: core,    description: "API REST de inferencia" }
+  export.code_project:   { tier: premium, description: "Proyecto de código exportable" }
+  monitoring.drift:      { tier: premium, description: "Monitoreo de drift" }
+  monitoring.auto_retrain: { tier: premium, description: "Reentrenamiento automático" }
+  server.team:           { tier: premium, description: "Conexión a Team Server" }

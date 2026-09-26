@@ -1,0 +1,14 @@
+[project]
+name = "perceptron-server"
+version = "0.1.0"
+description = "Perceptron Team Server: auth OIDC, RBAC, sync, cola de jobs (Capa 5)"
+requires-python = ">=3.12,<3.14"
+license = { text = "Proprietary" }
+dependencies = ["perceptron-engine"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["perceptron_server"]
