@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine:
+    name: engine (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync --all-packages --locked
+      - name: Ruff
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Mypy
+        run: uv run mypy
+      - name: Pytest
+        run: uv run pytest --cov --cov-report=term --cov-report=xml
+      - name: Coverage >= 80% en core/domain (SPEC §13.6)
+        run: uv run coverage report --include="*/perceptron/core/*,*/perceptron/domain/*" --fail-under=80
+      - name: CLI smoke
+        run: uv run perceptron --version
+
+  ui:
+    name: ui (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C ui lint
+      - run: pnpm -C ui format:check
+      - run: pnpm -C ui typecheck
+      - run: pnpm -C ui test
+      - run: pnpm -C ui build
+
+  contract:
+    name: OpenAPI ↔ TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: uv sync --all-packages --locked
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm gen:api
+      - name: Tipos generados al día
+        run: git diff --exit-code -- docs/api/openapi.json ui/src/lib/api/schema.d.ts
+
+  fixtures:
+    name: fixtures deterministas
+    # Generados en Windows; libm puede diferir en el último bit entre SO.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python fixtures/generate.py --check
