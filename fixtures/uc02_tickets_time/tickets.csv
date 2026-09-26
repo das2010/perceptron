@@ -1,0 +1,301 @@
+ticket_id,descripcion,categoria,prioridad,nivel_cliente,horas_resolucion
+T00000,La cuenta quedó bloqueada,acceso,alta,2,0.97
+T00001,La cuenta quedó bloqueada,acceso,baja,5,2.8
+T00002,Falta la opción de exportar a Excel,funcionalidad,baja,5,29.79
+T00003,La cuenta quedó bloqueada,acceso,media,3,3.34
+T00004,Quisiera agregar usuarios al equipo,funcionalidad,media,4,11.81
+T00005,Me cobraron dos veces en abril,facturación,media,1,3.94
+T00006,¿Cómo configuro alertas por email?,funcionalidad,baja,5,25.81
+T00007,Falta la opción de exportar a Excel,funcionalidad,media,3,9.23
+T00008,La página tarda en cargar,rendimiento,media,5,27.66
+T00009,La página tarda en cargar,rendimiento,baja,5,37.12
+T00010,Error en el importe de la factura,facturación,baja,3,10.4
+T00011,No puedo descargar la factura de abril,facturación,baja,1,10.2
+T00012,No puedo descargar la factura de junio,facturación,alta,4,4.07
+T00013,Error en el importe de la factura,facturación,alta,1,2.87
+T00014,El sistema está muy lento en Chrome,rendimiento,media,2,18.0
+T00015,Quisiera agregar usuarios al equipo,funcionalidad,media,5,13.21
+T00016,Me cobraron dos veces en febrero,facturación,baja,2,6.54
+T00017,Me cobraron dos veces en marzo,facturación,media,3,6.61
+T00018,No puedo descargar la factura de mayo,facturación,media,5,6.42
+T00019,El sistema está muy lento en la notebook,rendimiento,media,5,19.24
+T00020,Quisiera agregar usuarios al equipo,funcionalidad,alta,5,9.25
+T00021,Falta la opción de exportar a Excel,funcionalidad,alta,1,6.84
+T00022,Error en el importe de la factura,facturación,alta,1,3.28
+T00023,La cuenta quedó bloqueada,acceso,media,4,1.94
+T00024,Se congela al exportar reportes,rendimiento,alta,1,10.42
+T00025,La cuenta quedó bloqueada,acceso,media,5,1.98
+T00026,No puedo descargar la factura de mayo,facturación,baja,2,14.88
+T00027,El sistema está muy lento en la notebook,rendimiento,alta,3,7.22
+T00028,La cuenta quedó bloqueada,acceso,baja,5,1.62
+T00029,Falta la opción de exportar a Excel,funcionalidad,baja,1,10.86
+T00030,Olvidé mi contraseña,acceso,baja,5,7.82
+T00031,¿Cómo configuro alertas por email?,funcionalidad,alta,3,5.29
+T00032,No puedo iniciar sesión desde la notebook,acceso,media,2,2.22
+T00033,Falta la opción de exportar a Excel,funcionalidad,media,1,8.87
+T00034,El sistema está muy lento en Chrome,rendimiento,alta,3,7.51
+T00035,Me cobraron dos veces en mayo,facturación,baja,5,8.61
+T00036,Error en el importe de la factura,facturación,alta,5,3.92
+T00037,Error en el importe de la factura,facturación,media,2,7.08
+T00038,Error en el importe de la factura,facturación,alta,5,2.57
+T00039,Error en el importe de la factura,facturación,baja,2,6.76
+T00040,El sistema está muy lento en la app de escritorio,rendimiento,baja,1,45.56
+T00041,¿Cómo configuro alertas por email?,funcionalidad,baja,1,15.81
+T00042,Me cobraron dos veces en abril,facturación,baja,1,5.07
+T00043,La cuenta quedó bloqueada,acceso,media,5,2.02
+T00044,Me cobraron dos veces en febrero,facturación,media,4,3.65
+T00045,La página tarda en cargar,rendimiento,alta,2,12.76
+T00046,El sistema está muy lento en la app de escritorio,rendimiento,media,4,19.01
+T00047,¿Cómo configuro alertas por email?,funcionalidad,media,4,6.7
+T00048,Falta la opción de exportar a Excel,funcionalidad,baja,1,20.15
+T00049,Me cobraron dos veces en abril,facturación,media,1,6.81
+T00050,No puedo iniciar sesión desde el celular,acceso,alta,4,0.8
+T00051,El sistema está muy lento en la notebook,rendimiento,baja,2,34.52
+T00052,¿Cómo configuro alertas por email?,funcionalidad,baja,3,14.89
+T00053,¿Cómo configuro alertas por email?,funcionalidad,alta,4,7.12
+T00054,Falta la opción de exportar a Excel,funcionalidad,media,1,10.3
+T00055,No puedo iniciar sesión desde Chrome,acceso,baja,3,2.48
+T00056,Falta la opción de exportar a Excel,funcionalidad,media,5,14.18
+T00057,No puedo descargar la factura de febrero,facturación,media,5,7.06
+T00058,El sistema está muy lento en la app de escritorio,rendimiento,alta,3,9.38
+T00059,No puedo iniciar sesión desde Chrome,acceso,media,1,2.44
+T00060,No puedo iniciar sesión desde Chrome,acceso,media,3,2.32
+T00061,Se congela al exportar reportes,rendimiento,baja,1,34.42
+T00062,Olvidé mi contraseña,acceso,media,1,3.6
+T00063,La cuenta quedó bloqueada,acceso,baja,5,3.5
+T00064,No puedo descargar la factura de marzo,facturación,alta,1,2.62
+T00065,La cuenta quedó bloqueada,acceso,baja,4,3.12
+T00066,Quisiera agregar usuarios al equipo,funcionalidad,media,3,21.51
+T00067,Quisiera agregar usuarios al equipo,funcionalidad,media,2,11.14
+T00068,Error en el importe de la factura,facturación,baja,1,10.09
+T00069,Olvidé mi contraseña,acceso,alta,5,1.46
+T00070,Falta la opción de exportar a Excel,funcionalidad,baja,3,11.99
+T00071,La página tarda en cargar,rendimiento,media,2,16.11
+T00072,No puedo descargar la factura de mayo,facturación,alta,3,2.06
+T00073,La página tarda en cargar,rendimiento,alta,3,8.49
+T00074,La cuenta quedó bloqueada,acceso,baja,5,3.83
+T00075,No puedo descargar la factura de febrero,facturación,baja,3,8.61
+T00076,No puedo iniciar sesión desde el celular,acceso,alta,1,1.36
+T00077,El sistema está muy lento en la app de escritorio,rendimiento,alta,1,12.11
+T00078,El sistema está muy lento en el celular,rendimiento,media,1,28.76
+T00079,Falta la opción de exportar a Excel,funcionalidad,baja,5,17.63
+T00080,Me cobraron dos veces en enero,facturación,alta,2,3.47
+T00081,El sistema está muy lento en el celular,rendimiento,media,3,19.5
+T00082,Se congela al exportar reportes,rendimiento,alta,4,8.79
+T00083,¿Cómo configuro alertas por email?,funcionalidad,baja,5,17.65
+T00084,Error en el importe de la factura,facturación,baja,1,7.15
+T00085,No puedo descargar la factura de marzo,facturación,media,1,6.25
+T00086,¿Cómo configuro alertas por email?,funcionalidad,media,5,15.3
+T00087,Se congela al exportar reportes,rendimiento,alta,5,8.25
+T00088,Se congela al exportar reportes,rendimiento,alta,2,9.37
+T00089,Falta la opción de exportar a Excel,funcionalidad,alta,1,7.36
+T00090,Olvidé mi contraseña,acceso,media,2,1.23
+T00091,La cuenta quedó bloqueada,acceso,baja,3,3.3
+T00092,Se congela al exportar reportes,rendimiento,baja,2,23.49
+T00093,El sistema está muy lento en la app de escritorio,rendimiento,baja,3,43.15
+T00094,Me cobraron dos veces en mayo,facturación,baja,4,8.03
+T00095,¿Cómo configuro alertas por email?,funcionalidad,alta,2,5.5
+T00096,No puedo iniciar sesión desde la app de escritorio,acceso,alta,3,1.45
+T00097,La página tarda en cargar,rendimiento,media,1,22.32
+T00098,El sistema está muy lento en Chrome,rendimiento,baja,1,36.85
+T00099,¿Cómo configuro alertas por email?,funcionalidad,alta,3,4.8
+T00100,No puedo iniciar sesión desde Chrome,acceso,alta,5,1.52
+T00101,Quisiera agregar usuarios al equipo,funcionalidad,baja,2,9.66
+T00102,¿Cómo configuro alertas por email?,funcionalidad,baja,1,10.08
+T00103,Quisiera agregar usuarios al equipo,funcionalidad,alta,1,7.81
+T00104,Falta la opción de exportar a Excel,funcionalidad,baja,3,13.24
+T00105,Me cobraron dos veces en junio,facturación,baja,5,10.5
+T00106,La página tarda en cargar,rendimiento,baja,4,23.86
+T00107,Se congela al exportar reportes,rendimiento,media,1,18.58
+T00108,Quisiera agregar usuarios al equipo,funcionalidad,baja,1,15.91
+T00109,La página tarda en cargar,rendimiento,media,5,21.7
+T00110,La cuenta quedó bloqueada,acceso,baja,2,2.67
+T00111,Olvidé mi contraseña,acceso,alta,3,2.48
+T00112,Se congela al exportar reportes,rendimiento,alta,2,13.0
+T00113,La cuenta quedó bloqueada,acceso,baja,4,3.13
+T00114,El sistema está muy lento en el celular,rendimiento,media,5,22.59
+T00115,La página tarda en cargar,rendimiento,alta,3,11.29
+T00116,Quisiera agregar usuarios al equipo,funcionalidad,baja,5,22.69
+T00117,No puedo descargar la factura de junio,facturación,alta,4,2.15
+T00118,No puedo descargar la factura de abril,facturación,alta,1,4.69
+T00119,No puedo iniciar sesión desde Chrome,acceso,media,3,1.7
+T00120,Quisiera agregar usuarios al equipo,funcionalidad,media,2,14.81
+T00121,No puedo descargar la factura de junio,facturación,media,2,7.32
+T00122,Olvidé mi contraseña,acceso,alta,1,0.99
+T00123,No puedo descargar la factura de enero,facturación,alta,3,6.47
+T00124,¿Cómo configuro alertas por email?,funcionalidad,baja,5,19.89
+T00125,Error en el importe de la factura,facturación,alta,5,5.76
+T00126,Me cobraron dos veces en enero,facturación,baja,1,10.54
+T00127,La cuenta quedó bloqueada,acceso,media,4,2.34
+T00128,Error en el importe de la factura,facturación,media,1,6.99
+T00129,Falta la opción de exportar a Excel,funcionalidad,baja,1,15.17
+T00130,Me cobraron dos veces en abril,facturación,baja,5,6.53
+T00131,El sistema está muy lento en la notebook,rendimiento,baja,4,50.32
+T00132,Se congela al exportar reportes,rendimiento,baja,1,20.24
+T00133,Error en el importe de la factura,facturación,media,5,3.67
+T00134,Me cobraron dos veces en febrero,facturación,alta,2,4.88
+T00135,La página tarda en cargar,rendimiento,alta,4,8.6
+T00136,Error en el importe de la factura,facturación,alta,1,5.31
+T00137,No puedo iniciar sesión desde el celular,acceso,baja,3,2.08
+T00138,No puedo descargar la factura de marzo,facturación,media,2,6.2
+T00139,¿Cómo configuro alertas por email?,funcionalidad,baja,3,25.81
+T00140,Error en el importe de la factura,facturación,baja,4,12.43
+T00141,Error en el importe de la factura,facturación,alta,5,2.81
+T00142,¿Cómo configuro alertas por email?,funcionalidad,alta,5,7.57
+T00143,La cuenta quedó bloqueada,acceso,alta,2,0.92
+T00144,Olvidé mi contraseña,acceso,alta,1,0.92
+T00145,Error en el importe de la factura,facturación,baja,4,7.82
+T00146,La página tarda en cargar,rendimiento,baja,3,32.63
+T00147,La página tarda en cargar,rendimiento,baja,3,45.24
+T00148,La cuenta quedó bloqueada,acceso,media,4,1.61
+T00149,El sistema está muy lento en la notebook,rendimiento,media,1,18.83
+T00150,La página tarda en cargar,rendimiento,alta,3,9.21
+T00151,Quisiera agregar usuarios al equipo,funcionalidad,media,1,11.05
+T00152,No puedo iniciar sesión desde la app de escritorio,acceso,alta,1,1.45
+T00153,¿Cómo configuro alertas por email?,funcionalidad,alta,4,8.34
+T00154,No puedo iniciar sesión desde Chrome,acceso,media,2,1.89
+T00155,No puedo descargar la factura de abril,facturación,baja,1,5.31
+T00156,¿Cómo configuro alertas por email?,funcionalidad,alta,1,7.96
+T00157,Se congela al exportar reportes,rendimiento,alta,3,17.72
+T00158,Me cobraron dos veces en abril,facturación,media,2,5.78
+T00159,La página tarda en cargar,rendimiento,baja,5,38.63
+T00160,El sistema está muy lento en el celular,rendimiento,alta,5,11.5
+T00161,Olvidé mi contraseña,acceso,media,2,1.74
+T00162,Quisiera agregar usuarios al equipo,funcionalidad,alta,5,8.27
+T00163,¿Cómo configuro alertas por email?,funcionalidad,baja,5,17.12
+T00164,Falta la opción de exportar a Excel,funcionalidad,baja,1,10.53
+T00165,Quisiera agregar usuarios al equipo,funcionalidad,baja,3,12.71
+T00166,Quisiera agregar usuarios al equipo,funcionalidad,alta,1,9.19
+T00167,¿Cómo configuro alertas por email?,funcionalidad,baja,3,10.43
+T00168,Error en el importe de la factura,facturación,media,1,7.88
+T00169,Me cobraron dos veces en mayo,facturación,media,1,5.39
+T00170,Error en el importe de la factura,facturación,alta,1,5.34
+T00171,Me cobraron dos veces en mayo,facturación,media,4,6.52
+T00172,¿Cómo configuro alertas por email?,funcionalidad,baja,2,16.62
+T00173,Error en el importe de la factura,facturación,baja,2,8.23
+T00174,La página tarda en cargar,rendimiento,media,4,26.12
+T00175,Se congela al exportar reportes,rendimiento,baja,5,28.08
+T00176,No puedo iniciar sesión desde la app de escritorio,acceso,alta,4,1.15
+T00177,La página tarda en cargar,rendimiento,media,1,13.31
+T00178,Falta la opción de exportar a Excel,funcionalidad,alta,5,8.18
+T00179,Olvidé mi contraseña,acceso,baja,2,2.92
+T00180,Falta la opción de exportar a Excel,funcionalidad,alta,5,8.65
+T00181,La página tarda en cargar,rendimiento,baja,4,34.07
+T00182,Olvidé mi contraseña,acceso,baja,1,3.58
+T00183,Me cobraron dos veces en abril,facturación,alta,4,2.5
+T00184,La cuenta quedó bloqueada,acceso,alta,2,1.07
+T00185,¿Cómo configuro alertas por email?,funcionalidad,alta,5,6.6
+T00186,Se congela al exportar reportes,rendimiento,media,5,16.9
+T00187,Se congela al exportar reportes,rendimiento,alta,5,12.15
+T00188,La cuenta quedó bloqueada,acceso,baja,2,4.13
+T00189,Falta la opción de exportar a Excel,funcionalidad,alta,5,6.8
+T00190,El sistema está muy lento en el celular,rendimiento,baja,3,18.75
+T00191,Se congela al exportar reportes,rendimiento,media,5,25.95
+T00192,No puedo iniciar sesión desde la app de escritorio,acceso,alta,1,2.6
+T00193,Olvidé mi contraseña,acceso,media,1,2.46
+T00194,La página tarda en cargar,rendimiento,media,1,30.17
+T00195,Falta la opción de exportar a Excel,funcionalidad,baja,2,18.23
+T00196,¿Cómo configuro alertas por email?,funcionalidad,baja,1,13.91
+T00197,Quisiera agregar usuarios al equipo,funcionalidad,media,2,11.2
+T00198,Me cobraron dos veces en junio,facturación,baja,3,10.21
+T00199,La página tarda en cargar,rendimiento,baja,2,33.51
+T00200,Se congela al exportar reportes,rendimiento,alta,5,19.12
+T00201,¿Cómo configuro alertas por email?,funcionalidad,baja,3,11.27
+T00202,Olvidé mi contraseña,acceso,baja,1,3.76
+T00203,Error en el importe de la factura,facturación,media,3,10.95
+T00204,Error en el importe de la factura,facturación,baja,3,8.02
+T00205,¿Cómo configuro alertas por email?,funcionalidad,alta,2,6.46
+T00206,La cuenta quedó bloqueada,acceso,baja,3,2.18
+T00207,Olvidé mi contraseña,acceso,baja,4,3.15
+T00208,¿Cómo configuro alertas por email?,funcionalidad,baja,2,22.81
+T00209,¿Cómo configuro alertas por email?,funcionalidad,alta,1,7.44
+T00210,Se congela al exportar reportes,rendimiento,media,3,24.31
+T00211,Me cobraron dos veces en enero,facturación,alta,4,6.45
+T00212,Quisiera agregar usuarios al equipo,funcionalidad,alta,2,5.48
+T00213,Falta la opción de exportar a Excel,funcionalidad,alta,2,6.98
+T00214,Se congela al exportar reportes,rendimiento,baja,1,43.83
+T00215,Me cobraron dos veces en abril,facturación,media,1,4.46
+T00216,Falta la opción de exportar a Excel,funcionalidad,alta,3,7.71
+T00217,La página tarda en cargar,rendimiento,baja,5,23.12
+T00218,No puedo iniciar sesión desde la notebook,acceso,media,3,1.81
+T00219,La página tarda en cargar,rendimiento,media,4,25.36
+T00220,Olvidé mi contraseña,acceso,alta,1,1.22
+T00221,¿Cómo configuro alertas por email?,funcionalidad,alta,1,17.48
+T00222,No puedo descargar la factura de junio,facturación,alta,4,4.87
+T00223,Se congela al exportar reportes,rendimiento,alta,4,18.73
+T00224,Falta la opción de exportar a Excel,funcionalidad,media,5,22.25
+T00225,Me cobraron dos veces en junio,facturación,baja,4,6.95
+T00226,El sistema está muy lento en Chrome,rendimiento,media,4,16.53
+T00227,No puedo descargar la factura de enero,facturación,media,2,15.25
+T00228,¿Cómo configuro alertas por email?,funcionalidad,alta,4,5.9
+T00229,Se congela al exportar reportes,rendimiento,media,5,20.54
+T00230,Se congela al exportar reportes,rendimiento,alta,4,20.98
+T00231,La página tarda en cargar,rendimiento,media,2,15.57
+T00232,No puedo descargar la factura de enero,facturación,baja,1,11.24
+T00233,Error en el importe de la factura,facturación,media,1,6.66
+T00234,No puedo iniciar sesión desde la notebook,acceso,baja,3,2.07
+T00235,Error en el importe de la factura,facturación,baja,1,6.1
+T00236,El sistema está muy lento en la app de escritorio,rendimiento,media,1,24.45
+T00237,¿Cómo configuro alertas por email?,funcionalidad,media,1,8.68
+T00238,Olvidé mi contraseña,acceso,media,5,2.42
+T00239,El sistema está muy lento en la app de escritorio,rendimiento,media,1,18.56
+T00240,No puedo iniciar sesión desde Chrome,acceso,baja,1,6.78
+T00241,La cuenta quedó bloqueada,acceso,alta,3,0.71
+T00242,No puedo iniciar sesión desde Chrome,acceso,alta,4,0.96
+T00243,Falta la opción de exportar a Excel,funcionalidad,media,5,10.35
+T00244,¿Cómo configuro alertas por email?,funcionalidad,media,4,11.4
+T00245,No puedo descargar la factura de enero,facturación,baja,4,12.13
+T00246,El sistema está muy lento en Chrome,rendimiento,alta,5,29.88
+T00247,¿Cómo configuro alertas por email?,funcionalidad,baja,3,18.59
+T00248,El sistema está muy lento en la notebook,rendimiento,alta,1,12.51
+T00249,Olvidé mi contraseña,acceso,baja,2,2.36
+T00250,El sistema está muy lento en la notebook,rendimiento,alta,5,12.41
+T00251,Quisiera agregar usuarios al equipo,funcionalidad,baja,5,15.6
+T00252,Me cobraron dos veces en febrero,facturación,alta,1,2.25
+T00253,Error en el importe de la factura,facturación,media,4,5.36
+T00254,No puedo descargar la factura de junio,facturación,alta,5,3.01
+T00255,Se congela al exportar reportes,rendimiento,alta,5,9.61
+T00256,Falta la opción de exportar a Excel,funcionalidad,baja,5,12.07
+T00257,El sistema está muy lento en el celular,rendimiento,media,4,23.84
+T00258,Error en el importe de la factura,facturación,media,3,4.08
+T00259,Falta la opción de exportar a Excel,funcionalidad,media,4,17.65
+T00260,Se congela al exportar reportes,rendimiento,baja,3,37.07
+T00261,Olvidé mi contraseña,acceso,baja,3,3.32
+T00262,Se congela al exportar reportes,rendimiento,alta,5,13.09
+T00263,Se congela al exportar reportes,rendimiento,baja,4,15.93
+T00264,La página tarda en cargar,rendimiento,baja,5,19.2
+T00265,No puedo iniciar sesión desde la notebook,acceso,baja,1,2.48
+T00266,Olvidé mi contraseña,acceso,alta,4,1.57
+T00267,El sistema está muy lento en Chrome,rendimiento,alta,3,11.07
+T00268,Me cobraron dos veces en abril,facturación,alta,3,3.77
+T00269,No puedo iniciar sesión desde el celular,acceso,baja,3,4.89
+T00270,La cuenta quedó bloqueada,acceso,alta,4,1.36
+T00271,Olvidé mi contraseña,acceso,media,4,2.06
+T00272,¿Cómo configuro alertas por email?,funcionalidad,alta,5,6.21
+T00273,Olvidé mi contraseña,acceso,alta,3,1.03
+T00274,¿Cómo configuro alertas por email?,funcionalidad,media,5,9.31
+T00275,¿Cómo configuro alertas por email?,funcionalidad,baja,5,16.27
+T00276,Error en el importe de la factura,facturación,alta,5,3.48
+T00277,¿Cómo configuro alertas por email?,funcionalidad,media,4,13.39
+T00278,¿Cómo configuro alertas por email?,funcionalidad,media,5,13.0
+T00279,Quisiera agregar usuarios al equipo,funcionalidad,media,1,11.68
+T00280,No puedo descargar la factura de abril,facturación,alta,2,4.41
+T00281,Quisiera agregar usuarios al equipo,funcionalidad,media,3,6.66
+T00282,Olvidé mi contraseña,acceso,alta,1,1.12
+T00283,¿Cómo configuro alertas por email?,funcionalidad,media,1,14.77
+T00284,Me cobraron dos veces en junio,facturación,media,2,8.21
+T00285,Quisiera agregar usuarios al equipo,funcionalidad,baja,5,10.84
+T00286,No puedo iniciar sesión desde la notebook,acceso,baja,3,3.28
+T00287,Olvidé mi contraseña,acceso,alta,4,1.15
+T00288,No puedo descargar la factura de mayo,facturación,baja,1,11.91
+T00289,Quisiera agregar usuarios al equipo,funcionalidad,baja,4,13.12
+T00290,Falta la opción de exportar a Excel,funcionalidad,media,2,9.97
+T00291,La cuenta quedó bloqueada,acceso,baja,3,2.69
+T00292,No puedo iniciar sesión desde el celular,acceso,baja,5,3.31
+T00293,¿Cómo configuro alertas por email?,funcionalidad,alta,3,9.75
+T00294,Olvidé mi contraseña,acceso,baja,1,4.19
+T00295,Falta la opción de exportar a Excel,funcionalidad,alta,4,11.97
+T00296,Me cobraron dos veces en febrero,facturación,alta,2,4.52
+T00297,Falta la opción de exportar a Excel,funcionalidad,alta,1,7.31
+T00298,No puedo iniciar sesión desde el celular,acceso,media,5,1.4
+T00299,La página tarda en cargar,rendimiento,baja,2,28.87

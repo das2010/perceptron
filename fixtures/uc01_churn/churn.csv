@@ -1,0 +1,401 @@
+customer_id,edad,region,plan,antiguedad_meses,cargo_mensual,tickets_90d,churn
+C00000,80,AMBA,premium,1,90.95,2,0
+C00001,69,Córdoba,básico,39,20.22,8,1
+C00002,18,Santa Fe,básico,46,16.32,3,0
+C00003,44,AMBA,básico,34,19.6,3,0
+C00004,65,Mendoza,estándar,5,48.02,2,0
+C00005,33,AMBA,premium,44,85.73,5,0
+C00006,76,Santa Fe,estándar,68,53.75,4,0
+C00007,36,Santa Fe,premium,65,83.11,1,0
+C00008,74,Córdoba,estándar,71,42.89,8,0
+C00009,62,Mendoza,premium,56,64.68,1,0
+C00010,80,Mendoza,premium,72,67.05,3,0
+C00011,36,Córdoba,premium,49,94.05,2,0
+C00012,76,AMBA,básico,37,18.57,4,0
+C00013,44,AMBA,estándar,58,48.56,3,0
+C00014,19,Córdoba,premium,5,73.09,1,0
+C00015,70,Córdoba,premium,2,76.0,5,0
+C00016,28,Santa Fe,premium,18,84.12,0,0
+C00017,70,Córdoba,estándar,25,40.0,1,0
+C00018,28,Mendoza,estándar,40,40.02,5,0
+C00019,78,Córdoba,básico,61,23.1,2,0
+C00020,56,Santa Fe,estándar,23,48.48,2,0
+C00021,43,Mendoza,premium,36,84.8,1,0
+C00022,28,AMBA,estándar,55,47.54,6,0
+C00023,50,Córdoba,premium,53,66.62,2,0
+C00024,46,Córdoba,estándar,58,37.09,0,0
+C00025,27,Mendoza,premium,10,75.77,2,0
+C00026,66,Mendoza,básico,44,21.94,5,0
+C00027,51,AMBA,estándar,46,48.91,7,0
+C00028,61,Mendoza,premium,49,69.77,4,0
+C00029,39,Santa Fe,básico,47,20.08,5,0
+C00030,30,Córdoba,estándar,15,45.72,7,1
+C00031,43,AMBA,estándar,38,52.88,8,0
+C00032,75,Mendoza,premium,45,87.94,4,0
+C00033,26,Santa Fe,premium,9,87.31,4,0
+C00034,50,AMBA,premium,6,79.48,5,1
+C00035,20,AMBA,estándar,62,41.21,4,0
+C00036,45,AMBA,estándar,7,46.47,0,0
+C00037,20,Córdoba,premium,62,83.56,1,0
+C00038,24,Córdoba,premium,21,85.35,1,0
+C00039,,Santa Fe,estándar,47,38.87,3,0
+C00040,65,Córdoba,premium,43,86.84,8,0
+C00041,73,Santa Fe,estándar,57,36.22,0,0
+C00042,68,AMBA,premium,1,71.95,5,1
+C00043,26,Santa Fe,premium,21,73.11,5,0
+C00044,52,Santa Fe,premium,25,80.0,5,0
+C00045,,AMBA,básico,47,19.52,1,0
+C00046,47,Córdoba,estándar,3,37.23,8,1
+C00047,34,Mendoza,estándar,53,52.33,3,0
+C00048,31,Mendoza,estándar,44,42.79,5,0
+C00049,29,Santa Fe,básico,52,18.95,0,0
+C00050,56,AMBA,estándar,60,43.59,2,0
+C00051,18,Santa Fe,estándar,6,37.32,5,1
+C00052,74,AMBA,básico,57,23.62,1,0
+C00053,57,Córdoba,básico,66,18.15,8,0
+C00054,75,Córdoba,premium,72,88.08,2,0
+C00055,71,Córdoba,básico,5,22.54,4,1
+C00056,56,Santa Fe,básico,2,23.17,7,1
+C00057,60,Santa Fe,premium,37,92.83,7,0
+C00058,47,Santa Fe,estándar,21,38.32,7,1
+C00059,,Mendoza,estándar,29,46.63,5,0
+C00060,29,Santa Fe,premium,66,74.42,8,0
+C00061,41,Mendoza,básico,25,22.46,5,1
+C00062,23,Córdoba,estándar,50,40.27,2,0
+C00063,50,Córdoba,básico,50,16.37,3,0
+C00064,41,Santa Fe,estándar,43,45.72,6,0
+C00065,33,Córdoba,estándar,9,43.1,5,1
+C00066,31,Santa Fe,premium,33,77.26,8,0
+C00067,74,Santa Fe,estándar,66,45.41,0,0
+C00068,26,Córdoba,estándar,39,51.04,8,0
+C00069,64,AMBA,estándar,44,47.94,8,0
+C00070,20,Mendoza,premium,48,78.51,7,0
+C00071,29,Córdoba,básico,61,21.42,2,0
+C00072,51,Santa Fe,básico,21,22.78,4,1
+C00073,76,Mendoza,estándar,50,47.81,0,0
+C00074,78,Córdoba,estándar,44,44.03,6,1
+C00075,65,Mendoza,básico,34,18.05,3,0
+C00076,80,AMBA,básico,22,21.71,1,0
+C00077,23,Córdoba,estándar,24,43.28,6,1
+C00078,50,Mendoza,premium,5,86.03,3,0
+C00079,40,Santa Fe,estándar,61,40.82,2,0
+C00080,27,Mendoza,estándar,28,51.11,8,1
+C00081,37,Santa Fe,premium,27,74.3,5,0
+C00082,,Santa Fe,premium,11,81.31,2,0
+C00083,21,AMBA,premium,4,81.41,5,0
+C00084,45,Santa Fe,premium,55,74.74,2,0
+C00085,26,Santa Fe,estándar,30,37.54,2,0
+C00086,63,AMBA,premium,22,89.34,7,1
+C00087,79,Córdoba,premium,29,64.77,0,0
+C00088,61,AMBA,premium,17,65.13,0,0
+C00089,,Córdoba,estándar,22,47.84,6,0
+C00090,18,AMBA,básico,22,20.59,1,0
+C00091,49,Santa Fe,premium,37,80.72,3,0
+C00092,,Córdoba,básico,42,23.02,3,0
+C00093,52,Santa Fe,básico,18,19.71,6,1
+C00094,25,AMBA,estándar,12,46.39,7,1
+C00095,48,Córdoba,estándar,16,41.12,1,0
+C00096,61,Mendoza,estándar,6,36.74,1,0
+C00097,32,Mendoza,estándar,39,41.72,3,0
+C00098,59,Santa Fe,estándar,23,46.52,6,1
+C00099,24,AMBA,básico,21,19.79,5,0
+C00100,53,AMBA,estándar,19,38.17,7,1
+C00101,74,AMBA,estándar,11,46.9,5,1
+C00102,79,Mendoza,premium,67,84.54,0,0
+C00103,45,Santa Fe,básico,40,23.27,1,0
+C00104,51,Mendoza,estándar,66,49.11,2,0
+C00105,75,Mendoza,básico,48,20.33,3,0
+C00106,56,Mendoza,básico,15,17.78,8,1
+C00107,36,AMBA,estándar,64,48.82,5,0
+C00108,65,Córdoba,básico,26,18.93,3,1
+C00109,50,Santa Fe,estándar,63,39.5,7,0
+C00110,43,Santa Fe,estándar,35,52.7,6,0
+C00111,71,Santa Fe,premium,66,73.46,6,0
+C00112,75,Mendoza,premium,13,88.73,6,0
+C00113,43,AMBA,premium,10,84.78,8,1
+C00114,,Córdoba,básico,43,17.94,3,0
+C00115,30,Santa Fe,básico,68,20.33,3,0
+C00116,76,AMBA,básico,1,19.19,3,1
+C00117,33,AMBA,premium,70,90.6,7,0
+C00118,52,Santa Fe,estándar,53,48.76,2,0
+C00119,28,AMBA,premium,25,93.11,3,0
+C00120,64,Mendoza,premium,11,73.1,3,1
+C00121,29,Mendoza,estándar,44,44.15,4,0
+C00122,51,Mendoza,estándar,33,48.17,0,0
+C00123,50,Córdoba,básico,24,19.31,0,0
+C00124,46,AMBA,básico,36,18.13,6,0
+C00125,46,Córdoba,premium,13,83.94,0,0
+C00126,65,Santa Fe,básico,51,19.46,4,0
+C00127,23,AMBA,premium,34,90.68,3,0
+C00128,73,Mendoza,estándar,57,38.1,0,0
+C00129,30,AMBA,estándar,18,46.76,3,0
+C00130,73,Córdoba,básico,55,19.64,6,0
+C00131,66,Mendoza,estándar,50,53.72,5,0
+C00132,45,Santa Fe,premium,47,68.81,6,0
+C00133,64,Córdoba,básico,5,18.81,7,1
+C00134,54,Santa Fe,premium,64,81.48,7,0
+C00135,20,Mendoza,estándar,14,41.5,5,1
+C00136,72,Mendoza,básico,23,16.48,6,0
+C00137,42,Mendoza,estándar,17,39.33,4,0
+C00138,56,Córdoba,premium,14,87.93,6,0
+C00139,62,Mendoza,básico,51,23.66,6,0
+C00140,69,AMBA,básico,5,21.05,5,1
+C00141,60,Mendoza,estándar,48,51.54,3,0
+C00142,58,Córdoba,premium,5,95.21,5,1
+C00143,32,Mendoza,premium,24,87.65,8,1
+C00144,71,AMBA,premium,16,90.11,5,0
+C00145,21,Santa Fe,estándar,56,48.13,7,0
+C00146,72,Córdoba,básico,60,21.46,4,0
+C00147,20,AMBA,básico,45,16.74,2,0
+C00148,39,Santa Fe,estándar,53,36.44,2,0
+C00149,51,AMBA,premium,2,65.03,1,0
+C00150,53,Mendoza,premium,12,84.73,4,0
+C00151,52,Santa Fe,estándar,60,42.54,1,0
+C00152,46,Mendoza,premium,69,67.45,7,0
+C00153,20,Santa Fe,básico,39,22.75,4,0
+C00154,65,Mendoza,estándar,32,40.89,1,0
+C00155,52,Santa Fe,básico,21,16.52,8,1
+C00156,53,AMBA,estándar,52,50.31,0,0
+C00157,70,AMBA,premium,39,68.13,5,0
+C00158,42,Córdoba,premium,8,88.7,8,1
+C00159,58,Mendoza,básico,37,23.21,0,0
+C00160,,Mendoza,premium,54,71.9,1,0
+C00161,53,Santa Fe,premium,44,85.72,2,0
+C00162,51,AMBA,básico,5,21.74,2,0
+C00163,70,Santa Fe,básico,70,22.9,5,0
+C00164,28,Santa Fe,básico,32,16.92,4,0
+C00165,44,AMBA,básico,7,20.51,1,0
+C00166,,Mendoza,básico,28,18.83,1,0
+C00167,70,Santa Fe,estándar,72,36.42,8,0
+C00168,47,Mendoza,premium,8,86.02,4,1
+C00169,47,Córdoba,básico,4,18.46,5,0
+C00170,59,Santa Fe,básico,46,23.3,2,0
+C00171,60,Santa Fe,básico,70,22.9,1,0
+C00172,78,AMBA,estándar,62,40.06,0,0
+C00173,76,AMBA,básico,5,17.43,1,0
+C00174,28,Mendoza,básico,55,17.67,0,0
+C00175,71,Córdoba,básico,65,18.66,4,0
+C00176,38,Mendoza,estándar,18,48.91,0,0
+C00177,76,AMBA,premium,58,73.44,0,0
+C00178,42,AMBA,estándar,67,43.25,7,0
+C00179,41,AMBA,estándar,6,52.66,7,1
+C00180,24,AMBA,básico,63,16.32,0,0
+C00181,48,Mendoza,básico,72,23.64,5,0
+C00182,73,Córdoba,estándar,60,37.88,5,0
+C00183,36,Mendoza,básico,34,21.41,6,0
+C00184,55,Córdoba,estándar,43,45.85,3,0
+C00185,51,AMBA,estándar,57,50.64,1,0
+C00186,77,Santa Fe,estándar,27,39.48,2,0
+C00187,32,Santa Fe,estándar,68,40.37,5,0
+C00188,46,AMBA,básico,33,18.49,4,0
+C00189,78,Córdoba,estándar,23,49.2,2,0
+C00190,19,AMBA,estándar,6,46.66,0,0
+C00191,,Córdoba,premium,45,64.66,6,0
+C00192,79,Santa Fe,básico,53,16.33,2,0
+C00193,70,Santa Fe,estándar,57,39.63,1,0
+C00194,48,Santa Fe,básico,3,21.33,3,0
+C00195,31,AMBA,premium,49,92.72,5,0
+C00196,37,Santa Fe,estándar,4,43.78,4,1
+C00197,76,Mendoza,estándar,67,41.05,2,0
+C00198,36,Córdoba,premium,50,92.86,7,0
+C00199,45,AMBA,básico,50,21.91,5,0
+C00200,49,AMBA,premium,2,94.26,5,1
+C00201,24,Mendoza,estándar,9,38.0,6,1
+C00202,41,Mendoza,estándar,59,50.59,1,0
+C00203,39,Mendoza,básico,66,21.67,2,0
+C00204,19,AMBA,básico,42,19.6,7,0
+C00205,38,Córdoba,premium,48,89.05,0,0
+C00206,26,Mendoza,estándar,67,36.97,6,0
+C00207,20,Mendoza,básico,50,17.5,0,0
+C00208,76,Mendoza,estándar,54,48.4,7,0
+C00209,54,Santa Fe,básico,25,18.48,3,0
+C00210,30,Mendoza,estándar,39,44.64,3,0
+C00211,20,Mendoza,premium,2,80.7,3,1
+C00212,68,AMBA,básico,8,17.91,2,0
+C00213,43,Córdoba,premium,15,85.57,3,0
+C00214,54,AMBA,básico,20,20.03,0,0
+C00215,60,AMBA,premium,46,65.24,8,0
+C00216,52,Córdoba,estándar,4,49.84,5,0
+C00217,69,Santa Fe,premium,23,79.88,3,0
+C00218,54,Santa Fe,básico,66,22.23,0,0
+C00219,26,AMBA,básico,3,20.12,5,1
+C00220,43,Córdoba,premium,25,75.09,6,0
+C00221,46,Mendoza,premium,49,64.62,2,0
+C00222,48,Santa Fe,básico,34,16.63,5,0
+C00223,68,Santa Fe,premium,45,90.04,0,0
+C00224,46,Córdoba,premium,1,87.25,3,0
+C00225,75,Santa Fe,estándar,10,48.01,5,0
+C00226,33,Córdoba,estándar,58,52.77,4,0
+C00227,70,Santa Fe,estándar,35,43.2,3,0
+C00228,77,Santa Fe,estándar,7,44.24,5,1
+C00229,43,AMBA,estándar,43,48.22,2,0
+C00230,71,Santa Fe,estándar,33,53.16,7,0
+C00231,,Córdoba,premium,20,68.18,5,0
+C00232,27,Mendoza,básico,53,19.53,2,0
+C00233,71,Córdoba,premium,30,84.59,3,0
+C00234,19,Mendoza,básico,45,20.6,8,1
+C00235,48,AMBA,básico,8,19.86,0,0
+C00236,21,AMBA,premium,42,70.63,4,0
+C00237,67,Córdoba,estándar,72,43.25,6,0
+C00238,34,Mendoza,básico,44,20.77,8,1
+C00239,39,Santa Fe,estándar,22,39.78,6,1
+C00240,79,Mendoza,estándar,30,53.69,3,0
+C00241,33,AMBA,premium,60,94.25,7,0
+C00242,46,Córdoba,premium,67,89.51,4,0
+C00243,30,AMBA,básico,25,17.39,3,0
+C00244,65,AMBA,premium,8,69.21,5,1
+C00245,38,Córdoba,estándar,60,51.43,1,0
+C00246,,Córdoba,estándar,31,37.3,7,0
+C00247,58,Santa Fe,estándar,47,50.02,2,0
+C00248,36,AMBA,básico,17,18.14,5,1
+C00249,26,Córdoba,premium,67,69.22,7,0
+C00250,,Mendoza,estándar,59,37.75,5,0
+C00251,22,AMBA,estándar,40,37.18,7,0
+C00252,62,Córdoba,premium,15,95.29,7,1
+C00253,23,Córdoba,básico,56,18.02,8,0
+C00254,78,Mendoza,premium,10,83.09,3,0
+C00255,61,Córdoba,premium,52,74.58,2,0
+C00256,75,Mendoza,premium,29,90.96,5,0
+C00257,65,Santa Fe,básico,22,17.86,7,1
+C00258,,Mendoza,premium,53,68.8,8,0
+C00259,20,Mendoza,premium,1,90.02,8,1
+C00260,39,Mendoza,básico,34,20.59,4,0
+C00261,75,Mendoza,premium,54,82.74,6,0
+C00262,67,AMBA,premium,60,75.52,2,0
+C00263,78,Córdoba,premium,33,85.94,8,0
+C00264,40,Santa Fe,estándar,31,36.48,7,1
+C00265,36,Santa Fe,básico,49,19.33,6,0
+C00266,35,Córdoba,estándar,24,39.6,8,1
+C00267,64,AMBA,básico,5,21.4,6,1
+C00268,49,AMBA,estándar,8,46.96,1,0
+C00269,36,Córdoba,premium,14,64.03,3,0
+C00270,53,AMBA,estándar,29,45.73,8,0
+C00271,41,Santa Fe,premium,32,73.82,1,0
+C00272,73,AMBA,premium,56,94.61,1,0
+C00273,50,Mendoza,básico,1,23.82,2,1
+C00274,60,AMBA,estándar,52,42.81,1,0
+C00275,32,Mendoza,premium,46,70.91,6,0
+C00276,18,Mendoza,básico,56,23.26,6,0
+C00277,73,Santa Fe,estándar,55,36.31,3,0
+C00278,50,Mendoza,básico,35,17.6,4,0
+C00279,80,Córdoba,premium,51,93.15,3,0
+C00280,73,AMBA,estándar,26,50.04,2,0
+C00281,78,AMBA,premium,71,85.31,8,0
+C00282,23,Santa Fe,básico,3,21.48,4,1
+C00283,63,AMBA,premium,58,86.66,2,0
+C00284,77,Córdoba,estándar,25,51.17,6,0
+C00285,22,AMBA,premium,69,83.5,4,0
+C00286,38,Santa Fe,premium,13,67.75,6,1
+C00287,67,AMBA,básico,10,18.42,3,0
+C00288,,Córdoba,premium,49,81.89,7,0
+C00289,67,AMBA,estándar,28,49.99,8,0
+C00290,68,Santa Fe,premium,18,88.81,0,0
+C00291,60,Santa Fe,premium,49,85.83,3,0
+C00292,26,Córdoba,premium,36,89.29,3,0
+C00293,61,Mendoza,básico,39,23.93,0,0
+C00294,53,Córdoba,estándar,17,40.18,4,0
+C00295,35,Mendoza,estándar,46,45.97,0,0
+C00296,33,AMBA,premium,38,89.93,1,0
+C00297,53,Mendoza,estándar,70,47.21,7,0
+C00298,73,Mendoza,básico,68,20.7,2,0
+C00299,49,Mendoza,básico,5,16.58,1,1
+C00300,41,Mendoza,premium,10,86.18,5,1
+C00301,61,Mendoza,básico,35,21.92,8,1
+C00302,,Mendoza,premium,66,73.06,5,0
+C00303,41,AMBA,estándar,45,48.13,2,0
+C00304,59,Córdoba,básico,65,16.52,2,0
+C00305,28,Mendoza,premium,48,83.39,4,0
+C00306,43,AMBA,premium,5,66.97,6,1
+C00307,42,AMBA,estándar,28,43.3,7,0
+C00308,75,Santa Fe,premium,42,83.97,6,1
+C00309,65,Santa Fe,básico,22,18.95,7,1
+C00310,66,Santa Fe,premium,62,71.31,1,0
+C00311,46,Mendoza,básico,3,23.14,2,1
+C00312,54,Mendoza,básico,65,23.85,8,0
+C00313,49,Córdoba,estándar,29,46.52,0,0
+C00314,18,AMBA,básico,11,18.48,8,1
+C00315,54,Mendoza,básico,11,22.79,4,1
+C00316,,Mendoza,premium,5,88.6,4,1
+C00317,79,Mendoza,estándar,42,42.92,1,0
+C00318,33,Santa Fe,básico,14,21.23,6,1
+C00319,34,Córdoba,premium,68,81.64,6,0
+C00320,38,AMBA,básico,21,16.1,5,0
+C00321,76,Santa Fe,estándar,29,49.42,1,0
+C00322,58,AMBA,estándar,13,36.78,2,0
+C00323,33,Santa Fe,estándar,57,37.61,6,0
+C00324,53,AMBA,premium,20,82.98,6,0
+C00325,57,Santa Fe,premium,24,81.87,4,1
+C00326,54,Mendoza,premium,68,68.58,6,0
+C00327,67,Mendoza,básico,3,21.3,1,0
+C00328,74,AMBA,estándar,71,39.38,2,0
+C00329,47,AMBA,básico,15,22.93,3,0
+C00330,57,Santa Fe,básico,36,21.14,0,0
+C00331,24,Mendoza,premium,47,89.82,4,0
+C00332,24,AMBA,estándar,5,48.95,1,0
+C00333,53,Córdoba,estándar,14,45.5,1,0
+C00334,59,Córdoba,premium,24,87.64,8,0
+C00335,56,AMBA,estándar,70,37.53,3,0
+C00336,75,AMBA,estándar,8,48.46,0,0
+C00337,42,Córdoba,premium,32,73.05,2,0
+C00338,53,Córdoba,básico,19,22.17,3,0
+C00339,73,Santa Fe,estándar,7,47.26,7,1
+C00340,47,AMBA,premium,51,70.12,6,0
+C00341,43,Mendoza,estándar,63,42.43,5,0
+C00342,76,Santa Fe,básico,15,23.74,8,1
+C00343,50,Mendoza,básico,3,16.8,3,0
+C00344,74,Córdoba,básico,3,21.2,6,1
+C00345,70,Córdoba,básico,20,16.73,4,0
+C00346,66,Córdoba,básico,14,18.27,1,0
+C00347,43,Santa Fe,premium,61,89.98,5,0
+C00348,37,AMBA,premium,45,75.33,4,0
+C00349,23,Córdoba,básico,25,23.39,3,0
+C00350,65,Córdoba,básico,24,19.18,0,0
+C00351,39,Córdoba,premium,62,91.9,4,0
+C00352,27,Mendoza,básico,21,16.24,0,0
+C00353,75,Mendoza,premium,67,81.52,7,0
+C00354,55,Santa Fe,premium,39,81.02,7,0
+C00355,26,Córdoba,básico,1,18.02,2,1
+C00356,22,Santa Fe,básico,2,21.53,5,1
+C00357,56,Mendoza,básico,41,21.96,4,0
+C00358,75,AMBA,básico,11,16.44,8,1
+C00359,,Mendoza,estándar,58,48.33,5,0
+C00360,51,Santa Fe,estándar,16,51.53,5,0
+C00361,59,AMBA,premium,15,67.56,6,1
+C00362,67,Mendoza,premium,25,70.27,6,0
+C00363,43,AMBA,premium,59,95.79,8,0
+C00364,37,Córdoba,estándar,64,45.6,1,0
+C00365,46,Córdoba,básico,49,21.51,8,1
+C00366,50,Córdoba,premium,44,66.01,2,0
+C00367,51,Santa Fe,estándar,69,42.12,0,0
+C00368,34,Santa Fe,básico,2,22.96,4,1
+C00369,,Santa Fe,básico,34,19.14,7,1
+C00370,65,AMBA,básico,70,16.74,0,0
+C00371,50,AMBA,premium,52,73.64,2,0
+C00372,32,AMBA,básico,18,17.87,1,0
+C00373,58,Mendoza,estándar,55,45.8,5,0
+C00374,32,Mendoza,premium,37,95.11,3,0
+C00375,73,Santa Fe,básico,35,21.48,3,0
+C00376,75,Mendoza,premium,9,76.86,3,0
+C00377,51,Santa Fe,básico,6,19.07,0,0
+C00378,68,Santa Fe,premium,18,89.44,4,0
+C00379,50,Santa Fe,premium,33,82.17,8,1
+C00380,57,Córdoba,básico,3,23.34,5,1
+C00381,76,Santa Fe,básico,35,21.02,0,0
+C00382,35,Mendoza,estándar,1,47.0,4,0
+C00383,26,Mendoza,estándar,42,41.6,2,0
+C00384,70,Mendoza,básico,45,20.22,8,0
+C00385,53,Santa Fe,básico,21,17.83,2,0
+C00386,,AMBA,premium,68,78.91,5,0
+C00387,45,Mendoza,básico,10,21.55,7,1
+C00388,21,Mendoza,básico,21,21.26,8,1
+C00389,30,Córdoba,estándar,9,47.53,7,1
+C00390,71,Santa Fe,premium,20,90.14,4,0
+C00391,39,Santa Fe,básico,60,20.13,7,0
+C00392,70,AMBA,premium,21,81.1,3,0
+C00393,51,Santa Fe,básico,20,23.49,0,0
+C00394,43,Santa Fe,premium,69,87.96,5,0
+C00395,53,AMBA,premium,36,73.94,0,0
+C00396,65,AMBA,estándar,59,53.04,6,0
+C00397,19,Mendoza,premium,65,84.22,1,0
+C00398,,Mendoza,premium,52,77.84,5,0
+C00399,43,Santa Fe,básico,17,21.94,3,0
