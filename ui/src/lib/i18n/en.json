@@ -1,0 +1,21 @@
+{
+  "app": {
+    "name": "Perceptron",
+    "tagline": "Train neural networks locally, guided by AI"
+  },
+  "engine": {
+    "title": "Engine status",
+    "checking": "Connecting to the Engine…",
+    "ok": "Engine is running",
+    "version": "Version {{version}}",
+    "error": "Could not connect to the Engine",
+    "retry": "Retry"
+  },
+  "settings": {
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
+  }
+}

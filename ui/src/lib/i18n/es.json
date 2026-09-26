@@ -1,0 +1,21 @@
+{
+  "app": {
+    "name": "Perceptron",
+    "tagline": "Entrená redes neuronales localmente, guiado por IA"
+  },
+  "engine": {
+    "title": "Estado del Engine",
+    "checking": "Conectando con el Engine…",
+    "ok": "Engine operativo",
+    "version": "Versión {{version}}",
+    "error": "No se pudo conectar con el Engine",
+    "retry": "Reintentar"
+  },
+  "settings": {
+    "language": "Idioma",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "themeSystem": "Sistema"
+  }
+}

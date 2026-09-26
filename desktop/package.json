@@ -1,0 +1,7 @@
+{
+  "name": "@perceptron/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Shell Tauri 2 de Perceptron (se implementa en Capa 3)",
+  "scripts": {}
+}

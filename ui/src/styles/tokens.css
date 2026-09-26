@@ -1,0 +1,74 @@
+/*
+ * Tokens de marca Preteco (SPEC §11.1) y tokens semánticos por tema.
+ * Regla: el Lima nunca se usa como color de texto sobre fondos claros (WCAG AA);
+ * en tema claro el botón primario es fondo Lima + texto Negro.
+ */
+
+:root {
+  /* Paleta principal */
+  --pt-lime: #cbff00;
+  --pt-black: #263000;
+  --pt-dark: #334000;
+  --pt-white: #f7ffd6;
+  --pt-light: #faffeb;
+  --pt-neutral: #d1d1c3;
+
+  /* Paleta secundaria (elementos del copiloto LLM) */
+  --pt-violet: #cd87ff;
+  --pt-violet-dark: #a46dcd;
+  --pt-violet-light: #e6c3ff;
+
+  --pt-font: "Titillium Web", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --pt-radius: 10px;
+  --pt-radius-pill: 999px;
+
+  /* Tema claro (default) */
+  color-scheme: light;
+  --color-bg: var(--pt-light);
+  --color-surface: var(--pt-white);
+  --color-text: var(--pt-black);
+  --color-text-muted: #5a6330;
+  --color-border: var(--pt-neutral);
+  --color-primary-bg: var(--pt-lime);
+  --color-primary-text: var(--pt-black);
+  --color-accent: var(--pt-dark);
+  --color-ai: var(--pt-violet-dark);
+  --color-ai-bg: var(--pt-violet-light);
+  --color-success: #2e6b00;
+  --color-warning: #8a5a00;
+  --color-danger: #a1261b;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #1d2400;
+  --color-surface: var(--pt-dark);
+  --color-text: var(--pt-light);
+  --color-text-muted: #c4cc9f;
+  --color-border: #4d5a1a;
+  --color-primary-bg: var(--pt-lime);
+  --color-primary-text: var(--pt-black);
+  --color-accent: var(--pt-lime);
+  --color-ai: var(--pt-violet);
+  --color-ai-bg: #3d2a4d;
+  --color-success: #9be05a;
+  --color-warning: #ffc861;
+  --color-danger: #ff8a7a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg: #1d2400;
+    --color-surface: var(--pt-dark);
+    --color-text: var(--pt-light);
+    --color-text-muted: #c4cc9f;
+    --color-border: #4d5a1a;
+    --color-accent: var(--pt-lime);
+    --color-ai: var(--pt-violet);
+    --color-ai-bg: #3d2a4d;
+    --color-success: #9be05a;
+    --color-warning: #ffc861;
+    --color-danger: #ff8a7a;
+  }
+}

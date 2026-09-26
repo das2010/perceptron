@@ -1,0 +1,678 @@
+{
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "properties": {
+          "status": {
+            "const": "ok",
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "Modality": {
+        "enum": [
+          "tabular",
+          "image",
+          "text",
+          "timeseries",
+          "audio"
+        ],
+        "title": "Modality",
+        "type": "string"
+      },
+      "PrivacyLevel": {
+        "enum": [
+          "L0",
+          "L1",
+          "L2",
+          "L3"
+        ],
+        "title": "PrivacyLevel",
+        "type": "string"
+      },
+      "Project": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "default": "",
+            "type": "string"
+          },
+          "goal": {
+            "default": "",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "llm_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "modalities": {
+            "items": {
+              "$ref": "#/components/schemas/Modality"
+            },
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "privacy_level": {
+            "$ref": "#/components/schemas/PrivacyLevel",
+            "default": "L1"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ProjectScope",
+            "default": "local"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus",
+            "default": "draft"
+          },
+          "target_metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Project",
+        "type": "object"
+      },
+      "ProjectCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "default": "",
+            "type": "string"
+          },
+          "goal": {
+            "default": "",
+            "type": "string"
+          },
+          "modalities": {
+            "items": {
+              "$ref": "#/components/schemas/Modality"
+            },
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "privacy_level": {
+            "$ref": "#/components/schemas/PrivacyLevel",
+            "default": "L1"
+          },
+          "target_metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ProjectCreate",
+        "type": "object"
+      },
+      "ProjectPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "modalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Modality"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "privacy_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrivacyLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "ProjectPatch",
+        "type": "object"
+      },
+      "ProjectScope": {
+        "enum": [
+          "local",
+          "team"
+        ],
+        "title": "ProjectScope",
+        "type": "string"
+      },
+      "ProjectStatus": {
+        "enum": [
+          "draft",
+          "active",
+          "archived"
+        ],
+        "title": "ProjectStatus",
+        "type": "string"
+      },
+      "RuntimeMode": {
+        "enum": [
+          "desktop",
+          "server"
+        ],
+        "title": "RuntimeMode",
+        "type": "string"
+      },
+      "TaskType": {
+        "enum": [
+          "classification",
+          "regression",
+          "forecasting",
+          "anomaly_detection",
+          "object_detection",
+          "segmentation",
+          "ocr",
+          "sound_event_detection"
+        ],
+        "title": "TaskType",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          "msg": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionInfo": {
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/RuntimeMode"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "python": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "python",
+          "platform",
+          "mode"
+        ],
+        "title": "VersionInfo",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Perceptron Engine API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/projects": {
+      "get": {
+        "operationId": "listProjects",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Project"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "tags": [
+          "projects"
+        ]
+      },
+      "post": {
+        "operationId": "createProject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}": {
+      "delete": {
+        "operationId": "deleteProject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "tags": [
+          "projects"
+        ]
+      },
+      "get": {
+        "operationId": "getProject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "tags": [
+          "projects"
+        ]
+      },
+      "patch": {
+        "operationId": "updateProject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/system/health": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/version": {
+      "get": {
+        "operationId": "getVersion",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "tags": [
+          "system"
+        ]
+      }
+    }
+  }
+}

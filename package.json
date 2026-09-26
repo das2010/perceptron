@@ -1,0 +1,13 @@
+{
+  "name": "perceptron",
+  "private": true,
+  "packageManager": "pnpm@12.6.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "gen:api": "uv run perceptron openapi -o docs/api/openapi.json && pnpm -C ui gen:api",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build"
+  }
+}
