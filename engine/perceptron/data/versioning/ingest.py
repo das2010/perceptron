@@ -14,11 +14,14 @@ from perceptron.core.errors import ValidationError
 from perceptron.core.ids import IdPrefix, new_id
 from perceptron.core.paths import ProjectPaths
 from perceptron.data.schema import SemanticType, TableSchema, infer_schema
+from perceptron.data.series import SeriesConfig, detect_series, temporal_split_per_series
 from perceptron.data.sources.files import (
     SourceKind,
+    audio_folder_index,
     image_folder_index,
     open_source,
     scan_table,
+    text_folder_table,
     write_table_parquet,
 )
 from perceptron.data.splits import SplitRequest, assign_splits, split_counts
@@ -30,7 +33,7 @@ from perceptron.data.view import (
     SCHEMA_FILE,
     TABLE_FILE,
 )
-from perceptron.domain.enums import Modality, SplitStrategy
+from perceptron.domain.enums import Modality, SplitStrategy, TaskType
 from perceptron.domain.models import DatasetVersion, Split
 from perceptron.storage.filesystem import write_json
 from perceptron.storage.manifest import build_manifest
@@ -48,6 +51,11 @@ class IngestRequest:
     split: SplitRequest | None = None
     overrides: dict[str, SemanticType] | None = None
     source_id: str | None = None
+    modality: Modality | None = None
+    series: SeriesConfig | None = None
+    series_overrides: dict[str, object] | None = None
+    task: TaskType | None = None
+    annotations: Path | None = None
 
 
 def _materialize_table(
@@ -79,6 +87,106 @@ def _materialize_images(src: Path, staging: Path) -> tuple[TableSchema, pl.DataF
     return schema, df
 
 
+MAX_TEXT_SIDE_COLUMNS = 2
+
+
+def text_column(schema: TableSchema) -> str | None:
+    """La columna de texto principal si la tabla es 'texto + pocas columnas más'."""
+    texts = [
+        c.name
+        for c in schema.columns
+        if c.semantic is SemanticType.TEXT and c.name != schema.target
+    ]
+    others = [
+        c
+        for c in schema.columns
+        if c.name != schema.target and c.semantic not in (SemanticType.ID, SemanticType.TEXT)
+    ]
+    if len(texts) == 1 and len(others) <= MAX_TEXT_SIDE_COLUMNS:
+        return texts[0]
+    return None
+
+
+_VISION_KINDS = (SourceKind.SEGMENTATION_FOLDER, SourceKind.OCR_FOLDER)
+_VISION_TARGET = {
+    TaskType.OBJECT_DETECTION: "boxes",
+    TaskType.SEGMENTATION: "mask_path",
+    TaskType.OCR: "text",
+}
+
+
+def _materialize_vision_task(
+    kind: SourceKind, src: Path, staging: Path, req: IngestRequest
+) -> tuple[TableSchema, pl.DataFrame, TaskType, list[str]]:
+    from perceptron.data.schema import ColumnSchema
+    from perceptron.data.vision_tasks import (
+        detection_index,
+        find_annotations,
+        ocr_index,
+        ocr_labels_file,
+        segmentation_index,
+    )
+
+    files = staging / FILES_DIR
+    if kind is SourceKind.SEGMENTATION_FOLDER:
+        task = TaskType.SEGMENTATION
+        df, classes = segmentation_index(src, files)
+    elif kind is SourceKind.OCR_FOLDER:
+        task = TaskType.OCR
+        labels = ocr_labels_file(src)
+        if labels is None:
+            raise ValidationError("no se encontró el CSV de textos para OCR")
+        df, classes = ocr_index(src, files, labels)
+    else:
+        task = TaskType.OBJECT_DETECTION
+        annotations = req.annotations or find_annotations(src)
+        df, classes = detection_index(src, files, annotations)
+    target = _VISION_TARGET[task]
+    schema = TableSchema(
+        columns=[
+            ColumnSchema(
+                name="path",
+                dtype="String",
+                semantic=SemanticType.FILEPATH,
+                nullable=False,
+                n_unique=df.height,
+            ),
+            ColumnSchema(
+                name=target,
+                dtype=str(df[target].dtype),
+                semantic=SemanticType.TEXT,
+                nullable=False,
+                n_unique=df.height,
+            ),
+        ],
+        target=target,
+    )
+    return schema, df, task, classes
+
+
+def _materialize_audio(src: Path, staging: Path) -> tuple[TableSchema, pl.DataFrame]:
+    df = audio_folder_index(src, staging / FILES_DIR)
+    if df.height == 0:
+        raise ValidationError("no se encontraron archivos de audio")
+    has_labels = df["label"].null_count() < df.height
+    schema = infer_schema(df.select("path", "label"), target=IMAGE_TARGET if has_labels else None)
+    schema = schema.with_overrides(
+        {"path": SemanticType.FILEPATH, "label": SemanticType.CATEGORICAL}
+    )
+    return schema, df
+
+
+def _materialize_text_folder(src: Path, req: IngestRequest) -> tuple[TableSchema, pl.DataFrame]:
+    df = text_folder_table(src)
+    if df.height == 0:
+        raise ValidationError("no se encontraron archivos .txt")
+    has_labels = df["label"].null_count() < df.height
+    schema = infer_schema(df, target="label" if has_labels else None).with_overrides(
+        {"path": SemanticType.ID, "text": SemanticType.TEXT, "label": SemanticType.CATEGORICAL}
+    )
+    return schema, df
+
+
 def _default_split(schema: TableSchema, modality: Modality) -> SplitRequest:
     """Estratificado si hay target categórico; temporal si hay una columna de fecha."""
     if modality is Modality.TABULAR:
@@ -98,23 +206,77 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
     staging = paths.datasets_dir / f".staging-{new_id(IdPrefix.DATASET_VERSION)}"
     staging.mkdir(parents=True)
     try:
+        extra_meta: dict[str, object] = {}
         with open_source(req.source) as detected:
             if detected.kind is SourceKind.TABLE:
-                modality = Modality.TABULAR
                 schema, df = _materialize_table(detected.path, staging, req)
+                text_col = text_column(schema)
+                series_cfg = req.series
+                if (
+                    series_cfg is None
+                    and req.modality in (None, Modality.TIMESERIES)
+                    and not text_col
+                ):
+                    series_cfg = detect_series(schema, df)
+                if series_cfg is not None and req.series_overrides:
+                    series_cfg = SeriesConfig.model_validate(
+                        {**series_cfg.model_dump(), **req.series_overrides}
+                    )
+                if req.modality is Modality.TIMESERIES and series_cfg is None:
+                    raise ValidationError(
+                        "no se pudo inferir la serie: indicá la columna de tiempo y el target"
+                    )
+                auto = Modality.TIMESERIES if series_cfg else Modality.TABULAR
+                modality = req.modality or (Modality.TEXT if text_col else auto)
+                if modality is Modality.TIMESERIES and series_cfg is not None:
+                    extra_meta["series"] = series_cfg.model_dump(mode="json")
+                    schema = schema.model_copy(update={"target": series_cfg.target})
+                if modality is Modality.TEXT:
+                    text_col = text_col or next(
+                        (c.name for c in schema.columns if c.semantic is SemanticType.TEXT), None
+                    )
+                    if text_col is None:
+                        raise ValidationError("modalidad texto sin ninguna columna de texto")
+                    extra_meta["text_column"] = text_col
                 data_file = TABLE_FILE
+            elif detected.kind is SourceKind.TEXT_FOLDER:
+                modality = Modality.TEXT
+                schema, df = _materialize_text_folder(detected.path, req)
+                extra_meta["text_column"] = "text"
+                data_file = TABLE_FILE
+            elif detected.kind in _VISION_KINDS or (
+                detected.kind is SourceKind.IMAGE_FOLDER and req.task is TaskType.OBJECT_DETECTION
+            ):
+                modality = Modality.IMAGE
+                schema, df, task, classes = _materialize_vision_task(
+                    detected.kind, detected.path, staging, req
+                )
+                extra_meta.update(task=task.value, classes=classes)
+                data_file = INDEX_FILE
+            elif detected.kind is SourceKind.AUDIO_FOLDER:
+                modality = Modality.AUDIO
+                schema, df = _materialize_audio(detected.path, staging)
+                data_file = INDEX_FILE
             else:
                 modality = Modality.IMAGE
                 schema, df = _materialize_images(detected.path, staging)
                 data_file = INDEX_FILE
 
         split_req = req.split or _default_split(schema, modality)
-        df = assign_splits(df, split_req, schema.target)
+        if modality is Modality.TIMESERIES and "series" in extra_meta:
+            cfg = SeriesConfig.model_validate(extra_meta["series"])
+            split_req = SplitRequest(strategy=SplitStrategy.TEMPORAL, time_column=cfg.time_column)
+            df = temporal_split_per_series(df, cfg)
+        elif "task" in extra_meta:
+            split_req = req.split or SplitRequest(strategy=SplitStrategy.RANDOM)
+            df = assign_splits(df, split_req, None)
+        else:
+            df = assign_splits(df, split_req, schema.target)
         df.write_parquet(staging / data_file, compression="zstd", statistics=True)
         write_json(staging / SCHEMA_FILE, schema.model_dump(mode="json"))
         write_json(
             staging / META_FILE,
-            {"modality": modality.value, "split": split_req.model_dump(mode="json")},
+            {"modality": modality.value, "split": split_req.model_dump(mode="json"), **extra_meta},
         )
 
         manifest = build_manifest(staging)

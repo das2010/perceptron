@@ -14,7 +14,7 @@ from perceptron.data.profiling.card import ProfileCard
 from perceptron.data.schema import SemanticType, TableSchema, infer_schema
 from perceptron.data.sources.files import SourceKind, open_source, scan_table
 from perceptron.data.splits import SPLIT_COLUMN, SplitRequest
-from perceptron.domain.enums import DataSourceType
+from perceptron.domain.enums import DataSourceType, Modality
 from perceptron.domain.models import DatasetVersion, DataSource
 from perceptron.services.workflow import Workflow
 
@@ -45,6 +45,7 @@ class IngestBody(BaseModel):
     target: str | None = None
     split: SplitRequest | None = None
     overrides: dict[str, SemanticType] | None = None
+    modality: Modality | None = None
 
 
 @router.post(
@@ -95,6 +96,7 @@ def ingest_source(source_id: str, body: IngestBody, ctx: Ctx) -> DatasetVersion:
         split=body.split,
         overrides=body.overrides,
         source_record=src,
+        modality=body.modality,
     )
 
 

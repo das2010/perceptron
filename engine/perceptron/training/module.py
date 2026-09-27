@@ -11,13 +11,10 @@ from typing import Any, cast
 
 import lightning as L
 import torch
-import torch.nn.functional as F
-import torchmetrics
-from torch import nn
 
 from perceptron.archspec.builder import ArchModel, build_model, num_outputs
 from perceptron.archspec.schema import ArchSpec, Scalar, resolve
-from perceptron.domain.enums import TaskType
+from perceptron.tasks import get_adapter, supervised
 
 LOWER_IS_BETTER = ("loss", "mae", "rmse", "mse", "mape", "smape")
 
@@ -26,42 +23,7 @@ def monitor_mode(metric: str) -> str:
     return "min" if any(k in metric for k in LOWER_IS_BETTER) else "max"
 
 
-class FocalLoss(nn.Module):
-    def __init__(self, gamma: float = 2.0, weight: torch.Tensor | None = None) -> None:
-        super().__init__()
-        self.gamma = gamma
-        self.weight: torch.Tensor | None
-        self.register_buffer("weight", weight)
-
-    def forward(self, logits: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        ce = F.cross_entropy(logits, y, weight=self.weight, reduction="none")
-        pt = torch.exp(-ce)
-        return ((1 - pt) ** self.gamma * ce).mean()
-
-
-def _metrics(
-    task: TaskType, num_classes: int | None, names: list[str]
-) -> torchmetrics.MetricCollection:
-    ms: dict[str, torchmetrics.Metric | torchmetrics.MetricCollection] = {}
-    if task is TaskType.REGRESSION:
-        available: dict[str, Any] = {
-            "mae": torchmetrics.MeanAbsoluteError,
-            "rmse": lambda: torchmetrics.MeanSquaredError(squared=False),
-            "r2": torchmetrics.R2Score,
-        }
-    else:
-        k = num_classes or 2
-        available = {
-            "accuracy": lambda: torchmetrics.Accuracy(task="multiclass", num_classes=k),
-            "f1_macro": lambda: torchmetrics.F1Score(
-                task="multiclass", num_classes=k, average="macro"
-            ),
-            "auroc": lambda: torchmetrics.AUROC(task="multiclass", num_classes=k),
-        }
-    for name in names or list(available):
-        if name in available:
-            ms[name] = available[name]()
-    return torchmetrics.MetricCollection(ms)
+FocalLoss = supervised.FocalLoss  # compatibilidad
 
 
 class PerceptronModule(L.LightningModule):
@@ -80,40 +42,16 @@ class PerceptronModule(L.LightningModule):
         self.model = cast(ArchModel, built.model)
         self.backbones = built.backbones
         self.task = spec.task.type
+        self.adapter = get_adapter(self.task)
         self.num_outputs = num_outputs(spec)
-        self.loss_fn = self._loss(class_weights)
-        k = spec.task.num_classes
-        self.train_metrics = _metrics(self.task, k, spec.metrics).clone(prefix="train_")
-        self.val_metrics = _metrics(self.task, k, spec.metrics).clone(prefix="val_")
+        self.loss_fn = self.adapter.build_loss(spec, self._r, class_weights)
+        self.train_metrics = self.adapter.build_metrics(spec).clone(prefix="train_")
+        self.val_metrics = self.adapter.build_metrics(spec).clone(prefix="val_")
 
     # ---------------------------------------------------------------- loss
 
     def _r(self, v: object) -> Any:
         return resolve(v, self.overrides)
-
-    def _loss(self, class_weights: torch.Tensor | None) -> nn.Module:
-        loss = self.spec.loss
-        weight = None
-        if isinstance(loss.class_weights, list):
-            weight = torch.tensor(loss.class_weights, dtype=torch.float32)
-        elif loss.class_weights == "auto":
-            weight = class_weights
-        match loss.type:
-            case "cross_entropy":
-                return nn.CrossEntropyLoss(
-                    weight=weight, label_smoothing=float(self._r(loss.label_smoothing))
-                )
-            case "focal":
-                return FocalLoss(weight=weight)
-            case "bce":
-                return nn.BCEWithLogitsLoss()
-            case "mse":
-                return nn.MSELoss()
-            case "mae":
-                return nn.L1Loss()
-            case "huber":
-                return nn.HuberLoss()
-        raise ValueError(f"loss no soportada: {loss.type}")
 
     # ---------------------------------------------------------------- forward
 
@@ -121,27 +59,19 @@ class PerceptronModule(L.LightningModule):
         out: torch.Tensor = self.model(*inputs)
         return out
 
-    def _step(self, batch: tuple[torch.Tensor, ...], stage: str) -> torch.Tensor:
-        loss: torch.Tensor
-        *inputs, y = batch
-        out = self(*inputs)
-        if self.task is TaskType.REGRESSION:
-            pred = out.squeeze(-1)
-            loss = self.loss_fn(pred, y.float())
-            metric_input: tuple[torch.Tensor, torch.Tensor] = (pred.detach(), y.float())
-        elif self.spec.loss.type == "bce":
-            loss = self.loss_fn(out.squeeze(-1), y.float())
-            p1 = torch.sigmoid(out.squeeze(-1)).detach()
-            metric_input = (torch.stack([1 - p1, p1], dim=1), y)
-        else:
-            loss = self.loss_fn(out, y)
-            metric_input = (out.detach().softmax(-1), y)
+    def _step(self, batch: Any, stage: str) -> torch.Tensor:
+        res = self.adapter.step(self.model, self.loss_fn, batch)
         metrics = self.train_metrics if stage == "train" else self.val_metrics
-        metrics.update(*metric_input)
+        metrics.update(*res.metric_args)
         self.log(
-            f"{stage}_loss", loss, on_step=False, on_epoch=True, prog_bar=False, batch_size=len(y)
+            f"{stage}_loss",
+            res.loss,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=False,
+            batch_size=res.batch_size,
         )
-        return loss
+        return res.loss
 
     def training_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> torch.Tensor:
         return self._step(batch, "train")

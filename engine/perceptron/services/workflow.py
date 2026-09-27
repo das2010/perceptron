@@ -16,6 +16,7 @@ from typing import Any
 from perceptron.api.context import EngineContext
 from perceptron.archspec.schema import ArchSpec
 from perceptron.archspec.validate import ValidationReport, offline_mode, validate_archspec
+from perceptron.catalog.registry import DEFAULT_HF_TEXT_MODEL
 from perceptron.catalog.rules import recommend
 from perceptron.core.errors import NotFoundError, ValidationError
 from perceptron.core.ids import IdPrefix, new_id
@@ -31,9 +32,11 @@ from perceptron.data.view import DatasetView
 from perceptron.domain.enums import (
     DataSourceType,
     Device,
+    Modality,
     Origin,
     ProjectStatus,
     RunStatus,
+    TaskType,
 )
 from perceptron.domain.models import (
     ArchSpecRecord,
@@ -114,6 +117,9 @@ class Workflow:
         split: SplitRequest | None = None,
         overrides: dict[str, SemanticType] | None = None,
         source_record: DataSource | None = None,
+        modality: Modality | None = None,
+        series_overrides: dict[str, Any] | None = None,
+        task: TaskType | None = None,
     ) -> DatasetVersion:
         project = self.project(project_id)
         src = source_record
@@ -135,6 +141,9 @@ class Workflow:
                     split=split,
                     overrides=overrides,
                     source_id=src.id,
+                    modality=modality,
+                    series_overrides=series_overrides,
+                    task=task,
                 ),
             )
         existing = self.ctx.repo(DatasetVersion).list(
@@ -187,7 +196,9 @@ class Workflow:
         dv = self.dataset(dataset_version_id)
         card = self.profile_card(dv.id)
         use_pretrained = (not offline_mode()) if pretrained is None else pretrained
-        spec = propose_pipeline(card, pretrained=use_pretrained and self._has_gpu())
+        spec = propose_pipeline(
+            card, pretrained=use_pretrained and self._has_gpu(), hf_model=DEFAULT_HF_TEXT_MODEL
+        )
         pipeline = Pipeline(
             project_id=dv.project_id,
             name=f"auto-{dv.content_hash[:8]}",
@@ -218,7 +229,8 @@ class Workflow:
             if fitted.spec.model_dump(mode="json") == pipeline.graph:
                 return fitted
         spec = PipelineSpec.model_validate(pipeline.graph)
-        fitted = fit_pipeline(spec, self.view(dv).read("train"))
+        view = self.view(dv)
+        fitted = fit_pipeline(spec, view.read("train"), view.files_dir)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(fitted.model_dump_json(indent=2), encoding="utf-8")
         return fitted
@@ -424,6 +436,25 @@ class Workflow:
             raise NotFoundError(f"el run {run_id} no fue evaluado")
         return EvaluationReport.model_validate(json.loads(path.read_text(encoding="utf-8")))
 
+    def baseline(
+        self, dataset_version_id: str, pipeline_id: str, project_id: str
+    ) -> dict[str, Any] | None:
+        """LightGBM de referencia (§5.1): mismo pipeline y test sellado; se registra en MLflow."""
+        from perceptron.evaluation.baseline import lightgbm_baseline
+
+        dv = self.dataset(dataset_version_id)
+        try:
+            result = lightgbm_baseline(self.view(dv), self.fitted_pipeline(pipeline_id, dv.id))
+        except (ImportError, ValueError) as e:
+            logger.warning("baseline no disponible", extra={"error": str(e)})
+            return None
+        rid = self.tracker.start_run(
+            project_id, "baseline-lightgbm", {"perceptron.baseline": "lightgbm"}
+        )
+        self.tracker.log_metrics(rid, {f"test.{k}": v for k, v in result["metrics"].items()})
+        self.tracker.end_run(rid, "FINISHED")
+        return result
+
     def register(self, run_id: str) -> ModelVersion:
         run = self.ctx.repo(Run).get(run_id)
         dv = self.dataset(run.dataset_version_id)
@@ -453,6 +484,7 @@ class QuickstartResult:
     study_result: StudyResult
     evaluation: EvaluationReport | None
     model_version: ModelVersion | None
+    baseline: dict[str, Any] | None = None
 
     def summary(self) -> dict[str, Any]:
         best = self.study_result.best_trial
@@ -476,7 +508,21 @@ class QuickstartResult:
             "best_run_id": best.run_id if best else None,
             "best_params": best.params if best else None,
             "test_metrics": self.evaluation.metrics if self.evaluation else None,
+            "test_per_class": {
+                c.label: {
+                    "recall": round(c.recall, 4),
+                    "precision": round(c.precision, 4),
+                    "support": c.support,
+                }
+                for c in self.evaluation.classification.per_class
+            }
+            if self.evaluation and self.evaluation.classification
+            else None,
+            "test_confusion": self.evaluation.classification.confusion_matrix
+            if self.evaluation and self.evaluation.classification
+            else None,
             "model_version_id": self.model_version.id if self.model_version else None,
+            "baseline": self.baseline,
         }
 
 
@@ -486,6 +532,9 @@ def quickstart(
     *,
     name: str | None = None,
     target: str | None = None,
+    modality: Modality | None = None,
+    series_overrides: dict[str, Any] | None = None,
+    task: TaskType | None = None,
     trials: int = 10,
     max_epochs: int | None = None,
     max_time_s: float | None = None,
@@ -497,7 +546,14 @@ def quickstart(
     wf = Workflow(ctx, tracker)
     project = ctx.projects.add(Project(name=name or source.stem, goal="quickstart"))
     ctx.files.init_project(project)
-    dv = wf.ingest(project.id, source, target=target)
+    dv = wf.ingest(
+        project.id,
+        source,
+        target=target,
+        modality=modality,
+        series_overrides=series_overrides,
+        task=task,
+    )
     card = wf.profile(dv.id)
     pipeline = wf.propose_pipeline(dv.id)
     archspec, why = wf.propose_architecture(dv.id, pipeline.id)
@@ -512,6 +568,9 @@ def quickstart(
     if result.best_trial is not None:
         _, evaluation = wf.evaluate(result.best_trial.run_id)
         mv = wf.register(result.best_trial.run_id)
+    baseline = None
+    if dv.modality is Modality.TABULAR and evaluation is not None:
+        baseline = wf.baseline(dv.id, pipeline.id, project.id)
     return QuickstartResult(
         project=ctx.projects.get(project.id),
         dataset=dv,
@@ -524,6 +583,7 @@ def quickstart(
         study_result=result,
         evaluation=evaluation,
         model_version=mv,
+        baseline=baseline,
     )
 
 

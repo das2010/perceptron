@@ -16,6 +16,8 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 from perceptron.data.schema import SemanticType
+from perceptron.data.series import SeriesProfile
+from perceptron.data.vision_tasks import VisionTaskProfile
 from perceptron.domain.enums import Modality, TaskType
 
 SIG_DIGITS = 4
@@ -52,6 +54,11 @@ class AlertCode(StrEnum):
     MIXED_RESOLUTIONS = "mixed_resolutions"
     MIXED_CHANNELS = "mixed_channels"
     MISSING_TARGET = "missing_target"
+    DUPLICATE_TEXTS = "duplicate_texts"
+    LONG_TEXTS = "long_texts"
+    CLIPPING = "clipping"
+    MIXED_SAMPLE_RATES = "mixed_sample_rates"
+    SILENT_AUDIO = "silent_audio"
 
 
 class Alert(BaseModel):
@@ -122,6 +129,32 @@ class ImageProfile(BaseModel):
     near_duplicate_fraction: float
 
 
+class AudioProfile(BaseModel):
+    """Audio (RF-PRF-05)."""
+
+    count: int
+    corrupt: int
+    duration_quantiles: dict[str, float | None]
+    sample_rates: list[CategoryCount]
+    channels: list[CategoryCount]
+    silence_fraction: float | None
+    clipping_fraction: float | None
+    snr_db: float | None
+
+
+class TextProfile(BaseModel):
+    """Texto (RF-PRF-03): solo agregados; el vocabulario no se expone."""
+
+    column: str
+    language: str | None
+    language_confidence: float
+    tokens_p50: float | None
+    tokens_p95: float | None
+    vocabulary_size: int
+    empty_fraction: float
+    duplicate_fraction: float
+
+
 class ProfileCard(BaseModel):
     """Resumen agregado del dataset (solo train + val; el test sellado no se perfila)."""
 
@@ -136,6 +169,10 @@ class ProfileCard(BaseModel):
     target: TargetProfile | None
     columns: list[ColumnProfile]
     images: ImageProfile | None = None
+    text: TextProfile | None = None
+    audio: AudioProfile | None = None
+    vision_task: VisionTaskProfile | None = None
+    series: SeriesProfile | None = None
     duplicate_row_fraction: float | None = None
     alerts: list[Alert] = Field(default_factory=list)
 

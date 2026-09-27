@@ -9,19 +9,16 @@ import json
 from pathlib import Path
 from typing import Any
 
+import torch
 from pydantic import BaseModel, Field
+from torch.utils.data import DataLoader
 
 from perceptron.data.view import DatasetView, Purpose
 from perceptron.domain.enums import ModelStage, TaskType
 from perceptron.domain.models import ModelVersion
-from perceptron.evaluation.metrics import (
-    ClassificationMetrics,
-    Curves,
-    RegressionMetrics,
-    classification_metrics,
-    regression_metrics,
-)
+from perceptron.evaluation.metrics import ClassificationMetrics, RegressionMetrics
 from perceptron.storage.filesystem import write_json
+from perceptron.tasks import get_adapter
 from perceptron.training.config import RESULT_FILE, RunResult
 from perceptron.training.data import make_dataset
 from perceptron.training.inference import TrainedModel, load_trained, predict
@@ -38,16 +35,11 @@ class EvaluationReport(BaseModel):
     metrics: dict[str, float] = Field(description="Resumen plano (tracking, comparación de runs)")
     classification: ClassificationMetrics | None = None
     regression: RegressionMetrics | None = None
-    curves: Curves = Field(default_factory=Curves)
+    details: dict[str, Any] = Field(
+        default_factory=dict, description="Detalle propio de cada tarea"
+    )
+    curves: dict[str, list[list[float]]] = Field(default_factory=dict)
     checkpoint: str
-
-
-def _flat(report: ClassificationMetrics | RegressionMetrics) -> dict[str, float]:
-    return {
-        k: float(v)
-        for k, v in report.model_dump().items()
-        if isinstance(v, int | float) and not isinstance(v, bool)
-    }
 
 
 def evaluate_run(run_dir: Path, dataset_dir: Path, *, split: str = "test") -> EvaluationReport:
@@ -55,36 +47,34 @@ def evaluate_run(run_dir: Path, dataset_dir: Path, *, split: str = "test") -> Ev
     view = DatasetView(dataset_dir)
     ds = make_dataset(view, trained.pipeline, split, train=False, purpose=Purpose.FINAL_EVALUATION)
     preds = predict(trained, ds)
-    if preds.y_true is None:
-        raise ValueError("el dataset no tiene target para evaluar")
     run_id = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))["run_id"]
-    if trained.task is TaskType.REGRESSION:
-        reg, curves = regression_metrics(preds.y_true.astype(float), preds.y_pred.astype(float))
-        report = EvaluationReport(
-            run_id=run_id,
-            split=split,
-            task=trained.task,
-            num_samples=len(preds.y_pred),
-            metrics=_flat(reg),
-            regression=reg,
-            curves=curves,
-            checkpoint=trained.checkpoint.name,
+    adapter = get_adapter(trained.task)
+    calibration: dict[str, Any] = {}
+    if adapter.needs_calibration:
+        val_ds = make_dataset(
+            view, trained.pipeline, "val", train=False, purpose=Purpose.FINAL_EVALUATION
         )
-    else:
-        assert preds.proba is not None  # noqa: S101 - clasificación siempre trae probabilidades
-        cls, curves = classification_metrics(
-            preds.y_true.astype(int), preds.proba, trained.pipeline.classes or []
-        )
-        report = EvaluationReport(
-            run_id=run_id,
-            split=split,
-            task=trained.task,
-            num_samples=len(preds.y_pred),
-            metrics=_flat(cls),
-            classification=cls,
-            curves=curves,
-            checkpoint=trained.checkpoint.name,
-        )
+        loader = DataLoader(val_ds, batch_size=256, shuffle=False)
+        with torch.no_grad():
+            calibration = adapter.calibrate(trained.model, loader, trained.spec)
+    result = adapter.evaluate(preds, trained.spec, trained.pipeline, calibration)
+    detail = dict(result.detail)
+    report = EvaluationReport(
+        run_id=run_id,
+        split=split,
+        task=trained.task,
+        num_samples=len(preds.y_pred),
+        metrics=result.metrics,
+        classification=ClassificationMetrics.model_validate(detail.pop("classification"))
+        if "classification" in detail
+        else None,
+        regression=RegressionMetrics.model_validate(detail.pop("regression"))
+        if "regression" in detail
+        else None,
+        details=detail,
+        curves=result.curves,
+        checkpoint=trained.checkpoint.name,
+    )
     write_json(run_dir / EVALUATION_DIR / EVALUATION_FILE, report.model_dump(mode="json"))
     return report
 

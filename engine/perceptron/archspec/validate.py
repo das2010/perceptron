@@ -87,6 +87,43 @@ def weights_cached(model: str, tag: str, cache_dir: Path | None = None) -> bool:
     return (root / f"models--timm--{model}.{tag}").is_dir()
 
 
+def hf_cached(repo: str, cache_dir: Path | None = None) -> bool:
+    default = Path.home() / ".cache" / "huggingface" / "hub"
+    root = cache_dir or Path(os.environ.get("HF_HUB_CACHE", default))
+    return (root / f"models--{repo.replace('/', '--')}").is_dir()
+
+
+def _hf_text_issues(
+    i: int, params: dict[str, Any], commercial: bool, cache_dir: Path | None
+) -> list[Issue]:
+    from perceptron.catalog.registry import HF_TEXT_MODELS
+
+    model = params.get("model", "")
+    info = HF_TEXT_MODELS.get(model)
+    if info is None:
+        return []
+    if commercial and not info.commercial_ok:
+        return [
+            Issue(
+                stage=Stage.WEIGHTS,
+                severity=Severity.ERROR,
+                path=f"nodes[{i}].params.model",
+                message=f"{model} ({info.license}) no permite uso comercial",
+            )
+        ]
+    if params.get("pretrained", True) and offline_mode() and not hf_cached(model, cache_dir):
+        return [
+            Issue(
+                stage=Stage.WEIGHTS,
+                severity=Severity.WARNING,
+                path=f"nodes[{i}].params.model",
+                message=f"sin conexión y {model} no está en la caché de Hugging Face",
+                suggestion="usar una plantilla sin preentrenado (TextCNN) o descargar el modelo",
+            )
+        ]
+    return []
+
+
 def validate_archspec(
     data: dict[str, Any] | ArchSpec,
     *,
@@ -185,6 +222,9 @@ def validate_archspec(
 
     # 6. pesos preentrenados
     for i, node in enumerate(spec.nodes):
+        if node.block == "text.hf_encoder":
+            issues += _hf_text_issues(i, resolve(node.params, overrides), commercial_use, cache_dir)
+            continue
         if node.block != "vision.timm_backbone":
             continue
         params = resolve(node.params, overrides)

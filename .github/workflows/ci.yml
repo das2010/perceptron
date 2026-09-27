@@ -62,19 +62,23 @@ jobs:
       - run: pnpm -C ui build
 
   e2e:
-    name: aceptación e2e (UC-01, UC-04)
+    name: e2e ${{ matrix.uc }}
     # Solo Linux: Windows cuenta doble en minutos de Actions de repos privados.
     runs-on: ubuntu-latest
     timeout-minutes: 40
     needs: engine
+    strategy:
+      fail-fast: false
+      matrix:
+        uc: [uc01, uc03, uc04, uc05, uc06, uc07, uc08, uc09]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
       - run: uv sync --all-packages --locked
-      - name: Quickstart UC-01 y UC-04 (10 trials, CPU, sin descargar pesos)
-        run: uv run pytest -m e2e -s -v engine/tests/e2e
+      - name: Quickstart ${{ matrix.uc }} (10 trials, CPU, sin descargar pesos)
+        run: uv run pytest -m e2e -s -v engine/tests/e2e -k ${{ matrix.uc }}
 
   contract:
     name: OpenAPI ↔ TypeScript

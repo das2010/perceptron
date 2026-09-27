@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 import typer
 
 from perceptron.core.config import Settings
-from perceptron.domain.enums import Device
+from perceptron.domain.enums import Device, Modality, TaskType
 
 if TYPE_CHECKING:
     from perceptron.api.context import EngineContext
@@ -86,6 +86,7 @@ def data_ingest(
     source: Annotated[Path, typer.Argument(help="Archivo, carpeta de imágenes o ZIP")],
     project: ProjectOpt,
     target: Annotated[str | None, typer.Option(help="Columna objetivo")] = None,
+    modality: Annotated[Modality | None, typer.Option(help="Forzar la modalidad")] = None,
     workspace: WorkspaceOpt = None,
     as_json: JsonOpt = False,
 ) -> None:
@@ -93,7 +94,7 @@ def data_ingest(
     from perceptron.services.workflow import Workflow
 
     with _ctx(workspace) as ctx:
-        dv = Workflow(ctx).ingest(project, source, target=target)
+        dv = Workflow(ctx).ingest(project, source, target=target, modality=modality)
         split = dv.split
         _out(
             dv,
@@ -317,12 +318,27 @@ def model_register(
         _out(mv, as_json, f"{mv.id} ({mv.stage.value})")
 
 
+def _series_overrides(
+    task: TaskType | None, time_column: str | None, series_id: str | None, horizon: int | None
+) -> dict[str, Any] | None:
+    raw = {"task": task, "time_column": time_column, "series_id": series_id, "horizon": horizon}
+    given = {k: v for k, v in raw.items() if v is not None}
+    return given or None
+
+
 def quickstart(
     source: Annotated[Path, typer.Argument(help="Archivo tabular o carpeta de imágenes")],
     target: Annotated[
         str | None, typer.Option(help="Columna objetivo (se infiere si falta)")
     ] = None,
     name: Annotated[str | None, typer.Option(help="Nombre del proyecto")] = None,
+    modality: Annotated[Modality | None, typer.Option(help="Forzar la modalidad")] = None,
+    task: Annotated[
+        TaskType | None, typer.Option(help="Series: forecasting | anomaly_detection")
+    ] = None,
+    time_column: Annotated[str | None, typer.Option(help="Series: columna de tiempo")] = None,
+    series_id: Annotated[str | None, typer.Option(help="Series: columna identificadora")] = None,
+    horizon: Annotated[int | None, typer.Option(help="Series: pasos a pronosticar")] = None,
     trials: Annotated[int, typer.Option(help="Trials de HPO")] = 10,
     max_epochs: Annotated[int | None, typer.Option(help="Épocas máximas por trial")] = None,
     max_time: Annotated[float | None, typer.Option(help="Tiempo máximo total (s)")] = None,
@@ -339,6 +355,9 @@ def quickstart(
             source,
             name=name,
             target=target,
+            modality=modality,
+            series_overrides=_series_overrides(task, time_column, series_id, horizon),
+            task=task,
             trials=trials,
             max_epochs=max_epochs,
             max_time_s=max_time,

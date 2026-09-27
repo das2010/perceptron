@@ -1,301 +1,301 @@
 ticket_id,descripcion,categoria,prioridad,nivel_cliente,horas_resolucion
-T00000,La cuenta quedó bloqueada,acceso,alta,2,0.97
-T00001,La cuenta quedó bloqueada,acceso,baja,5,2.8
-T00002,Falta la opción de exportar a Excel,funcionalidad,baja,5,29.79
-T00003,La cuenta quedó bloqueada,acceso,media,3,3.34
-T00004,Quisiera agregar usuarios al equipo,funcionalidad,media,4,11.81
-T00005,Me cobraron dos veces en abril,facturación,media,1,3.94
-T00006,¿Cómo configuro alertas por email?,funcionalidad,baja,5,25.81
-T00007,Falta la opción de exportar a Excel,funcionalidad,media,3,9.23
-T00008,La página tarda en cargar,rendimiento,media,5,27.66
-T00009,La página tarda en cargar,rendimiento,baja,5,37.12
-T00010,Error en el importe de la factura,facturación,baja,3,10.4
-T00011,No puedo descargar la factura de abril,facturación,baja,1,10.2
-T00012,No puedo descargar la factura de junio,facturación,alta,4,4.07
-T00013,Error en el importe de la factura,facturación,alta,1,2.87
-T00014,El sistema está muy lento en Chrome,rendimiento,media,2,18.0
-T00015,Quisiera agregar usuarios al equipo,funcionalidad,media,5,13.21
-T00016,Me cobraron dos veces en febrero,facturación,baja,2,6.54
-T00017,Me cobraron dos veces en marzo,facturación,media,3,6.61
-T00018,No puedo descargar la factura de mayo,facturación,media,5,6.42
-T00019,El sistema está muy lento en la notebook,rendimiento,media,5,19.24
-T00020,Quisiera agregar usuarios al equipo,funcionalidad,alta,5,9.25
-T00021,Falta la opción de exportar a Excel,funcionalidad,alta,1,6.84
-T00022,Error en el importe de la factura,facturación,alta,1,3.28
-T00023,La cuenta quedó bloqueada,acceso,media,4,1.94
-T00024,Se congela al exportar reportes,rendimiento,alta,1,10.42
-T00025,La cuenta quedó bloqueada,acceso,media,5,1.98
-T00026,No puedo descargar la factura de mayo,facturación,baja,2,14.88
-T00027,El sistema está muy lento en la notebook,rendimiento,alta,3,7.22
-T00028,La cuenta quedó bloqueada,acceso,baja,5,1.62
-T00029,Falta la opción de exportar a Excel,funcionalidad,baja,1,10.86
-T00030,Olvidé mi contraseña,acceso,baja,5,7.82
-T00031,¿Cómo configuro alertas por email?,funcionalidad,alta,3,5.29
-T00032,No puedo iniciar sesión desde la notebook,acceso,media,2,2.22
-T00033,Falta la opción de exportar a Excel,funcionalidad,media,1,8.87
-T00034,El sistema está muy lento en Chrome,rendimiento,alta,3,7.51
-T00035,Me cobraron dos veces en mayo,facturación,baja,5,8.61
-T00036,Error en el importe de la factura,facturación,alta,5,3.92
-T00037,Error en el importe de la factura,facturación,media,2,7.08
-T00038,Error en el importe de la factura,facturación,alta,5,2.57
-T00039,Error en el importe de la factura,facturación,baja,2,6.76
-T00040,El sistema está muy lento en la app de escritorio,rendimiento,baja,1,45.56
-T00041,¿Cómo configuro alertas por email?,funcionalidad,baja,1,15.81
-T00042,Me cobraron dos veces en abril,facturación,baja,1,5.07
-T00043,La cuenta quedó bloqueada,acceso,media,5,2.02
-T00044,Me cobraron dos veces en febrero,facturación,media,4,3.65
-T00045,La página tarda en cargar,rendimiento,alta,2,12.76
-T00046,El sistema está muy lento en la app de escritorio,rendimiento,media,4,19.01
-T00047,¿Cómo configuro alertas por email?,funcionalidad,media,4,6.7
-T00048,Falta la opción de exportar a Excel,funcionalidad,baja,1,20.15
-T00049,Me cobraron dos veces en abril,facturación,media,1,6.81
-T00050,No puedo iniciar sesión desde el celular,acceso,alta,4,0.8
-T00051,El sistema está muy lento en la notebook,rendimiento,baja,2,34.52
-T00052,¿Cómo configuro alertas por email?,funcionalidad,baja,3,14.89
-T00053,¿Cómo configuro alertas por email?,funcionalidad,alta,4,7.12
-T00054,Falta la opción de exportar a Excel,funcionalidad,media,1,10.3
-T00055,No puedo iniciar sesión desde Chrome,acceso,baja,3,2.48
-T00056,Falta la opción de exportar a Excel,funcionalidad,media,5,14.18
-T00057,No puedo descargar la factura de febrero,facturación,media,5,7.06
-T00058,El sistema está muy lento en la app de escritorio,rendimiento,alta,3,9.38
-T00059,No puedo iniciar sesión desde Chrome,acceso,media,1,2.44
-T00060,No puedo iniciar sesión desde Chrome,acceso,media,3,2.32
-T00061,Se congela al exportar reportes,rendimiento,baja,1,34.42
-T00062,Olvidé mi contraseña,acceso,media,1,3.6
-T00063,La cuenta quedó bloqueada,acceso,baja,5,3.5
-T00064,No puedo descargar la factura de marzo,facturación,alta,1,2.62
-T00065,La cuenta quedó bloqueada,acceso,baja,4,3.12
-T00066,Quisiera agregar usuarios al equipo,funcionalidad,media,3,21.51
-T00067,Quisiera agregar usuarios al equipo,funcionalidad,media,2,11.14
-T00068,Error en el importe de la factura,facturación,baja,1,10.09
-T00069,Olvidé mi contraseña,acceso,alta,5,1.46
-T00070,Falta la opción de exportar a Excel,funcionalidad,baja,3,11.99
-T00071,La página tarda en cargar,rendimiento,media,2,16.11
-T00072,No puedo descargar la factura de mayo,facturación,alta,3,2.06
-T00073,La página tarda en cargar,rendimiento,alta,3,8.49
-T00074,La cuenta quedó bloqueada,acceso,baja,5,3.83
-T00075,No puedo descargar la factura de febrero,facturación,baja,3,8.61
-T00076,No puedo iniciar sesión desde el celular,acceso,alta,1,1.36
-T00077,El sistema está muy lento en la app de escritorio,rendimiento,alta,1,12.11
-T00078,El sistema está muy lento en el celular,rendimiento,media,1,28.76
-T00079,Falta la opción de exportar a Excel,funcionalidad,baja,5,17.63
-T00080,Me cobraron dos veces en enero,facturación,alta,2,3.47
-T00081,El sistema está muy lento en el celular,rendimiento,media,3,19.5
-T00082,Se congela al exportar reportes,rendimiento,alta,4,8.79
-T00083,¿Cómo configuro alertas por email?,funcionalidad,baja,5,17.65
-T00084,Error en el importe de la factura,facturación,baja,1,7.15
-T00085,No puedo descargar la factura de marzo,facturación,media,1,6.25
-T00086,¿Cómo configuro alertas por email?,funcionalidad,media,5,15.3
-T00087,Se congela al exportar reportes,rendimiento,alta,5,8.25
-T00088,Se congela al exportar reportes,rendimiento,alta,2,9.37
-T00089,Falta la opción de exportar a Excel,funcionalidad,alta,1,7.36
-T00090,Olvidé mi contraseña,acceso,media,2,1.23
-T00091,La cuenta quedó bloqueada,acceso,baja,3,3.3
-T00092,Se congela al exportar reportes,rendimiento,baja,2,23.49
-T00093,El sistema está muy lento en la app de escritorio,rendimiento,baja,3,43.15
-T00094,Me cobraron dos veces en mayo,facturación,baja,4,8.03
-T00095,¿Cómo configuro alertas por email?,funcionalidad,alta,2,5.5
-T00096,No puedo iniciar sesión desde la app de escritorio,acceso,alta,3,1.45
-T00097,La página tarda en cargar,rendimiento,media,1,22.32
-T00098,El sistema está muy lento en Chrome,rendimiento,baja,1,36.85
-T00099,¿Cómo configuro alertas por email?,funcionalidad,alta,3,4.8
-T00100,No puedo iniciar sesión desde Chrome,acceso,alta,5,1.52
-T00101,Quisiera agregar usuarios al equipo,funcionalidad,baja,2,9.66
-T00102,¿Cómo configuro alertas por email?,funcionalidad,baja,1,10.08
-T00103,Quisiera agregar usuarios al equipo,funcionalidad,alta,1,7.81
-T00104,Falta la opción de exportar a Excel,funcionalidad,baja,3,13.24
-T00105,Me cobraron dos veces en junio,facturación,baja,5,10.5
-T00106,La página tarda en cargar,rendimiento,baja,4,23.86
-T00107,Se congela al exportar reportes,rendimiento,media,1,18.58
-T00108,Quisiera agregar usuarios al equipo,funcionalidad,baja,1,15.91
-T00109,La página tarda en cargar,rendimiento,media,5,21.7
-T00110,La cuenta quedó bloqueada,acceso,baja,2,2.67
-T00111,Olvidé mi contraseña,acceso,alta,3,2.48
-T00112,Se congela al exportar reportes,rendimiento,alta,2,13.0
-T00113,La cuenta quedó bloqueada,acceso,baja,4,3.13
-T00114,El sistema está muy lento en el celular,rendimiento,media,5,22.59
-T00115,La página tarda en cargar,rendimiento,alta,3,11.29
-T00116,Quisiera agregar usuarios al equipo,funcionalidad,baja,5,22.69
-T00117,No puedo descargar la factura de junio,facturación,alta,4,2.15
-T00118,No puedo descargar la factura de abril,facturación,alta,1,4.69
-T00119,No puedo iniciar sesión desde Chrome,acceso,media,3,1.7
-T00120,Quisiera agregar usuarios al equipo,funcionalidad,media,2,14.81
-T00121,No puedo descargar la factura de junio,facturación,media,2,7.32
-T00122,Olvidé mi contraseña,acceso,alta,1,0.99
-T00123,No puedo descargar la factura de enero,facturación,alta,3,6.47
-T00124,¿Cómo configuro alertas por email?,funcionalidad,baja,5,19.89
-T00125,Error en el importe de la factura,facturación,alta,5,5.76
-T00126,Me cobraron dos veces en enero,facturación,baja,1,10.54
-T00127,La cuenta quedó bloqueada,acceso,media,4,2.34
-T00128,Error en el importe de la factura,facturación,media,1,6.99
-T00129,Falta la opción de exportar a Excel,funcionalidad,baja,1,15.17
-T00130,Me cobraron dos veces en abril,facturación,baja,5,6.53
-T00131,El sistema está muy lento en la notebook,rendimiento,baja,4,50.32
-T00132,Se congela al exportar reportes,rendimiento,baja,1,20.24
-T00133,Error en el importe de la factura,facturación,media,5,3.67
-T00134,Me cobraron dos veces en febrero,facturación,alta,2,4.88
-T00135,La página tarda en cargar,rendimiento,alta,4,8.6
-T00136,Error en el importe de la factura,facturación,alta,1,5.31
-T00137,No puedo iniciar sesión desde el celular,acceso,baja,3,2.08
-T00138,No puedo descargar la factura de marzo,facturación,media,2,6.2
-T00139,¿Cómo configuro alertas por email?,funcionalidad,baja,3,25.81
-T00140,Error en el importe de la factura,facturación,baja,4,12.43
-T00141,Error en el importe de la factura,facturación,alta,5,2.81
-T00142,¿Cómo configuro alertas por email?,funcionalidad,alta,5,7.57
-T00143,La cuenta quedó bloqueada,acceso,alta,2,0.92
-T00144,Olvidé mi contraseña,acceso,alta,1,0.92
-T00145,Error en el importe de la factura,facturación,baja,4,7.82
-T00146,La página tarda en cargar,rendimiento,baja,3,32.63
-T00147,La página tarda en cargar,rendimiento,baja,3,45.24
-T00148,La cuenta quedó bloqueada,acceso,media,4,1.61
-T00149,El sistema está muy lento en la notebook,rendimiento,media,1,18.83
-T00150,La página tarda en cargar,rendimiento,alta,3,9.21
-T00151,Quisiera agregar usuarios al equipo,funcionalidad,media,1,11.05
-T00152,No puedo iniciar sesión desde la app de escritorio,acceso,alta,1,1.45
-T00153,¿Cómo configuro alertas por email?,funcionalidad,alta,4,8.34
-T00154,No puedo iniciar sesión desde Chrome,acceso,media,2,1.89
-T00155,No puedo descargar la factura de abril,facturación,baja,1,5.31
-T00156,¿Cómo configuro alertas por email?,funcionalidad,alta,1,7.96
-T00157,Se congela al exportar reportes,rendimiento,alta,3,17.72
-T00158,Me cobraron dos veces en abril,facturación,media,2,5.78
-T00159,La página tarda en cargar,rendimiento,baja,5,38.63
-T00160,El sistema está muy lento en el celular,rendimiento,alta,5,11.5
-T00161,Olvidé mi contraseña,acceso,media,2,1.74
-T00162,Quisiera agregar usuarios al equipo,funcionalidad,alta,5,8.27
-T00163,¿Cómo configuro alertas por email?,funcionalidad,baja,5,17.12
-T00164,Falta la opción de exportar a Excel,funcionalidad,baja,1,10.53
-T00165,Quisiera agregar usuarios al equipo,funcionalidad,baja,3,12.71
-T00166,Quisiera agregar usuarios al equipo,funcionalidad,alta,1,9.19
-T00167,¿Cómo configuro alertas por email?,funcionalidad,baja,3,10.43
-T00168,Error en el importe de la factura,facturación,media,1,7.88
-T00169,Me cobraron dos veces en mayo,facturación,media,1,5.39
-T00170,Error en el importe de la factura,facturación,alta,1,5.34
-T00171,Me cobraron dos veces en mayo,facturación,media,4,6.52
-T00172,¿Cómo configuro alertas por email?,funcionalidad,baja,2,16.62
-T00173,Error en el importe de la factura,facturación,baja,2,8.23
-T00174,La página tarda en cargar,rendimiento,media,4,26.12
-T00175,Se congela al exportar reportes,rendimiento,baja,5,28.08
-T00176,No puedo iniciar sesión desde la app de escritorio,acceso,alta,4,1.15
-T00177,La página tarda en cargar,rendimiento,media,1,13.31
-T00178,Falta la opción de exportar a Excel,funcionalidad,alta,5,8.18
-T00179,Olvidé mi contraseña,acceso,baja,2,2.92
-T00180,Falta la opción de exportar a Excel,funcionalidad,alta,5,8.65
-T00181,La página tarda en cargar,rendimiento,baja,4,34.07
-T00182,Olvidé mi contraseña,acceso,baja,1,3.58
-T00183,Me cobraron dos veces en abril,facturación,alta,4,2.5
-T00184,La cuenta quedó bloqueada,acceso,alta,2,1.07
-T00185,¿Cómo configuro alertas por email?,funcionalidad,alta,5,6.6
-T00186,Se congela al exportar reportes,rendimiento,media,5,16.9
-T00187,Se congela al exportar reportes,rendimiento,alta,5,12.15
-T00188,La cuenta quedó bloqueada,acceso,baja,2,4.13
-T00189,Falta la opción de exportar a Excel,funcionalidad,alta,5,6.8
-T00190,El sistema está muy lento en el celular,rendimiento,baja,3,18.75
-T00191,Se congela al exportar reportes,rendimiento,media,5,25.95
-T00192,No puedo iniciar sesión desde la app de escritorio,acceso,alta,1,2.6
-T00193,Olvidé mi contraseña,acceso,media,1,2.46
-T00194,La página tarda en cargar,rendimiento,media,1,30.17
-T00195,Falta la opción de exportar a Excel,funcionalidad,baja,2,18.23
-T00196,¿Cómo configuro alertas por email?,funcionalidad,baja,1,13.91
-T00197,Quisiera agregar usuarios al equipo,funcionalidad,media,2,11.2
-T00198,Me cobraron dos veces en junio,facturación,baja,3,10.21
-T00199,La página tarda en cargar,rendimiento,baja,2,33.51
-T00200,Se congela al exportar reportes,rendimiento,alta,5,19.12
-T00201,¿Cómo configuro alertas por email?,funcionalidad,baja,3,11.27
-T00202,Olvidé mi contraseña,acceso,baja,1,3.76
-T00203,Error en el importe de la factura,facturación,media,3,10.95
-T00204,Error en el importe de la factura,facturación,baja,3,8.02
-T00205,¿Cómo configuro alertas por email?,funcionalidad,alta,2,6.46
-T00206,La cuenta quedó bloqueada,acceso,baja,3,2.18
-T00207,Olvidé mi contraseña,acceso,baja,4,3.15
-T00208,¿Cómo configuro alertas por email?,funcionalidad,baja,2,22.81
-T00209,¿Cómo configuro alertas por email?,funcionalidad,alta,1,7.44
-T00210,Se congela al exportar reportes,rendimiento,media,3,24.31
-T00211,Me cobraron dos veces en enero,facturación,alta,4,6.45
-T00212,Quisiera agregar usuarios al equipo,funcionalidad,alta,2,5.48
-T00213,Falta la opción de exportar a Excel,funcionalidad,alta,2,6.98
-T00214,Se congela al exportar reportes,rendimiento,baja,1,43.83
-T00215,Me cobraron dos veces en abril,facturación,media,1,4.46
-T00216,Falta la opción de exportar a Excel,funcionalidad,alta,3,7.71
-T00217,La página tarda en cargar,rendimiento,baja,5,23.12
-T00218,No puedo iniciar sesión desde la notebook,acceso,media,3,1.81
-T00219,La página tarda en cargar,rendimiento,media,4,25.36
-T00220,Olvidé mi contraseña,acceso,alta,1,1.22
-T00221,¿Cómo configuro alertas por email?,funcionalidad,alta,1,17.48
-T00222,No puedo descargar la factura de junio,facturación,alta,4,4.87
-T00223,Se congela al exportar reportes,rendimiento,alta,4,18.73
-T00224,Falta la opción de exportar a Excel,funcionalidad,media,5,22.25
-T00225,Me cobraron dos veces en junio,facturación,baja,4,6.95
-T00226,El sistema está muy lento en Chrome,rendimiento,media,4,16.53
-T00227,No puedo descargar la factura de enero,facturación,media,2,15.25
-T00228,¿Cómo configuro alertas por email?,funcionalidad,alta,4,5.9
-T00229,Se congela al exportar reportes,rendimiento,media,5,20.54
-T00230,Se congela al exportar reportes,rendimiento,alta,4,20.98
-T00231,La página tarda en cargar,rendimiento,media,2,15.57
-T00232,No puedo descargar la factura de enero,facturación,baja,1,11.24
-T00233,Error en el importe de la factura,facturación,media,1,6.66
-T00234,No puedo iniciar sesión desde la notebook,acceso,baja,3,2.07
-T00235,Error en el importe de la factura,facturación,baja,1,6.1
-T00236,El sistema está muy lento en la app de escritorio,rendimiento,media,1,24.45
-T00237,¿Cómo configuro alertas por email?,funcionalidad,media,1,8.68
-T00238,Olvidé mi contraseña,acceso,media,5,2.42
-T00239,El sistema está muy lento en la app de escritorio,rendimiento,media,1,18.56
-T00240,No puedo iniciar sesión desde Chrome,acceso,baja,1,6.78
-T00241,La cuenta quedó bloqueada,acceso,alta,3,0.71
-T00242,No puedo iniciar sesión desde Chrome,acceso,alta,4,0.96
-T00243,Falta la opción de exportar a Excel,funcionalidad,media,5,10.35
-T00244,¿Cómo configuro alertas por email?,funcionalidad,media,4,11.4
-T00245,No puedo descargar la factura de enero,facturación,baja,4,12.13
-T00246,El sistema está muy lento en Chrome,rendimiento,alta,5,29.88
-T00247,¿Cómo configuro alertas por email?,funcionalidad,baja,3,18.59
-T00248,El sistema está muy lento en la notebook,rendimiento,alta,1,12.51
-T00249,Olvidé mi contraseña,acceso,baja,2,2.36
-T00250,El sistema está muy lento en la notebook,rendimiento,alta,5,12.41
-T00251,Quisiera agregar usuarios al equipo,funcionalidad,baja,5,15.6
-T00252,Me cobraron dos veces en febrero,facturación,alta,1,2.25
-T00253,Error en el importe de la factura,facturación,media,4,5.36
-T00254,No puedo descargar la factura de junio,facturación,alta,5,3.01
-T00255,Se congela al exportar reportes,rendimiento,alta,5,9.61
-T00256,Falta la opción de exportar a Excel,funcionalidad,baja,5,12.07
-T00257,El sistema está muy lento en el celular,rendimiento,media,4,23.84
-T00258,Error en el importe de la factura,facturación,media,3,4.08
-T00259,Falta la opción de exportar a Excel,funcionalidad,media,4,17.65
-T00260,Se congela al exportar reportes,rendimiento,baja,3,37.07
-T00261,Olvidé mi contraseña,acceso,baja,3,3.32
-T00262,Se congela al exportar reportes,rendimiento,alta,5,13.09
-T00263,Se congela al exportar reportes,rendimiento,baja,4,15.93
-T00264,La página tarda en cargar,rendimiento,baja,5,19.2
-T00265,No puedo iniciar sesión desde la notebook,acceso,baja,1,2.48
-T00266,Olvidé mi contraseña,acceso,alta,4,1.57
-T00267,El sistema está muy lento en Chrome,rendimiento,alta,3,11.07
-T00268,Me cobraron dos veces en abril,facturación,alta,3,3.77
-T00269,No puedo iniciar sesión desde el celular,acceso,baja,3,4.89
-T00270,La cuenta quedó bloqueada,acceso,alta,4,1.36
-T00271,Olvidé mi contraseña,acceso,media,4,2.06
-T00272,¿Cómo configuro alertas por email?,funcionalidad,alta,5,6.21
-T00273,Olvidé mi contraseña,acceso,alta,3,1.03
-T00274,¿Cómo configuro alertas por email?,funcionalidad,media,5,9.31
-T00275,¿Cómo configuro alertas por email?,funcionalidad,baja,5,16.27
-T00276,Error en el importe de la factura,facturación,alta,5,3.48
-T00277,¿Cómo configuro alertas por email?,funcionalidad,media,4,13.39
-T00278,¿Cómo configuro alertas por email?,funcionalidad,media,5,13.0
-T00279,Quisiera agregar usuarios al equipo,funcionalidad,media,1,11.68
-T00280,No puedo descargar la factura de abril,facturación,alta,2,4.41
-T00281,Quisiera agregar usuarios al equipo,funcionalidad,media,3,6.66
-T00282,Olvidé mi contraseña,acceso,alta,1,1.12
-T00283,¿Cómo configuro alertas por email?,funcionalidad,media,1,14.77
-T00284,Me cobraron dos veces en junio,facturación,media,2,8.21
-T00285,Quisiera agregar usuarios al equipo,funcionalidad,baja,5,10.84
-T00286,No puedo iniciar sesión desde la notebook,acceso,baja,3,3.28
-T00287,Olvidé mi contraseña,acceso,alta,4,1.15
-T00288,No puedo descargar la factura de mayo,facturación,baja,1,11.91
-T00289,Quisiera agregar usuarios al equipo,funcionalidad,baja,4,13.12
-T00290,Falta la opción de exportar a Excel,funcionalidad,media,2,9.97
-T00291,La cuenta quedó bloqueada,acceso,baja,3,2.69
-T00292,No puedo iniciar sesión desde el celular,acceso,baja,5,3.31
-T00293,¿Cómo configuro alertas por email?,funcionalidad,alta,3,9.75
-T00294,Olvidé mi contraseña,acceso,baja,1,4.19
-T00295,Falta la opción de exportar a Excel,funcionalidad,alta,4,11.97
-T00296,Me cobraron dos veces en febrero,facturación,alta,2,4.52
-T00297,Falta la opción de exportar a Excel,funcionalidad,alta,1,7.31
-T00298,No puedo iniciar sesión desde el celular,acceso,media,5,1.4
-T00299,La página tarda en cargar,rendimiento,baja,2,28.87
+T00000,"Hola, La cuenta quedó bloqueada desde ayer Quedo atento.",acceso,alta,2,0.97
+T00001,Buenas tardes. Error en el importe de la factura desde ayer Gracias.,facturación,media,3,4.85
+T00002,"Buen día, No puedo iniciar sesión desde el celular ¿Me pueden ayudar?",acceso,alta,4,1.3
+T00003,Me cobraron dos veces en enero en el portal Saludos.,facturación,media,3,8.88
+T00004,"Buen día, Falta la opción de exportar a Excel Saludos.",funcionalidad,media,2,10.61
+T00005,"Hola equipo, ¿Cómo configuro alertas por email? en la app Gracias.",funcionalidad,media,4,9.74
+T00006,"Hola equipo, Falta la opción de exportar a Excel en la app Saludos.",funcionalidad,media,3,9.23
+T00007,Estimados: Quisiera agregar usuarios al equipo desde ayer Saludos.,funcionalidad,baja,2,22.08
+T00008,Estimados: La página tarda en cargar Gracias.,rendimiento,baja,5,37.12
+T00009,"Hola, Se congela al exportar reportes desde ayer Gracias.",rendimiento,alta,5,10.61
+T00010,"Hola equipo, Quisiera agregar usuarios al equipo otra vez ¿Me pueden ayudar?",funcionalidad,baja,3,17.83
+T00011,Falta la opción de exportar a Excel Saludos.,funcionalidad,baja,4,16.65
+T00012,"Buen día, Se congela al exportar reportes en mi cuenta empresa ¿Me pueden ayudar?",rendimiento,baja,3,22.46
+T00013,No puedo iniciar sesión desde Chrome otra vez,acceso,baja,3,2.17
+T00014,"Hola equipo, Olvidé mi contraseña en la app",acceso,media,3,1.86
+T00015,"Buen día, Falta la opción de exportar a Excel en mi cuenta empresa Es urgente.",funcionalidad,media,4,21.6
+T00016,Buenas tardes. Falta la opción de exportar a Excel en la app Quedo atento.,funcionalidad,baja,4,24.03
+T00017,Estimados: Falta la opción de exportar a Excel en mi cuenta empresa ¿Me pueden ayudar?,funcionalidad,alta,3,4.83
+T00018,"Hola, Quisiera agregar usuarios al equipo otra vez Es urgente.",funcionalidad,alta,1,9.4
+T00019,"Hola equipo, Se congela al exportar reportes en la app Gracias.",rendimiento,alta,2,10.97
+T00020,Estimados: La página tarda en cargar en la app,rendimiento,baja,5,43.85
+T00021,"Hola, No puedo descargar la factura de mayo en la app Quedo atento.",facturación,baja,3,14.88
+T00022,"Hola equipo, No puedo descargar la factura de febrero ¿Me pueden ayudar?",facturación,media,1,6.14
+T00023,Falta la opción de exportar a Excel en el portal Gracias.,funcionalidad,baja,5,10.86
+T00024,La cuenta quedó bloqueada en el portal Quedo atento.,acceso,baja,4,1.67
+T00025,La página tarda en cargar en mi cuenta empresa Gracias.,rendimiento,media,2,27.89
+T00026,"Hola equipo, Falta la opción de exportar a Excel Quedo atento.",funcionalidad,media,5,8.87
+T00027,Buenas tardes. El sistema está muy lento en Chrome,rendimiento,alta,4,7.51
+T00028,Estimados: Error en el importe de la factura Saludos.,facturación,baja,5,9.8
+T00029,"Hola equipo, Se congela al exportar reportes desde ayer Quedo atento.",rendimiento,baja,2,21.65
+T00030,"Hola, Error en el importe de la factura en la app",facturación,alta,4,2.6
+T00031,"Buen día, ¿Cómo configuro alertas por email? en la app ¿Me pueden ayudar?",funcionalidad,media,3,8.01
+T00032,Me cobraron dos veces en abril en el portal Saludos.,facturación,baja,1,5.88
+T00033,Buenas tardes. Quisiera agregar usuarios al equipo Quedo atento.,funcionalidad,alta,3,5.62
+T00034,Estimados: La cuenta quedó bloqueada en mi cuenta empresa Es urgente.,acceso,baja,2,3.91
+T00035,"Buen día, La cuenta quedó bloqueada en mi cuenta empresa Saludos.",acceso,alta,3,1.12
+T00036,Estimados: La cuenta quedó bloqueada en el portal ¿Me pueden ayudar?,acceso,media,4,1.47
+T00037,Me cobraron dos veces en abril en el portal ¿Me pueden ayudar?,facturación,baja,2,5.7
+T00038,"Buen día, Error en el importe de la factura en la app",facturación,baja,1,12.6
+T00039,"Hola, No puedo iniciar sesión desde la notebook en mi cuenta empresa Gracias.",acceso,alta,2,1.38
+T00040,"Hola equipo, La cuenta quedó bloqueada en mi cuenta empresa Gracias.",acceso,media,3,1.64
+T00041,"Buen día, La página tarda en cargar en mi cuenta empresa",rendimiento,media,2,23.38
+T00042,Buenas tardes. Quisiera agregar usuarios al equipo en mi cuenta empresa Saludos.,funcionalidad,media,3,20.5
+T00043,"Hola equipo, Se congela al exportar reportes otra vez Saludos.",rendimiento,baja,1,30.66
+T00044,Estimados: La cuenta quedó bloqueada otra vez,acceso,alta,4,1.7
+T00045,"Hola equipo, No puedo descargar la factura de abril",facturación,baja,3,7.92
+T00046,Buenas tardes. No puedo descargar la factura de junio en la app Gracias.,facturación,baja,5,7.77
+T00047,"Hola equipo, El sistema está muy lento en el celular ¿Me pueden ayudar?",rendimiento,alta,4,7.49
+T00048,"Hola equipo, La cuenta quedó bloqueada en el portal",acceso,media,5,2.29
+T00049,Estimados: Quisiera agregar usuarios al equipo Saludos.,funcionalidad,alta,5,8.74
+T00050,"Buen día, Error en el importe de la factura desde ayer Es urgente.",facturación,alta,3,3.75
+T00051,"Buen día, Me cobraron dos veces en abril Gracias.",facturación,media,4,8.24
+T00052,"Hola equipo, No puedo iniciar sesión desde Chrome en mi cuenta empresa Gracias.",acceso,media,1,2.3
+T00053,"Hola equipo, Olvidé mi contraseña desde ayer Quedo atento.",acceso,alta,4,1.46
+T00054,Buenas tardes. Error en el importe de la factura en mi cuenta empresa Gracias.,facturación,baja,1,9.24
+T00055,"Hola equipo, Olvidé mi contraseña Quedo atento.",acceso,media,2,1.69
+T00056,Buenas tardes. Error en el importe de la factura en la app ¿Me pueden ayudar?,facturación,media,1,7.33
+T00057,Estimados: Se congela al exportar reportes,rendimiento,baja,4,21.6
+T00058,Estimados: Se congela al exportar reportes otra vez,rendimiento,media,1,14.14
+T00059,El sistema está muy lento en la app de escritorio en la app Saludos.,rendimiento,alta,5,12.11
+T00060,"Hola equipo, ¿Cómo configuro alertas por email? en el portal Quedo atento.",funcionalidad,baja,4,25.4
+T00061,"Hola, Me cobraron dos veces en enero en la app Saludos.",facturación,alta,4,3.47
+T00062,"Hola equipo, El sistema está muy lento en Chrome otra vez Gracias.",rendimiento,baja,1,41.24
+T00063,Estimados: Error en el importe de la factura otra vez Es urgente.,facturación,media,1,3.78
+T00064,Falta la opción de exportar a Excel en mi cuenta empresa ¿Me pueden ayudar?,funcionalidad,media,5,9.3
+T00065,Estimados: La cuenta quedó bloqueada,acceso,media,1,1.4
+T00066,"Hola, La página tarda en cargar en mi cuenta empresa Quedo atento.",rendimiento,alta,2,8.38
+T00067,Estimados: Se congela al exportar reportes otra vez Saludos.,rendimiento,alta,1,8.25
+T00068,Buenas tardes. ¿Cómo configuro alertas por email? Quedo atento.,funcionalidad,media,4,12.37
+T00069,"Buen día, Quisiera agregar usuarios al equipo en la app Es urgente.",funcionalidad,baja,2,20.56
+T00070,"Hola equipo, La cuenta quedó bloqueada en la app ¿Me pueden ayudar?",acceso,baja,3,3.3
+T00071,"Hola equipo, La cuenta quedó bloqueada en la app Gracias.",acceso,baja,4,2.74
+T00072,"Buen día, No puedo descargar la factura de enero desde ayer Es urgente.",facturación,alta,5,3.96
+T00073,Estimados: Falta la opción de exportar a Excel Gracias.,funcionalidad,media,5,11.06
+T00074,Buenas tardes. No puedo iniciar sesión desde la app de escritorio en la app Es urgente.,acceso,alta,2,1.45
+T00075,"Hola, Quisiera agregar usuarios al equipo Gracias.",funcionalidad,media,1,15.27
+T00076,"Buen día, No puedo iniciar sesión desde Chrome ¿Me pueden ayudar?",acceso,media,4,1.23
+T00077,Estimados: La página tarda en cargar en la app ¿Me pueden ayudar?,rendimiento,baja,5,59.64
+T00078,"Hola, Quisiera agregar usuarios al equipo en mi cuenta empresa Gracias.",funcionalidad,baja,2,9.66
+T00079,Buenas tardes. Olvidé mi contraseña otra vez,acceso,media,1,2.83
+T00080,"Hola equipo, Olvidé mi contraseña desde ayer Gracias.",acceso,baja,3,1.89
+T00081,Estimados: Se congela al exportar reportes en la app Gracias.,rendimiento,alta,2,8.04
+T00082,Buenas tardes. Se congela al exportar reportes en mi cuenta empresa,rendimiento,media,3,25.0
+T00083,"Hola equipo, Quisiera agregar usuarios al equipo en mi cuenta empresa Saludos.",funcionalidad,media,5,16.08
+T00084,"Buen día, Falta la opción de exportar a Excel en la app ¿Me pueden ayudar?",funcionalidad,baja,1,11.97
+T00085,Se congela al exportar reportes en mi cuenta empresa ¿Me pueden ayudar?,rendimiento,media,3,17.08
+T00086,"Hola, Se congela al exportar reportes en el portal",rendimiento,alta,3,13.0
+T00087,"Buen día, La cuenta quedó bloqueada desde ayer Saludos.",acceso,alta,3,1.25
+T00088,Buenas tardes. ¿Cómo configuro alertas por email? otra vez Saludos.,funcionalidad,alta,3,5.59
+T00089,Estimados: Quisiera agregar usuarios al equipo ¿Me pueden ayudar?,funcionalidad,baja,1,22.69
+T00090,Se congela al exportar reportes desde ayer ¿Me pueden ayudar?,rendimiento,alta,4,12.56
+T00091,"Hola, Olvidé mi contraseña desde ayer Gracias.",acceso,media,1,1.41
+T00092,"Buen día, La página tarda en cargar otra vez Gracias.",rendimiento,media,5,17.78
+T00093,"Hola equipo, No puedo descargar la factura de junio en el portal Gracias.",facturación,media,5,7.32
+T00094,Me cobraron dos veces en febrero ¿Me pueden ayudar?,facturación,baja,5,7.44
+T00095,Estimados: Error en el importe de la factura ¿Me pueden ayudar?,facturación,baja,5,7.41
+T00096,Falta la opción de exportar a Excel en el portal,funcionalidad,alta,3,9.05
+T00097,"Buen día, ¿Cómo configuro alertas por email? en mi cuenta empresa",funcionalidad,baja,3,14.62
+T00098,"Hola equipo, La cuenta quedó bloqueada en el portal",acceso,baja,4,4.97
+T00099,Buenas tardes. Me cobraron dos veces en junio en mi cuenta empresa Gracias.,facturación,media,5,6.5
+T00100,"Buen día, El sistema está muy lento en la notebook desde ayer Saludos.",rendimiento,baja,1,50.32
+T00101,Buenas tardes. Me cobraron dos veces en enero Quedo atento.,facturación,baja,3,8.86
+T00102,"Buen día, El sistema está muy lento en Chrome en la app Es urgente.",rendimiento,media,2,24.07
+T00103,Estimados: La página tarda en cargar otra vez Gracias.,rendimiento,baja,4,27.97
+T00104,Error en el importe de la factura en el portal Gracias.,facturación,alta,2,5.31
+T00105,"Hola, No puedo descargar la factura de abril en la app ¿Me pueden ayudar?",facturación,baja,1,9.25
+T00106,Buenas tardes. La cuenta quedó bloqueada otra vez ¿Me pueden ayudar?,acceso,media,3,1.98
+T00107,"Buen día, La página tarda en cargar en mi cuenta empresa",rendimiento,baja,5,22.71
+T00108,Estimados: No puedo iniciar sesión desde la app de escritorio desde ayer Quedo atento.,acceso,media,1,2.63
+T00109,Buenas tardes. Falta la opción de exportar a Excel en mi cuenta empresa Quedo atento.,funcionalidad,media,4,7.51
+T00110,"Buen día, Quisiera agregar usuarios al equipo en el portal Quedo atento.",funcionalidad,baja,3,19.37
+T00111,"Buen día, Me cobraron dos veces en enero ¿Me pueden ayudar?",facturación,alta,1,4.27
+T00112,Buenas tardes. No puedo descargar la factura de mayo en la app Saludos.,facturación,media,1,7.35
+T00113,"Buen día, El sistema está muy lento en Chrome desde ayer Es urgente.",rendimiento,alta,3,12.42
+T00114,"Buen día, La cuenta quedó bloqueada en la app Es urgente.",acceso,media,4,1.61
+T00115,"Buen día, Olvidé mi contraseña desde ayer Es urgente.",acceso,alta,3,1.55
+T00116,No puedo descargar la factura de febrero en el portal ¿Me pueden ayudar?,facturación,media,3,5.91
+T00117,Estimados: Me cobraron dos veces en junio en la app ¿Me pueden ayudar?,facturación,media,2,8.74
+T00118,"Hola, La página tarda en cargar en la app Saludos.",rendimiento,alta,2,11.26
+T00119,No puedo descargar la factura de abril en mi cuenta empresa ¿Me pueden ayudar?,facturación,baja,5,5.31
+T00120,"Hola equipo, No puedo iniciar sesión desde el celular en la app Quedo atento.",acceso,media,3,2.45
+T00121,Quisiera agregar usuarios al equipo otra vez Es urgente.,funcionalidad,media,1,8.87
+T00122,"Hola, Olvidé mi contraseña en la app Gracias.",acceso,media,2,1.52
+T00123,"Hola equipo, Falta la opción de exportar a Excel en mi cuenta empresa",funcionalidad,media,2,11.24
+T00124,"Buen día, El sistema está muy lento en Chrome en la app Es urgente.",rendimiento,baja,1,42.99
+T00125,No puedo iniciar sesión desde la app de escritorio desde ayer Es urgente.,acceso,media,1,2.14
+T00126,"Hola equipo, ¿Cómo configuro alertas por email? en mi cuenta empresa",funcionalidad,media,1,12.14
+T00127,Buenas tardes. Quisiera agregar usuarios al equipo en mi cuenta empresa Quedo atento.,funcionalidad,baja,3,12.71
+T00128,"Buen día, No puedo descargar la factura de marzo en mi cuenta empresa Gracias.",facturación,baja,5,9.5
+T00129,Me cobraron dos veces en marzo en la app Saludos.,facturación,media,5,4.6
+T00130,Se congela al exportar reportes desde ayer,rendimiento,media,4,20.67
+T00131,"Hola equipo, La página tarda en cargar en la app",rendimiento,alta,1,7.66
+T00132,"Hola, Me cobraron dos veces en mayo desde ayer",facturación,media,1,5.54
+T00133,"Hola, Quisiera agregar usuarios al equipo en mi cuenta empresa",funcionalidad,media,5,15.8
+T00134,"Buen día, No puedo iniciar sesión desde la notebook desde ayer Saludos.",acceso,baja,1,2.65
+T00135,Estimados: Falta la opción de exportar a Excel desde ayer ¿Me pueden ayudar?,funcionalidad,baja,5,13.01
+T00136,"Buen día, No puedo iniciar sesión desde la app de escritorio en la app Saludos.",acceso,alta,1,1.15
+T00137,Me cobraron dos veces en junio en mi cuenta empresa ¿Me pueden ayudar?,facturación,media,2,6.42
+T00138,¿Cómo configuro alertas por email? en mi cuenta empresa Es urgente.,funcionalidad,alta,2,4.73
+T00139,"Hola equipo, La cuenta quedó bloqueada en mi cuenta empresa",acceso,alta,4,1.2
+T00140,Buenas tardes. La cuenta quedó bloqueada en el portal,acceso,alta,4,1.1
+T00141,Olvidé mi contraseña Quedo atento.,acceso,baja,2,3.58
+T00142,"Hola, La página tarda en cargar desde ayer ¿Me pueden ayudar?",rendimiento,baja,5,34.49
+T00143,"Buen día, Se congela al exportar reportes desde ayer ¿Me pueden ayudar?",rendimiento,baja,2,17.7
+T00144,Estimados: Se congela al exportar reportes en la app ¿Me pueden ayudar?,rendimiento,media,5,16.9
+T00145,Estimados: Error en el importe de la factura en el portal,facturación,media,1,5.49
+T00146,"Hola equipo, La página tarda en cargar en mi cuenta empresa Gracias.",rendimiento,alta,5,10.32
+T00147,No puedo descargar la factura de marzo Saludos.,facturación,baja,3,9.98
+T00148,Estimados: La página tarda en cargar en el portal ¿Me pueden ayudar?,rendimiento,baja,2,17.7
+T00149,Buenas tardes. Se congela al exportar reportes en el portal Saludos.,rendimiento,baja,1,30.76
+T00150,Estimados: Error en el importe de la factura en la app,facturación,baja,4,11.0
+T00151,"Hola equipo, No puedo iniciar sesión desde el celular otra vez Quedo atento.",acceso,alta,2,1.21
+T00152,Estimados: Olvidé mi contraseña en el portal,acceso,media,4,2.44
+T00153,"Hola equipo, Falta la opción de exportar a Excel otra vez",funcionalidad,media,1,9.81
+T00154,Buenas tardes. La página tarda en cargar otra vez Saludos.,rendimiento,baja,2,46.79
+T00155,Buenas tardes. Me cobraron dos veces en enero otra vez Quedo atento.,facturación,baja,2,5.99
+T00156,Buenas tardes. No puedo iniciar sesión desde la notebook desde ayer Es urgente.,acceso,media,3,2.02
+T00157,Olvidé mi contraseña Es urgente.,acceso,baja,2,3.76
+T00158,Buenas tardes. La cuenta quedó bloqueada en mi cuenta empresa ¿Me pueden ayudar?,acceso,media,3,1.78
+T00159,Buenas tardes. Quisiera agregar usuarios al equipo otra vez Es urgente.,funcionalidad,baja,5,23.3
+T00160,"Buen día, No puedo iniciar sesión desde la app de escritorio ¿Me pueden ayudar?",acceso,media,5,1.8
+T00161,"Hola, Me cobraron dos veces en febrero desde ayer Es urgente.",facturación,media,5,7.6
+T00162,Buenas tardes. Me cobraron dos veces en marzo otra vez ¿Me pueden ayudar?,facturación,media,2,5.68
+T00163,"Buen día, ¿Cómo configuro alertas por email? en mi cuenta empresa ¿Me pueden ayudar?",funcionalidad,media,1,7.46
+T00164,"Buen día, El sistema está muy lento en la app de escritorio en el portal Saludos.",rendimiento,baja,1,41.54
+T00165,"Hola equipo, Olvidé mi contraseña ¿Me pueden ayudar?",acceso,baja,1,2.73
+T00166,Buenas tardes. No puedo descargar la factura de febrero en mi cuenta empresa,facturación,baja,1,4.96
+T00167,Buenas tardes. Falta la opción de exportar a Excel en la app,funcionalidad,alta,3,7.71
+T00168,Estimados: ¿Cómo configuro alertas por email? en el portal Saludos.,funcionalidad,media,3,13.53
+T00169,Estimados: ¿Cómo configuro alertas por email? desde ayer Quedo atento.,funcionalidad,baja,3,16.24
+T00170,Estimados: Falta la opción de exportar a Excel en mi cuenta empresa Quedo atento.,funcionalidad,media,4,8.37
+T00171,"Hola equipo, Me cobraron dos veces en abril en la app Es urgente.",facturación,baja,5,8.56
+T00172,"Hola equipo, La página tarda en cargar otra vez ¿Me pueden ayudar?",rendimiento,baja,5,24.47
+T00173,"Hola equipo, ¿Cómo configuro alertas por email? en la app Es urgente.",funcionalidad,alta,3,5.68
+T00174,La página tarda en cargar en la app ¿Me pueden ayudar?,rendimiento,alta,5,12.91
+T00175,"Buen día, La cuenta quedó bloqueada en mi cuenta empresa Saludos.",acceso,baja,4,2.84
+T00176,Estimados: Error en el importe de la factura en la app Quedo atento.,facturación,baja,5,9.24
+T00177,"Buen día, Me cobraron dos veces en enero desde ayer ¿Me pueden ayudar?",facturación,alta,3,2.79
+T00178,"Hola equipo, Olvidé mi contraseña en la app",acceso,baja,1,2.38
+T00179,¿Cómo configuro alertas por email? en el portal,funcionalidad,alta,1,5.96
+T00180,"Hola, Quisiera agregar usuarios al equipo Es urgente.",funcionalidad,alta,1,4.2
+T00181,Buenas tardes. Me cobraron dos veces en abril en la app ¿Me pueden ayudar?,facturación,media,2,4.54
+T00182,Buenas tardes. No puedo iniciar sesión desde Chrome desde ayer ¿Me pueden ayudar?,acceso,media,5,1.32
+T00183,"Hola, El sistema está muy lento en la notebook desde ayer Saludos.",rendimiento,baja,4,47.55
+T00184,"Hola equipo, ¿Cómo configuro alertas por email? desde ayer Saludos.",funcionalidad,media,1,14.41
+T00185,Buenas tardes. La cuenta quedó bloqueada desde ayer Gracias.,acceso,alta,2,0.71
+T00186,"Hola, Me cobraron dos veces en enero en mi cuenta empresa Es urgente.",facturación,baja,2,11.33
+T00187,El sistema está muy lento en la app de escritorio Es urgente.,rendimiento,alta,3,12.28
+T00188,Quisiera agregar usuarios al equipo ¿Me pueden ayudar?,funcionalidad,alta,3,6.14
+T00189,"Hola equipo, ¿Cómo configuro alertas por email? en el portal Saludos.",funcionalidad,media,3,14.69
+T00190,Buenas tardes. ¿Cómo configuro alertas por email? en la app Quedo atento.,funcionalidad,baja,5,18.59
+T00191,Buenas tardes. Quisiera agregar usuarios al equipo,funcionalidad,media,2,18.12
+T00192,Estimados: El sistema está muy lento en la notebook en mi cuenta empresa Gracias.,rendimiento,alta,2,12.41
+T00193,Me cobraron dos veces en febrero en el portal Gracias.,facturación,baja,3,11.86
+T00194,Estimados: La página tarda en cargar en la app Es urgente.,rendimiento,baja,4,26.23
+T00195,Estimados: No puedo descargar la factura de junio otra vez Quedo atento.,facturación,alta,3,3.01
+T00196,"Hola, La cuenta quedó bloqueada Gracias.",acceso,media,5,1.83
+T00197,La cuenta quedó bloqueada desde ayer Saludos.,acceso,baja,3,3.13
+T00198,"Hola equipo, Me cobraron dos veces en abril Es urgente.",facturación,baja,1,16.14
+T00199,"Hola equipo, Falta la opción de exportar a Excel en mi cuenta empresa Es urgente.",funcionalidad,baja,4,14.67
+T00200,"Hola, Quisiera agregar usuarios al equipo en mi cuenta empresa Gracias.",funcionalidad,baja,4,25.43
+T00201,Estimados: La página tarda en cargar en mi cuenta empresa Saludos.,rendimiento,media,5,23.02
+T00202,No puedo descargar la factura de junio otra vez Saludos.,facturación,alta,4,3.87
+T00203,"Buen día, Se congela al exportar reportes en la app Gracias.",rendimiento,baja,1,15.93
+T00204,"Hola, No puedo descargar la factura de mayo en la app Es urgente.",facturación,baja,4,8.54
+T00205,Buenas tardes. No puedo descargar la factura de mayo Quedo atento.,facturación,baja,1,7.39
+T00206,Estimados: La página tarda en cargar en la app Saludos.,rendimiento,baja,2,23.97
+T00207,Buenas tardes. La cuenta quedó bloqueada en mi cuenta empresa Es urgente.,acceso,baja,3,2.36
+T00208,Buenas tardes. No puedo iniciar sesión desde el celular en el portal ¿Me pueden ayudar?,acceso,baja,2,4.89
+T00209,"Hola equipo, Error en el importe de la factura en mi cuenta empresa Quedo atento.",facturación,media,2,6.78
+T00210,¿Cómo configuro alertas por email? en el portal ¿Me pueden ayudar?,funcionalidad,alta,4,9.62
+T00211,Buenas tardes. La página tarda en cargar en el portal Quedo atento.,rendimiento,alta,2,12.0
+T00212,"Hola, El sistema está muy lento en el celular en la app Saludos.",rendimiento,alta,1,13.49
+T00213,Estimados: ¿Cómo configuro alertas por email? otra vez Saludos.,funcionalidad,alta,5,5.1
+T00214,Estimados: Error en el importe de la factura en mi cuenta empresa Saludos.,facturación,alta,5,3.48
+T00215,Estimados: La cuenta quedó bloqueada desde ayer Quedo atento.,acceso,media,4,1.83
+T00216,"Buen día, Falta la opción de exportar a Excel en el portal Gracias.",funcionalidad,alta,4,10.17
+T00217,Estimados: Olvidé mi contraseña desde ayer ¿Me pueden ayudar?,acceso,alta,5,0.56
+T00218,"Hola, No puedo descargar la factura de abril en mi cuenta empresa Es urgente.",facturación,alta,3,4.41
+T00219,Quisiera agregar usuarios al equipo en mi cuenta empresa,funcionalidad,baja,2,21.49
+T00220,Falta la opción de exportar a Excel,funcionalidad,media,5,10.08
+T00221,"Hola equipo, Me cobraron dos veces en junio en el portal Es urgente.",facturación,media,2,8.21
+T00222,"Hola, La cuenta quedó bloqueada desde ayer Es urgente.",acceso,baja,5,3.34
+T00223,Buenas tardes. Error en el importe de la factura en la app ¿Me pueden ayudar?,facturación,baja,4,7.11
+T00224,No puedo descargar la factura de mayo en mi cuenta empresa Gracias.,facturación,baja,1,11.91
+T00225,"Buen día, El sistema está muy lento en la notebook desde ayer",rendimiento,alta,2,11.0
+T00226,Buenas tardes. La cuenta quedó bloqueada en el portal Gracias.,acceso,alta,3,1.97
+T00227,"Hola, La cuenta quedó bloqueada Es urgente.",acceso,alta,5,1.22
+T00228,"Hola equipo, Se congela al exportar reportes en el portal ¿Me pueden ayudar?",rendimiento,alta,1,12.06
+T00229,Estimados: Falta la opción de exportar a Excel desde ayer Saludos.,funcionalidad,baja,2,20.18
+T00230,"Hola equipo, Falta la opción de exportar a Excel Gracias.",funcionalidad,alta,4,7.31
+T00231,"Hola, El sistema está muy lento en Chrome Gracias.",rendimiento,baja,1,33.71
+T00232,Buenas tardes. ¿Cómo configuro alertas por email? desde ayer Gracias.,funcionalidad,baja,1,12.33
+T00233,Buenas tardes. Me cobraron dos veces en marzo en mi cuenta empresa Quedo atento.,facturación,alta,4,4.03
+T00234,"Buen día, Olvidé mi contraseña otra vez",acceso,media,5,1.43
+T00235,Estimados: Error en el importe de la factura otra vez ¿Me pueden ayudar?,facturación,baja,2,8.56
+T00236,Falta la opción de exportar a Excel en el portal Saludos.,funcionalidad,alta,4,5.52
+T00237,"Hola, Olvidé mi contraseña otra vez Saludos.",acceso,baja,2,2.09
+T00238,Buenas tardes. La cuenta quedó bloqueada en la app,acceso,baja,2,2.32
+T00239,Buenas tardes. Quisiera agregar usuarios al equipo Es urgente.,funcionalidad,baja,4,17.78
+T00240,Buenas tardes. No puedo iniciar sesión desde la notebook en el portal Es urgente.,acceso,baja,5,4.79
+T00241,"Buen día, Falta la opción de exportar a Excel en la app Gracias.",funcionalidad,alta,2,6.44
+T00242,Se congela al exportar reportes en la app Quedo atento.,rendimiento,alta,5,12.52
+T00243,Error en el importe de la factura ¿Me pueden ayudar?,facturación,alta,5,3.32
+T00244,"Buen día, Quisiera agregar usuarios al equipo en el portal Saludos.",funcionalidad,baja,2,23.64
+T00245,"Buen día, Falta la opción de exportar a Excel en el portal Saludos.",funcionalidad,media,3,15.04
+T00246,Buenas tardes. Falta la opción de exportar a Excel Saludos.,funcionalidad,media,2,14.03
+T00247,Estimados: Quisiera agregar usuarios al equipo en el portal Saludos.,funcionalidad,baja,1,12.17
+T00248,Buenas tardes. El sistema está muy lento en la app de escritorio Gracias.,rendimiento,alta,4,8.65
+T00249,Estimados: No puedo descargar la factura de febrero desde ayer Es urgente.,facturación,alta,1,4.0
+T00250,Estimados: No puedo descargar la factura de febrero en el portal Saludos.,facturación,media,4,10.1
+T00251,Estimados: El sistema está muy lento en Chrome en la app Es urgente.,rendimiento,media,3,20.13
+T00252,Estimados: No puedo iniciar sesión desde la app de escritorio en la app Gracias.,acceso,media,5,2.14
+T00253,"Hola, Olvidé mi contraseña desde ayer ¿Me pueden ayudar?",acceso,media,1,1.95
+T00254,"Buen día, Falta la opción de exportar a Excel Gracias.",funcionalidad,media,4,14.56
+T00255,Error en el importe de la factura desde ayer Quedo atento.,facturación,media,2,9.86
+T00256,"Buen día, La página tarda en cargar en la app ¿Me pueden ayudar?",rendimiento,alta,5,9.03
+T00257,"Hola equipo, No puedo iniciar sesión desde la app de escritorio en mi cuenta empresa Gracias.",acceso,alta,2,1.21
+T00258,Buenas tardes. La página tarda en cargar Quedo atento.,rendimiento,media,4,24.36
+T00259,Estimados: No puedo iniciar sesión desde el celular en el portal ¿Me pueden ayudar?,acceso,media,4,3.49
+T00260,"Hola, Falta la opción de exportar a Excel en la app Es urgente.",funcionalidad,baja,2,15.52
+T00261,¿Cómo configuro alertas por email? otra vez,funcionalidad,baja,1,12.09
+T00262,"Buen día, El sistema está muy lento en Chrome desde ayer",rendimiento,alta,5,15.87
+T00263,Estimados: Error en el importe de la factura ¿Me pueden ayudar?,facturación,baja,5,9.83
+T00264,"Buen día, Se congela al exportar reportes",rendimiento,media,2,14.28
+T00265,"Hola, Olvidé mi contraseña en mi cuenta empresa Es urgente.",acceso,media,2,2.05
+T00266,"Buen día, El sistema está muy lento en la app de escritorio en mi cuenta empresa ¿Me pueden ayudar?",rendimiento,media,2,34.32
+T00267,"Hola equipo, Error en el importe de la factura en la app Es urgente.",facturación,baja,2,7.21
+T00268,¿Cómo configuro alertas por email? en el portal Saludos.,funcionalidad,baja,2,12.39
+T00269,Estimados: No puedo iniciar sesión desde el celular en mi cuenta empresa Quedo atento.,acceso,baja,5,4.5
+T00270,"Buen día, La página tarda en cargar Quedo atento.",rendimiento,baja,3,65.47
+T00271,Estimados: ¿Cómo configuro alertas por email? en mi cuenta empresa Gracias.,funcionalidad,alta,4,6.02
+T00272,"Buen día, La cuenta quedó bloqueada en la app Quedo atento.",acceso,baja,2,4.56
+T00273,Error en el importe de la factura en mi cuenta empresa Gracias.,facturación,baja,4,5.76
+T00274,"Hola, Olvidé mi contraseña en el portal ¿Me pueden ayudar?",acceso,baja,3,4.01
+T00275,"Buen día, Falta la opción de exportar a Excel en el portal ¿Me pueden ayudar?",funcionalidad,media,2,9.6
+T00276,"Buen día, Quisiera agregar usuarios al equipo Gracias.",funcionalidad,alta,1,8.73
+T00277,Quisiera agregar usuarios al equipo en el portal Es urgente.,funcionalidad,media,2,15.03
+T00278,La cuenta quedó bloqueada desde ayer Gracias.,acceso,alta,5,1.07
+T00279,Error en el importe de la factura Es urgente.,facturación,alta,5,3.17
+T00280,"Hola, Quisiera agregar usuarios al equipo en mi cuenta empresa Gracias.",funcionalidad,alta,1,10.72
+T00281,Estimados: Falta la opción de exportar a Excel en el portal Gracias.,funcionalidad,alta,5,5.54
+T00282,Me cobraron dos veces en marzo en mi cuenta empresa Saludos.,facturación,alta,3,3.02
+T00283,"Buen día, El sistema está muy lento en el celular en mi cuenta empresa ¿Me pueden ayudar?",rendimiento,alta,4,10.8
+T00284,"Buen día, Se congela al exportar reportes en el portal Quedo atento.",rendimiento,alta,1,11.17
+T00285,Buenas tardes. Se congela al exportar reportes Es urgente.,rendimiento,alta,5,13.03
+T00286,Estimados: No puedo descargar la factura de mayo desde ayer ¿Me pueden ayudar?,facturación,media,3,6.07
+T00287,La cuenta quedó bloqueada en mi cuenta empresa Gracias.,acceso,baja,1,1.97
+T00288,Estimados: La página tarda en cargar desde ayer,rendimiento,alta,2,13.58
+T00289,Buenas tardes. Error en el importe de la factura desde ayer Es urgente.,facturación,media,1,6.67
+T00290,Olvidé mi contraseña ¿Me pueden ayudar?,acceso,baja,4,4.19
+T00291,Me cobraron dos veces en marzo otra vez ¿Me pueden ayudar?,facturación,baja,3,11.43
+T00292,"Buen día, Se congela al exportar reportes en la app Quedo atento.",rendimiento,media,4,27.79
+T00293,"Hola, Quisiera agregar usuarios al equipo Gracias.",funcionalidad,media,4,18.71
+T00294,Falta la opción de exportar a Excel en mi cuenta empresa ¿Me pueden ayudar?,funcionalidad,alta,4,7.8
+T00295,"Hola equipo, Quisiera agregar usuarios al equipo desde ayer ¿Me pueden ayudar?",funcionalidad,alta,3,8.02
+T00296,"Hola equipo, Falta la opción de exportar a Excel desde ayer Saludos.",funcionalidad,media,2,14.66
+T00297,"Hola, Falta la opción de exportar a Excel en el portal Gracias.",funcionalidad,media,5,12.48
+T00298,Estimados: Quisiera agregar usuarios al equipo otra vez Es urgente.,funcionalidad,baja,1,18.41
+T00299,"Buen día, Quisiera agregar usuarios al equipo otra vez Es urgente.",funcionalidad,baja,2,25.35

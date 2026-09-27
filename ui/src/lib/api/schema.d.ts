@@ -636,7 +636,7 @@ export interface components {
          * AlertCode
          * @enum {string}
          */
-        AlertCode: "class_imbalance" | "target_leakage" | "id_column" | "future_dates" | "constant_column" | "high_nulls" | "duplicate_rows" | "insufficient_data" | "corrupt_files" | "near_duplicates" | "mixed_resolutions" | "mixed_channels" | "missing_target";
+        AlertCode: "class_imbalance" | "target_leakage" | "id_column" | "future_dates" | "constant_column" | "high_nulls" | "duplicate_rows" | "insufficient_data" | "corrupt_files" | "near_duplicates" | "mixed_resolutions" | "mixed_channels" | "missing_target" | "duplicate_texts" | "long_texts" | "clipping" | "mixed_sample_rates" | "silent_audio";
         /**
          * AlertSeverity
          * @enum {string}
@@ -713,6 +713,83 @@ export interface components {
              * @default 1
              */
             version: number;
+        };
+        /**
+         * AudioProfile
+         * @description Audio (RF-PRF-05).
+         */
+        AudioProfile: {
+            /** Channels */
+            channels: components["schemas"]["CategoryCount"][];
+            /** Clipping Fraction */
+            clipping_fraction: number | null;
+            /** Corrupt */
+            corrupt: number;
+            /** Count */
+            count: number;
+            /** Duration Quantiles */
+            duration_quantiles: {
+                [key: string]: number | null;
+            };
+            /** Sample Rates */
+            sample_rates: components["schemas"]["CategoryCount"][];
+            /** Silence Fraction */
+            silence_fraction: number | null;
+            /** Snr Db */
+            snr_db: number | null;
+        };
+        /** AudioSpec */
+        AudioSpec: {
+            /**
+             * Duration S
+             * @default 1
+             */
+            duration_s: number;
+            /**
+             * Features
+             * @default mel
+             * @enum {string}
+             */
+            features: "mel" | "mfcc";
+            /**
+             * Freq Mask
+             * @description SpecAugment: ancho máx. en bandas
+             * @default 0
+             */
+            freq_mask: number;
+            /**
+             * N Mels
+             * @default 64
+             */
+            n_mels: number;
+            /**
+             * N Mfcc
+             * @default 20
+             */
+            n_mfcc: number;
+            /**
+             * Noise
+             * @description Ruido gaussiano (train)
+             * @default 0
+             */
+            noise: number;
+            /**
+             * Sample Rate
+             * @default 16000
+             */
+            sample_rate: number;
+            /**
+             * Time Mask
+             * @description SpecAugment: ancho máx. en frames
+             * @default 0
+             */
+            time_mask: number;
+            /**
+             * Time Shift
+             * @description Desplazamiento máx. (fracción)
+             * @default 0
+             */
+            time_shift: number;
         };
         /** AugmentSpec */
         AugmentSpec: {
@@ -864,34 +941,6 @@ export interface components {
             equals: unknown;
             /** Param */
             param: string;
-        };
-        /** Curves */
-        Curves: {
-            /**
-             * Error Histogram
-             * @description [centro, n]
-             */
-            error_histogram?: number[][];
-            /**
-             * Pr
-             * @description [recall, precision]
-             */
-            pr?: number[][];
-            /**
-             * Reliability
-             * @description [confianza, acierto, n]
-             */
-            reliability?: number[][];
-            /**
-             * Residuals
-             * @description [predicción, residuo]
-             */
-            residuals?: number[][];
-            /**
-             * Roc
-             * @description [fpr, tpr]
-             */
-            roc?: number[][];
         };
         /** DataSource */
         DataSource: {
@@ -1050,7 +1099,17 @@ export interface components {
             /** Checkpoint */
             checkpoint: string;
             classification?: components["schemas"]["ClassificationMetrics"] | null;
-            curves?: components["schemas"]["Curves"];
+            /** Curves */
+            curves?: {
+                [key: string]: number[][];
+            };
+            /**
+             * Details
+             * @description Detalle propio de cada tarea
+             */
+            details?: {
+                [key: string]: unknown;
+            };
             /**
              * Metrics
              * @description Resumen plano (tracking, comparación de runs)
@@ -1117,6 +1176,12 @@ export interface components {
              * @enum {string}
              */
             pruner: "none" | "median" | "asha" | "hyperband";
+            /**
+             * Pruner Warmup Epochs
+             * @description Épocas sin poda al inicio
+             * @default 1
+             */
+            pruner_warmup_epochs: number;
             /** Rationale */
             rationale?: string | null;
             /** Search Space */
@@ -1219,9 +1284,15 @@ export interface components {
              * @default 224
              */
             size: number;
+            /**
+             * Width
+             * @description Si difiere de size (OCR)
+             */
+            width?: number | null;
         };
         /** IngestBody */
         IngestBody: {
+            modality?: components["schemas"]["Modality"] | null;
             /** Overrides */
             overrides?: {
                 [key: string]: components["schemas"]["SemanticType"];
@@ -1249,8 +1320,19 @@ export interface components {
             kind: "tabular" | "image" | "spectrogram" | "sequence" | "tokens";
             /** Num Numeric */
             num_numeric?: number | null;
+            /**
+             * Pad Id
+             * @description Tokens: id de padding
+             * @default 0
+             */
+            pad_id: number;
             /** Shape */
             shape?: number[] | null;
+            /**
+             * Vocab Size
+             * @description Tokens: tamaño del vocabulario
+             */
+            vocab_size?: number | null;
         };
         /** Issue */
         Issue: {
@@ -1517,6 +1599,7 @@ export interface components {
         };
         /** PipelineSpec */
         PipelineSpec: {
+            audio?: components["schemas"]["AudioSpec"] | null;
             image?: components["schemas"]["ImageSpec"] | null;
             modality: components["schemas"]["Modality"];
             /**
@@ -1529,9 +1612,11 @@ export interface components {
              * @description Por qué se eligió cada paso
              */
             rationale?: string[];
+            series?: components["schemas"]["SeriesSpec"] | null;
             /** Steps */
             steps?: components["schemas"]["StepSpec"][];
             target: components["schemas"]["TargetSpec"] | null;
+            text?: components["schemas"]["TextSpec"] | null;
         };
         /** PipelineUpdate */
         PipelineUpdate: {
@@ -1552,6 +1637,7 @@ export interface components {
         ProfileCard: {
             /** Alerts */
             alerts?: components["schemas"]["Alert"][];
+            audio?: components["schemas"]["AudioProfile"] | null;
             /**
              * Card Version
              * @default 1.0
@@ -1573,11 +1659,14 @@ export interface components {
             num_samples: number;
             /** Profiled Samples */
             profiled_samples: number;
+            series?: components["schemas"]["SeriesProfile"] | null;
             /** Split Counts */
             split_counts: {
                 [key: string]: number;
             };
             target: components["schemas"]["TargetProfile"] | null;
+            text?: components["schemas"]["TextProfile"] | null;
+            vision_task?: components["schemas"]["VisionTaskProfile"] | null;
         };
         /** Project */
         Project: {
@@ -1819,6 +1908,11 @@ export interface components {
             /** Choices */
             choices?: unknown[] | null;
             condition?: components["schemas"]["Condition"] | null;
+            /**
+             * Default
+             * @description Valor de la plantilla: se prueba primero (trial 0)
+             */
+            default?: unknown;
             /** High */
             high?: number | null;
             /**
@@ -1843,6 +1937,82 @@ export interface components {
          * @enum {string}
          */
         SemanticType: "numeric" | "categorical" | "boolean" | "datetime" | "text" | "id" | "filepath";
+        /** SeriesConfig */
+        SeriesConfig: {
+            /** Covariates */
+            covariates?: string[];
+            /** Freq Seconds */
+            freq_seconds?: number | null;
+            /**
+             * Horizon
+             * @default 8
+             */
+            horizon: number;
+            /**
+             * Lookback
+             * @default 32
+             */
+            lookback: number;
+            /** Season */
+            season?: number | null;
+            /** Series Id */
+            series_id?: string | null;
+            /** Target */
+            target: string;
+            /** @default forecasting */
+            task: components["schemas"]["TaskType"];
+            /** Time Column */
+            time_column: string;
+        };
+        /**
+         * SeriesProfile
+         * @description RF-PRF-04 (solo agregados).
+         */
+        SeriesProfile: {
+            /** @description Columnas y parámetros (sin valores) */
+            config: components["schemas"]["SeriesConfig"];
+            /** Feasible Horizon */
+            feasible_horizon: number;
+            /** Freq Seconds */
+            freq_seconds: number | null;
+            /**
+             * Gaps
+             * @description Saltos mayores a 1,5× la frecuencia
+             */
+            gaps: number;
+            /** Horizon */
+            horizon: number;
+            /** Lookback */
+            lookback: number;
+            /** Num Series */
+            num_series: number;
+            /** Points Median */
+            points_median: number;
+            /** Points Min */
+            points_min: number;
+            /** Season */
+            season: number | null;
+            /** Season Strength */
+            season_strength: number | null;
+            task: components["schemas"]["TaskType"];
+            /** Trend Slope Per Step */
+            trend_slope_per_step: number | null;
+        };
+        /** SeriesSpec */
+        SeriesSpec: {
+            /**
+             * Calendar
+             * @default true
+             */
+            calendar: boolean;
+            config: components["schemas"]["SeriesConfig"];
+            /**
+             * Jitter
+             * @description Ruido gaussiano en train
+             * @default 0
+             */
+            jitter: number;
+        };
         /**
          * Severity
          * @enum {string}
@@ -1864,7 +2034,7 @@ export interface components {
          * SourceKind
          * @enum {string}
          */
-        SourceKind: "table" | "image_folder";
+        SourceKind: "table" | "image_folder" | "text_folder" | "audio_folder" | "segmentation_folder" | "ocr_folder";
         /** SourcePreview */
         SourcePreview: {
             /** Columns */
@@ -2041,6 +2211,11 @@ export interface components {
         };
         /** TargetSpec */
         TargetSpec: {
+            /**
+             * Classes
+             * @description Clases fijas (detección/segmentación)
+             */
+            classes?: string[] | null;
             /** Name */
             name: string;
             /**
@@ -2053,6 +2228,11 @@ export interface components {
         };
         /** TaskSpec */
         TaskSpec: {
+            /**
+             * Horizon
+             * @description Forecasting: pasos a futuro
+             */
+            horizon?: number | null;
             /**
              * Multilabel
              * @default false
@@ -2073,6 +2253,76 @@ export interface components {
          * @enum {string}
          */
         TaskType: "classification" | "regression" | "forecasting" | "anomaly_detection" | "object_detection" | "segmentation" | "ocr" | "sound_event_detection";
+        /**
+         * TextProfile
+         * @description Texto (RF-PRF-03): solo agregados; el vocabulario no se expone.
+         */
+        TextProfile: {
+            /** Column */
+            column: string;
+            /** Duplicate Fraction */
+            duplicate_fraction: number;
+            /** Empty Fraction */
+            empty_fraction: number;
+            /** Language */
+            language: string | null;
+            /** Language Confidence */
+            language_confidence: number;
+            /** Tokens P50 */
+            tokens_p50: number | null;
+            /** Tokens P95 */
+            tokens_p95: number | null;
+            /** Vocabulary Size */
+            vocabulary_size: number;
+        };
+        /** TextSpec */
+        TextSpec: {
+            /**
+             * Accents
+             * @default true
+             */
+            accents: boolean;
+            /** Column */
+            column: string;
+            /** Hf Model */
+            hf_model?: string | null;
+            /**
+             * Lowercase
+             * @default true
+             */
+            lowercase: boolean;
+            /**
+             * Max Length
+             * @default 64
+             */
+            max_length: number;
+            /**
+             * Min Freq
+             * @default 1
+             */
+            min_freq: number;
+            /**
+             * Numbers
+             * @default false
+             */
+            numbers: boolean;
+            /**
+             * Tokenizer
+             * @default word
+             * @enum {string}
+             */
+            tokenizer: "word" | "hf";
+            /**
+             * Urls
+             * @default true
+             */
+            urls: boolean;
+            /**
+             * Vocab Size
+             * @default 20000
+             */
+            vocab_size: number;
+        };
         /** TextStats */
         TextStats: {
             /** Mean Length */
@@ -2134,6 +2384,17 @@ export interface components {
              */
             gradient_clip: number | null;
             /**
+             * Min Epochs
+             * @description Épocas mínimas antes de early stopping (None = 1/3)
+             */
+            min_epochs?: number | null;
+            /**
+             * Oversample
+             * @description Muestreo balanceado por clase (RF-TRN-10)
+             * @default false
+             */
+            oversample: boolean;
+            /**
              * Precision
              * @default auto
              * @enum {string}
@@ -2178,6 +2439,28 @@ export interface components {
             python: string;
             /** Version */
             version: string;
+        };
+        /** VisionTaskProfile */
+        VisionTaskProfile: {
+            /** Alphabet Size */
+            alphabet_size?: number | null;
+            /** Box Area Fraction P50 */
+            box_area_fraction_p50?: number | null;
+            /** Classes */
+            classes?: string[];
+            /** Foreground Fraction */
+            foreground_fraction?: number | null;
+            /** Images Without Objects */
+            images_without_objects?: number | null;
+            /** Objects Per Image Max */
+            objects_per_image_max?: number | null;
+            /** Objects Per Image P50 */
+            objects_per_image_p50?: number | null;
+            task: components["schemas"]["TaskType"];
+            /** Text Length P50 */
+            text_length_p50?: number | null;
+            /** Text Length P95 */
+            text_length_p95?: number | null;
         };
     };
     responses: never;

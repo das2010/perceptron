@@ -107,9 +107,13 @@ def _pruner(s: HPOStrategy) -> optuna.pruners.BasePruner:
     max_epochs = s.budget.max_epochs_per_trial or 30
     match s.pruner:
         case "median":
-            return optuna.pruners.MedianPruner(n_startup_trials=2, n_warmup_steps=1)
+            return optuna.pruners.MedianPruner(
+                n_startup_trials=3, n_warmup_steps=s.pruner_warmup_epochs
+            )
         case "asha":
-            return optuna.pruners.SuccessiveHalvingPruner(min_resource=1, reduction_factor=3)
+            return optuna.pruners.SuccessiveHalvingPruner(
+                min_resource=max(1, s.pruner_warmup_epochs), reduction_factor=3
+            )
         case "hyperband":
             return optuna.pruners.HyperbandPruner(min_resource=1, max_resource=max_epochs)
     return optuna.pruners.NopPruner()
@@ -182,6 +186,26 @@ def _enqueue_grid(study: optuna.Study, space: list[SearchParam]) -> int:
     return len(points)
 
 
+def _enqueue_defaults(study: optuna.Study, space: list[SearchParam]) -> bool:
+    """Estudio nuevo: el trial 0 es la configuración de la plantilla (las reglas).
+
+    Así el HPO parte de un punto curado y solo puede mejorarlo; con pocos trials,
+    los aleatorios iniciales de TPE pueden no alcanzar nunca esa calidad.
+    """
+    if study.get_trials(deepcopy=False):
+        return False
+    point: dict[str, Any] = {}
+    for p in space:
+        if p.condition is not None and point.get(p.condition.param) != p.condition.equals:
+            continue
+        if p.accepts(p.default):
+            point[p.name] = p.default
+    if not point:
+        return False
+    study.enqueue_trial(point)
+    return True
+
+
 def _reached(value: float, target: float | None, direction: str) -> bool:
     if target is None:
         return False
@@ -226,6 +250,8 @@ def run_study(
     grid_total = None
     if strategy.strategy == "grid":
         grid_total = _enqueue_grid(study, strategy.search_space)
+    elif strategy.strategy != "single":
+        _enqueue_defaults(study, strategy.search_space)
 
     while True:
         done = [t for t in study.get_trials(deepcopy=False) if t.state in finished_states]

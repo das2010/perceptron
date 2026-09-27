@@ -67,7 +67,12 @@
           "near_duplicates",
           "mixed_resolutions",
           "mixed_channels",
-          "missing_target"
+          "missing_target",
+          "duplicate_texts",
+          "long_texts",
+          "clipping",
+          "mixed_sample_rates",
+          "silent_audio"
         ],
         "title": "AlertCode",
         "type": "string"
@@ -257,6 +262,165 @@
           "content_hash"
         ],
         "title": "ArchSpecRecord",
+        "type": "object"
+      },
+      "AudioProfile": {
+        "description": "Audio (RF-PRF-05).",
+        "properties": {
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Channels",
+            "type": "array"
+          },
+          "clipping_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clipping Fraction"
+          },
+          "corrupt": {
+            "title": "Corrupt",
+            "type": "integer"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "duration_quantiles": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Duration Quantiles",
+            "type": "object"
+          },
+          "sample_rates": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Sample Rates",
+            "type": "array"
+          },
+          "silence_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Silence Fraction"
+          },
+          "snr_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snr Db"
+          }
+        },
+        "required": [
+          "count",
+          "corrupt",
+          "duration_quantiles",
+          "sample_rates",
+          "channels",
+          "silence_fraction",
+          "clipping_fraction",
+          "snr_db"
+        ],
+        "title": "AudioProfile",
+        "type": "object"
+      },
+      "AudioSpec": {
+        "properties": {
+          "duration_s": {
+            "default": 1.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 60.0,
+            "title": "Duration S",
+            "type": "number"
+          },
+          "features": {
+            "default": "mel",
+            "enum": [
+              "mel",
+              "mfcc"
+            ],
+            "title": "Features",
+            "type": "string"
+          },
+          "freq_mask": {
+            "default": 0,
+            "description": "SpecAugment: ancho máx. en bandas",
+            "minimum": 0.0,
+            "title": "Freq Mask",
+            "type": "integer"
+          },
+          "n_mels": {
+            "default": 64,
+            "maximum": 256.0,
+            "minimum": 8.0,
+            "title": "N Mels",
+            "type": "integer"
+          },
+          "n_mfcc": {
+            "default": 20,
+            "maximum": 128.0,
+            "minimum": 4.0,
+            "title": "N Mfcc",
+            "type": "integer"
+          },
+          "noise": {
+            "default": 0.0,
+            "description": "Ruido gaussiano (train)",
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Noise",
+            "type": "number"
+          },
+          "sample_rate": {
+            "default": 16000,
+            "maximum": 96000.0,
+            "minimum": 4000.0,
+            "title": "Sample Rate",
+            "type": "integer"
+          },
+          "time_mask": {
+            "default": 0,
+            "description": "SpecAugment: ancho máx. en frames",
+            "minimum": 0.0,
+            "title": "Time Mask",
+            "type": "integer"
+          },
+          "time_shift": {
+            "default": 0.0,
+            "description": "Desplazamiento máx. (fracción)",
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Time Shift",
+            "type": "number"
+          }
+        },
+        "title": "AudioSpec",
         "type": "object"
       },
       "AugmentSpec": {
@@ -705,67 +869,6 @@
         "title": "Condition",
         "type": "object"
       },
-      "Curves": {
-        "properties": {
-          "error_histogram": {
-            "description": "[centro, n]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Error Histogram",
-            "type": "array"
-          },
-          "pr": {
-            "description": "[recall, precision]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Pr",
-            "type": "array"
-          },
-          "reliability": {
-            "description": "[confianza, acierto, n]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Reliability",
-            "type": "array"
-          },
-          "residuals": {
-            "description": "[predicción, residuo]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Residuals",
-            "type": "array"
-          },
-          "roc": {
-            "description": "[fpr, tpr]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Roc",
-            "type": "array"
-          }
-        },
-        "title": "Curves",
-        "type": "object"
-      },
       "DataSource": {
         "additionalProperties": false,
         "properties": {
@@ -1092,7 +1195,23 @@
             ]
           },
           "curves": {
-            "$ref": "#/components/schemas/Curves"
+            "additionalProperties": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "title": "Curves",
+            "type": "object"
+          },
+          "details": {
+            "additionalProperties": true,
+            "description": "Detalle propio de cada tarea",
+            "title": "Details",
+            "type": "object"
           },
           "metrics": {
             "additionalProperties": {
@@ -1270,6 +1389,13 @@
             ],
             "title": "Pruner",
             "type": "string"
+          },
+          "pruner_warmup_epochs": {
+            "default": 1,
+            "description": "Épocas sin poda al inicio",
+            "minimum": 0.0,
+            "title": "Pruner Warmup Epochs",
+            "type": "integer"
           },
           "rationale": {
             "anyOf": [
@@ -1523,6 +1649,20 @@
             "minimum": 16.0,
             "title": "Size",
             "type": "integer"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "maximum": 4096.0,
+                "minimum": 16.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Si difiere de size (OCR)",
+            "title": "Width"
           }
         },
         "title": "ImageSpec",
@@ -1531,6 +1671,16 @@
       "IngestBody": {
         "additionalProperties": false,
         "properties": {
+          "modality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Modality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "overrides": {
             "anyOf": [
               {
@@ -1622,6 +1772,13 @@
             ],
             "title": "Num Numeric"
           },
+          "pad_id": {
+            "default": 0,
+            "description": "Tokens: id de padding",
+            "minimum": 0.0,
+            "title": "Pad Id",
+            "type": "integer"
+          },
           "shape": {
             "anyOf": [
               {
@@ -1635,6 +1792,19 @@
               }
             ],
             "title": "Shape"
+          },
+          "vocab_size": {
+            "anyOf": [
+              {
+                "minimum": 2.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tokens: tamaño del vocabulario",
+            "title": "Vocab Size"
           }
         },
         "required": [
@@ -2276,6 +2446,16 @@
       },
       "PipelineSpec": {
         "properties": {
+          "audio": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AudioSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "image": {
             "anyOf": [
               {
@@ -2302,6 +2482,16 @@
             "title": "Rationale",
             "type": "array"
           },
+          "series": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SeriesSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "steps": {
             "items": {
               "$ref": "#/components/schemas/StepSpec"
@@ -2313,6 +2503,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/TargetSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextSpec"
               },
               {
                 "type": "null"
@@ -2366,6 +2566,16 @@
             },
             "title": "Alerts",
             "type": "array"
+          },
+          "audio": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AudioProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "card_version": {
             "default": "1.0",
@@ -2437,6 +2647,16 @@
             "title": "Profiled Samples",
             "type": "integer"
           },
+          "series": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SeriesProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "split_counts": {
             "additionalProperties": {
               "type": "integer"
@@ -2448,6 +2668,26 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/TargetProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "vision_task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisionTaskProfile"
               },
               {
                 "type": "null"
@@ -3139,6 +3379,10 @@
               }
             ]
           },
+          "default": {
+            "description": "Valor de la plantilla: se prueba primero (trial 0)",
+            "title": "Default"
+          },
           "high": {
             "anyOf": [
               {
@@ -3211,6 +3455,207 @@
         "title": "SemanticType",
         "type": "string"
       },
+      "SeriesConfig": {
+        "properties": {
+          "covariates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Covariates",
+            "type": "array"
+          },
+          "freq_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freq Seconds"
+          },
+          "horizon": {
+            "default": 8,
+            "minimum": 1.0,
+            "title": "Horizon",
+            "type": "integer"
+          },
+          "lookback": {
+            "default": 32,
+            "minimum": 2.0,
+            "title": "Lookback",
+            "type": "integer"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "series_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Series Id"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType",
+            "default": "forecasting"
+          },
+          "time_column": {
+            "title": "Time Column",
+            "type": "string"
+          }
+        },
+        "required": [
+          "time_column",
+          "target"
+        ],
+        "title": "SeriesConfig",
+        "type": "object"
+      },
+      "SeriesProfile": {
+        "description": "RF-PRF-04 (solo agregados).",
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/SeriesConfig",
+            "description": "Columnas y parámetros (sin valores)"
+          },
+          "feasible_horizon": {
+            "title": "Feasible Horizon",
+            "type": "integer"
+          },
+          "freq_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freq Seconds"
+          },
+          "gaps": {
+            "description": "Saltos mayores a 1,5× la frecuencia",
+            "title": "Gaps",
+            "type": "integer"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "integer"
+          },
+          "lookback": {
+            "title": "Lookback",
+            "type": "integer"
+          },
+          "num_series": {
+            "title": "Num Series",
+            "type": "integer"
+          },
+          "points_median": {
+            "title": "Points Median",
+            "type": "number"
+          },
+          "points_min": {
+            "title": "Points Min",
+            "type": "integer"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "season_strength": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Strength"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "trend_slope_per_step": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Slope Per Step"
+          }
+        },
+        "required": [
+          "num_series",
+          "points_min",
+          "points_median",
+          "freq_seconds",
+          "gaps",
+          "season",
+          "season_strength",
+          "trend_slope_per_step",
+          "feasible_horizon",
+          "task",
+          "horizon",
+          "lookback",
+          "config"
+        ],
+        "title": "SeriesProfile",
+        "type": "object"
+      },
+      "SeriesSpec": {
+        "properties": {
+          "calendar": {
+            "default": true,
+            "title": "Calendar",
+            "type": "boolean"
+          },
+          "config": {
+            "$ref": "#/components/schemas/SeriesConfig"
+          },
+          "jitter": {
+            "default": 0.0,
+            "description": "Ruido gaussiano en train",
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Jitter",
+            "type": "number"
+          }
+        },
+        "required": [
+          "config"
+        ],
+        "title": "SeriesSpec",
+        "type": "object"
+      },
       "Severity": {
         "enum": [
           "error",
@@ -3252,7 +3697,11 @@
       "SourceKind": {
         "enum": [
           "table",
-          "image_folder"
+          "image_folder",
+          "text_folder",
+          "audio_folder",
+          "segmentation_folder",
+          "ocr_folder"
         ],
         "title": "SourceKind",
         "type": "string"
@@ -3725,6 +4174,21 @@
       },
       "TargetSpec": {
         "properties": {
+          "classes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Clases fijas (detección/segmentación)",
+            "title": "Classes"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -3749,6 +4213,19 @@
       "TaskSpec": {
         "additionalProperties": false,
         "properties": {
+          "horizon": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Forecasting: pasos a futuro",
+            "title": "Horizon"
+          },
           "multilabel": {
             "default": false,
             "title": "Multilabel",
@@ -3757,7 +4234,7 @@
           "num_classes": {
             "anyOf": [
               {
-                "minimum": 2.0,
+                "minimum": 1.0,
                 "type": "integer"
               },
               {
@@ -3796,6 +4273,148 @@
         ],
         "title": "TaskType",
         "type": "string"
+      },
+      "TextProfile": {
+        "description": "Texto (RF-PRF-03): solo agregados; el vocabulario no se expone.",
+        "properties": {
+          "column": {
+            "title": "Column",
+            "type": "string"
+          },
+          "duplicate_fraction": {
+            "title": "Duplicate Fraction",
+            "type": "number"
+          },
+          "empty_fraction": {
+            "title": "Empty Fraction",
+            "type": "number"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "language_confidence": {
+            "title": "Language Confidence",
+            "type": "number"
+          },
+          "tokens_p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tokens P50"
+          },
+          "tokens_p95": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tokens P95"
+          },
+          "vocabulary_size": {
+            "title": "Vocabulary Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "column",
+          "language",
+          "language_confidence",
+          "tokens_p50",
+          "tokens_p95",
+          "vocabulary_size",
+          "empty_fraction",
+          "duplicate_fraction"
+        ],
+        "title": "TextProfile",
+        "type": "object"
+      },
+      "TextSpec": {
+        "properties": {
+          "accents": {
+            "default": true,
+            "title": "Accents",
+            "type": "boolean"
+          },
+          "column": {
+            "title": "Column",
+            "type": "string"
+          },
+          "hf_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hf Model"
+          },
+          "lowercase": {
+            "default": true,
+            "title": "Lowercase",
+            "type": "boolean"
+          },
+          "max_length": {
+            "default": 64,
+            "maximum": 4096.0,
+            "minimum": 4.0,
+            "title": "Max Length",
+            "type": "integer"
+          },
+          "min_freq": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Min Freq",
+            "type": "integer"
+          },
+          "numbers": {
+            "default": false,
+            "title": "Numbers",
+            "type": "boolean"
+          },
+          "tokenizer": {
+            "default": "word",
+            "enum": [
+              "word",
+              "hf"
+            ],
+            "title": "Tokenizer",
+            "type": "string"
+          },
+          "urls": {
+            "default": true,
+            "title": "Urls",
+            "type": "boolean"
+          },
+          "vocab_size": {
+            "default": 20000,
+            "minimum": 10.0,
+            "title": "Vocab Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "column"
+        ],
+        "title": "TextSpec",
+        "type": "object"
       },
       "TextStats": {
         "properties": {
@@ -3969,6 +4588,25 @@
             "default": 1.0,
             "title": "Gradient Clip"
           },
+          "min_epochs": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Épocas mínimas antes de early stopping (None = 1/3)",
+            "title": "Min Epochs"
+          },
+          "oversample": {
+            "default": false,
+            "description": "Muestreo balanceado por clase (RF-TRN-10)",
+            "title": "Oversample",
+            "type": "boolean"
+          },
           "precision": {
             "default": "auto",
             "enum": [
@@ -4126,6 +4764,113 @@
           "mode"
         ],
         "title": "VersionInfo",
+        "type": "object"
+      },
+      "VisionTaskProfile": {
+        "properties": {
+          "alphabet_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alphabet Size"
+          },
+          "box_area_fraction_p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Box Area Fraction P50"
+          },
+          "classes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "foreground_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foreground Fraction"
+          },
+          "images_without_objects": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images Without Objects"
+          },
+          "objects_per_image_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objects Per Image Max"
+          },
+          "objects_per_image_p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objects Per Image P50"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "text_length_p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Length P50"
+          },
+          "text_length_p95": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Length P95"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "VisionTaskProfile",
         "type": "object"
       }
     }

@@ -259,6 +259,266 @@
       "id": 19,
       "image_id": 39,
       "iscrowd": 0
+    },
+    {
+      "area": 16,
+      "bbox": [
+        9,
+        9,
+        4,
+        4
+      ],
+      "category_id": 1,
+      "id": 20,
+      "image_id": 41,
+      "iscrowd": 0
+    },
+    {
+      "area": 28,
+      "bbox": [
+        18,
+        10,
+        7,
+        4
+      ],
+      "category_id": 1,
+      "id": 21,
+      "image_id": 43,
+      "iscrowd": 0
+    },
+    {
+      "area": 27,
+      "bbox": [
+        12,
+        28,
+        9,
+        3
+      ],
+      "category_id": 1,
+      "id": 22,
+      "image_id": 45,
+      "iscrowd": 0
+    },
+    {
+      "area": 24,
+      "bbox": [
+        21,
+        9,
+        8,
+        3
+      ],
+      "category_id": 1,
+      "id": 23,
+      "image_id": 47,
+      "iscrowd": 0
+    },
+    {
+      "area": 24,
+      "bbox": [
+        27,
+        10,
+        4,
+        6
+      ],
+      "category_id": 1,
+      "id": 24,
+      "image_id": 49,
+      "iscrowd": 0
+    },
+    {
+      "area": 20,
+      "bbox": [
+        21,
+        16,
+        5,
+        4
+      ],
+      "category_id": 1,
+      "id": 25,
+      "image_id": 51,
+      "iscrowd": 0
+    },
+    {
+      "area": 12,
+      "bbox": [
+        17,
+        5,
+        4,
+        3
+      ],
+      "category_id": 1,
+      "id": 26,
+      "image_id": 53,
+      "iscrowd": 0
+    },
+    {
+      "area": 24,
+      "bbox": [
+        13,
+        5,
+        6,
+        4
+      ],
+      "category_id": 1,
+      "id": 27,
+      "image_id": 55,
+      "iscrowd": 0
+    },
+    {
+      "area": 48,
+      "bbox": [
+        14,
+        1,
+        8,
+        6
+      ],
+      "category_id": 1,
+      "id": 28,
+      "image_id": 57,
+      "iscrowd": 0
+    },
+    {
+      "area": 12,
+      "bbox": [
+        23,
+        13,
+        4,
+        3
+      ],
+      "category_id": 1,
+      "id": 29,
+      "image_id": 59,
+      "iscrowd": 0
+    },
+    {
+      "area": 42,
+      "bbox": [
+        18,
+        3,
+        7,
+        6
+      ],
+      "category_id": 1,
+      "id": 30,
+      "image_id": 61,
+      "iscrowd": 0
+    },
+    {
+      "area": 25,
+      "bbox": [
+        12,
+        6,
+        5,
+        5
+      ],
+      "category_id": 1,
+      "id": 31,
+      "image_id": 63,
+      "iscrowd": 0
+    },
+    {
+      "area": 45,
+      "bbox": [
+        17,
+        12,
+        9,
+        5
+      ],
+      "category_id": 1,
+      "id": 32,
+      "image_id": 65,
+      "iscrowd": 0
+    },
+    {
+      "area": 18,
+      "bbox": [
+        6,
+        8,
+        9,
+        2
+      ],
+      "category_id": 1,
+      "id": 33,
+      "image_id": 67,
+      "iscrowd": 0
+    },
+    {
+      "area": 54,
+      "bbox": [
+        14,
+        9,
+        9,
+        6
+      ],
+      "category_id": 1,
+      "id": 34,
+      "image_id": 69,
+      "iscrowd": 0
+    },
+    {
+      "area": 12,
+      "bbox": [
+        27,
+        22,
+        4,
+        3
+      ],
+      "category_id": 1,
+      "id": 35,
+      "image_id": 71,
+      "iscrowd": 0
+    },
+    {
+      "area": 42,
+      "bbox": [
+        1,
+        8,
+        7,
+        6
+      ],
+      "category_id": 1,
+      "id": 36,
+      "image_id": 73,
+      "iscrowd": 0
+    },
+    {
+      "area": 16,
+      "bbox": [
+        5,
+        12,
+        8,
+        2
+      ],
+      "category_id": 1,
+      "id": 37,
+      "image_id": 75,
+      "iscrowd": 0
+    },
+    {
+      "area": 45,
+      "bbox": [
+        21,
+        14,
+        9,
+        5
+      ],
+      "category_id": 1,
+      "id": 38,
+      "image_id": 77,
+      "iscrowd": 0
+    },
+    {
+      "area": 15,
+      "bbox": [
+        21,
+        18,
+        5,
+        3
+      ],
+      "category_id": 1,
+      "id": 39,
+      "image_id": 79,
+      "iscrowd": 0
     }
   ],
   "categories": [
@@ -506,6 +766,246 @@
       "file_name": "defect/pieza_039.png",
       "height": 32,
       "id": 39,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_040.png",
+      "height": 32,
+      "id": 40,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_041.png",
+      "height": 32,
+      "id": 41,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_042.png",
+      "height": 32,
+      "id": 42,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_043.png",
+      "height": 32,
+      "id": 43,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_044.png",
+      "height": 32,
+      "id": 44,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_045.png",
+      "height": 32,
+      "id": 45,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_046.png",
+      "height": 32,
+      "id": 46,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_047.png",
+      "height": 32,
+      "id": 47,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_048.png",
+      "height": 32,
+      "id": 48,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_049.png",
+      "height": 32,
+      "id": 49,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_050.png",
+      "height": 32,
+      "id": 50,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_051.png",
+      "height": 32,
+      "id": 51,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_052.png",
+      "height": 32,
+      "id": 52,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_053.png",
+      "height": 32,
+      "id": 53,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_054.png",
+      "height": 32,
+      "id": 54,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_055.png",
+      "height": 32,
+      "id": 55,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_056.png",
+      "height": 32,
+      "id": 56,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_057.png",
+      "height": 32,
+      "id": 57,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_058.png",
+      "height": 32,
+      "id": 58,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_059.png",
+      "height": 32,
+      "id": 59,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_060.png",
+      "height": 32,
+      "id": 60,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_061.png",
+      "height": 32,
+      "id": 61,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_062.png",
+      "height": 32,
+      "id": 62,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_063.png",
+      "height": 32,
+      "id": 63,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_064.png",
+      "height": 32,
+      "id": 64,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_065.png",
+      "height": 32,
+      "id": 65,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_066.png",
+      "height": 32,
+      "id": 66,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_067.png",
+      "height": 32,
+      "id": 67,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_068.png",
+      "height": 32,
+      "id": 68,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_069.png",
+      "height": 32,
+      "id": 69,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_070.png",
+      "height": 32,
+      "id": 70,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_071.png",
+      "height": 32,
+      "id": 71,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_072.png",
+      "height": 32,
+      "id": 72,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_073.png",
+      "height": 32,
+      "id": 73,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_074.png",
+      "height": 32,
+      "id": 74,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_075.png",
+      "height": 32,
+      "id": 75,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_076.png",
+      "height": 32,
+      "id": 76,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_077.png",
+      "height": 32,
+      "id": 77,
+      "width": 32
+    },
+    {
+      "file_name": "ok/pieza_078.png",
+      "height": 32,
+      "id": 78,
+      "width": 32
+    },
+    {
+      "file_name": "defect/pieza_079.png",
+      "height": 32,
+      "id": 79,
       "width": 32
     }
   ]

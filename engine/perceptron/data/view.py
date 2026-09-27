@@ -15,8 +15,9 @@ import polars as pl
 
 from perceptron.core.errors import NotFoundError, PerceptronError
 from perceptron.data.schema import TableSchema
+from perceptron.data.series import SeriesConfig
 from perceptron.data.splits import SPLIT_COLUMN, TEST
-from perceptron.domain.enums import Modality
+from perceptron.domain.enums import Modality, TaskType
 
 TABLE_FILE = "table.parquet"
 INDEX_FILE = "index.parquet"
@@ -24,6 +25,9 @@ SCHEMA_FILE = "schema.json"
 META_FILE = "dataset.json"
 MANIFEST_FILE = "manifest.json"
 FILES_DIR = "files"
+
+
+TABLE_MODALITIES = frozenset({Modality.TABULAR, Modality.TEXT, Modality.TIMESERIES})
 
 
 class Purpose(StrEnum):
@@ -54,7 +58,27 @@ class DatasetView:
 
     @property
     def data_file(self) -> Path:
-        return self.root / (TABLE_FILE if self.modality is Modality.TABULAR else INDEX_FILE)
+        return self.root / (TABLE_FILE if self.modality in TABLE_MODALITIES else INDEX_FILE)
+
+    @property
+    def task(self) -> TaskType | None:
+        raw = self.meta.get("task")
+        return TaskType(str(raw)) if raw else None
+
+    @property
+    def classes(self) -> list[str]:
+        raw = self.meta.get("classes")
+        return [str(c) for c in raw] if isinstance(raw, list) else []
+
+    @property
+    def series(self) -> SeriesConfig | None:
+        raw = self.meta.get("series")
+        return SeriesConfig.model_validate(raw) if raw else None
+
+    @property
+    def text_column(self) -> str | None:
+        col = self.meta.get("text_column")
+        return str(col) if col else None
 
     @property
     def files_dir(self) -> Path:

@@ -195,7 +195,7 @@ def test_ingest_images(project_paths: ProjectPaths, fixtures_dir: Path) -> None:
     )
     assert v.modality is Modality.IMAGE
     assert v.target == "label"
-    assert v.num_samples == 40
+    assert v.num_samples == 80
     view = DatasetView(project_paths.dataset(v.content_hash))
     index = view.read(purpose=Purpose.FINAL_EVALUATION)
     assert set(index["label"].unique()) == {"ok", "defect"}

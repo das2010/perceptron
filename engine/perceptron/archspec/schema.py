@@ -37,9 +37,10 @@ class TaskSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: TaskType
-    num_classes: int | None = Field(default=None, ge=2)
+    num_classes: int | None = Field(default=None, ge=1)
     multilabel: bool = False
     num_targets: int = Field(default=1, ge=1, description="Regresión multi-salida")
+    horizon: int | None = Field(default=None, ge=1, description="Forecasting: pasos a futuro")
 
 
 class InputSpec(BaseModel):
@@ -55,6 +56,8 @@ class InputSpec(BaseModel):
     shape: list[int] | None = None
     num_numeric: int | None = Field(default=None, ge=0)
     cardinalities: list[int] | None = None
+    vocab_size: int | None = Field(default=None, ge=2, description="Tokens: tamaño del vocabulario")
+    pad_id: int = Field(default=0, ge=0, description="Tokens: id de padding")
     from_pipeline: str | None = None
 
 
@@ -106,7 +109,11 @@ class TrainingSpec(BaseModel):
     precision: Literal["auto", "32", "16-mixed", "bf16-mixed"] = "auto"
     gradient_clip: float | None = 1.0
     early_stopping: EarlyStopping | None = Field(default_factory=EarlyStopping)
+    min_epochs: int | None = Field(
+        default=None, ge=1, description="Épocas mínimas antes de early stopping (None = 1/3)"
+    )
     freeze_backbone_epochs: int = Field(default=0, ge=0)
+    oversample: bool = Field(default=False, description="Muestreo balanceado por clase (RF-TRN-10)")
 
 
 class Provenance(BaseModel):

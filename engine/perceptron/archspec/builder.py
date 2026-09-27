@@ -24,7 +24,6 @@ from perceptron.catalog.registry import (
     TensorSpec,
     get_block,
 )
-from perceptron.domain.enums import TaskType
 
 
 class ArchBuildError(ValueError):
@@ -47,18 +46,27 @@ def input_tensor_spec(spec: ArchSpec) -> TensorSpec:
         if not inp.shape or len(inp.shape) != 3:
             raise ArchBuildError("input.shape", "se espera [C, H, W]")
         return TensorSpec(TensorKind.IMAGE, tuple(inp.shape))
-    raise ArchBuildError("input.kind", f"'{inp.kind}' se soporta desde la Capa 1b")
+    if inp.kind == "sequence":
+        if not inp.shape or len(inp.shape) != 2:
+            raise ArchBuildError("input.shape", "se espera [L, C] (ventana × canales)")
+        return TensorSpec(TensorKind.SEQUENCE, tuple(inp.shape))
+    if inp.kind == "tokens":
+        if not inp.shape or len(inp.shape) != 1:
+            raise ArchBuildError("input.shape", "se espera [L] (largo máximo de la secuencia)")
+        return TensorSpec(
+            TensorKind.TOKENS, tuple(inp.shape), vocab_size=inp.vocab_size or 0, pad_id=inp.pad_id
+        )
+    raise ArchBuildError("input.kind", f"'{inp.kind}' todavía no está soportado")
 
 
 def num_outputs(spec: ArchSpec) -> int:
-    t = spec.task
-    if t.type is TaskType.REGRESSION:
-        return t.num_targets
-    if t.num_classes is None:
-        raise ArchBuildError("task.num_classes", "requerido para clasificación")
-    if t.num_classes == 2 and spec.loss.type == "bce" and not t.multilabel:
-        return 1
-    return t.num_classes
+    """Tamaño de la salida que espera la tarea (lo define su adaptador, ADR-0017)."""
+    from perceptron.tasks import get_adapter
+
+    try:
+        return get_adapter(spec.task.type).num_outputs(spec)
+    except ValueError as e:
+        raise ArchBuildError("task", str(e)) from None
 
 
 def topological_order(spec: ArchSpec) -> tuple[list[str], dict[str, list[str]]]:
@@ -166,6 +174,8 @@ def _dummy(t: TensorSpec, device: torch.device, batch: int = 2) -> tuple[torch.T
             torch.zeros(batch, t.num_numeric, device=device),
             torch.zeros(batch, len(t.cardinalities), dtype=torch.long, device=device),
         )
+    if t.kind is TensorKind.TOKENS:
+        return (torch.zeros(batch, *t.shape, dtype=torch.long, device=device),)
     return (torch.zeros(batch, *t.shape, device=device),)
 
 
@@ -192,7 +202,7 @@ def build_model(
 ) -> BuildResult:
     """Construye el modelo. Con `materialize=False` solo hace la pasada `meta` (validación)."""
     order, preds = topological_order(spec)
-    ctx = BuildContext(num_outputs=num_outputs(spec), pretrained_allowed=False)
+    ctx = BuildContext(num_outputs=num_outputs(spec), pretrained_allowed=False, meta=True)
     specs: dict[str, TensorSpec] = {INPUT_NODE: input_tensor_spec(spec)}
     params_by_node: dict[str, dict[str, Any]] = {}
     meta = torch.device("meta")
@@ -241,12 +251,11 @@ def build_model(
 
     output = specs[order[-1]]
     expected = ctx.num_outputs
-    if output.kind is not TensorKind.FEATURES or output.dim != expected:
-        raise ArchBuildError(
-            f"nodes[{len(spec.nodes) - 1}]",
-            f"la salida debe ser un vector de {expected} valores y es "
-            f"{output.kind.value} {list(output.shape)}",
-        )
+    from perceptron.tasks import get_adapter
+
+    problem = get_adapter(spec.task.type).check_output(output.kind.value, output.shape, spec)
+    if problem:
+        raise ArchBuildError(f"nodes[{len(spec.nodes) - 1}]", problem)
 
     model: nn.Module
     if materialize:

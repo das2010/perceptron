@@ -157,10 +157,17 @@ _MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio"]
 _DEVICES = ["el celular", "la notebook", "Chrome", "la app de escritorio"]
 
 
+_GREETINGS = ["", "Hola,", "Buenas tardes.", "Buen día,", "Estimados:", "Hola equipo,"]
+_CLOSINGS = ["", "Gracias.", "Saludos.", "Es urgente.", "Quedo atento.", "¿Me pueden ayudar?"]
+_PRODUCTS = ["", "en el portal", "en la app", "en mi cuenta empresa", "desde ayer", "otra vez"]
+
+
 def _ticket_text(rng: random.Random, category: str) -> str:
-    return rng.choice(_TICKET_TEMPLATES[category]).format(
+    body = rng.choice(_TICKET_TEMPLATES[category]).format(
         m=rng.choice(_MONTHS), d=rng.choice(_DEVICES)
     )
+    parts = [rng.choice(_GREETINGS), body, rng.choice(_PRODUCTS), rng.choice(_CLOSINGS)]
+    return " ".join(p for p in parts if p)
 
 
 def uc02_tickets_time(rng: random.Random) -> Files:
@@ -219,7 +226,7 @@ def uc04_defects(rng: random.Random) -> Files:
     """Imagen: clasificación (carpetas clase/archivo) + detección (anotaciones COCO)."""
     files: Files = {}
     images, annotations = [], []
-    for i in range(40):
+    for i in range(80):
         defect = i % 2 == 1
         pixels, box = _part_image(rng, defect)
         name = f"{'defect' if defect else 'ok'}/pieza_{i:03d}.png"
@@ -250,7 +257,7 @@ def uc04_defects(rng: random.Random) -> Files:
 def uc05_masks(rng: random.Random) -> Files:
     """Imagen: segmentación (imagen + máscara PNG, 0 = fondo, 255 = daño)."""
     files: Files = {}
-    for i in range(20):
+    for i in range(60):
         size = 32
         cx, cy, r = rng.randint(8, 24), rng.randint(8, 24), rng.randint(3, 7)
         mask = [
@@ -290,7 +297,7 @@ def uc06_ocr(rng: random.Random) -> Files:
     files: Files = {}
     labels = []
     scale = 2
-    for i in range(20):
+    for i in range(200):
         text = f"{rng.randint(1, 9999):04d}-{rng.randint(0, 99999999):08d}"
         width, height = (len(text) * 4 + 2) * scale, 9 * scale
         img = [[(245, 245, 240) for _ in range(width)] for _ in range(height)]
@@ -327,18 +334,34 @@ def uc07_demand(rng: random.Random) -> Files:
 
 
 def uc08_telemetry(rng: random.Random) -> Files:
-    """Serie temporal: telemetría de sensores con anomalías etiquetadas."""
+    """Serie temporal: 2 días de telemetría (1 muestra/min) con anomalías etiquetadas.
+
+    Hay anomalías de tres tipos (pico de temperatura, escalón sostenido, ráfaga de
+    vibración) repartidas en todo el período, así train, val y test tienen casos.
+    """
+    minutes = 2 * 1440
+    events: list[tuple[int, int, str]] = []
+    start = 150
+    while start < minutes - 40:
+        length = rng.randint(6, 18)
+        events.append((start, start + length, rng.choice(["pico", "escalon", "vibracion"])))
+        start += rng.randint(170, 260)
+    kind_at = {t: kind for a, b, kind in events for t in range(a, b)}
     rows = []
-    for t in range(1440):  # 1 día a 1 muestra/min
+    for t in range(minutes):
         temp = 60 + 5 * math.sin(2 * math.pi * t / 1440) + rng.gauss(0, 0.5)
-        vib = 0.3 + rng.gauss(0, 0.03)
-        anomaly = 0
-        if 600 <= t < 615 or 1100 <= t < 1105:
-            temp += 12
-            vib += 0.5
-            anomaly = 1
-        ts = f"2026-01-15T{t // 60:02d}:{t % 60:02d}:00"
-        rows.append([ts, "S1", round(temp, 3), round(vib, 4), anomaly])
+        vib = 0.3 + 0.02 * math.sin(2 * math.pi * t / 60) + rng.gauss(0, 0.03)
+        kind = kind_at.get(t)
+        if kind == "pico":
+            temp += 10 + rng.gauss(0, 1)
+        elif kind == "escalon":
+            temp += 4
+            vib += 0.15
+        elif kind == "vibracion":
+            vib += 0.6 + rng.gauss(0, 0.1)
+        day, minute = divmod(t, 1440)
+        ts = f"2026-01-{15 + day:02d}T{minute // 60:02d}:{minute % 60:02d}:00"
+        rows.append([ts, "S1", round(temp, 3), round(vib, 4), int(kind is not None)])
     return {
         "uc08_telemetry/telemetria.csv": csv_bytes(
             ["timestamp", "sensor", "temperatura", "vibracion", "anomalia"], rows
@@ -352,7 +375,7 @@ def uc09_motor_audio(rng: random.Random) -> Files:
     files: Files = {}
     events = []
     classes = ["normal", "rodamiento", "desbalance", "cavitacion"]
-    for i in range(40):
+    for i in range(120):
         cls = classes[i % len(classes)]
         f0 = rng.uniform(95, 105)
         samples = []

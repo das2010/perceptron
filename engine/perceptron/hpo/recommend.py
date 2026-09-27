@@ -12,6 +12,8 @@ from perceptron.hpo.strategy import Budget, HPOStrategy, Objective, default_sear
 from perceptron.training.module import monitor_mode
 
 PRUNE_MIN_EPOCHS = 10
+ASHA_MIN_TRIALS = 30
+MEDIAN_MIN_TRIALS = 5
 CMAES_MIN_TRIALS = 20
 
 
@@ -54,11 +56,18 @@ def recommend_strategy(
     grid_size = 1
     for p in space:
         grid_size *= len(p.grid_values())
-    pruner = (
-        "asha"
-        if epochs >= PRUNE_MIN_EPOCHS and trials >= 5
-        else ("median" if trials >= 5 else "none")
-    )
+    # ASHA reduce ×3 en cada peldaño: con pocos trials casi ninguno llega al final (en la
+    # práctica, un solo entrenamiento). Con presupuestos chicos se poda por mediana y con
+    # un calentamiento del 25 % de las épocas, para no cortar por el ruido del arranque.
+    if trials >= ASHA_MIN_TRIALS and epochs >= PRUNE_MIN_EPOCHS:
+        pruner = "asha"
+    elif trials >= MEDIAN_MIN_TRIALS:
+        pruner = "median"
+    else:
+        pruner = "none"
+    # Un tercio de las épocas sin poda: los modelos suelen pasar por mesetas antes de
+    # aprender los rasgos sutiles (visto en UC-09: meseta en 0,72 hasta la época ~15).
+    warmup = max(2, epochs // 3)
     if len(space) <= 3 and len(discrete) == len(space) and grid_size <= trials:
         strategy, why = (
             "grid",
@@ -77,6 +86,7 @@ def recommend_strategy(
     return HPOStrategy(
         strategy=strategy,  # type: ignore[arg-type]
         pruner=pruner,  # type: ignore[arg-type]
+        pruner_warmup_epochs=warmup,
         search_space=space,
         objectives=objectives,
         budget=budget,

@@ -77,6 +77,57 @@ def _ctor(
             return f"nn.Dropout({p['p']!r})", None
         case "head.linear":
             return f"nn.Linear({i.dim}, {p.get('out_features') or n_out})", None
+        case "text.embedding":
+            return (
+                f"TextEmbedding({i.vocab_size}, {p['dim']}, {p['dropout']!r}, {i.pad_id})",
+                "TextEmbedding",
+            )
+        case "text.cnn":
+            ks = list(p["kernel_sizes"])
+            return f"TextCNN({i.shape[-1]}, {p['filters']}, {ks}, {p['dropout']!r})", "TextCNN"
+        case "text.bilstm":
+            args = f"{i.shape[-1]}, {p['hidden']}, {p['layers']}, {p['dropout']!r}"
+            return f"BiLSTMEncoder({args})", "BiLSTMEncoder"
+        case "pool.sequence":
+            return f"SequencePool({p['mode']!r})", "SequencePool"
+        case "text.hf_encoder":
+            use = bool(p["pretrained"]) and pretrained
+            args = f"{p['model']!r}, pretrained={use}, pad_id={i.pad_id}, pooling={p['pooling']!r}"
+            return f"HFTextEncoder({args})", "HFTextEncoder"
+        case "seq.rnn":
+            args = f"{i.shape[-1]}, {p['hidden']}, {p['layers']}, {p['dropout']!r}, {p['cell']!r}"
+            return f"RNNEncoder({args})", "RNNEncoder"
+        case "seq.tcn":
+            args = f"{i.shape[-1]}, {p['channels']}, {p['levels']}, {p['kernel']}, {p['dropout']!r}"
+            return f"TCN({args})", "TCN"
+        case "seq.nbeats":
+            args = (
+                f"{i.shape[0]}, {i.shape[1]}, {n_out}, {p['hidden']}, {p['blocks']}, "
+                f"{p['layers']}, {p['dropout']!r}"
+            )
+            return f"NBeats({args})", "NBeats"
+        case "seq.patchtst":
+            patch = min(p["patch_len"], i.shape[0])
+            args = (
+                f"{i.shape[0]}, {i.shape[1]}, {patch}, {p['stride']}, {p['d_model']}, "
+                f"{p['heads']}, {p['layers']}, {p['dropout']!r}"
+            )
+            return f"PatchTST({args})", "PatchTST"
+        case "seq.autoencoder":
+            args = f"{i.shape[0]}, {i.shape[1]}, {p['hidden']}, {p['latent']}, {p['kind']!r}"
+            return f"SeriesAutoencoder({args})", "SeriesAutoencoder"
+        case "audio.crnn":
+            args = f"{i.channels}, {i.shape[1]}, {p['width']}, {p['hidden']}, {p['dropout']!r}"
+            return f"AudioCRNN({args})", "AudioCRNN"
+        case "detection.centernet_small":
+            return (
+                f"CenterNetSmall({i.channels}, {n_out}, {p['width']}, {p['depth']})",
+                "CenterNetSmall",
+            )
+        case "seg.unet_small":
+            return f"UNetSmall({i.channels}, {n_out}, {p['width']}, {p['depth']})", "UNetSmall"
+        case "ocr.crnn":
+            return f"CRNN({i.channels}, {n_out}, {p['width']}, {p['hidden']})", "CRNN"
         case "merge.concat":
             return "Concat()", "Concat"
         case "merge.add":
@@ -86,6 +137,10 @@ def _ctor(
 
 _DEPENDENCIES = {
     "TabularInput": ["embedding_dim"],
+    "CenterNetSmall": ["_conv_bn"],
+    "UNetSmall": ["_conv_bn"],
+    "CRNN": ["_conv_bn"],
+    "AudioCRNN": ["_conv_bn"],
     "MLPBlock": ["_activation"],
 }
 
@@ -138,6 +193,7 @@ Entrada: {spec.input.kind} {spec.input.shape or ""}
 from __future__ import annotations
 
 import math
+from typing import Any, cast
 
 import torch
 from torch import nn

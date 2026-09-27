@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from perceptron.catalog.templates import tabular_template
+from perceptron.catalog.templates import audio_template, tabular_template
 from perceptron.domain.enums import TaskType
 from perceptron.hpo.recommend import recommend_strategy
 from perceptron.hpo.strategy import (
@@ -119,6 +119,27 @@ def test_tpe_finds_good_region(tmp_path: Path) -> None:
     assert len(res.trials) == 15
     assert res.best_trial is not None and res.best_trial.values
     assert 1e-3 < float(res.best_trial.params["lr"]) < 1e-1
+
+
+def test_first_trial_is_template_default(tmp_path: Path) -> None:
+    space = [
+        SearchParam(name="lr", type="float", low=1e-4, high=1e-1, log=True, default=2e-3),
+        SearchParam(name="hidden", type="int", low=16, high=256, default=999),
+    ]
+    s = HPOStrategy(strategy="tpe", pruner="none", search_space=space, budget=Budget(max_trials=3))
+    res = _run(tmp_path, s)
+    first = min(res.trials, key=lambda t: t.number)
+    assert first.params["lr"] == pytest.approx(2e-3)
+    assert 16 <= int(first.params["hidden"]) <= 256  # default fuera de rango: lo sugiere TPE
+    again = _run(tmp_path, s.model_copy(update={"budget": Budget(max_trials=4)}))
+    assert sum(t.params["lr"] == pytest.approx(2e-3) for t in again.trials) >= 1
+    assert len(again.trials) == 4  # al reanudar no se vuelve a encolar
+
+
+def test_default_search_space_keeps_template_defaults() -> None:
+    spec = audio_template("crnn", task=TaskType.CLASSIFICATION, num_classes=4, bins=64, frames=101)
+    defaults = {p.name: p.default for p in default_search_space(spec)}
+    assert defaults["lr"] == pytest.approx(2e-3) and defaults["width"] == 16
 
 
 def test_target_value_stops_early(tmp_path: Path) -> None:
@@ -252,10 +273,31 @@ def test_default_space_and_recommendation() -> None:
 
     assert recommend_strategy(spec, Budget(max_trials=1)).strategy == "single"
     rec = recommend_strategy(spec, Budget(max_trials=20, max_epochs_per_trial=30))
-    assert rec.strategy == "tpe" and rec.pruner == "asha"
+    assert rec.strategy == "tpe" and rec.pruner == "median"  # 20 trials: ASHA recién con 30
+    assert rec.pruner_warmup_epochs == 10
+    big = recommend_strategy(spec, Budget(max_trials=40, max_epochs_per_trial=30))
+    assert big.pruner == "asha"
     assert rec.objectives[0].metric == "val_loss" and rec.objectives[0].direction == "minimize"
     assert rec.rationale
     multi = recommend_strategy(
         spec, Budget(max_trials=20), extra_objectives=[Objective(metric="num_params")]
     )
     assert multi.strategy == "nsga2"
+
+
+def test_balanced_sampler_equalizes_classes() -> None:
+    import torch
+
+    from perceptron.training.data import balanced_sampler
+
+    class DS(torch.utils.data.Dataset):  # type: ignore[type-arg]
+        y = torch.tensor([0] * 90 + [1] * 10)
+
+        def __len__(self) -> int:
+            return 100
+
+    sampler = balanced_sampler(DS(), torch.Generator().manual_seed(0))
+    assert sampler is not None
+    drawn = torch.tensor(list(iter(sampler)))
+    minority_share = (DS.y[drawn] == 1).float().mean().item()
+    assert 0.35 < minority_share < 0.65  # ≈ 50 % en vez de 10 %
