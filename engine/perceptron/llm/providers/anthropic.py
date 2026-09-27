@@ -44,8 +44,7 @@ class AnthropicProvider(LLMProvider):
             "max_tokens": request.max_tokens,
             "messages": [{"role": m.role, "content": _content(m)} for m in request.messages],
         }
-        if request.temperature is not None and model.temperature:
-            kwargs["temperature"] = request.temperature
+        # La API de mensajes actual de Anthropic no acepta `temperature`: no se envía.
         if request.output_schema is not None and model.structured_output:
             kwargs["tools"] = [
                 {
