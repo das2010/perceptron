@@ -150,6 +150,8 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         pretrained_allowed=cfg.pretrained_allowed,
     )
 
+    epochs = cfg.max_epochs or int(resolve(spec.training.epochs, cfg.overrides))
+    min_epochs = spec.training.min_epochs or max(1, epochs // 3)
     es = spec.training.early_stopping
     monitor = es.monitor if es else "val_loss"
     mode = (es.mode if es and es.mode else None) or monitor_mode(monitor)
@@ -161,7 +163,10 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
     best_ckpt.CHECKPOINT_NAME_LAST = "last"
     callbacks: list[L.Callback] = [progress, control, best_ckpt]
     if es:
-        callbacks.append(EarlyStopping(monitor=monitor, mode=mode, patience=es.patience))
+        # Paciencia proporcional al presupuesto: con muchas épocas, 5 es poco para salir de
+        # una meseta; con pocas, no se alarga más de lo que dura el entrenamiento.
+        patience = max(es.patience, epochs // 6)
+        callbacks.append(EarlyStopping(monitor=monitor, mode=mode, patience=patience))
     freeze = spec.training.freeze_backbone_epochs
     for node in spec.nodes:
         f = str(resolve(node.params.get("freeze", "none"), cfg.overrides))
@@ -170,12 +175,12 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
     if freeze and module.backbones:
         callbacks.append(FreezeBackboneCallback(freeze))
 
-    epochs = cfg.max_epochs or int(resolve(spec.training.epochs, cfg.overrides))
     precision = _precision(spec.training.precision, cfg.device.value)
     trainer = L.Trainer(
         accelerator=_accelerator(cfg.device.value),
         devices=1,
         max_epochs=epochs,
+        min_epochs=min(min_epochs, epochs),
         max_time={"seconds": cfg.max_time_s} if cfg.max_time_s else None,
         precision=precision,  # type: ignore[arg-type]
         gradient_clip_val=spec.training.gradient_clip,

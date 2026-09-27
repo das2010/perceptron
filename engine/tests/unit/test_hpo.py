@@ -253,7 +253,7 @@ def test_default_space_and_recommendation() -> None:
     assert recommend_strategy(spec, Budget(max_trials=1)).strategy == "single"
     rec = recommend_strategy(spec, Budget(max_trials=20, max_epochs_per_trial=30))
     assert rec.strategy == "tpe" and rec.pruner == "median"  # 20 trials: ASHA recién con 30
-    assert rec.pruner_warmup_epochs == 7
+    assert rec.pruner_warmup_epochs == 10
     big = recommend_strategy(spec, Budget(max_trials=40, max_epochs_per_trial=30))
     assert big.pruner == "asha"
     assert rec.objectives[0].metric == "val_loss" and rec.objectives[0].direction == "minimize"

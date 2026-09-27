@@ -109,6 +109,9 @@ class TrainingSpec(BaseModel):
     precision: Literal["auto", "32", "16-mixed", "bf16-mixed"] = "auto"
     gradient_clip: float | None = 1.0
     early_stopping: EarlyStopping | None = Field(default_factory=EarlyStopping)
+    min_epochs: int | None = Field(
+        default=None, ge=1, description="Épocas mínimas antes de early stopping (None = 1/3)"
+    )
     freeze_backbone_epochs: int = Field(default=0, ge=0)
     oversample: bool = Field(default=False, description="Muestreo balanceado por clase (RF-TRN-10)")
 

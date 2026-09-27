@@ -65,7 +65,9 @@ def recommend_strategy(
         pruner = "median"
     else:
         pruner = "none"
-    warmup = max(2, epochs // 4)
+    # Un tercio de las épocas sin poda: los modelos suelen pasar por mesetas antes de
+    # aprender los rasgos sutiles (visto en UC-09: meseta en 0,72 hasta la época ~15).
+    warmup = max(2, epochs // 3)
     if len(space) <= 3 and len(discrete) == len(space) and grid_size <= trials:
         strategy, why = (
             "grid",
