@@ -146,10 +146,11 @@ class TimmBackbone(nn.Module):
         super().__init__()
         import timm
 
-        self.body: Any = timm.create_model(
+        body: Any = timm.create_model(
             model, pretrained=pretrained, num_classes=0, global_pool="", in_chans=in_chans
         )
-        self.out_channels = int(self.body.num_features)
+        self.out_channels = int(body.num_features)
+        self.body: Any = body
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out: torch.Tensor = self.body.forward_features(x)
