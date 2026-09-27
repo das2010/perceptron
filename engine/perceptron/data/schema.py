@@ -81,6 +81,12 @@ def _string_parses_as_datetime(s: pl.Series) -> bool:
     return parsed.null_count() / len(sample) < 0.1
 
 
+def series_mean(s: pl.Series) -> float:
+    """Media como float (0.0 si la serie está vacía o no es numérica)."""
+    m = s.mean()
+    return float(m) if isinstance(m, int | float) else 0.0
+
+
 def _is_consecutive(s: pl.Series) -> bool:
     """Enteros únicos que cubren un rango contiguo (1..n, 1000..1000+n): típico de un id."""
     if s.len() < 20:
@@ -110,15 +116,15 @@ def _infer_column(s: pl.Series, n_rows: int) -> SemanticType:  # noqa: PLR0911, 
         strs = non_null.cast(pl.String)
         if strs.is_empty():
             return SemanticType.CATEGORICAL
-        path_ratio = strs.head(200).str.contains(_PATH_SUFFIX.pattern).mean() or 0.0
-        if float(path_ratio) > 0.9:
+        path_ratio = series_mean(strs.head(200).str.contains(_PATH_SUFFIX.pattern))
+        if path_ratio > 0.9:
             return SemanticType.FILEPATH
         if _string_parses_as_datetime(strs):
             return SemanticType.DATETIME
-        avg_len = strs.str.len_chars().mean() or 0.0
-        if all_unique and (id_named or float(avg_len) < TEXT_MIN_AVG_LEN / 2):
+        avg_len = series_mean(strs.str.len_chars())
+        if all_unique and (id_named or avg_len < TEXT_MIN_AVG_LEN / 2):
             return SemanticType.ID
-        if float(avg_len) >= TEXT_MIN_AVG_LEN:
+        if avg_len >= TEXT_MIN_AVG_LEN:
             return SemanticType.TEXT
         if n_unique <= 2:
             return SemanticType.BOOLEAN

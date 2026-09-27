@@ -52,7 +52,7 @@ def _can_stratify(y: np.ndarray, fraction: float) -> bool:
     if fraction <= 0:
         return False
     _, counts = np.unique(y, return_counts=True)
-    return len(counts) > 1 and counts.min() >= 2 and round(len(y) * fraction) >= len(counts)
+    return bool(len(counts) > 1 and counts.min() >= 2 and round(len(y) * fraction) >= len(counts))
 
 
 def _random_split(
