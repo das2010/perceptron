@@ -508,6 +508,19 @@ class QuickstartResult:
             "best_run_id": best.run_id if best else None,
             "best_params": best.params if best else None,
             "test_metrics": self.evaluation.metrics if self.evaluation else None,
+            "test_per_class": {
+                c.label: {
+                    "recall": round(c.recall, 4),
+                    "precision": round(c.precision, 4),
+                    "support": c.support,
+                }
+                for c in self.evaluation.classification.per_class
+            }
+            if self.evaluation and self.evaluation.classification
+            else None,
+            "test_confusion": self.evaluation.classification.confusion_matrix
+            if self.evaluation and self.evaluation.classification
+            else None,
             "model_version_id": self.model_version.id if self.model_version else None,
             "baseline": self.baseline,
         }
