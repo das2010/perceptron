@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -449,6 +451,7 @@ class LLMRoles:
                     llm_ctx,
                     project=project,
                     prompt_vars={"language": language},
+                    validator=report_validator(language),
                 )
                 metrics = {k: float(v) for k, v in evaluation.metrics.items()}
                 card_out = out.value.model_card.model_copy(update={"metrics": metrics})
@@ -678,6 +681,33 @@ def _range_errors(sp: SearchParam, ref: SearchParam) -> list[str]:
     if float(sp.low or 0) < lo or float(sp.high or 0) > hi:
         errors.append(f"'{sp.name}': el rango debe estar dentro de [{lo}, {hi}]")
     return errors
+
+
+REPORT_SECTIONS = {
+    "español": ["Resumen", "Datos", "Modelo", "Resultados", "Errores y límites", "Recomendaciones"],
+    "english": ["Summary", "Data", "Model", "Results", "Errors and limitations", "Recommendations"],
+}
+
+
+def report_validator(language: str) -> Callable[[Report], str | None]:
+    """El informe debe tener las secciones como encabezados Markdown (`## …`)."""
+    sections = REPORT_SECTIONS.get(language, REPORT_SECTIONS["español"])
+
+    def check(r: Report) -> str | None:
+        missing = [
+            name
+            for name in sections
+            if not re.search(
+                rf"^#{{1,3}}\s*{re.escape(name)}", r.markdown, re.MULTILINE | re.IGNORECASE
+            )
+        ]
+        if missing:
+            return "El campo markdown debe usar encabezados Markdown: faltan " + ", ".join(
+                f"'## {m}'" for m in missing
+            )
+        return None
+
+    return check
 
 
 def rules_report(
