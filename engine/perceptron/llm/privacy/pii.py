@@ -82,7 +82,7 @@ class PatternPiiEngine:
 
 
 class PresidioPiiEngine:
-    """Presidio con NER. Requiere el extra `privacy` y un motor NLP configurado."""
+    """Presidio con NER. Requiere Presidio instalado aparte y un motor NLP configurado."""
 
     name = "presidio"
     handles_free_text = True

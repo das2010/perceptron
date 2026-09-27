@@ -69,10 +69,11 @@ class KeyringSecrets:
         import keyring
 
         try:
-            return keyring.get_password(KEYRING_SERVICE, name)
+            value = keyring.get_password(KEYRING_SERVICE, name)
         except Exception:  # sin backend (Linux headless): se sigue con el resto de la cadena
             logger.debug("keyring no disponible", exc_info=True)
             return None
+        return str(value) if value else None
 
     def set(self, name: str, value: str) -> None:
         import keyring

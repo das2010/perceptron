@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
+from typing import Any
 
 import httpx
 
@@ -23,11 +24,14 @@ class LLMProvider(ABC):
         base_url: str | None = None,
         timeout_s: float = 120.0,
         http_client: httpx.Client | None = None,
+        sdk_http_client: Any = None,
     ) -> None:
         self.api_key = api_key
         self.base_url = base_url
         self.timeout_s = timeout_s
         self.http_client = http_client
+        # Los SDKs de Anthropic y OpenAI usan su propio cliente (`httpx2`): tests y proxies.
+        self.sdk_http_client = sdk_http_client
 
     @abstractmethod
     def complete(self, request: LLMRequest, model: ModelInfo) -> LLMResponse:

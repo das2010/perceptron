@@ -4,7 +4,7 @@
 - Contexto: SPEC §7.7.3 pide enmascarar PII con Presidio en el nivel L2. Presidio (MIT) necesita un motor NLP para detectar nombres; los modelos spaCy en español (`es_core_news_*`) son GPL-3.0, incompatibles con un producto comercial (§16).
 - Decisión:
   - Reconocedores por patrón propios, siempre activos: email, URL, IP, IBAN, tarjeta (con Luhn), teléfono (sin fechas ISO), DNI, CUIT/CUIL, más reglas regex del usuario.
-  - `PresidioPiiEngine` (extra `privacy`) agrega NER solo con un motor NLP configurado explícitamente con licencia comercial compatible; ninguno por defecto.
+  - `PresidioPiiEngine` (Presidio instalado aparte, no como extra: spaCy restringe numpy y el lock resuelve todos los extras juntos) agrega NER solo con un motor NLP configurado explícitamente con licencia comercial compatible; ninguno por defecto.
   - Falla cerrada: sin motor NER, en L2 los campos de texto libre no se envían (queda registrado en `redactions`). L3 envía crudo; L1 no envía muestras.
   - En todos los niveles: clases del target con menos de K=5 muestras seudonimizadas (el mapeo se revierte localmente en la respuesta), rutas absolutas reemplazadas y claves con ejemplos individuales quitadas en L1.
 - Consecuencias: L2 es seguro por defecto aunque menos útil para texto hasta configurar un NER. La auditoría (`find_leaks`) y un test de propiedad verifican que en L1 no sale ningún valor individual (O4).

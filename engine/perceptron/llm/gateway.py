@@ -117,8 +117,10 @@ class Gateway:
         if settings.llm.fake_cassette is not None:
             fake = FakeLLMProvider.from_cassette(settings.llm.fake_cassette)
 
-            def factory(_name: str, _info: ProviderInfo, _key: str | None) -> LLMProvider:
+            def fake_factory(_name: str, _info: ProviderInfo, _key: str | None) -> LLMProvider:
                 return fake
+
+            factory = fake_factory
 
         return cls(db, config, secrets, provider_factory=factory)
 

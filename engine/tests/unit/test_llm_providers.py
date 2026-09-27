@@ -36,6 +36,18 @@ def _client(handler: Handler, seen: list[httpx.Request]) -> httpx.Client:
     return httpx.Client(transport=httpx.MockTransport(wrapped))
 
 
+def _sdk_client(handler: Callable[[Any], Any], seen: list[Any]) -> Any:
+    """Cliente simulado para los SDKs de Anthropic/OpenAI, que usan `httpx2`."""
+    import httpx2
+
+    def wrapped(request: Any) -> Any:
+        seen.append(request)
+        status, payload = handler(request)
+        return httpx2.Response(status, json=payload)
+
+    return httpx2.Client(transport=httpx2.MockTransport(wrapped))
+
+
 def _req(schema: dict[str, Any] | None = SCHEMA, *, images: bool = False) -> LLMRequest:
     img = [ImagePart(data_b64="aGVsbG8=")] if images else []
     return LLMRequest(
@@ -48,17 +60,17 @@ def _req(schema: dict[str, Any] | None = SCHEMA, *, images: bool = False) -> LLM
     )
 
 
-def _body(r: httpx.Request) -> dict[str, Any]:
+def _body(r: Any) -> dict[str, Any]:
     return json.loads(r.content)
 
 
 def test_anthropic_forced_tool() -> None:
-    seen: list[httpx.Request] = []
+    seen: list[Any] = []
 
-    def handler(_: httpx.Request) -> httpx.Response:
-        return httpx.Response(
+    def handler(_: Any) -> tuple[int, dict[str, Any]]:
+        return (
             200,
-            json={
+            {
                 "id": "msg_1",
                 "type": "message",
                 "role": "assistant",
@@ -73,7 +85,7 @@ def test_anthropic_forced_tool() -> None:
         )
 
     p = AnthropicProvider(
-        api_key="k", base_url="http://anthropic.test", http_client=_client(handler, seen)
+        api_key="k", base_url="http://anthropic.test", sdk_http_client=_sdk_client(handler, seen)
     )
     out = p.complete(_req(images=True), STRUCT)
     assert out.data == {"value": 4} and out.usage.input_tokens == 11
@@ -85,14 +97,11 @@ def test_anthropic_forced_tool() -> None:
 
 
 def test_anthropic_error_is_mapped() -> None:
-    def handler(_: httpx.Request) -> httpx.Response:
-        return httpx.Response(
-            400,
-            json={"type": "error", "error": {"type": "invalid_request_error", "message": "mal"}},
-        )
+    def handler(_: Any) -> tuple[int, dict[str, Any]]:
+        return 400, {"type": "error", "error": {"type": "invalid_request_error", "message": "mal"}}
 
     p = AnthropicProvider(
-        api_key="k", base_url="http://anthropic.test", http_client=_client(handler, [])
+        api_key="k", base_url="http://anthropic.test", sdk_http_client=_sdk_client(handler, [])
     )
     with pytest.raises(LLMProviderError):
         p.complete(_req(), STRUCT)
@@ -120,13 +129,11 @@ def _chat_response(content: str) -> dict[str, Any]:
     [(OpenAIProvider, "max_completion_tokens"), (MoonshotProvider, "max_tokens")],
 )
 def test_openai_family_json_schema(cls: type[OpenAIProvider], tokens_field: str) -> None:
-    seen: list[httpx.Request] = []
+    seen: list[Any] = []
     p = cls(
         api_key="k",
         base_url="http://openai.test/v1",
-        http_client=_client(
-            lambda _: httpx.Response(200, json=_chat_response('{"value": 2}')), seen
-        ),
+        sdk_http_client=_sdk_client(lambda _: (200, _chat_response('{"value": 2}')), seen),
     )
     out = p.complete(_req(images=True), STRUCT)
     assert out.data == {"value": 2} and out.usage.output_tokens == 3
@@ -139,10 +146,10 @@ def test_openai_family_json_schema(cls: type[OpenAIProvider], tokens_field: str)
 
 
 def test_openai_without_structured_output_uses_json_mode() -> None:
-    seen: list[httpx.Request] = []
+    seen: list[Any] = []
     p = OpenAIProvider(
         base_url="http://compat.test/v1",
-        http_client=_client(lambda _: httpx.Response(200, json=_chat_response("texto")), seen),
+        sdk_http_client=_sdk_client(lambda _: (200, _chat_response("texto")), seen),
     )
     out = p.complete(_req(), PLAIN)
     assert out.data is None and out.text == "texto"

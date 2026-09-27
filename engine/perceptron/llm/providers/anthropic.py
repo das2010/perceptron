@@ -33,7 +33,7 @@ class AnthropicProvider(LLMProvider):
             api_key=self.api_key,
             base_url=self.base_url,
             timeout=self.timeout_s,
-            http_client=self.http_client,
+            http_client=self.sdk_http_client,
             max_retries=2,
         )
 
