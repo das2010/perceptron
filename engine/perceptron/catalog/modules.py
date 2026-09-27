@@ -7,6 +7,7 @@ código fuente al proyecto exportable y a la vista "ver como código".
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import torch
 from torch import nn
@@ -35,7 +36,8 @@ class TabularInput(nn.Module):
     def forward(self, x_num: torch.Tensor, x_cat: torch.Tensor) -> torch.Tensor:
         parts = [self.num_norm(x_num)] if self.num_norm is not None else []
         parts += [emb(x_cat[:, i]) for i, emb in enumerate(self.embeddings)]
-        return self.dropout(torch.cat(parts, dim=1))
+        out: torch.Tensor = self.dropout(torch.cat(parts, dim=1))
+        return out
 
 
 def _activation(name: str) -> nn.Module:
@@ -65,7 +67,8 @@ class MLPBlock(nn.Module):
         self.out_features = d
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.net(x)
+        out: torch.Tensor = self.net(x)
+        return out
 
 
 class ResidualMLPBlock(nn.Module):
@@ -95,7 +98,8 @@ class ResidualMLPBlock(nn.Module):
         x = self.proj(x)
         for block in self.blocks:
             x = x + block(x)
-        return self.out(x)
+        out: torch.Tensor = self.out(x)
+        return out
 
 
 class FTTransformer(nn.Module):
@@ -131,7 +135,8 @@ class FTTransformer(nn.Module):
         tokens = [x_num.unsqueeze(-1) * self.num_weight + self.num_bias] if x_num.shape[1] else []
         tokens += [emb(x_cat[:, i]).unsqueeze(1) for i, emb in enumerate(self.cat_embeddings)]
         x = torch.cat([self.cls.expand(x_num.shape[0], -1, -1), *tokens], dim=1)
-        return self.norm(self.encoder(x)[:, 0])
+        out: torch.Tensor = self.norm(self.encoder(x)[:, 0])
+        return out
 
 
 class TimmBackbone(nn.Module):
@@ -141,13 +146,13 @@ class TimmBackbone(nn.Module):
         super().__init__()
         import timm
 
-        self.body = timm.create_model(
+        self.body: Any = timm.create_model(
             model, pretrained=pretrained, num_classes=0, global_pool="", in_chans=in_chans
         )
         self.out_channels = int(self.body.num_features)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.body.forward_features(x)
+        out: torch.Tensor = self.body.forward_features(x)
         if out.dim() == 3:  # ViT: [B, tokens, C] → [B, C, 1, 1] con el token de clase
             out = out[:, 0].unsqueeze(-1).unsqueeze(-1)
         return out
@@ -177,7 +182,8 @@ class SmallCNN(nn.Module):
         self.out_channels = c
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.net(x)
+        out: torch.Tensor = self.net(x)
+        return out
 
 
 class ChannelAdapter(nn.Module):
@@ -186,7 +192,8 @@ class ChannelAdapter(nn.Module):
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.conv(x)
+        out: torch.Tensor = self.conv(x)
+        return out
 
 
 class GlobalAvgPool(nn.Module):

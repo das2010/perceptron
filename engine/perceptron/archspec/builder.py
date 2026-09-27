@@ -171,6 +171,7 @@ def _dummy(t: TensorSpec, device: torch.device, batch: int = 2) -> tuple[torch.T
 
 def _out_spec(block: BlockSpec, inputs: list[TensorSpec], out: torch.Tensor) -> TensorSpec:
     shape = tuple(int(s) for s in out.shape[1:])
+    kind: TensorKind
     if block.key in SHAPE_PRESERVING:
         kind = inputs[0].kind if inputs[0].kind is not TensorKind.IMAGE else TensorKind.FEATURE_MAP
     else:
