@@ -26,10 +26,10 @@ from perceptron.domain.enums import Modality, TaskType
 class TabularDataset(Dataset[tuple[torch.Tensor, ...]]):
     def __init__(self, fitted: FittedPipeline, df: pl.DataFrame) -> None:
         arr = transform_tabular(fitted, df)
-        self.x_num = torch.from_numpy(arr.x_num)
-        self.x_cat = torch.from_numpy(arr.x_cat)
+        self.x_num = torch.tensor(arr.x_num)  # copia: los arrays de Polars son de solo lectura
+        self.x_cat = torch.tensor(arr.x_cat)
         y = arr.y if arr.y is not None else np.zeros(df.height, dtype=np.int64)
-        self.y = torch.from_numpy(y)
+        self.y = torch.tensor(y)
 
     def __len__(self) -> int:
         return len(self.y)
@@ -48,7 +48,7 @@ class ImageDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         self.paths = [files_dir / p for p in df["path"].to_list()]
         target = fitted.spec.target
         if target and target.name in df.columns:
-            self.y = torch.from_numpy(encode_target(fitted, df[target.name]))
+            self.y = torch.tensor(encode_target(fitted, df[target.name]))
         else:
             self.y = torch.zeros(len(self.paths), dtype=torch.long)
         self.transform = image_transforms(fitted, train=train)

@@ -5,6 +5,8 @@ Heurísticas de la tabla de SPEC §7.9.
 
 from __future__ import annotations
 
+from typing import Literal
+
 from perceptron.archspec.schema import ArchSpec, resolve
 from perceptron.hpo.strategy import Budget, HPOStrategy, Objective, default_search_space
 from perceptron.training.module import monitor_mode
@@ -23,7 +25,9 @@ def recommend_strategy(
     space = default_search_space(spec)
     es = spec.training.early_stopping
     metric = metric or (es.monitor if es else "val_loss")
-    direction = "minimize" if monitor_mode(metric) == "min" else "maximize"
+    direction: Literal["minimize", "maximize"] = (
+        "minimize" if monitor_mode(metric) == "min" else "maximize"
+    )
     objectives = [Objective(metric=metric, direction=direction), *(extra_objectives or [])]
     epochs = budget.max_epochs_per_trial or int(resolve(spec.training.epochs))
     trials = budget.max_trials

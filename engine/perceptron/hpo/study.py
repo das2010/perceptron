@@ -8,6 +8,7 @@ storage SQLite permite reanudar un estudio interrumpido.
 
 from __future__ import annotations
 
+import itertools
 import logging
 import threading
 import time
@@ -87,8 +88,9 @@ def _sampler(s: HPOStrategy) -> optuna.samplers.BaseSampler:
         case "random" | "single":
             return optuna.samplers.RandomSampler(seed=s.seed)
         case "grid":
-            grid = {p.name: p.grid_values() for p in s.search_space}
-            return optuna.samplers.GridSampler(grid, seed=s.seed)
+            # Los puntos de la grilla se encolan en `run_study` (GridSampler de Optuna llama
+            # a `study.stop()`, que no funciona con la interfaz ask/tell).
+            return optuna.samplers.RandomSampler(seed=s.seed)
         case "cmaes":
             try:
                 import cmaes  # noqa: F401
@@ -165,6 +167,21 @@ class _TrialMonitor:
                 self.handle.prune()
 
 
+def _enqueue_grid(study: optuna.Study, space: list[SearchParam]) -> int:
+    """Encola los puntos de la grilla que todavía no se probaron. Devuelve el total."""
+    names = [p.name for p in space]
+    points = list(itertools.product(*(p.grid_values() for p in space)))
+    tried = {tuple(t.params.get(n) for n in names) for t in study.get_trials(deepcopy=False)}
+    tried |= {
+        tuple(t.system_attrs.get("fixed_params", {}).get(n) for n in names)
+        for t in study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.WAITING,))
+    }
+    for point in points:
+        if point not in tried:
+            study.enqueue_trial(dict(zip(names, point, strict=True)))
+    return len(points)
+
+
 def _reached(value: float, target: float | None, direction: str) -> bool:
     if target is None:
         return False
@@ -208,9 +225,7 @@ def run_study(
     stop_reason: StopReason = "max_trials"
     grid_total = None
     if strategy.strategy == "grid":
-        grid_total = 1
-        for p in strategy.search_space:
-            grid_total *= len(p.grid_values())
+        grid_total = _enqueue_grid(study, strategy.search_space)
 
     while True:
         done = [t for t in study.get_trials(deepcopy=False) if t.state in finished_states]
