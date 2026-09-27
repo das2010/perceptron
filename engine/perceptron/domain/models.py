@@ -10,7 +10,7 @@ Toda entidad tiene `version` para bloqueo optimista (RF-SRV-03).
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -64,6 +64,9 @@ class Workspace(Entity):
     id: str = Field(default_factory=_id_factory(IdPrefix.WORKSPACE))
     name: str = Field(min_length=1, max_length=200)
     max_privacy_level: PrivacyLevel = PrivacyLevel.L3
+    local_llm_max_privacy: PrivacyLevel | None = Field(
+        default=None, description="Tope con LLM local; puede superar el general (RF-PRV-02)"
+    )
     allowed_llm_providers: list[str] | None = None
 
 
@@ -297,6 +300,15 @@ class LLMCall(Entity):
     input_tokens: int = Field(default=0, ge=0)
     output_tokens: int = Field(default=0, ge=0)
     cost_usd: float = Field(default=0.0, ge=0)
+    status: Literal["ok", "invalid", "error"] = "ok"
+    error: str | None = None
+    attempt: int = Field(default=1, ge=1, description="Intento dentro de la llamada (RF-LLM-04)")
+    cache_hit: bool = False
+    redactions: list[str] = Field(
+        default_factory=list, description="Qué quitó o enmascaró el PrivacyFilter"
+    )
+    scope: str | None = Field(default=None, description="Ámbito del presupuesto: run, agente…")
+    latency_s: float = Field(default=0.0, ge=0)
 
 
 ALL_ENTITIES: tuple[type[Entity], ...] = (

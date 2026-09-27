@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, WebSocket, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,7 +16,7 @@ from perceptron.archspec.validate import ValidationReport
 from perceptron.catalog.registry import BLOCKS, blocks_for
 from perceptron.core.errors import NotFoundError
 from perceptron.data.pipeline.pipeline import PipelineSpec, transform_tabular
-from perceptron.domain.enums import Device, Modality, TaskType
+from perceptron.domain.enums import Device, Modality, Origin, TaskType
 from perceptron.domain.models import ArchSpecRecord, Evaluation, ModelVersion, Pipeline, Run, Study
 from perceptron.evaluation.evaluate import EvaluationReport
 from perceptron.hpo.strategy import Budget, HPOStrategy
@@ -25,6 +25,7 @@ from perceptron.services.workflow import Workflow
 
 router = APIRouter()
 Ctx = Annotated[EngineContext, Depends(get_context)]
+Mode = Literal["auto", "llm", "rules"]
 
 
 # ------------------------------------------------------------------ pipelines
@@ -99,12 +100,38 @@ class ProposeArchBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     dataset_version_id: str
     pipeline_id: str
+    mode: Mode = Field(
+        default="auto", description="auto: LLM si está disponible; si no, reglas (RF-ARC-04)"
+    )
+    n: int = Field(default=3, ge=2, le=4, description="Propuestas pedidas al LLM (RF-ARC-01)")
+    device: Device | None = None
+
+
+class ArchEstimates(BaseModel):
+    num_params: float | None = None
+    memory_mb: float | None = None
+    epoch_time_s: float | None = None
 
 
 class ArchProposal(BaseModel):
     archspec: ArchSpecRecord
+    title: str
     rationale: str
     validation: ValidationReport
+    pros: list[str] = Field(default_factory=list)
+    cons: list[str] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+    confidence: float | None = None
+    estimates: ArchEstimates = Field(default_factory=ArchEstimates)
+
+
+class ArchProposals(BaseModel):
+    proposals: list[ArchProposal]
+    origin: Origin
+    llm_call_id: str | None = None
+    fallback_reason: str | None = Field(
+        default=None, description="Por qué se usaron reglas o se descartaron propuestas"
+    )
 
 
 class CodeResponse(BaseModel):
@@ -117,11 +144,39 @@ class CodeResponse(BaseModel):
     tags=["arch"],
     operation_id="proposeArchitecture",
 )
-def propose_architecture(project_id: str, body: ProposeArchBody, ctx: Ctx) -> ArchProposal:
+def propose_architecture(project_id: str, body: ProposeArchBody, ctx: Ctx) -> ArchProposals:
+    """2–4 propuestas del LLM validadas, o la de reglas como fallback (RF-ARC-01..04).
+
+    Cada propuesta ya queda guardada como ArchSpec (origin llm/rules): el usuario elige una
+    por `archspec.id`, la edita o las descarta.
+    """
     ctx.projects.get(project_id)
-    wf = Workflow(ctx)
-    record, why = wf.propose_architecture(body.dataset_version_id, body.pipeline_id)
-    return ArchProposal(archspec=record, rationale=why, validation=wf.validate(record.spec or {}))
+    out = Workflow(ctx).roles.propose_architectures(
+        body.dataset_version_id,
+        body.pipeline_id,
+        mode=body.mode,
+        n=body.n,
+        device=body.device.value if body.device else None,
+    )
+    return ArchProposals(
+        proposals=[
+            ArchProposal(
+                archspec=o.record,
+                title=o.title,
+                rationale=o.rationale,
+                validation=o.validation,
+                pros=o.pros,
+                cons=o.cons,
+                risks=o.risks,
+                confidence=o.confidence,
+                estimates=ArchEstimates(**o.estimates),
+            )
+            for o in out.options
+        ],
+        origin=out.origin,
+        llm_call_id=out.llm_call_id,
+        fallback_reason=out.fallback_reason,
+    )
 
 
 @router.post("/arch/validate", tags=["arch"], operation_id="validateArchitecture")
@@ -149,6 +204,10 @@ class StrategyBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     archspec_id: str
     budget: Budget = Field(default_factory=Budget)
+    mode: Mode = "auto"
+    dataset_version_id: str | None = Field(
+        default=None, description="Dataset para darle al estratega el perfil (opcional)"
+    )
 
 
 class StudyCreate(BaseModel):
@@ -171,7 +230,12 @@ class StudyLaunch(BaseModel):
 )
 def hpo_strategy(project_id: str, body: StrategyBody, ctx: Ctx) -> HPOStrategy:
     ctx.projects.get(project_id)
-    return Workflow(ctx).hpo_strategy(body.archspec_id, body.budget)
+    return Workflow(ctx).hpo_strategy(
+        body.archspec_id,
+        body.budget,
+        mode=body.mode,
+        dataset_version_id=body.dataset_version_id,
+    )
 
 
 def _launch_study(
@@ -225,6 +289,7 @@ def create_study(project_id: str, body: StudyCreate, ctx: Ctx) -> StudyLaunch:
                 "request": body.model_dump(mode="json"),
             },
             objectives=[o.metric for o in strategy.objectives],
+            origin=strategy.origin,
         )
     )
     return StudyLaunch(study=study, job=_launch_study(ctx, study, body, strategy))

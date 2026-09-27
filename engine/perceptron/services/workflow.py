@@ -1,6 +1,8 @@
-"""Orquestación del flujo de un proyecto (Capa 1, sin LLM).
+"""Orquestación del flujo de un proyecto.
 
-ingesta → profiling → pipeline → arquitectura (reglas) → HPO → evaluación → registro.
+ingesta → profiling → pipeline → arquitectura → HPO → evaluación → registro.
+Las reglas (Capa 1) son el camino por defecto; los roles del LLM (Capa 2) viven en
+`services.llm_roles` y caen a estas mismas reglas si el LLM no está disponible.
 La API y la CLI llaman a estas funciones; ninguna contiene lógica de ML propia.
 """
 
@@ -11,7 +13,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from perceptron.api.context import EngineContext
 from perceptron.archspec.schema import ArchSpec
@@ -43,6 +45,7 @@ from perceptron.domain.models import (
     DatasetVersion,
     DataSource,
     Evaluation,
+    LLMCall,
     ModelVersion,
     Pipeline,
     Profile,
@@ -61,11 +64,16 @@ from perceptron.evaluation.evaluate import (
 from perceptron.hpo.recommend import recommend_strategy
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.hpo.study import StudyControl, StudyResult, TrialRecord, run_study
+from perceptron.llm.schemas import Report
 from perceptron.tracking.tracker import MlflowTracker, RunRecorder, Tracker
 from perceptron.training.config import RunConfig, RunEvent, RunResult
 from perceptron.training.hardware import detect_hardware
 
+if TYPE_CHECKING:
+    from perceptron.services.llm_roles import LLMRoles
+
 logger = logging.getLogger(__name__)
+Mode = Literal["auto", "llm", "rules"]
 
 _RUN_STATUS = {
     "succeeded": RunStatus.SUCCEEDED,
@@ -80,6 +88,13 @@ class Workflow:
     def __init__(self, ctx: EngineContext, tracker: Tracker | None = None) -> None:
         self.ctx = ctx
         self._tracker = tracker
+
+    @property
+    def roles(self) -> LLMRoles:
+        """Arquitecto, estratega de HPO, diagnosticador, informante y etiquetador (Capa 2)."""
+        from perceptron.services.llm_roles import LLMRoles
+
+        return LLMRoles(self)
 
     @property
     def tracker(self) -> Tracker:
@@ -278,7 +293,18 @@ class Workflow:
 
     # ------------------------------------------------------------------ HPO / entrenamiento
 
-    def hpo_strategy(self, archspec_id: str, budget: Budget) -> HPOStrategy:
+    def hpo_strategy(
+        self,
+        archspec_id: str,
+        budget: Budget,
+        *,
+        mode: Mode = "rules",
+        dataset_version_id: str | None = None,
+    ) -> HPOStrategy:
+        if mode != "rules":
+            return self.roles.hpo_strategy(
+                archspec_id, budget, mode=mode, dataset_version_id=dataset_version_id
+            )
         record = self.ctx.repo(ArchSpecRecord).get(archspec_id)
         return recommend_strategy(ArchSpec.model_validate(record.spec), budget)
 
@@ -306,7 +332,7 @@ class Workflow:
             strategy=strategy.model_dump(mode="json"),
             budget=strategy.budget.model_dump(mode="json"),
             objectives=[o.metric for o in strategy.objectives],
-            origin=Origin.RULES,
+            origin=strategy.origin,
         )
         if self.ctx.repo(Study).find(st.id) is None:
             self.ctx.repo(Study).add(st)
@@ -485,6 +511,11 @@ class QuickstartResult:
     evaluation: EvaluationReport | None
     model_version: ModelVersion | None
     baseline: dict[str, Any] | None = None
+    arch_origin: Origin = Origin.RULES
+    llm_fallback: str | None = None
+    report: Report | None = None
+    llm_calls: int = 0
+    llm_cost_usd: float = 0.0
 
     def summary(self) -> dict[str, Any]:
         best = self.study_result.best_trial
@@ -523,6 +554,12 @@ class QuickstartResult:
             else None,
             "model_version_id": self.model_version.id if self.model_version else None,
             "baseline": self.baseline,
+            "architecture_origin": self.arch_origin.value,
+            "hpo_origin": self.strategy.origin.value,
+            "llm_fallback": self.llm_fallback,
+            "llm_calls": self.llm_calls,
+            "llm_cost_usd": round(self.llm_cost_usd, 6),
+            "report_origin": self.report.origin if self.report else None,
         }
 
 
@@ -541,10 +578,15 @@ def quickstart(
     device: Device | None = None,
     on_event: Callable[[RunEvent], None] | None = None,
     tracker: Tracker | None = None,
+    llm: bool = False,
+    goal: str | None = None,
 ) -> QuickstartResult:
-    """Todo el flujo con reglas, sin escribir código (camino de aceptación de la Capa 1)."""
+    """Todo el flujo sin escribir código. Con `llm`, arquitectura, HPO e informe los propone
+    el LLM (si está disponible; si no, reglas). Camino de aceptación de las Capas 1 y 2."""
     wf = Workflow(ctx, tracker)
-    project = ctx.projects.add(Project(name=name or source.stem, goal="quickstart"))
+    project = ctx.projects.add(
+        Project(name=name or source.stem, goal=goal or ("" if llm else "quickstart"))
+    )
     ctx.files.init_project(project)
     dv = wf.ingest(
         project.id,
@@ -556,10 +598,16 @@ def quickstart(
     )
     card = wf.profile(dv.id)
     pipeline = wf.propose_pipeline(dv.id)
-    archspec, why = wf.propose_architecture(dv.id, pipeline.id)
+    budget = Budget(max_trials=trials, max_epochs_per_trial=max_epochs, max_time_s=max_time_s)
+    arch_origin, fallback = Origin.RULES, None
+    if llm:
+        proposals = wf.roles.propose_architectures(dv.id, pipeline.id, mode="auto")
+        archspec, why = proposals.options[0].record, proposals.options[0].rationale
+        arch_origin, fallback = proposals.origin, proposals.fallback_reason
+    else:
+        archspec, why = wf.propose_architecture(dv.id, pipeline.id)
     strategy = wf.hpo_strategy(
-        archspec.id,
-        Budget(max_trials=trials, max_epochs_per_trial=max_epochs, max_time_s=max_time_s),
+        archspec.id, budget, mode="auto" if llm else "rules", dataset_version_id=dv.id
     )
     study, result = wf.run_study(
         project.id, dv.id, pipeline.id, archspec.id, strategy, device=device, on_event=on_event
@@ -571,6 +619,10 @@ def quickstart(
     baseline = None
     if dv.modality is Modality.TABULAR and evaluation is not None:
         baseline = wf.baseline(dv.id, pipeline.id, project.id)
+    report = None
+    if llm and result.best_trial is not None:
+        report = wf.roles.report(result.best_trial.run_id, mode="auto")
+    calls = list(ctx.repo(LLMCall).list(filters={"project_id": project.id}, limit=1000))
     return QuickstartResult(
         project=ctx.projects.get(project.id),
         dataset=dv,
@@ -584,6 +636,11 @@ def quickstart(
         evaluation=evaluation,
         model_version=mv,
         baseline=baseline,
+        arch_origin=arch_origin,
+        llm_fallback=fallback,
+        report=report,
+        llm_calls=len(calls),
+        llm_cost_usd=sum(c.cost_usd for c in calls),
     )
 
 

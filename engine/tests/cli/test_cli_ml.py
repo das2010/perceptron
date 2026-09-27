@@ -54,7 +54,7 @@ def test_step_by_step_commands(workspace_dir: Path, fixtures_dir: Path) -> None:
     card = run("data", "profile", dv["id"])
     assert card["target"]["name"] == "churn"
     pipe = run("pipeline", "propose", dv["id"])
-    arch = run("arch", "propose", dv["id"], "--pipeline", pipe["id"])
+    arch = run("arch", "propose", dv["id"], "--pipeline", pipe["id"])["proposals"][0]
     strategy = run("hpo", "strategy", arch["archspec"]["id"], "--trials", "2")
     assert strategy["budget"]["max_trials"] == 2
     trained = run(

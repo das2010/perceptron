@@ -5,3 +5,4 @@
 - Decisión: `PrivacyLevel` por proyecto con default **L1**. El filtro se aplica en el Gateway, nunca en cada llamador; cada `LLMCall` registra el payload ya filtrado y el nivel aplicado (auditoría RF-PRV-03).
 - Consecuencias: Tests de propiedad (hypothesis) en Capa 2 verifican que ningún valor individual aparece en payloads L1.
 - Alternativas consideradas: Filtrado por llamador (descartado: fácil de olvidar).
+- Implementación (Capa 2a): `llm/privacy/` (`PrivacyFilter`, PII por patrones + NER opcional, ADR-0022; `find_leaks` para auditoría) y test de propiedad en `tests/unit/test_llm_privacy.py`. Política de workspace: `max_privacy_level`, `local_llm_max_privacy` (RF-PRV-02) y `allowed_llm_providers`.

@@ -70,6 +70,18 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 
 **Pendiente, documentado:** detectores de torchvision y U-Net con encoder timm (ADR-0019), detección de eventos sonoros (SED), LoRA/PEFT, fusión tabular + texto (UC-02).
 
+## Capa 2a — LLM Gateway, privacidad, prompts y roles
+
+| Sub-hito | Estado |
+|---|---|
+| 0. Configuración, catálogo de modelos, secretos, caché (ADR-0020) | ✅ |
+| 1. Gateway + 6 adaptadores + `FakeLLMProvider` (ADR-0021) | ✅ |
+| 2. PrivacyFilter L0–L3, PII, auditoría y test de propiedad (ADR-0022) | ✅ |
+| 3. Prompts versionados (`llm/prompts/<propósito>/<nombre>-vN.md`) | ✅ |
+| 4. Roles: arquitecto, estratega de HPO, diagnosticador, informante, etiquetador | ✅ |
+
+**Aceptación 2a (CI de cada PR, con `FakeLLMProvider`):** salida válida por rol, reintento con feedback, fallback a reglas (L0, sin clave, presupuesto, 3 fallos), caché gratis en la segunda llamada, auditoría de cada intento y ningún valor individual en payloads L1 (hypothesis). La aceptación con Claude y Ollama es de la Capa 2b.
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
@@ -102,36 +114,36 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 | RF-PIP-04 | sí | 1/3 | El pipeline se serializa (JSON) y se ajusta solo con train (fit/transform separado)… | ✅ fit solo con train, estado JSON empaquetable |
 | RF-PIP-05 |  | 1/3 | El LLM puede sugerir cambios al pipeline con justificación; el usuario acepta/rechaza… | ⬜ pendiente |
 | RF-LBL-01 |  | 4 | Herramientas de etiquetado: clase por muestra (imagen/texto/audio), multi-etiqueta,… | ⬜ pendiente |
-| RF-LBL-02 |  | 4 | Pre-etiquetado automático con: | ⬜ pendiente |
+| RF-LBL-02 |  | 4 | Pre-etiquetado automático con: | 🟡 pre-etiquetado de texto con el LLM (L2 con NER o L3), `POST /labels/prelabel`; zero-shot locales y modelo propio en Capa 4 |
 | RF-LBL-03 |  | 4 | Active learning: priorizar para revisión humana las muestras de mayor… | ⬜ pendiente |
-| RF-LBL-04 |  | 4 | Guía de etiquetado: el usuario describe las clases en lenguaje natural; el LLM genera… | ⬜ pendiente |
+| RF-LBL-04 |  | 4 | Guía de etiquetado: el usuario describe las clases en lenguaje natural; el LLM genera… | ✅ guía de etiquetado por LLM (`POST /projects/{id}/labels/guide`); sin LLM, las definiciones del usuario |
 | RF-LBL-05 |  | 4 | Métricas de calidad del etiquetado: acuerdo humano-modelo, clases confusas, posibles… | ⬜ pendiente |
 | RF-LBL-06 |  | 4 | Importar/exportar etiquetas en COCO, YOLO, VOC, CSV, JSONL. | ⬜ pendiente |
 | RF-WIZ-01 | sí | 3 | Pasos 1, 2, 3, 5, 6, 7, 8, 9 para tabular e imagen. | ⬜ pendiente |
 | RF-WIZ-02 |  | 3 | Cada paso muestra "¿Por qué?" con la explicación del LLM y permite rechazar/editar. | ⬜ pendiente |
 | RF-WIZ-03 |  | 3 | Sin LLM configurado (o privacidad L0) el wizard funciona con recomendaciones por… | ⬜ pendiente |
 | RF-WIZ-04 |  | 3 | El estado del wizard es un documento ProjectDraft versionado. | ⬜ pendiente |
-| RF-LLM-01 | sí | 2 | Interfaz única LLMProvider con adaptadores: Anthropic, OpenAI, Google Gemini, Kimi /… | ⬜ pendiente |
-| RF-LLM-02 | sí | 2 | Capacidades declaradas por modelo: structured_output, tool_use, vision,… | ⬜ pendiente |
-| RF-LLM-03 | sí | 2 | Perfiles LLM configurables: qué modelo se usa para cada *propósito* (copilot,… | ⬜ pendiente |
-| RF-LLM-04 | sí | 2 | Salida estructurada: toda respuesta que alimenta al sistema se pide como JSON contra… | ⬜ pendiente |
-| RF-LLM-05 |  | 2 | Streaming de respuestas al panel de copiloto. | ⬜ pendiente |
-| RF-LLM-06 |  | 2 | Control de costos: presupuesto por proyecto/run/usuario, conteo de tokens, estimación… | ⬜ pendiente |
-| RF-LLM-07 |  | 2 | Caché de respuestas por hash de (prompt, modelo, parámetros) para reproducibilidad y… | ⬜ pendiente |
-| RF-LLM-08 |  | 2 | Claves API: en desktop, keychain del SO; en servidor, cifradas (AES-GCM, clave maestra… | ⬜ pendiente |
-| RF-PRV-01 | sí | 2 | El PrivacyFilter se aplica en el Gateway (no en cada llamador). | ⬜ pendiente |
-| RF-PRV-02 |  | 2 | Con un LLM local el Admin puede permitir L3 aunque la política general sea L1. | ⬜ pendiente |
-| RF-PRV-03 | sí | 2 | Log de auditoría: el usuario puede ver exactamente qué payload se envió en cada… | ⬜ pendiente |
-| RF-PRV-04 |  | 2 | Política de workspace: nivel máximo permitido y proveedores permitidos, definidos por… | ⬜ pendiente |
-| RF-ARC-01 | sí | 2 | El LLM genera 2–4 propuestas usando exclusivamente bloques del catálogo (§8) en… | ⬜ pendiente |
-| RF-ARC-02 | sí | 1/2 | Validación de cada propuesta: schema, compatibilidad de shapes (construcción en meta… | ✅ `archspec.validate` (6 etapas de §9.3) |
+| RF-LLM-01 | sí | 2 | Interfaz única LLMProvider con adaptadores: Anthropic, OpenAI, Google Gemini, Kimi /… | ✅ `llm.providers`: Anthropic, OpenAI, Gemini, Kimi/Moonshot, OpenAI-compatible, Ollama |
+| RF-LLM-02 | sí | 2 | Capacidades declaradas por modelo: structured_output, tool_use, vision,… | ✅ capacidades en `llm/catalog.yaml`; sin `structured_output` → JSON en texto; sin `vision` no salen imágenes |
+| RF-LLM-03 | sí | 2 | Perfiles LLM configurables: qué modelo se usa para cada *propósito* (copilot,… | ✅ perfiles por propósito (catálogo + `PUT /llm/profiles`), `Project.llm_profile_id` |
+| RF-LLM-04 | sí | 2 | Salida estructurada: toda respuesta que alimenta al sistema se pide como JSON contra… | ✅ JSON Schema por proveedor + Pydantic + validador de dominio, 3 intentos con feedback |
+| RF-LLM-05 |  | 2 | Streaming de respuestas al panel de copiloto. | 🟡 `Gateway.stream_chat` y `stream()` en todos los adaptadores; WS del copiloto en Capa 3 |
+| RF-LLM-06 |  | 2 | Control de costos: presupuesto por proyecto/run/usuario, conteo de tokens, estimación… | 🟡 costo por llamada (catálogo), presupuesto por proyecto y por ámbito (run/agente) con corte previo; cuotas por usuario/workspace en Capa 5 |
+| RF-LLM-07 |  | 2 | Caché de respuestas por hash de (prompt, modelo, parámetros) para reproducibilidad y… | ✅ tabla `llm_cache` por hash de proveedor + request |
+| RF-LLM-08 |  | 2 | Claves API: en desktop, keychain del SO; en servidor, cifradas (AES-GCM, clave maestra… | ✅ keychain (`keyring`), archivo AES-GCM en servidor, entorno como último recurso; `allowed_llm_providers` |
+| RF-PRV-01 | sí | 2 | El PrivacyFilter se aplica en el Gateway (no en cada llamador). | ✅ `llm.privacy.PrivacyFilter` aplicado en el Gateway sobre un `LLMContext` tipado |
+| RF-PRV-02 |  | 2 | Con un LLM local el Admin puede permitir L3 aunque la política general sea L1. | ✅ `Workspace.local_llm_max_privacy` para LLM locales |
+| RF-PRV-03 | sí | 2 | Log de auditoría: el usuario puede ver exactamente qué payload se envió en cada… | ✅ `LLMCall` con payload post-filtro, redacciones, intento y costo; `GET /llm/audit`, `perceptron llm audit`; `find_leaks` |
+| RF-PRV-04 |  | 2 | Política de workspace: nivel máximo permitido y proveedores permitidos, definidos por… | 🟡 nivel máximo y proveedores permitidos aplicados en el Gateway; edición por el Admin en Capa 5 |
+| RF-ARC-01 | sí | 2 | El LLM genera 2–4 propuestas usando exclusivamente bloques del catálogo (§8) en… | ✅ arquitecto LLM: 2–4 propuestas con justificación, pros/contras/riesgos y estimaciones del sistema (parámetros, memoria, tiempo por época medido) |
+| RF-ARC-02 | sí | 1/2 | Validación de cada propuesta: schema, compatibilidad de shapes (construcción en meta… | ✅ `archspec.validate` (6 etapas de §9.3) sobre cada propuesta del LLM, con feedback al reintento |
 | RF-ARC-03 |  | 2 | Mini-torneo opcional: entrenar cada propuesta con un presupuesto corto (p. ej. 10 %… | ⬜ pendiente |
-| RF-ARC-04 | sí | 1/2 | Fallback por reglas si el LLM no está disponible o falla la validación 3 veces. | ✅ `catalog.rules` |
+| RF-ARC-04 | sí | 1/2 | Fallback por reglas si el LLM no está disponible o falla la validación 3 veces. | ✅ `catalog.rules` como fallback (L0, sin LLM, presupuesto, 3 fallos) con motivo informado |
 | RF-ARC-05 |  | 3 | Editor visual de ArchSpec (React Flow): bloques del catálogo como nodos, parámetros en… | ⬜ pendiente |
 | RF-ARC-06 |  | 3 | Modo experto — código libre: el LLM (o el usuario) escribe un… | ⬜ pendiente |
 | RF-ARC-07 |  | 1/2 | Conversión ArchSpec → código PyTorch legible ("ver como código") para aprendizaje y… | ✅ `archspec.to_code` (equivalencia verificada con pesos) |
 | RF-HPO-01 | sí | 1 | Estrategias soportadas: | ✅ single/random/grid/TPE/CMA-ES/NSGA-II + median/ASHA/Hyperband |
-| RF-HPO-02 | sí | 1 | El LLM estratega recibe el escenario (tamaño de datos, costo por trial, presupuesto,… | 🟡 recomendación por reglas (ASHA ≥ 30 trials, si no mediana con calentamiento); estratega LLM en Capa 2 |
+| RF-HPO-02 | sí | 1 | El LLM estratega recibe el escenario (tamaño de datos, costo por trial, presupuesto,… | ✅ estratega LLM validado contra la ArchSpec, rangos del catálogo y presupuesto; fallback por reglas |
 | RF-HPO-03 | sí | 1 | Presupuesto configurable en el wizard: tiempo total, n.º de trials, preset, métrica… | ✅ corte por trials, tiempo y métrica objetivo |
 | RF-HPO-04 |  | 1 | Paralelismo de trials según recursos: varias GPUs → un trial por GPU; en servidor,… | ⬜ pendiente |
 | RF-HPO-05 |  | 1 | Reanudación de estudios interrumpidos (almacenamiento Optuna en SQLite/PostgreSQL). | ✅ reanudación desde SQLite |
@@ -161,7 +173,7 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 | RF-EVL-03 |  | 1/4 | Análisis de errores: explorador de muestras mal predichas con filtros, slices… | ⬜ pendiente |
 | RF-EVL-04 |  | 1/4 | Fairness: el usuario marca atributos sensibles; métricas por subgrupo (Fairlearn:… | ⬜ pendiente |
 | RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | ⬜ pendiente |
-| RF-EVL-06 | sí | 2/4 | Informe final generado por el LLM (o plantilla sin LLM): resumen ejecutivo, qué se… | ⬜ pendiente |
+| RF-EVL-06 | sí | 2/4 | Informe final generado por el LLM (o plantilla sin LLM): resumen ejecutivo, qué se… | ✅ informante LLM (Markdown + model card, métricas de la evaluación) o plantilla sin LLM; `POST /runs/{rid}/report` |
 | RF-EXP-01 | sí | 4 | Exportar a ONNX (con verificación numérica vs. PyTorch), torch.export… | ⬜ pendiente |
 | RF-EXP-02 | sí | 4 | Playground en la app: cargar un archivo/fila/imagen/audio/texto, ver predicción,… | ⬜ pendiente |
 | RF-EXP-03 |  | 4 | API REST de inferencia: generar y levantar un servidor FastAPI (ONNX Runtime o… | ⬜ pendiente |

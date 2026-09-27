@@ -46,6 +46,16 @@ class EntityRow(Base):
     __table_args__ = (Index("ix_entities_kind_created", "kind", "created_at"),)
 
 
+class LLMCacheRow(Base):
+    """Caché de respuestas del LLM por hash de (prompt, modelo, parámetros) (RF-LLM-07)."""
+
+    __tablename__ = "llm_cache"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    data: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
 def sqlite_url(db_file: Path) -> str:
     # as_posix(): SQLAlchemy acepta "/" en Windows y evita escapes con espacios/acentos.
     return f"sqlite:///{db_file.resolve().as_posix()}"

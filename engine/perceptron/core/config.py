@@ -45,6 +45,42 @@ class LoggingSettings(BaseModel):
     backup_count: int = 5
 
 
+class LLMProviderSettings(BaseModel):
+    """Proveedor configurado por el usuario o el Admin; la clave va por referencia (RF-LLM-08)."""
+
+    kind: Literal["anthropic", "openai", "gemini", "moonshot", "openai_compat", "ollama", "fake"]
+    base_url: str | None = None
+    api_key_ref: str | None = Field(
+        default=None, description="Nombre del secreto en keychain/vault/entorno; nunca la clave"
+    )
+    local: bool | None = Field(
+        default=None, description="Corre en la máquina o red propia (RF-PRV-02); None = según URL"
+    )
+    timeout_s: float = Field(default=120.0, gt=0)
+
+
+class LLMSettings(BaseModel):
+    """Capa LLM (SPEC §7.7). Los IDs de modelo viven en el catálogo o en perfiles, no en código."""
+
+    enabled: bool = True
+    catalog_file: Path | None = Field(
+        default=None, description="Catálogo de modelos alternativo al empaquetado"
+    )
+    providers: dict[str, LLMProviderSettings] = Field(default_factory=dict)
+    profile: str | None = Field(
+        default=None, description="Perfil activo (default: el del catálogo)"
+    )
+    max_attempts: int = Field(
+        default=3, ge=1, le=5, description="Intentos con feedback (RF-LLM-04)"
+    )
+    cache: bool = True
+    project_budget_usd: float | None = Field(default=5.0, ge=0)
+    l2_samples: int = Field(default=5, ge=0, le=100)
+    fake_cassette: Path | None = Field(
+        default=None, description="Solo tests/CI: responde con FakeLLMProvider desde un cassette"
+    )
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="PERCEPTRON_",
@@ -59,6 +95,7 @@ class Settings(BaseSettings):
     locale: Literal["es", "en"] = "es"
     api: ApiSettings = Field(default_factory=ApiSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
+    llm: LLMSettings = Field(default_factory=LLMSettings)
 
     @property
     def paths(self) -> WorkspacePaths:

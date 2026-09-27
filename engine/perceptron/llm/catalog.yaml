@@ -1,0 +1,112 @@
+# Catálogo de proveedores y modelos LLM (RF-LLM-02, RF-LLM-03; decisión D4 de SPEC §17).
+#
+# Es configuración, no código: se actualiza sin tocar el Engine y se puede reemplazar
+# con PERCEPTRON_LLM__CATALOG_FILE. `verified: false` marca IDs/precios que hay que
+# confirmar con el proveedor antes de ofrecerlos por defecto. Costos en USD por millón
+# de tokens; se usan para estimar y cortar por presupuesto (RF-LLM-06).
+version: 1
+default_profile: anthropic
+
+providers:
+  anthropic:
+    kind: anthropic
+    api_key_ref: ANTHROPIC_API_KEY
+    models:
+      claude-sonnet-5:
+        { structured_output: true, tool_use: true, vision: true, context_window: 200000,
+          input_per_mtok: 3.0, output_per_mtok: 15.0, verified: true }
+      claude-haiku-4-5-20251001:
+        { structured_output: true, tool_use: true, vision: true, context_window: 200000,
+          input_per_mtok: 1.0, output_per_mtok: 5.0, verified: true }
+      claude-opus-5-5:
+        { structured_output: true, tool_use: true, vision: true, context_window: 200000,
+          input_per_mtok: 5.0, output_per_mtok: 25.0, verified: true }
+  openai:
+    kind: openai
+    api_key_ref: OPENAI_API_KEY
+    models:
+      gpt-5:
+        { structured_output: true, tool_use: true, vision: true, context_window: 400000,
+          input_per_mtok: 1.25, output_per_mtok: 10.0, temperature: false, verified: false }
+      gpt-5-mini:
+        { structured_output: true, tool_use: true, vision: true, context_window: 400000,
+          input_per_mtok: 0.25, output_per_mtok: 2.0, temperature: false, verified: false }
+  gemini:
+    kind: gemini
+    api_key_ref: GEMINI_API_KEY
+    models:
+      gemini-2.5-pro:
+        { structured_output: true, tool_use: true, vision: true, context_window: 1000000,
+          input_per_mtok: 1.25, output_per_mtok: 10.0, verified: false }
+      gemini-2.5-flash:
+        { structured_output: true, tool_use: true, vision: true, context_window: 1000000,
+          input_per_mtok: 0.3, output_per_mtok: 2.5, verified: false }
+  moonshot:
+    kind: moonshot
+    base_url: https://api.moonshot.ai/v1
+    api_key_ref: MOONSHOT_API_KEY
+    models:
+      kimi-k2:
+        { structured_output: false, tool_use: true, vision: false, context_window: 128000,
+          input_per_mtok: 0.6, output_per_mtok: 2.5, verified: false }
+  openai_compat:
+    kind: openai_compat
+    base_url: http://127.0.0.1:1234/v1
+    local: true
+    models:
+      local-model:
+        { structured_output: false, tool_use: false, vision: false, context_window: 32768,
+          verified: false }
+  ollama:
+    kind: ollama
+    base_url: http://127.0.0.1:11434
+    local: true
+    models:
+      # Qwen3 (Apache-2.0): chico, corre en CPU y respeta JSON Schema vía `format`.
+      "qwen3:4b":
+        { structured_output: true, tool_use: true, vision: false, context_window: 32768,
+          license: Apache-2.0, verified: true }
+
+# Perfiles: qué modelo atiende cada propósito (LLMPurpose). Un proyecto elige un perfil
+# por nombre (`Project.llm_profile_id`); si no, se usa el activo o `default_profile`.
+profiles:
+  anthropic:
+    provider: anthropic
+    purposes:
+      copilot: { model: claude-sonnet-5 }
+      architect: { model: claude-sonnet-5, max_tokens: 8192 }
+      hpo_strategist: { model: claude-sonnet-5 }
+      diagnostician: { model: claude-sonnet-5 }
+      agent: { model: claude-sonnet-5, max_tokens: 8192 }
+      reporter: { model: claude-haiku-4-5-20251001, max_tokens: 8192 }
+      labeler: { model: claude-haiku-4-5-20251001 }
+  ollama:
+    provider: ollama
+    purposes:
+      copilot: { model: "qwen3:4b" }
+      architect: { model: "qwen3:4b", max_tokens: 8192 }
+      hpo_strategist: { model: "qwen3:4b" }
+      diagnostician: { model: "qwen3:4b" }
+      agent: { model: "qwen3:4b", max_tokens: 8192 }
+      reporter: { model: "qwen3:4b", max_tokens: 8192 }
+      labeler: { model: "qwen3:4b" }
+  openai:
+    provider: openai
+    purposes:
+      copilot: { model: gpt-5 }
+      architect: { model: gpt-5, max_tokens: 8192 }
+      hpo_strategist: { model: gpt-5 }
+      diagnostician: { model: gpt-5 }
+      agent: { model: gpt-5, max_tokens: 8192 }
+      reporter: { model: gpt-5-mini, max_tokens: 8192 }
+      labeler: { model: gpt-5-mini }
+  gemini:
+    provider: gemini
+    purposes:
+      copilot: { model: gemini-2.5-flash }
+      architect: { model: gemini-2.5-pro, max_tokens: 8192 }
+      hpo_strategist: { model: gemini-2.5-flash }
+      diagnostician: { model: gemini-2.5-flash }
+      agent: { model: gemini-2.5-pro, max_tokens: 8192 }
+      reporter: { model: gemini-2.5-flash, max_tokens: 8192 }
+      labeler: { model: gemini-2.5-flash }

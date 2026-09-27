@@ -1,0 +1,12 @@
+# ADR-0020: Dependencias de la capa LLM y almacenamiento de claves
+- Estado: aceptado
+- Fecha: 2026-09-27
+- Contexto: SPEC §7.7.1 pide 6 adaptadores (Anthropic, OpenAI, Gemini, Kimi, OpenAI-compatible, Ollama) y claves en el keychain del SO (desktop) o cifradas con AES-GCM (servidor), RF-LLM-08. Cada SDK agrega peso a la instalación y superficie de licencias.
+- Decisión:
+  - `anthropic` (MIT) y `openai` (Apache-2.0) como SDKs oficiales en el extra `llm`; el adaptador OpenAI cubre también Kimi/Moonshot y los servidores compatibles (LM Studio, vLLM, llama.cpp) cambiando `base_url`.
+  - Gemini y Ollama por REST con `httpx` (BSD), sin SDK: sus APIs son simples y así se testean igual que el resto con `httpx.MockTransport`.
+  - `httpx` y `jinja2` (BSD) pasan a la base: el router `/llm` y los prompts los usan siempre.
+  - Claves: `keyring` (MIT) en desktop; `EncryptedFileSecrets` con `cryptography` (Apache-2.0/BSD) en servidor, clave maestra en `PERCEPTRON_MASTER_KEY` (32 bytes base64, la puede inyectar un KMS); variables de entorno como último recurso (CI). En configuración y auditoría solo viaja la referencia (`api_key_ref`).
+  - Catálogo de modelos y perfiles por propósito en `llm/catalog.yaml` (configuración, no código; D4). `verified: false` marca IDs y precios a confirmar.
+- Consecuencias: los IDs de modelo no están en el código; cambiar de proveedor o de modelo es editar el catálogo o `PUT /llm/profiles`. Los tests nunca tocan la red ni el keychain (proveedor falso y `MemorySecrets`).
+- Alternativas consideradas: `google-genai` (SDK extra y difícil de simular); LiteLLM como capa única (dependencia grande, menos control de la salida estructurada y de la auditoría).

@@ -26,6 +26,7 @@ class ProjectCreate(BaseModel):
     task: TaskType | None = None
     target_metric: str | None = None
     privacy_level: PrivacyLevel = PrivacyLevel.L1
+    llm_profile_id: str | None = None
     template: str | None = None
 
 
@@ -40,6 +41,7 @@ class ProjectPatch(BaseModel):
     task: TaskType | None = None
     target_metric: str | None = None
     privacy_level: PrivacyLevel | None = None
+    llm_profile_id: str | None = None
     status: ProjectStatus | None = None
 
 
