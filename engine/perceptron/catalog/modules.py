@@ -7,7 +7,7 @@ código fuente al proyecto exportable y a la vista "ver como código".
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import Any, cast
 
 import torch
 from torch import nn
@@ -368,7 +368,8 @@ class TCN(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         h = x.transpose(1, 2)
-        for layer, pad in zip(self.layers, self.pads, strict=True):
+        for module, pad in zip(self.layers, self.pads, strict=True):
+            layer = cast(nn.ModuleDict, module)
             y = layer["conv"](torch.nn.functional.pad(h, (pad, 0)))
             h = torch.relu(layer["drop"](torch.relu(y)) + layer["skip"](h))
         out: torch.Tensor = h.transpose(1, 2)
@@ -393,6 +394,7 @@ class NBeats(nn.Module):
     ) -> None:
         super().__init__()
         size = lookback * channels
+        self.horizon = horizon
         self.blocks = nn.ModuleList()
         for _ in range(blocks):
             mods: list[nn.Module] = []
@@ -412,8 +414,9 @@ class NBeats(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         residual = x.flatten(1)
-        forecast = torch.zeros(x.shape[0], self.blocks[0]["fore"].out_features, device=x.device)
-        for block in self.blocks:
+        forecast = torch.zeros(x.shape[0], self.horizon, device=x.device)
+        for module in self.blocks:
+            block = cast(nn.ModuleDict, module)
             h = block["fc"](residual)
             residual = residual - block["back"](h)
             forecast = forecast + block["fore"](h)
