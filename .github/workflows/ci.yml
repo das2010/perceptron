@@ -74,6 +74,14 @@ jobs:
       - run: pnpm gen:api
       - name: Tipos generados al día
         run: git diff --exit-code -- docs/api/openapi.json ui/src/lib/api/schema.d.ts
+      - name: Publicar contrato regenerado (para commitearlo)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-contract
+          path: |
+            docs/api/openapi.json
+            ui/src/lib/api/schema.d.ts
 
   fixtures:
     name: fixtures deterministas

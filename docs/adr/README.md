@@ -15,5 +15,8 @@
 | [0011](0011-i18n-y-marca.md) | i18n es/en y marca Preteco | aceptado |
 | [0012](0012-hooks-de-licenciamiento.md) | Hooks de licenciamiento sin enforcement en v1 | aceptado |
 | [0013](0013-persistencia-local-documental.md) | Persistencia de metadata: SQLAlchemy 2 + tabla documental, ids ULID | aceptado |
+| [0014](0014-dependencias-ml-y-torch-cpu.md) | Dependencias de ML, índice CPU de PyTorch y licencias | aceptado |
+| [0015](0015-un-subproceso-por-run.md) | Un subproceso por run/trial con eventos JSONL | aceptado |
+| [0016](0016-formato-dataset-version.md) | Formato en disco de DatasetVersion | aceptado |
 
 Plantilla: SPEC §18.3.

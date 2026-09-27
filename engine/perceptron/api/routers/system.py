@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from perceptron import __version__
 from perceptron.api.context import EngineContext, get_context
 from perceptron.core.config import RuntimeMode
+from perceptron.training.hardware import HardwareReport, detect_hardware
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -31,6 +32,12 @@ class VersionInfo(BaseModel):
 @router.get("/health", operation_id="getHealth")
 def health() -> Health:
     return Health(status="ok", version=__version__)
+
+
+@router.get("/hardware", operation_id="getHardware")
+def hardware(ctx: Annotated[EngineContext, Depends(get_context)]) -> HardwareReport:
+    """Hardware disponible y dispositivo recomendado (RF-TRN-01)."""
+    return detect_hardware(ctx.settings.workspace_dir)
 
 
 @router.get("/version", operation_id="getVersion")

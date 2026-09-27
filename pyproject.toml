@@ -7,7 +7,7 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-  "perceptron-engine",
+  "perceptron-engine[ml]",
   "perceptron-server",
   "pytest>=8",
   "pytest-cov>=5",
@@ -16,6 +16,7 @@ dev = [
   "ruff>=0.6",
   "mypy>=1.11",
   "types-pyyaml",
+  "types-psutil",
 ]
 
 [tool.uv]
@@ -27,6 +28,15 @@ members = ["engine", "server"]
 [tool.uv.sources]
 perceptron-engine = { workspace = true }
 perceptron-server = { workspace = true }
+# Desarrollo y CI con wheels CPU de PyTorch (ADR-0014). La app instala la variante
+# según el hardware detectado (RF-TRN-02, Capa 3).
+torch = [{ index = "pytorch-cpu" }]
+torchvision = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 # ---------------------------------------------------------------- ruff
 [tool.ruff]
@@ -66,6 +76,11 @@ files = ["engine/perceptron"]
 [[tool.mypy.overrides]]
 module = ["perceptron.core.*", "perceptron.domain.*", "perceptron.archspec.*", "perceptron.llm.*"]
 strict = true
+
+# Librerías de ML sin stubs completos
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "timm.*", "mlflow.*", "torchvision.*", "fastexcel.*", "scipy.*"]
+ignore_missing_imports = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
