@@ -163,3 +163,27 @@ def test_ocr_uc06(paths: ProjectPaths, fixtures_dir: Path) -> None:
     rec = recommend(card, fitted)
     assert rec.template == "crnn" and rec.spec.task.num_classes == 12
     assert np.isclose(x.shape[2] % 4, 0)
+
+
+def test_detection_evaluate_single_class() -> None:
+    """Regresión: con una sola clase torchmetrics devuelve tensores escalares."""
+    from perceptron.tasks.base import Predictions
+    from perceptron.tasks.vision import DetectionAdapter
+
+    box = torch.tensor([[4.0, 4.0, 20.0, 20.0]])
+    preds = Predictions(
+        y_true=None,
+        y_pred=np.array([1]),
+        extra={
+            "preds": [{"boxes": box, "scores": torch.tensor([0.9]), "labels": torch.tensor([0])}],
+            "targets": [{"boxes": box, "labels": torch.tensor([0])}],
+        },
+    )
+    spec = vision_task_template(TaskType.OBJECT_DETECTION, num_classes=1, image_shape=[3, 32, 32])
+
+    from types import SimpleNamespace
+
+    pipeline = SimpleNamespace(classes=["defecto"])
+    rep = DetectionAdapter().evaluate(preds, spec, pipeline)  # type: ignore[arg-type]
+    assert rep.metrics["map_50"] == pytest.approx(1.0)
+    assert rep.detail["ap_per_class"] == {"defecto": pytest.approx(1.0)}

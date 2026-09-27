@@ -178,17 +178,18 @@ class DetectionAdapter(TaskAdapter):
         res = metric.compute()
         classes = pipeline.classes or []
         per_class = {}
-        for cls_id, ap in zip(
-            res.get("classes", torch.tensor([])).tolist() if res.get("classes") is not None else [],
-            res.get("map_per_class", torch.tensor([])).flatten().tolist(),
-            strict=False,
-        ):
+        # Con una sola clase torchmetrics devuelve tensores escalares: se aplanan siempre.
+        class_ids = torch.as_tensor(res.get("classes", torch.tensor([]))).flatten().tolist()
+        class_ap = torch.as_tensor(res.get("map_per_class", torch.tensor([]))).flatten().tolist()
+        for cls_id, ap in zip(class_ids, class_ap, strict=False):
             name = classes[int(cls_id)] if int(cls_id) < len(classes) else str(cls_id)
             per_class[name] = round(float(ap), 6)
         metrics = {
             k: float(v)
             for k, v in res.items()
-            if isinstance(v, torch.Tensor) and v.numel() == 1 and k != "classes"
+            if isinstance(v, torch.Tensor)
+            and v.numel() == 1
+            and k not in ("classes", "map_per_class", "mar_100_per_class")
         }
         return TaskEvaluation(metrics=metrics, detail={"ap_per_class": per_class})
 
