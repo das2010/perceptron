@@ -119,7 +119,7 @@ def _is_consecutive(s: pl.Series) -> bool:
     return isinstance(lo, int) and isinstance(hi, int) and hi - lo + 1 == s.len()
 
 
-def _infer_column(s: pl.Series, n_rows: int) -> SemanticType:  # noqa: PLR0911, PLR0912 - tabla de decisión
+def _infer_column(s: pl.Series, n_rows: int) -> SemanticType:
     dtype = s.dtype
     non_null = s.drop_nulls()
     n_unique = non_null.n_unique()

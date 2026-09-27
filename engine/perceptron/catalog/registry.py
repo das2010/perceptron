@@ -1,0 +1,417 @@
+"""Registro de bloques del catálogo (SPEC §8).
+
+Cada bloque declara modalidades, tareas, qué tipo de tensor consume y produce,
+parámetros con rangos sugeridos (validación y espacio de HPO) y, si usa pesos
+preentrenados, su licencia. El LLM (Capa 2) solo puede componer estos bloques.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from enum import StrEnum
+from typing import Any, Literal
+
+from pydantic import BaseModel
+from torch import nn
+
+from perceptron.catalog import modules as m
+from perceptron.domain.enums import Modality, TaskType
+
+
+class TensorKind(StrEnum):
+    TABULAR = "tabular"  # par (x_num [B, N], x_cat [B, K])
+    FEATURES = "features"  # [B, D]
+    FEATURE_MAP = "feature_map"  # [B, C, H, W]
+    IMAGE = "image"  # [B, C, H, W] de entrada
+
+
+@dataclass(frozen=True)
+class TensorSpec:
+    kind: TensorKind
+    shape: tuple[int, ...]  # sin batch
+    num_numeric: int = 0
+    cardinalities: tuple[int, ...] = ()
+
+    @property
+    def channels(self) -> int:
+        return self.shape[0]
+
+    @property
+    def dim(self) -> int:
+        return self.shape[0]
+
+
+class ParamSpec(BaseModel):
+    type: Literal["int", "float", "bool", "str", "int_list"]
+    default: Any = None
+    low: float | None = None
+    high: float | None = None
+    log: bool = False
+    choices: list[Any] | None = None
+    tunable: bool = False
+    description: str = ""
+
+
+class WeightInfo(BaseModel):
+    """Pesos preentrenados curados (revisar en la auditoría de licencias, Capa 7)."""
+
+    model: str
+    pretrained_tag: str
+    license: str
+    commercial_ok: bool
+    params_m: float
+    source: str = "timm"
+
+
+BuildFn = Callable[[dict[str, Any], list[TensorSpec], "BuildContext"], nn.Module]
+
+
+@dataclass
+class BuildContext:
+    num_outputs: int
+    pretrained_allowed: bool = True
+
+
+@dataclass(frozen=True)
+class BlockSpec:
+    key: str
+    description: str
+    consumes: tuple[TensorKind, ...]
+    produces: TensorKind
+    build: BuildFn
+    params: dict[str, ParamSpec] = field(default_factory=dict)
+    modalities: tuple[Modality, ...] = ()  # vacío = todas
+    tasks: tuple[TaskType, ...] = ()  # vacío = todas
+    multi_input: bool = False
+    is_backbone: bool = False
+
+    def public(self) -> dict[str, Any]:
+        return {
+            "key": self.key,
+            "description": self.description,
+            "consumes": [k.value for k in self.consumes],
+            "produces": self.produces.value,
+            "modalities": [x.value for x in self.modalities],
+            "tasks": [x.value for x in self.tasks],
+            "multi_input": self.multi_input,
+            "params": {k: v.model_dump() for k, v in self.params.items()},
+        }
+
+
+# ----------------------------------------------------------------- pesos timm curados
+
+TIMM_WEIGHTS: dict[str, WeightInfo] = {
+    w.model: w
+    for w in [
+        WeightInfo(
+            model="resnet18",
+            pretrained_tag="a1_in1k",
+            license="Apache-2.0",
+            commercial_ok=True,
+            params_m=11.7,
+        ),
+        WeightInfo(
+            model="resnet50",
+            pretrained_tag="a1_in1k",
+            license="Apache-2.0",
+            commercial_ok=True,
+            params_m=25.6,
+        ),
+        WeightInfo(
+            model="efficientnet_b0",
+            pretrained_tag="ra_in1k",
+            license="Apache-2.0",
+            commercial_ok=True,
+            params_m=5.3,
+        ),
+        WeightInfo(
+            model="mobilenetv3_small_100",
+            pretrained_tag="lamb_in1k",
+            license="Apache-2.0",
+            commercial_ok=True,
+            params_m=2.5,
+        ),
+        WeightInfo(
+            model="mobilenetv3_large_100",
+            pretrained_tag="ra_in1k",
+            license="Apache-2.0",
+            commercial_ok=True,
+            params_m=5.5,
+        ),
+        WeightInfo(
+            model="convnext_tiny",
+            pretrained_tag="fb_in1k",
+            license="MIT",
+            commercial_ok=True,
+            params_m=28.6,
+        ),
+        WeightInfo(
+            model="vit_small_patch16_224",
+            pretrained_tag="augreg_in21k_ft_in1k",
+            license="Apache-2.0",
+            commercial_ok=True,
+            params_m=22.1,
+        ),
+        WeightInfo(
+            model="deit_small_patch16_224",
+            pretrained_tag="fb_in1k",
+            license="Apache-2.0",
+            commercial_ok=True,
+            params_m=22.1,
+        ),
+    ]
+}
+
+
+# ----------------------------------------------------------------- builders
+
+
+def _single(inputs: list[TensorSpec]) -> TensorSpec:
+    if len(inputs) != 1:
+        raise ValueError(f"el bloque espera 1 entrada y recibió {len(inputs)}")
+    return inputs[0]
+
+
+def _build_tabular_input(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    return m.TabularInput(t.num_numeric, list(t.cardinalities), p.get("embed_dim"), p["dropout"])
+
+
+def _build_ft(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    if p["d_token"] % p["n_heads"]:
+        raise ValueError("d_token debe ser múltiplo de n_heads")
+    return m.FTTransformer(
+        t.num_numeric,
+        list(t.cardinalities),
+        p["d_token"],
+        p["n_blocks"],
+        p["n_heads"],
+        p["dropout"],
+    )
+
+
+def _build_mlp(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    return m.MLPBlock(
+        _single(inputs).dim, p["hidden"], p["layers"], p["dropout"], p["activation"], p["batchnorm"]
+    )
+
+
+def _build_resmlp(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    return m.ResidualMLPBlock(
+        _single(inputs).dim, p["d"], p["blocks"], p["hidden_factor"], p["dropout"]
+    )
+
+
+def _build_timm(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) -> nn.Module:
+    name = p["model"]
+    if name not in TIMM_WEIGHTS:
+        raise ValueError(f"modelo timm no curado: {name}")
+    pretrained = bool(p["pretrained"]) and ctx.pretrained_allowed
+    full = f"{name}.{TIMM_WEIGHTS[name].pretrained_tag}" if pretrained else name
+    return m.TimmBackbone(full, pretrained, _single(inputs).channels)
+
+
+def _build_small_cnn(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    return m.SmallCNN(_single(inputs).channels, p["width"], p["depth"], p["dropout"])
+
+
+def _build_adapter(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    return m.ChannelAdapter(_single(inputs).channels, p["out_channels"])
+
+
+def _build_pool(_: dict[str, Any], inputs: list[TensorSpec], __: BuildContext) -> nn.Module:
+    _single(inputs)
+    return m.GlobalAvgPool()
+
+
+def _build_bn(_: dict[str, Any], inputs: list[TensorSpec], __: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    return nn.BatchNorm1d(t.dim) if t.kind is TensorKind.FEATURES else nn.BatchNorm2d(t.channels)
+
+
+def _build_dropout(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    _single(inputs)
+    return nn.Dropout(p["p"])
+
+
+def _build_linear(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) -> nn.Module:
+    out = p.get("out_features") or ctx.num_outputs
+    return nn.Linear(_single(inputs).dim, int(out))
+
+
+def _build_concat(_: dict[str, Any], inputs: list[TensorSpec], __: BuildContext) -> nn.Module:
+    if len(inputs) < 2:
+        raise ValueError("merge.concat necesita al menos 2 entradas")
+    return m.Concat()
+
+
+def _build_add(_: dict[str, Any], inputs: list[TensorSpec], __: BuildContext) -> nn.Module:
+    if len(inputs) < 2 or len({i.shape for i in inputs}) != 1:
+        raise ValueError("merge.add necesita ≥ 2 entradas con la misma forma")
+    return m.Add()
+
+
+def _p(t: str, default: Any, **kw: Any) -> ParamSpec:
+    return ParamSpec(type=t, default=default, **kw)  # type: ignore[arg-type]
+
+
+_DROPOUT = _p("float", 0.1, low=0.0, high=0.7, tunable=True, description="Probabilidad de dropout")
+_T, _I = (Modality.TABULAR,), (Modality.IMAGE,)
+_FEAT, _FMAP = TensorKind.FEATURES, TensorKind.FEATURE_MAP
+
+BLOCKS: dict[str, BlockSpec] = {
+    b.key: b
+    for b in [
+        BlockSpec(
+            "input.tabular",
+            "Numéricas normalizadas + embeddings de categóricas",
+            (TensorKind.TABULAR,),
+            _FEAT,
+            _build_tabular_input,
+            {
+                "embed_dim": _p("int", None, low=2, high=64, description="None = regla automática"),
+                "dropout": _DROPOUT,
+            },
+            modalities=_T,
+        ),
+        BlockSpec(
+            "ft_transformer.encoder",
+            "FT-Transformer: cada feature es un token (Gorishniy 2021)",
+            (TensorKind.TABULAR,),
+            _FEAT,
+            _build_ft,
+            {
+                "d_token": _p(
+                    "int", 64, low=16, high=256, choices=[32, 64, 96, 128, 192], tunable=True
+                ),
+                "n_blocks": _p("int", 3, low=1, high=6, tunable=True),
+                "n_heads": _p("int", 8, choices=[4, 8]),
+                "dropout": _DROPOUT,
+            },
+            modalities=_T,
+            is_backbone=True,
+        ),
+        BlockSpec(
+            "mlp.block",
+            "Capas densas con BatchNorm, activación y dropout",
+            (_FEAT,),
+            _FEAT,
+            _build_mlp,
+            {
+                "hidden": _p("int", 128, low=16, high=1024, log=True, tunable=True),
+                "layers": _p("int", 2, low=1, high=6, tunable=True),
+                "dropout": _DROPOUT,
+                "activation": _p("str", "relu", choices=["relu", "gelu", "silu"]),
+                "batchnorm": _p("bool", True),
+            },
+        ),
+        BlockSpec(
+            "resnet_mlp.block",
+            "MLP residual (ResNet-MLP)",
+            (_FEAT,),
+            _FEAT,
+            _build_resmlp,
+            {
+                "d": _p("int", 128, low=32, high=512, log=True, tunable=True),
+                "blocks": _p("int", 2, low=1, high=8, tunable=True),
+                "hidden_factor": _p("float", 2.0, low=1.0, high=4.0),
+                "dropout": _DROPOUT,
+            },
+        ),
+        BlockSpec(
+            "vision.timm_backbone",
+            "Backbone de visión de timm (lista curada con licencias)",
+            (TensorKind.IMAGE, _FMAP),
+            _FMAP,
+            _build_timm,
+            {
+                "model": _p("str", "efficientnet_b0", choices=sorted(TIMM_WEIGHTS)),
+                "pretrained": _p("bool", True),
+                "freeze": _p("str", "none", description="none | until_epoch:N"),
+            },
+            modalities=_I,
+            is_backbone=True,
+        ),
+        BlockSpec(
+            "vision.small_cnn",
+            "CNN compacta desde cero (imágenes chicas / pocos datos)",
+            (TensorKind.IMAGE, _FMAP),
+            _FMAP,
+            _build_small_cnn,
+            {
+                "width": _p("int", 32, low=8, high=128, log=True, tunable=True),
+                "depth": _p("int", 3, low=1, high=5, tunable=True),
+                "dropout": _p("float", 0.1, low=0.0, high=0.5, tunable=True),
+            },
+            modalities=_I,
+            is_backbone=True,
+        ),
+        BlockSpec(
+            "conv.channel_adapter",
+            "Conv 1×1 para adaptar canales (p. ej. 1 → 3)",
+            (TensorKind.IMAGE, _FMAP),
+            _FMAP,
+            _build_adapter,
+            {"out_channels": _p("int", 3, low=1, high=2048)},
+        ),
+        BlockSpec("pool.global_avg", "Promedio global espacial", (_FMAP,), _FEAT, _build_pool),
+        BlockSpec("norm.batchnorm", "Batch normalization", (_FEAT, _FMAP), _FEAT, _build_bn),
+        BlockSpec(
+            "reg.dropout",
+            "Dropout",
+            (_FEAT, _FMAP),
+            _FEAT,
+            _build_dropout,
+            {"p": _p("float", 0.2, low=0.0, high=0.8, tunable=True)},
+        ),
+        BlockSpec(
+            "head.linear",
+            "Capa lineal de salida (logits o regresión)",
+            (_FEAT,),
+            _FEAT,
+            _build_linear,
+            {
+                "out_features": _p(
+                    "int", None, low=1, high=100_000, description="None = según la tarea"
+                )
+            },
+        ),
+        BlockSpec(
+            "merge.concat",
+            "Concatena features de varias ramas",
+            (_FEAT,),
+            _FEAT,
+            _build_concat,
+            multi_input=True,
+        ),
+        BlockSpec(
+            "merge.add",
+            "Suma (skip connection)",
+            (_FEAT, _FMAP),
+            _FEAT,
+            _build_add,
+            multi_input=True,
+        ),
+    ]
+}
+
+# El tipo de salida de estos bloques es el mismo que el de su entrada.
+SHAPE_PRESERVING = {"norm.batchnorm", "reg.dropout", "merge.add"}
+
+
+def get_block(key: str) -> BlockSpec:
+    try:
+        return BLOCKS[key]
+    except KeyError:
+        raise KeyError(f"bloque desconocido: {key}") from None
+
+
+def blocks_for(modality: Modality, task: TaskType | None = None) -> list[BlockSpec]:
+    return [
+        b
+        for b in BLOCKS.values()
+        if (not b.modalities or modality in b.modalities)
+        and (not b.tasks or task is None or task in b.tasks)
+    ]
