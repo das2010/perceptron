@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.core.ids import IdPrefix, new_id
 from perceptron.domain.enums import (
+    AgentState,
     DataSourceType,
     DeploymentHost,
     Device,
@@ -311,8 +312,38 @@ class LLMCall(Entity):
     latency_s: float = Field(default=0.0, ge=0)
 
 
+class AgentRun(Entity):
+    """Una ejecución del agente autónomo (RF-AGT-01..05): límites, bitácora y resultado."""
+
+    id: str = Field(default_factory=_id_factory(IdPrefix.AGENT_RUN))
+    project_id: str
+    dataset_version_id: str
+    pipeline_id: str
+    state: AgentState = AgentState.RUNNING
+    limits: JsonDict = Field(default_factory=dict, description="AgentLimits")
+    approval: JsonDict = Field(default_factory=dict, description="ApprovalPolicy")
+    iterations: int = Field(default=0, ge=0, description="Estudios lanzados")
+    steps: int = Field(default=0, ge=0, description="Decisiones del LLM")
+    trials: int = Field(default=0, ge=0)
+    cost_usd: float = Field(default=0.0, ge=0)
+    studies: list[str] = Field(default_factory=list)
+    archspecs: list[str] = Field(default_factory=list)
+    strategies: JsonDict = Field(default_factory=dict, description="Estrategias propuestas")
+    best_run_id: str | None = None
+    model_version_id: str | None = None
+    test_metrics: dict[str, float] = Field(default_factory=dict)
+    log: list[JsonDict] = Field(default_factory=list, description="Bitácora (RF-AGT-04)")
+    pending_action: JsonDict | None = None
+    last_family: str | None = None
+    fallback: bool = False
+    stop_reason: str | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+
+
 ALL_ENTITIES: tuple[type[Entity], ...] = (
     Workspace,
+    AgentRun,
     User,
     Membership,
     Project,

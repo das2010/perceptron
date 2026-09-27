@@ -82,6 +82,17 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 
 **Aceptación 2a (CI de cada PR, con `FakeLLMProvider`):** salida válida por rol, reintento con feedback, fallback a reglas (L0, sin clave, presupuesto, 3 fallos), caché gratis en la segunda llamada, auditoría de cada intento y ningún valor individual en payloads L1 (hypothesis). La aceptación con Claude y Ollama es de la Capa 2b.
 
+## Capa 2b — mini-torneo, agente autónomo, aceptación real y benchmark
+
+| Sub-hito | Estado |
+|---|---|
+| 5. Mini-torneo de arquitecturas (RF-ARC-03) | ✅ `services.tournament`, `POST /projects/{id}/arch/tournament`, en `quickstart --llm` |
+| 6. Agente autónomo (RF-AGT-01..05, ADR-0021) | ✅ `agent/` (acciones con schema, límites, aprobaciones, bitácora, fallback); API `/agent/runs`, CLI `perceptron agent` |
+| 7. Aceptación con Claude y Ollama + golden tests | 🟡 workflow `llm.yml` (manual + nocturno); pendiente cargar `ANTHROPIC_API_KEY` y registrar los resultados |
+| 8. Benchmark O2 (3 datasets públicos) | 🟡 harness `perceptron bench run` (Adult, Fashion-MNIST, FSDD); pendiente primera corrida |
+
+**Aceptación 2b en cada PR (FakeLLMProvider):** guiones del agente sobre UC-01 que cubren camino feliz, feedback del validador, límites, aprobación, fallback a reglas, detención, que el agente nunca ve el test y la auditoría sin fugas en L1. **Aceptación real (§14):** `gh workflow run llm.yml` → matriz Claude/Ollama × UC-01/04/09, golden tests y (opcional) benchmark.
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
@@ -137,7 +148,7 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 | RF-PRV-04 |  | 2 | Política de workspace: nivel máximo permitido y proveedores permitidos, definidos por… | 🟡 nivel máximo y proveedores permitidos aplicados en el Gateway; edición por el Admin en Capa 5 |
 | RF-ARC-01 | sí | 2 | El LLM genera 2–4 propuestas usando exclusivamente bloques del catálogo (§8) en… | ✅ arquitecto LLM: 2–4 propuestas con justificación, pros/contras/riesgos y estimaciones del sistema (parámetros, memoria, tiempo por época medido) |
 | RF-ARC-02 | sí | 1/2 | Validación de cada propuesta: schema, compatibilidad de shapes (construcción en meta… | ✅ `archspec.validate` (6 etapas de §9.3) sobre cada propuesta del LLM, con feedback al reintento |
-| RF-ARC-03 |  | 2 | Mini-torneo opcional: entrenar cada propuesta con un presupuesto corto (p. ej. 10 %… | ⬜ pendiente |
+| RF-ARC-03 |  | 2 | Mini-torneo opcional: entrenar cada propuesta con un presupuesto corto (p. ej. 10 %… | ✅ `services.tournament` (fracción de épocas + subconjunto de train por época); gana la mejor en validación |
 | RF-ARC-04 | sí | 1/2 | Fallback por reglas si el LLM no está disponible o falla la validación 3 veces. | ✅ `catalog.rules` como fallback (L0, sin LLM, presupuesto, 3 fallos) con motivo informado |
 | RF-ARC-05 |  | 3 | Editor visual de ArchSpec (React Flow): bloques del catálogo como nodos, parámetros en… | ⬜ pendiente |
 | RF-ARC-06 |  | 3 | Modo experto — código libre: el LLM (o el usuario) escribe un… | ⬜ pendiente |
@@ -159,11 +170,11 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 | RF-TRN-09 |  | 1 | Técnicas de fine-tuning: congelar backbone, descongelado progresivo, LR… | 🟡 congelado del backbone (timm y encoders HF); LoRA/PEFT pendiente |
 | RF-TRN-10 |  | 1 | Manejo de desbalance: pesos de clase, focal loss, sobremuestreo, umbral óptimo… | ✅ pesos de clase, focal, oversampling, umbral óptimo en el reporte |
 | RF-TRN-11 |  | 1 | Caché de modelos preentrenados: descarga única, verificación de checksum, uso offline,… | ⬜ pendiente |
-| RF-AGT-01 |  | 2 | Herramientas del agente (tool use): get_profile, get_project_goal,… | ⬜ pendiente |
-| RF-AGT-02 |  | 2 | Límites duros aplicados por el sistema (no por el LLM): tiempo, n.º de iteraciones,… | ⬜ pendiente |
-| RF-AGT-03 |  | 2 | Puntos de aprobación configurables: nunca / antes de cada iteración / solo si cambia… | ⬜ pendiente |
-| RF-AGT-04 |  | 2 | Bitácora legible del agente ("Iteración 3: el modelo sobreajusta desde la época 12 →… | ⬜ pendiente |
-| RF-AGT-05 |  | 2 | Si el LLM falla o no responde, el loop cae a una política por reglas o se detiene de… | ⬜ pendiente |
+| RF-AGT-01 |  | 2 | Herramientas del agente (tool use): get_profile, get_project_goal,… | ✅ las 14 herramientas como acciones con schema (unión discriminada), ejecutadas por `agent.loop` |
+| RF-AGT-02 |  | 2 | Límites duros aplicados por el sistema (no por el LLM): tiempo, n.º de iteraciones,… | ✅ tiempo, decisiones, estudios, trials, costo de LLM (ámbito `agent:<id>`) y disco; el test solo lo abre `finish` |
+| RF-AGT-03 |  | 2 | Puntos de aprobación configurables: nunca / antes de cada iteración / solo si cambia… | ✅ nunca / cada iteración / cambio de familia / % de presupuesto; `POST /agent/runs/{id}/approve|reject` |
+| RF-AGT-04 |  | 2 | Bitácora legible del agente ("Iteración 3: el modelo sobreajusta desde la época 12 →… | ✅ bitácora en el AgentRun + `WS /agent/runs/{id}/log` |
+| RF-AGT-05 |  | 2 | Si el LLM falla o no responde, el loop cae a una política por reglas o se detiene de… | ✅ fallo del LLM → una iteración por reglas o cierre con el mejor modelo |
 | RF-TRK-01 | sí | 1 | Todo run se registra en MLflow: parámetros, métricas por paso, artefactos… | ✅ MLflow embebido (SQLite + artefactos) |
 | RF-TRK-02 | sí | 1 | La UI de Perceptron muestra runs y comparaciones de forma nativa (no depende de la UI… | 🟡 runs y comparación por API; vistas de UI en Capa 3 |
 | RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | ⬜ pendiente |

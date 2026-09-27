@@ -192,7 +192,7 @@ def get_diagnosis(run_id: str, ctx: Ctx, mode: Mode = "auto", refresh: bool = Fa
     from perceptron.domain.models import Run
 
     run = ctx.repo(Run).get(run_id)
-    if run.diagnosis and not refresh:
+    if run.diagnosis and "summary" in run.diagnosis and not refresh:
         return Diagnosis.model_validate(run.diagnosis)
     return Workflow(ctx).roles.diagnose(run_id, mode=mode)
 

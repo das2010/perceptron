@@ -80,8 +80,20 @@ def hardware_summary(hw: HardwareReport) -> dict[str, Any]:
     }
 
 
-def catalog_for(card: ProfileCard, task: Any) -> list[dict[str, Any]]:
+def _compact(block: dict[str, Any]) -> dict[str, Any]:
+    """Bloque del catálogo sin textos largos: menos tokens por llamada (modelos locales)."""
+    params = {
+        name: {k: v for k, v in p.items() if k in ("type", "default", "low", "high", "choices")}
+        for name, p in (block.get("params") or {}).items()
+    }
+    keep = ("key", "consumes", "produces", "multi_input")
+    return {**{k: block[k] for k in keep if k in block}, "params": params}
+
+
+def catalog_for(card: ProfileCard, task: Any, *, compact: bool = False) -> list[dict[str, Any]]:
     blocks = [b.public() for b in blocks_for(card.modality, task)]
+    if compact:
+        blocks = [_compact(b) for b in blocks]
     if card.modality in (Modality.IMAGE, Modality.AUDIO):
         weights = [w.model_dump() for w in TIMM_WEIGHTS.values() if w.commercial_ok]
         blocks.append({"key": "_pretrained_weights_timm", "weights": weights})
@@ -298,58 +310,12 @@ class LLMRoles:
         skip = self._skip(mode, LLMPurpose.HPO_STRATEGIST, project)
         if skip:
             return base
-        tunable = {p.name: p for p in default_search_space(spec)}
-        metrics = {"val_loss", *(f"val_{m}" for m in spec.metrics)}
-        if spec.training.early_stopping:
-            metrics.add(spec.training.early_stopping.monitor)
+        space = HPOSpace.of(spec)
+        tunable, metrics = space.tunable, space.metrics
         card = self.wf.profile_card(dataset_version_id) if dataset_version_id else None
 
-        def build(p: HPOProposal) -> HPOStrategy:
-            space = [
-                sp.model_copy(update={"default": tunable[sp.name].default}) for sp in p.search_space
-            ]
-            epochs = p.max_epochs_per_trial or budget.max_epochs_per_trial
-            if budget.max_epochs_per_trial and epochs:
-                epochs = min(epochs, budget.max_epochs_per_trial)
-            return HPOStrategy(
-                strategy=p.strategy,
-                pruner=p.pruner,
-                search_space=space,
-                objectives=p.objectives,
-                budget=budget.model_copy(
-                    update={
-                        "max_trials": min(p.max_trials, budget.max_trials),
-                        "max_epochs_per_trial": epochs,
-                    }
-                ),
-                pruner_warmup_epochs=p.pruner_warmup_epochs,
-                rationale=p.rationale,
-                origin=Origin.LLM,
-            )
-
         def validator(p: HPOProposal) -> str | None:
-            errors: list[str] = []
-            for sp in p.search_space:
-                ref = tunable.get(sp.name)
-                if ref is None:
-                    errors.append(f"'{sp.name}' no es un hiperparámetro ajustable de la ArchSpec")
-                    continue
-                errors += _range_errors(sp, ref)
-            errors += [
-                f"objetivo '{o.metric}' desconocido (válidos: {sorted(metrics)})"
-                for o in p.objectives
-                if o.metric not in metrics and o.metric != "num_params"
-            ]
-            if p.max_trials > budget.max_trials:
-                errors.append(
-                    f"max_trials {p.max_trials} supera el presupuesto ({budget.max_trials})"
-                )
-            if not errors:
-                try:
-                    build(p)
-                except ValueError as e:
-                    errors.append(str(e))
-            return "\n".join(errors) or None
+            return "\n".join(space.errors(p, budget)) or None
 
         llm_ctx = LLMContext(
             goal=project.goal or None,
@@ -375,7 +341,7 @@ class LLMRoles:
         except FALLBACK as e:
             logger.info("estrategia de HPO por reglas", extra={"reason": _reason(e)})
             return base
-        strategy = build(result.value)
+        strategy = space.build(result.value, budget, origin=Origin.LLM)
         return strategy.model_copy(update={"llm_call_id": result.call_id})
 
     # ------------------------------------------------------------------ diagnosticador
@@ -630,6 +596,68 @@ class LLMRoles:
             {**p.model_dump(mode="json"), "origin": "llm", "llm_call_id": out.call_id}
             for p in out.value.labels
         ]
+
+
+@dataclass
+class HPOSpace:
+    """Qué puede ajustar un estratega (LLM o agente) sobre una ArchSpec, y cómo se valida."""
+
+    tunable: dict[str, SearchParam]
+    metrics: set[str]
+
+    @classmethod
+    def of(cls, spec: ArchSpec) -> HPOSpace:
+        metrics = {"val_loss", *(f"val_{m}" for m in spec.metrics)}
+        if spec.training.early_stopping:
+            metrics.add(spec.training.early_stopping.monitor)
+        return cls({p.name: p for p in default_search_space(spec)}, metrics)
+
+    def build(self, p: HPOProposal, budget: Budget, *, origin: Origin) -> HPOStrategy:
+        """Estrategia final: defaults de la plantilla (trial 0) y presupuesto acotado."""
+        space = [
+            sp.model_copy(update={"default": self.tunable[sp.name].default})
+            for sp in p.search_space
+        ]
+        epochs = p.max_epochs_per_trial or budget.max_epochs_per_trial
+        if budget.max_epochs_per_trial and epochs:
+            epochs = min(epochs, budget.max_epochs_per_trial)
+        return HPOStrategy(
+            strategy=p.strategy,
+            pruner=p.pruner,
+            search_space=space,
+            objectives=p.objectives,
+            budget=budget.model_copy(
+                update={
+                    "max_trials": min(p.max_trials, budget.max_trials),
+                    "max_epochs_per_trial": epochs,
+                }
+            ),
+            pruner_warmup_epochs=p.pruner_warmup_epochs,
+            rationale=p.rationale,
+            origin=origin,
+        )
+
+    def errors(self, p: HPOProposal, budget: Budget) -> list[str]:
+        errors: list[str] = []
+        for sp in p.search_space:
+            ref = self.tunable.get(sp.name)
+            if ref is None:
+                errors.append(f"'{sp.name}' no es un hiperparámetro ajustable de la ArchSpec")
+                continue
+            errors += _range_errors(sp, ref)
+        errors += [
+            f"objetivo '{o.metric}' desconocido (válidos: {sorted(self.metrics)})"
+            for o in p.objectives
+            if o.metric not in self.metrics and o.metric != "num_params"
+        ]
+        if p.max_trials > budget.max_trials:
+            errors.append(f"max_trials {p.max_trials} supera el presupuesto ({budget.max_trials})")
+        if not errors:
+            try:
+                self.build(p, budget, origin=Origin.LLM)
+            except ValueError as e:
+                errors.append(str(e))
+        return errors
 
 
 def _range_errors(sp: SearchParam, ref: SearchParam) -> list[str]:

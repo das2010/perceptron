@@ -4,6 +4,74 @@
  */
 
 export interface paths {
+    "/api/v1/agent/runs/{agent_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Agent Run */
+        get: operations["getAgentRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/runs/{agent_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Agent Run */
+        post: operations["approveAgentRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/runs/{agent_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Agent Run */
+        post: operations["rejectAgentRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/runs/{agent_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop Agent Run */
+        post: operations["stopAgentRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/arch/to-code": {
         parameters: {
             query?: never;
@@ -327,6 +395,23 @@ export interface paths {
         patch: operations["updateProject"];
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/agent/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Agent Run */
+        post: operations["createAgentRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/arch/propose": {
         parameters: {
             query?: never;
@@ -344,6 +429,26 @@ export interface paths {
          *     por `archspec.id`, la edita o las descarta.
          */
         post: operations["proposeArchitecture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/arch/tournament": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Tournament
+         * @description Entrena cada propuesta con presupuesto corto; la mejor en validación gana (RF-ARC-03).
+         */
+        post: operations["runTournament"];
         delete?: never;
         options?: never;
         head?: never;
@@ -788,6 +893,183 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentCreate */
+        AgentCreate: {
+            approval?: components["schemas"]["ApprovalPolicy"];
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            limits?: components["schemas"]["AgentLimits"];
+            /** Pipeline Id */
+            pipeline_id: string;
+        };
+        /** AgentLaunch */
+        AgentLaunch: {
+            agent_run: components["schemas"]["AgentRun"];
+            job: components["schemas"]["Job"];
+        };
+        /**
+         * AgentLimits
+         * @description Límites duros que aplica el sistema, no el LLM (RF-AGT-02).
+         */
+        AgentLimits: {
+            /**
+             * Max Disk Mb
+             * @default 5000
+             */
+            max_disk_mb: number;
+            /** Max Epochs Per Trial */
+            max_epochs_per_trial?: number | null;
+            /**
+             * Max Iterations
+             * @description Estudios que puede lanzar
+             * @default 4
+             */
+            max_iterations: number;
+            /**
+             * Max Llm Cost Usd
+             * @default 2
+             */
+            max_llm_cost_usd: number;
+            /**
+             * Max Steps
+             * @description Decisiones del LLM
+             * @default 30
+             */
+            max_steps: number;
+            /**
+             * Max Time S
+             * @default 3600
+             */
+            max_time_s: number;
+            /**
+             * Max Trials
+             * @default 30
+             */
+            max_trials: number;
+            /**
+             * Selection Metric
+             * @description Métrica de validación
+             * @default val_loss
+             */
+            selection_metric: string;
+        };
+        /**
+         * AgentRun
+         * @description Una ejecución del agente autónomo (RF-AGT-01..05): límites, bitácora y resultado.
+         */
+        AgentRun: {
+            /**
+             * Approval
+             * @description ApprovalPolicy
+             */
+            approval?: {
+                [key: string]: unknown;
+            };
+            /** Archspecs */
+            archspecs?: string[];
+            /** Best Run Id */
+            best_run_id?: string | null;
+            /**
+             * Cost Usd
+             * @default 0
+             */
+            cost_usd: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /**
+             * Fallback
+             * @default false
+             */
+            fallback: boolean;
+            /** Finished At */
+            finished_at?: string | null;
+            /** Id */
+            id?: string;
+            /**
+             * Iterations
+             * @description Estudios lanzados
+             * @default 0
+             */
+            iterations: number;
+            /** Last Family */
+            last_family?: string | null;
+            /**
+             * Limits
+             * @description AgentLimits
+             */
+            limits?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Log
+             * @description Bitácora (RF-AGT-04)
+             */
+            log?: {
+                [key: string]: unknown;
+            }[];
+            /** Model Version Id */
+            model_version_id?: string | null;
+            /** Pending Action */
+            pending_action?: {
+                [key: string]: unknown;
+            } | null;
+            /** Pipeline Id */
+            pipeline_id: string;
+            /** Project Id */
+            project_id: string;
+            /** Started At */
+            started_at?: string | null;
+            /** @default running */
+            state: components["schemas"]["AgentState"];
+            /**
+             * Steps
+             * @description Decisiones del LLM
+             * @default 0
+             */
+            steps: number;
+            /** Stop Reason */
+            stop_reason?: string | null;
+            /**
+             * Strategies
+             * @description Estrategias propuestas
+             */
+            strategies?: {
+                [key: string]: unknown;
+            };
+            /** Studies */
+            studies?: string[];
+            /** Test Metrics */
+            test_metrics?: {
+                [key: string]: number;
+            };
+            /**
+             * Trials
+             * @default 0
+             */
+            trials: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+        };
+        /**
+         * AgentState
+         * @description Estados del ciclo autónomo (SPEC §7.11).
+         * @enum {string}
+         */
+        AgentState: "running" | "awaiting_approval" | "stopped" | "finished" | "failed";
         /** Alert */
         Alert: {
             code: components["schemas"]["AlertCode"];
@@ -811,6 +1093,28 @@ export interface components {
          * @enum {string}
          */
         AlertSeverity: "info" | "warning" | "high";
+        /** ApprovalBody */
+        ApprovalBody: {
+            /** Comment */
+            comment?: string | null;
+        };
+        /**
+         * ApprovalPolicy
+         * @description Cuándo pedir aprobación humana antes de lanzar un estudio (RF-AGT-03).
+         */
+        ApprovalPolicy: {
+            /**
+             * Budget Pct
+             * @default 50
+             */
+            budget_pct: number;
+            /**
+             * Mode
+             * @default never
+             * @enum {string}
+             */
+            mode: "never" | "each_iteration" | "family_change" | "budget_pct";
+        };
         /** ArchEstimates */
         ArchEstimates: {
             /** Epoch Time S */
@@ -1876,6 +2180,13 @@ export interface components {
              * @default 0
              */
             output_per_mtok: number;
+            /**
+             * Request Extra
+             * @description Campos extra del request (p. ej. Ollama `think`)
+             */
+            request_extra?: {
+                [key: string]: unknown;
+            };
             /**
              * Structured Output
              * @default true
@@ -3055,6 +3366,33 @@ export interface components {
             /** Version */
             version?: string | null;
         };
+        /** TournamentBody */
+        TournamentBody: {
+            /** Archspec Ids */
+            archspec_ids: string[];
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            device?: components["schemas"]["Device"] | null;
+            /**
+             * Fraction
+             * @description Fracción de las épocas
+             * @default 0.1
+             */
+            fraction: number;
+            /**
+             * Metric
+             * @default val_loss
+             */
+            metric: string;
+            /** Pipeline Id */
+            pipeline_id: string;
+            /**
+             * Subset
+             * @description Fracción de train por época
+             * @default 0.3
+             */
+            subset: number;
+        };
         /** TrainingSpec */
         TrainingSpec: {
             /**
@@ -3166,6 +3504,138 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getAgentRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approveAgentRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rejectAgentRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stopAgentRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     archToCode: {
         parameters: {
             query?: never;
@@ -3887,6 +4357,41 @@ export interface operations {
             };
         };
     };
+    createAgentRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentLaunch"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     proposeArchitecture: {
         parameters: {
             query?: never;
@@ -3909,6 +4414,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArchProposals"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    runTournament: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TournamentBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
                 };
             };
             /** @description Validation Error */

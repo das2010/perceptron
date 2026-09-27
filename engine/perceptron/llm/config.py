@@ -46,6 +46,9 @@ class ModelInfo(BaseModel):
     temperature: bool = Field(default=True, description="Acepta temperatura explícita")
     license: str | None = None
     verified: bool = False
+    request_extra: dict[str, Any] = Field(
+        default_factory=dict, description="Campos extra del request (p. ej. Ollama `think`)"
+    )
 
     def cost(self, input_tokens: int, output_tokens: int) -> float:
         return (input_tokens * self.input_per_mtok + output_tokens * self.output_per_mtok) / 1e6

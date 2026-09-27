@@ -24,8 +24,10 @@ LLM_KEYS = ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "MOONSHOT_A
 
 
 @pytest.fixture(autouse=True)
-def _hermetic_llm(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Ningún test llama a un LLM real: capa apagada y sin claves del entorno."""
+def _hermetic_llm(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ningún test llama a un LLM real (salvo `llm_live`/`golden`, workflow llm.yml)."""
+    if request.node.get_closest_marker("llm_live") or request.node.get_closest_marker("golden"):
+        return
     monkeypatch.setenv("PERCEPTRON_LLM__ENABLED", "false")
     for key in LLM_KEYS:
         monkeypatch.delenv(key, raising=False)

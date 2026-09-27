@@ -104,6 +104,16 @@ class RunStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+class AgentState(StrEnum):
+    """Estados del ciclo autónomo (SPEC §7.11)."""
+
+    RUNNING = "running"
+    AWAITING_APPROVAL = "awaiting_approval"
+    STOPPED = "stopped"
+    FINISHED = "finished"
+    FAILED = "failed"
+
+
 class Device(StrEnum):
     CUDA = "cuda"
     ROCM = "rocm"

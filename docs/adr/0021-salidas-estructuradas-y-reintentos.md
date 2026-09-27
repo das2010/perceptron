@@ -10,3 +10,4 @@
   - El agente de la Capa 2b decide con la misma técnica: una acción por paso como unión discriminada con schema, en vez de tool-calling nativo, para que funcione igual con modelos locales.
 - Consecuencias: el comportamiento es uniforme entre proveedores y verificable con `FakeLLMProvider`; la calidad depende del modelo pero nunca rompe el flujo.
 - Alternativas consideradas: modo "strict" de cada proveedor (limita el schema de ArchSpec: uniones, `$defs`); parsear texto libre (frágil).
+- Implementación del agente (Capa 2b): `agent/models.py` (acciones RF-AGT-01 como unión discriminada por `tool`), `agent/loop.py` (validación referencial de ids, límites del sistema, aprobaciones, bitácora, fallback). La arquitectura por reglas se registra como base (a0) para que un modelo chico pueda completar el ciclo con pocas acciones.

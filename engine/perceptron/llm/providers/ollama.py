@@ -37,6 +37,7 @@ class OllamaProvider(LLMProvider):
         }
         if request.output_schema is not None and not stream:
             body["format"] = request.output_schema if model.structured_output else "json"
+        body.update(model.request_extra)
         return body
 
     def _url(self) -> str:
