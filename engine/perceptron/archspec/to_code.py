@@ -177,6 +177,7 @@ Entrada: {spec.input.kind} {spec.input.shape or ""}
 from __future__ import annotations
 
 import math
+from typing import Any, cast
 
 import torch
 from torch import nn

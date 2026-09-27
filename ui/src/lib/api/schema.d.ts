@@ -1523,6 +1523,7 @@ export interface components {
              * @description Por qué se eligió cada paso
              */
             rationale?: string[];
+            series?: components["schemas"]["SeriesSpec"] | null;
             /** Steps */
             steps?: components["schemas"]["StepSpec"][];
             target: components["schemas"]["TargetSpec"] | null;
@@ -1568,6 +1569,7 @@ export interface components {
             num_samples: number;
             /** Profiled Samples */
             profiled_samples: number;
+            series?: components["schemas"]["SeriesProfile"] | null;
             /** Split Counts */
             split_counts: {
                 [key: string]: number;
@@ -1839,6 +1841,82 @@ export interface components {
          * @enum {string}
          */
         SemanticType: "numeric" | "categorical" | "boolean" | "datetime" | "text" | "id" | "filepath";
+        /** SeriesConfig */
+        SeriesConfig: {
+            /** Covariates */
+            covariates?: string[];
+            /** Freq Seconds */
+            freq_seconds?: number | null;
+            /**
+             * Horizon
+             * @default 8
+             */
+            horizon: number;
+            /**
+             * Lookback
+             * @default 32
+             */
+            lookback: number;
+            /** Season */
+            season?: number | null;
+            /** Series Id */
+            series_id?: string | null;
+            /** Target */
+            target: string;
+            /** @default forecasting */
+            task: components["schemas"]["TaskType"];
+            /** Time Column */
+            time_column: string;
+        };
+        /**
+         * SeriesProfile
+         * @description RF-PRF-04 (solo agregados).
+         */
+        SeriesProfile: {
+            /** @description Columnas y parámetros (sin valores) */
+            config: components["schemas"]["SeriesConfig"];
+            /** Feasible Horizon */
+            feasible_horizon: number;
+            /** Freq Seconds */
+            freq_seconds: number | null;
+            /**
+             * Gaps
+             * @description Saltos mayores a 1,5× la frecuencia
+             */
+            gaps: number;
+            /** Horizon */
+            horizon: number;
+            /** Lookback */
+            lookback: number;
+            /** Num Series */
+            num_series: number;
+            /** Points Median */
+            points_median: number;
+            /** Points Min */
+            points_min: number;
+            /** Season */
+            season: number | null;
+            /** Season Strength */
+            season_strength: number | null;
+            task: components["schemas"]["TaskType"];
+            /** Trend Slope Per Step */
+            trend_slope_per_step: number | null;
+        };
+        /** SeriesSpec */
+        SeriesSpec: {
+            /**
+             * Calendar
+             * @default true
+             */
+            calendar: boolean;
+            config: components["schemas"]["SeriesConfig"];
+            /**
+             * Jitter
+             * @description Ruido gaussiano en train
+             * @default 0
+             */
+            jitter: number;
+        };
         /**
          * Severity
          * @enum {string}
@@ -2049,6 +2127,11 @@ export interface components {
         };
         /** TaskSpec */
         TaskSpec: {
+            /**
+             * Horizon
+             * @description Forecasting: pasos a futuro
+             */
+            horizon?: number | null;
             /**
              * Multilabel
              * @default false

@@ -2289,6 +2289,16 @@
             "title": "Rationale",
             "type": "array"
           },
+          "series": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SeriesSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "steps": {
             "items": {
               "$ref": "#/components/schemas/StepSpec"
@@ -2433,6 +2443,16 @@
           "profiled_samples": {
             "title": "Profiled Samples",
             "type": "integer"
+          },
+          "series": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SeriesProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "split_counts": {
             "additionalProperties": {
@@ -3218,6 +3238,207 @@
         "title": "SemanticType",
         "type": "string"
       },
+      "SeriesConfig": {
+        "properties": {
+          "covariates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Covariates",
+            "type": "array"
+          },
+          "freq_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freq Seconds"
+          },
+          "horizon": {
+            "default": 8,
+            "minimum": 1.0,
+            "title": "Horizon",
+            "type": "integer"
+          },
+          "lookback": {
+            "default": 32,
+            "minimum": 2.0,
+            "title": "Lookback",
+            "type": "integer"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "series_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Series Id"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType",
+            "default": "forecasting"
+          },
+          "time_column": {
+            "title": "Time Column",
+            "type": "string"
+          }
+        },
+        "required": [
+          "time_column",
+          "target"
+        ],
+        "title": "SeriesConfig",
+        "type": "object"
+      },
+      "SeriesProfile": {
+        "description": "RF-PRF-04 (solo agregados).",
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/SeriesConfig",
+            "description": "Columnas y parámetros (sin valores)"
+          },
+          "feasible_horizon": {
+            "title": "Feasible Horizon",
+            "type": "integer"
+          },
+          "freq_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freq Seconds"
+          },
+          "gaps": {
+            "description": "Saltos mayores a 1,5× la frecuencia",
+            "title": "Gaps",
+            "type": "integer"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "integer"
+          },
+          "lookback": {
+            "title": "Lookback",
+            "type": "integer"
+          },
+          "num_series": {
+            "title": "Num Series",
+            "type": "integer"
+          },
+          "points_median": {
+            "title": "Points Median",
+            "type": "number"
+          },
+          "points_min": {
+            "title": "Points Min",
+            "type": "integer"
+          },
+          "season": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season"
+          },
+          "season_strength": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Strength"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "trend_slope_per_step": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Slope Per Step"
+          }
+        },
+        "required": [
+          "num_series",
+          "points_min",
+          "points_median",
+          "freq_seconds",
+          "gaps",
+          "season",
+          "season_strength",
+          "trend_slope_per_step",
+          "feasible_horizon",
+          "task",
+          "horizon",
+          "lookback",
+          "config"
+        ],
+        "title": "SeriesProfile",
+        "type": "object"
+      },
+      "SeriesSpec": {
+        "properties": {
+          "calendar": {
+            "default": true,
+            "title": "Calendar",
+            "type": "boolean"
+          },
+          "config": {
+            "$ref": "#/components/schemas/SeriesConfig"
+          },
+          "jitter": {
+            "default": 0.0,
+            "description": "Ruido gaussiano en train",
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Jitter",
+            "type": "number"
+          }
+        },
+        "required": [
+          "config"
+        ],
+        "title": "SeriesSpec",
+        "type": "object"
+      },
       "Severity": {
         "enum": [
           "error",
@@ -3757,6 +3978,19 @@
       "TaskSpec": {
         "additionalProperties": false,
         "properties": {
+          "horizon": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Forecasting: pasos a futuro",
+            "title": "Horizon"
+          },
           "multilabel": {
             "default": false,
             "title": "Multilabel",

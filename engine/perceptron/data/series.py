@@ -54,12 +54,16 @@ def with_series_key(df: pl.DataFrame, cfg: SeriesConfig) -> pl.DataFrame:
 
 
 def _freq_seconds(times: pl.Series) -> float | None:
-    t = times.cast(pl.Datetime).sort().drop_nulls()
+    # Timestamps únicos: varias series comparten fechas y, mezcladas, darían diferencias 0.
+    t = times.cast(pl.Datetime).drop_nulls().unique().sort()
     if t.len() < 3:
         return None
-    diffs = t.diff().drop_nulls().dt.total_seconds()
-    med = diffs.median()
-    return float(med) if med else None
+    med = _as_float(t.diff().drop_nulls().dt.total_seconds().median())
+    return med or None
+
+
+def _as_float(v: object) -> float:
+    return float(v) if isinstance(v, int | float) else 0.0
 
 
 def _closest_freq(freq: float | None) -> int | None:
@@ -108,7 +112,7 @@ def detect_series(schema: TableSchema, df: pl.DataFrame) -> SeriesConfig | None:
     if groups.min() < MIN_POINTS_PER_SERIES:  # type: ignore[operator]
         return None
     positive_rate = (
-        float(df[schema.target].cast(pl.Float64).mean() or 0)
+        _as_float(df[schema.target].cast(pl.Float64, strict=False).mean())
         if target.semantic is SemanticType.BOOLEAN
         else None
     )
