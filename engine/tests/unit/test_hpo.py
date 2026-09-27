@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from perceptron.catalog.templates import tabular_template
+from perceptron.catalog.templates import audio_template, tabular_template
 from perceptron.domain.enums import TaskType
 from perceptron.hpo.recommend import recommend_strategy
 from perceptron.hpo.strategy import (
@@ -119,6 +119,27 @@ def test_tpe_finds_good_region(tmp_path: Path) -> None:
     assert len(res.trials) == 15
     assert res.best_trial is not None and res.best_trial.values
     assert 1e-3 < float(res.best_trial.params["lr"]) < 1e-1
+
+
+def test_first_trial_is_template_default(tmp_path: Path) -> None:
+    space = [
+        SearchParam(name="lr", type="float", low=1e-4, high=1e-1, log=True, default=2e-3),
+        SearchParam(name="hidden", type="int", low=16, high=256, default=999),
+    ]
+    s = HPOStrategy(strategy="tpe", pruner="none", search_space=space, budget=Budget(max_trials=3))
+    res = _run(tmp_path, s)
+    first = min(res.trials, key=lambda t: t.number)
+    assert first.params["lr"] == pytest.approx(2e-3)
+    assert 16 <= int(first.params["hidden"]) <= 256  # default fuera de rango: lo sugiere TPE
+    again = _run(tmp_path, s.model_copy(update={"budget": Budget(max_trials=4)}))
+    assert sum(t.params["lr"] == pytest.approx(2e-3) for t in again.trials) >= 1
+    assert len(again.trials) == 4  # al reanudar no se vuelve a encolar
+
+
+def test_default_search_space_keeps_template_defaults() -> None:
+    spec = audio_template("crnn", task=TaskType.CLASSIFICATION, num_classes=4, bins=64, frames=101)
+    defaults = {p.name: p.default for p in default_search_space(spec)}
+    assert defaults["lr"] == pytest.approx(2e-3) and defaults["width"] == 16
 
 
 def test_target_value_stops_early(tmp_path: Path) -> None:

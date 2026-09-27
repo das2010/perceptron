@@ -29,6 +29,9 @@ class SearchParam(BaseModel):
     step: float | None = None
     choices: list[Any] | None = None
     condition: Condition | None = None
+    default: Any = Field(
+        default=None, description="Valor de la plantilla: se prueba primero (trial 0)"
+    )
 
     @model_validator(mode="after")
     def _check(self) -> SearchParam:
@@ -40,6 +43,16 @@ class SearchParam(BaseModel):
         elif self.log and self.low <= 0:
             raise ValueError(f"{self.name}: escala log requiere low > 0")
         return self
+
+    def accepts(self, value: Any) -> bool:
+        """¿El valor pertenece al espacio? (para encolar la configuración base)."""
+        if value is None:
+            return False
+        if self.type == "categorical":
+            return value in (self.choices or [])
+        if isinstance(value, bool) or not isinstance(value, int | float):
+            return False
+        return float(self.low or 0) <= float(value) <= float(self.high or 0)
 
     def grid_values(self, points: int = 3) -> list[Any]:
         if self.type == "categorical":
@@ -124,10 +137,17 @@ def default_search_space(spec: ArchSpec) -> list[SearchParam]:
             if p is None:
                 continue
             if p.choices and p.type in ("int", "str"):
-                found[value.hp] = SearchParam(name=value.hp, type="categorical", choices=p.choices)
+                found[value.hp] = SearchParam(
+                    name=value.hp, type="categorical", choices=p.choices, default=value.default
+                )
             elif p.type in ("int", "float") and p.low is not None and p.high is not None:
                 found[value.hp] = SearchParam(
-                    name=value.hp, type=p.type, low=p.low, high=p.high, log=p.log
+                    name=value.hp,
+                    type=p.type,
+                    low=p.low,
+                    high=p.high,
+                    log=p.log,
+                    default=value.default,
                 )
     for name, default in spec.hyperparameters().items():
         if name in found or name in NOT_TUNED or name not in _GLOBAL_RANGES:
@@ -136,5 +156,5 @@ def default_search_space(spec: ArchSpec) -> list[SearchParam]:
         if name == "lr":
             base = float(default or 1e-3)
             cfg.update(low=base / 10, high=min(base * 10, 1.0))
-        found[name] = SearchParam(name=name, **cfg)
+        found[name] = SearchParam(name=name, default=default, **cfg)
     return list(found.values())
