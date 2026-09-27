@@ -41,6 +41,7 @@ ml = [
   "jinja2>=3.1",
   "transformers>=4.45",
   "tokenizers>=0.20",
+  "soundfile>=0.12",
 ]
 # Capa 2
 llm = []

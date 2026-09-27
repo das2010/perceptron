@@ -17,6 +17,7 @@ from perceptron.data.schema import SemanticType, TableSchema, infer_schema
 from perceptron.data.series import SeriesConfig, detect_series, temporal_split_per_series
 from perceptron.data.sources.files import (
     SourceKind,
+    audio_folder_index,
     image_folder_index,
     open_source,
     scan_table,
@@ -104,6 +105,18 @@ def text_column(schema: TableSchema) -> str | None:
     return None
 
 
+def _materialize_audio(src: Path, staging: Path) -> tuple[TableSchema, pl.DataFrame]:
+    df = audio_folder_index(src, staging / FILES_DIR)
+    if df.height == 0:
+        raise ValidationError("no se encontraron archivos de audio")
+    has_labels = df["label"].null_count() < df.height
+    schema = infer_schema(df.select("path", "label"), target=IMAGE_TARGET if has_labels else None)
+    schema = schema.with_overrides(
+        {"path": SemanticType.FILEPATH, "label": SemanticType.CATEGORICAL}
+    )
+    return schema, df
+
+
 def _materialize_text_folder(src: Path, req: IngestRequest) -> tuple[TableSchema, pl.DataFrame]:
     df = text_folder_table(src)
     if df.height == 0:
@@ -172,6 +185,10 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
                 schema, df = _materialize_text_folder(detected.path, req)
                 extra_meta["text_column"] = "text"
                 data_file = TABLE_FILE
+            elif detected.kind is SourceKind.AUDIO_FOLDER:
+                modality = Modality.AUDIO
+                schema, df = _materialize_audio(detected.path, staging)
+                data_file = INDEX_FILE
             else:
                 modality = Modality.IMAGE
                 schema, df = _materialize_images(detected.path, staging)

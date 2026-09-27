@@ -226,7 +226,8 @@ class Workflow:
             if fitted.spec.model_dump(mode="json") == pipeline.graph:
                 return fitted
         spec = PipelineSpec.model_validate(pipeline.graph)
-        fitted = fit_pipeline(spec, self.view(dv).read("train"))
+        view = self.view(dv)
+        fitted = fit_pipeline(spec, view.read("train"), view.files_dir)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(fitted.model_dump_json(indent=2), encoding="utf-8")
         return fitted

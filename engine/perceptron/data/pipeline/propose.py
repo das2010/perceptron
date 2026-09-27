@@ -6,6 +6,7 @@ Cada decisión queda explicada en `rationale` (la UI la muestra en "¿Por qué?"
 from __future__ import annotations
 
 from perceptron.data.pipeline.pipeline import (
+    AudioSpec,
     AugmentSpec,
     ImageSpec,
     PipelineSpec,
@@ -48,6 +49,8 @@ def propose_pipeline(
     )
     if card.modality is Modality.IMAGE:
         return _propose_image(card, target, image_size, pretrained)
+    if card.modality is Modality.AUDIO:
+        return _propose_audio(card, target)
     if card.modality is Modality.TIMESERIES:
         return _propose_series(card)
     if card.modality is Modality.TEXT:
@@ -218,3 +221,22 @@ def _propose_series(card: ProfileCard) -> PipelineSpec:
         series=SeriesSpec(config=cfg, calendar=not anomaly),
         rationale=why,
     )
+
+
+def _propose_audio(card: ProfileCard, target: TargetSpec | None) -> PipelineSpec:
+    ap = card.audio
+    if ap is None:
+        raise ValueError("el ProfileCard no tiene perfil de audio")
+    common = int(ap.sample_rates[0].value) if ap.sample_rates else 16_000
+    sr = min(common, 16_000)
+    duration = float(ap.duration_quantiles.get("p95") or 1.0)
+    duration = round(min(max(duration, 0.25), 10.0), 2)
+    spec = AudioSpec(
+        sample_rate=sr, duration_s=duration, noise=0.005, time_shift=0.1, freq_mask=8, time_mask=10
+    )
+    why = [
+        f"Se convierte a mono y {sr} Hz; clips de {duration} s (p95 de duración).",
+        "Log-mel spectrogram de 64 bandas (ventana 32 ms, paso 10 ms), normalizado con train.",
+        "Augmentation en train: ruido leve, desplazamiento temporal y SpecAugment.",
+    ]
+    return PipelineSpec(modality=Modality.AUDIO, target=target, audio=spec, rationale=why)

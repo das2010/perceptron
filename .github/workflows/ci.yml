@@ -70,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        uc: [uc01, uc03, uc04, uc07, uc08]
+        uc: [uc01, uc03, uc04, uc07, uc08, uc09]
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6

@@ -135,6 +135,30 @@ def _text(card: ProfileCard, fitted: FittedPipeline, task: TaskType) -> Recommen
     return Recommendation("textcnn", spec, why)
 
 
+def _audio(
+    card: ProfileCard, fitted: FittedPipeline, task: TaskType, gpu: float, can_download: bool
+) -> Recommendation:
+    from perceptron.catalog.templates import audio_template
+    from perceptron.data.audio import frames_for
+
+    aspec = fitted.spec.audio
+    if aspec is None:
+        raise ValueError("pipeline de audio sin configuración")
+    frames = frames_for(aspec.duration_s, aspec.sample_rate)
+    num_classes = fitted.num_classes if task is not TaskType.REGRESSION else None
+    common = {"task": task, "num_classes": num_classes, "bins": aspec.bins, "frames": frames}
+    if gpu >= GPU_MIN_GB and can_download:
+        why = (
+            "Espectrograma como imagen + EfficientNet-B0 preentrenado (transfer learning desde "
+            "ImageNet), backbone congelado 3 épocas."
+        )
+        spec = audio_template("efficientnet_b0", pretrained=True, rationale=why, **common)  # type: ignore[arg-type]
+        return Recommendation("efficientnet_b0", spec, why)
+    why = f"{card.num_samples} clips en CPU: CNN compacta sobre el log-mel spectrogram."
+    spec = audio_template("small_cnn", rationale=why, **common)  # type: ignore[arg-type]
+    return Recommendation("small_cnn", spec, why)
+
+
 LARGE_SERIES_WINDOWS = 20_000
 
 
@@ -197,4 +221,6 @@ def recommend(
         return _text(card, fitted, task)
     if card.modality is Modality.TIMESERIES:
         return _series(card, fitted, gpu)
+    if card.modality is Modality.AUDIO:
+        return _audio(card, fitted, task, gpu, can_download)
     raise NotImplementedError(f"reglas para {card.modality} llegan en Capa 1b")

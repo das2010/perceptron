@@ -32,6 +32,7 @@ class SourceKind(StrEnum):
     TABLE = "table"
     IMAGE_FOLDER = "image_folder"
     TEXT_FOLDER = "text_folder"
+    AUDIO_FOLDER = "audio_folder"
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,6 +122,9 @@ def open_source(path: Path) -> Iterator[DetectedSource]:
     if any(_iter_images(path)):
         yield DetectedSource(SourceKind.IMAGE_FOLDER, path)
         return
+    if any(_iter_audio(path)):
+        yield DetectedSource(SourceKind.AUDIO_FOLDER, path)
+        return
     if any(_iter_texts(path)):
         yield DetectedSource(SourceKind.TEXT_FOLDER, path)
         return
@@ -143,6 +147,54 @@ def _iter_images(root: Path) -> Iterator[Path]:
     for p in sorted(root.rglob("*")):
         if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS:
             yield p
+
+
+def _iter_audio(root: Path) -> Iterator[Path]:
+    from perceptron.data.audio import AUDIO_EXTENSIONS
+
+    for p in sorted(root.rglob("*")):
+        if p.is_file() and p.suffix.lower() in AUDIO_EXTENSIONS:
+            yield p
+
+
+def audio_folder_index(root: Path, files_dir: Path) -> pl.DataFrame:
+    """Copia/enlaza los audios a `files_dir` y devuelve el índice (etiqueta = carpeta)."""
+    from perceptron.data.audio import info
+
+    rows: list[dict[str, object]] = []
+    for src in _iter_audio(root):
+        rel = src.relative_to(root)
+        link_or_copy(src, files_dir / rel)
+        try:
+            meta = info(src)
+            row = {
+                "sample_rate": meta.sample_rate,
+                "channels": meta.channels,
+                "duration": meta.duration,
+                "format": meta.format,
+                "corrupt": False,
+            }
+        except Exception:  # archivo ilegible: se marca y se excluye del entrenamiento
+            row = {
+                "sample_rate": None,
+                "channels": None,
+                "duration": None,
+                "format": None,
+                "corrupt": True,
+            }
+        rows.append(
+            {"path": rel.as_posix(), "label": rel.parts[0] if len(rel.parts) > 1 else None, **row}
+        )
+    schema = {
+        "path": pl.String,
+        "label": pl.String,
+        "sample_rate": pl.Int32,
+        "channels": pl.Int8,
+        "duration": pl.Float64,
+        "format": pl.String,
+        "corrupt": pl.Boolean,
+    }
+    return pl.DataFrame(rows, schema=schema)
 
 
 def _iter_texts(root: Path) -> Iterator[Path]:

@@ -9,6 +9,7 @@ modelo. En 1a el DAG es lineal: una secuencia de pasos sobre columnas.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Literal
 
 import numpy as np
@@ -59,6 +60,24 @@ class TextSpec(BaseModel):
     max_length: int = Field(default=64, ge=4, le=4096)
 
 
+class AudioSpec(BaseModel):
+    sample_rate: int = Field(default=16_000, ge=4_000, le=96_000)
+    duration_s: float = Field(default=1.0, gt=0, le=60)
+    features: Literal["mel", "mfcc"] = "mel"
+    n_mels: int = Field(default=64, ge=8, le=256)
+    n_mfcc: int = Field(default=20, ge=4, le=128)
+    noise: float = Field(default=0.0, ge=0, le=0.5, description="Ruido gaussiano (train)")
+    time_shift: float = Field(
+        default=0.0, ge=0, le=0.5, description="Desplazamiento máx. (fracción)"
+    )
+    freq_mask: int = Field(default=0, ge=0, description="SpecAugment: ancho máx. en bandas")
+    time_mask: int = Field(default=0, ge=0, description="SpecAugment: ancho máx. en frames")
+
+    @property
+    def bins(self) -> int:
+        return self.n_mels if self.features == "mel" else self.n_mfcc
+
+
 class SeriesSpec(BaseModel):
     config: SeriesConfig
     calendar: bool = True
@@ -73,6 +92,7 @@ class PipelineSpec(BaseModel):
     image: ImageSpec | None = None
     text: TextSpec | None = None
     series: SeriesSpec | None = None
+    audio: AudioSpec | None = None
     rationale: list[str] = Field(default_factory=list, description="Por qué se eligió cada paso")
 
 
@@ -89,6 +109,8 @@ class FittedPipeline(BaseModel):
     image_std: list[float] | None = None
     vocab: list[str] | None = None
     series_state: dict[str, Any] | None = None
+    audio_mean: float | None = None
+    audio_std: float | None = None
     pad_id: int = 0
 
     @property
@@ -144,15 +166,27 @@ def _apply_steps(fitted: FittedPipeline, df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
-def fit_pipeline(spec: PipelineSpec, train: pl.DataFrame) -> FittedPipeline:
-    """Ajusta el pipeline con las filas de **train** únicamente."""
+def fit_pipeline(
+    spec: PipelineSpec, train: pl.DataFrame, files_dir: Path | None = None
+) -> FittedPipeline:
+    """Ajusta el pipeline con las filas de **train** únicamente.
+
+    `files_dir` (imágenes/audio) permite calcular estadísticas de normalización.
+    """
     fitted = FittedPipeline(spec=spec)
     if spec.target is not None and spec.target.name in train.columns:
         extra = _fit_target(spec.target, train[spec.target.name])
         fitted = fitted.model_copy(update=extra)
 
     if spec.modality is Modality.IMAGE:
+        if files_dir is not None and spec.image and spec.image.normalize == "dataset":
+            return _fit_image_files(fitted, train, files_dir)
         return fitted
+    if spec.modality is Modality.AUDIO:
+        if files_dir is None or "path" not in train.columns:
+            return fitted
+        ok = train.filter(~pl.col("corrupt")) if "corrupt" in train.columns else train
+        return fit_audio_stats(fitted, [files_dir / p for p in ok["path"].to_list()])
     if spec.modality is Modality.TEXT:
         return _fit_text(fitted, train)
     if spec.modality is Modality.TIMESERIES:
@@ -211,6 +245,29 @@ def transform_tabular(fitted: FittedPipeline, df: pl.DataFrame) -> TabularArrays
 
 
 # ------------------------------------------------------------------ imágenes
+
+
+IMAGE_STATS_SAMPLE = 200
+
+
+def _fit_image_files(
+    fitted: FittedPipeline, train: pl.DataFrame, files_dir: Path
+) -> FittedPipeline:
+    from PIL import Image
+
+    img = fitted.spec.image or ImageSpec()
+    ok = train.filter(~pl.col("corrupt")) if "corrupt" in train.columns else train
+    arrays = []
+    for rel in ok["path"].head(IMAGE_STATS_SAMPLE).to_list():
+        try:
+            with Image.open(files_dir / rel) as im:
+                mode = "L" if img.channels == 1 else "RGB"
+                small = im.convert(mode).resize((min(img.size, 64), min(img.size, 64)))
+                arr = np.asarray(small, dtype=np.float32) / 255.0
+        except OSError:
+            continue
+        arrays.append(arr[..., None] if arr.ndim == 2 else arr)
+    return fit_image_stats(fitted, arrays)
 
 
 def fit_image_stats(fitted: FittedPipeline, images: list[np.ndarray]) -> FittedPipeline:
@@ -321,4 +378,41 @@ def transform_text(fitted: FittedPipeline, df: pl.DataFrame) -> np.ndarray:
     index = {w: i for i, w in enumerate(fitted.vocab or [])}
     return np.asarray([encode(t, index, spec.max_length) for t in texts], dtype=np.int64).reshape(
         len(texts), spec.max_length
+    )
+
+
+# ------------------------------------------------------------------ audio
+
+
+def audio_features(spec: AudioSpec, wav: np.ndarray) -> Any:
+    """Audio [1, N] (ya remuestreado) → features [1, bins, frames] de duración fija."""
+    from perceptron.data.audio import fix_length, log_mel, mfcc
+
+    x = fix_length(wav, round(spec.duration_s * spec.sample_rate))
+    if spec.features == "mfcc":
+        return mfcc(x, spec.sample_rate, spec.n_mfcc, spec.n_mels)
+    return log_mel(x, spec.sample_rate, spec.n_mels)
+
+
+def fit_audio_stats(fitted: FittedPipeline, paths: list[Any], sample: int = 200) -> FittedPipeline:
+    """Media/desvío global de las features sobre una muestra de train."""
+    from perceptron.data.audio import load
+
+    spec = fitted.spec.audio
+    if spec is None or not paths:
+        return fitted
+    values = []
+    for p in paths[:sample]:
+        try:
+            wav, _ = load(p, sample_rate=spec.sample_rate)
+        except Exception:  # noqa: S112 - se ignoran archivos ilegibles
+            continue
+        values.append(audio_features(spec, wav).flatten())
+    if not values:
+        return fitted
+    import torch
+
+    allv = torch.cat(values)
+    return fitted.model_copy(
+        update={"audio_mean": float(allv.mean()), "audio_std": float(allv.std()) or 1.0}
     )

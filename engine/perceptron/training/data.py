@@ -111,6 +111,54 @@ class SeriesAnomalyDataset(Dataset[tuple[torch.Tensor, ...]]):
         return self.x[i], self.label[i], self.normal[i]
 
 
+class AudioDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
+    """Features de audio calculadas al vuelo con caché en memoria por archivo."""
+
+    def __init__(
+        self, fitted: FittedPipeline, df: pl.DataFrame, files_dir: Path, *, train: bool
+    ) -> None:
+        df = df.filter(~pl.col("corrupt")) if "corrupt" in df.columns else df
+        self.paths = [files_dir / p for p in df["path"].to_list()]
+        spec = fitted.spec.audio
+        if spec is None:
+            raise ValueError("pipeline de audio sin `audio`")
+        self.spec = spec
+        self.train = train
+        self.mean = fitted.audio_mean or 0.0
+        self.std = fitted.audio_std or 1.0
+        target = fitted.spec.target
+        if target and target.name in df.columns:
+            self.y = torch.tensor(encode_target(fitted, df[target.name]))
+        else:
+            self.y = torch.zeros(len(self.paths), dtype=torch.long)
+        self._cache: dict[int, np.ndarray] = {}
+
+    def __len__(self) -> int:
+        return len(self.paths)
+
+    def _wave(self, i: int) -> np.ndarray:
+        from perceptron.data.audio import load
+
+        if i not in self._cache:
+            self._cache[i], _ = load(self.paths[i], sample_rate=self.spec.sample_rate)
+        return self._cache[i]
+
+    def __getitem__(self, i: int) -> tuple[torch.Tensor, torch.Tensor]:
+        from perceptron.data.audio import spec_augment
+        from perceptron.data.pipeline.pipeline import audio_features
+
+        wav = self._wave(i)
+        if self.train and self.spec.time_shift:
+            shift = int(np.random.uniform(-1, 1) * self.spec.time_shift * wav.shape[-1])
+            wav = np.roll(wav, shift, axis=-1)
+        if self.train and self.spec.noise:
+            wav = wav + np.random.normal(0, self.spec.noise, wav.shape).astype(np.float32)
+        feats = (audio_features(self.spec, wav) - self.mean) / self.std
+        if self.train and (self.spec.freq_mask or self.spec.time_mask):
+            feats = spec_augment(feats, self.spec.freq_mask, self.spec.time_mask)
+        return feats.float(), self.y[i]
+
+
 class ImageDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
     """Lee las imágenes desde disco en cada acceso (no carga el dataset en memoria)."""
 
@@ -161,6 +209,8 @@ def make_dataset(
         return ImageDataset(fitted, df, view.files_dir, train=train)
     if view.modality is Modality.TEXT:
         return TextDataset(fitted, df)
+    if view.modality is Modality.AUDIO:
+        return AudioDataset(fitted, df, view.files_dir, train=train)
     raise NotImplementedError(f"datasets para {view.modality} llegan en Capa 1b")
 
 

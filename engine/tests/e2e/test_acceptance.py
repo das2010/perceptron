@@ -78,3 +78,11 @@ def test_uc08_anomalies(workspace_dir: Path, fixtures_dir: Path) -> None:
     assert s["architecture"] == "series-ae_conv"
     assert s["model_version_id"]
     assert s["test_metrics"]["f1"] > 0.7
+
+
+def test_uc09_audio(workspace_dir: Path, fixtures_dir: Path) -> None:
+    s = _quickstart(workspace_dir, fixtures_dir / "uc09_motor_audio", "--max-epochs", "30")
+    assert s["modality"] == "audio"
+    assert s["architecture"] == "audio-small_cnn"
+    assert s["model_version_id"]
+    assert s["test_metrics"]["accuracy"] > 0.8

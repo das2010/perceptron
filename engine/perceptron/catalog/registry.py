@@ -391,6 +391,7 @@ def _p(t: str, default: Any, **kw: Any) -> ParamSpec:
 _DROPOUT = _p("float", 0.1, low=0.0, high=0.7, tunable=True, description="Probabilidad de dropout")
 _T, _I, _TXT = (Modality.TABULAR,), (Modality.IMAGE,), (Modality.TEXT,)
 _TS = (Modality.TIMESERIES,)
+_IA = (Modality.IMAGE, Modality.AUDIO)  # espectrogramas como imágenes de 1 canal
 _FEAT, _FMAP, _SEQ = TensorKind.FEATURES, TensorKind.FEATURE_MAP, TensorKind.SEQUENCE
 
 BLOCKS: dict[str, BlockSpec] = {
@@ -463,7 +464,7 @@ BLOCKS: dict[str, BlockSpec] = {
                 "pretrained": _p("bool", True),
                 "freeze": _p("str", "none", description="none | until_epoch:N"),
             },
-            modalities=_I,
+            modalities=_IA,
             is_backbone=True,
         ),
         BlockSpec(
@@ -477,7 +478,7 @@ BLOCKS: dict[str, BlockSpec] = {
                 "depth": _p("int", 3, low=1, high=5, tunable=True),
                 "dropout": _p("float", 0.1, low=0.0, high=0.5, tunable=True),
             },
-            modalities=_I,
+            modalities=_IA,
             is_backbone=True,
         ),
         BlockSpec(

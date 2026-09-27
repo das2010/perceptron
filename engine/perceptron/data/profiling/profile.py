@@ -13,6 +13,7 @@ from perceptron.data.profiling.alerts import (
     image_alerts,
     target_alerts,
 )
+from perceptron.data.profiling.audio import audio_alerts, profile_audio
 from perceptron.data.profiling.card import ProfileCard
 from perceptron.data.profiling.images import profile_images
 from perceptron.data.profiling.tabular import profile_columns, profile_target
@@ -36,7 +37,7 @@ def profile_dataset(
     total = int(sum(counts.values()))
 
     schema = view.schema
-    if view.modality is Modality.IMAGE:
+    if view.modality in (Modality.IMAGE, Modality.AUDIO):
         feature_df = df.select("path", "label")
     else:
         feature_df = df.drop([c for c in _INTERNAL if c in df.columns])
@@ -47,9 +48,14 @@ def profile_dataset(
 
     images = None
     dup_fraction: float | None = None
+    audio = None
     if view.modality is Modality.IMAGE:
         images = profile_images(df, view.files_dir)
         alerts += image_alerts(images)
+        num_features = 1
+    elif view.modality is Modality.AUDIO:
+        audio = profile_audio(df, view.files_dir)
+        alerts += audio_alerts(audio)
         num_features = 1
     else:
         alerts += column_alerts(schema, columns, feature_df)
@@ -75,9 +81,10 @@ def profile_dataset(
         split_counts={k: int(counts.get(k, 0)) for k in ("train", "val", TEST)},
         num_features=num_features,
         target=target,
-        columns=[] if view.modality is Modality.IMAGE else columns,
+        columns=[] if view.modality in (Modality.IMAGE, Modality.AUDIO) else columns,
         images=images,
         text=text,
+        audio=audio,
         series=series,
         duplicate_row_fraction=dup_fraction,
         alerts=alerts,

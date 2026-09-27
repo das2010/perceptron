@@ -382,3 +382,35 @@ def series_template(
         metrics=metrics,
         provenance=Provenance(origin=Origin.RULES, template=backbone, rationale=rationale),
     )
+
+
+def audio_template(
+    backbone: str,
+    *,
+    task: TaskType,
+    num_classes: int | None,
+    bins: int,
+    frames: int,
+    pretrained: bool = False,
+    epochs: int = 30,
+    rationale: str | None = None,
+) -> ArchSpec:
+    """Clasificación sobre espectrogramas: `small_cnn` o un backbone timm (como en §9.2)."""
+    base = image_template(
+        backbone,
+        task=task,
+        num_classes=num_classes,
+        image_size=bins,
+        channels=1,
+        pretrained=pretrained,
+        freeze_epochs=3 if pretrained else 0,
+        epochs=epochs,
+        rationale=rationale,
+    )
+    return base.model_copy(
+        update={
+            "name": f"audio-{backbone}",
+            "modality": Modality.AUDIO,
+            "input": InputSpec(kind="spectrogram", shape=[1, bins, frames], from_pipeline="audio"),
+        }
+    )
