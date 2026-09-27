@@ -24,7 +24,6 @@ from perceptron.catalog.registry import (
     TensorSpec,
     get_block,
 )
-from perceptron.domain.enums import TaskType
 
 
 class ArchBuildError(ValueError):
@@ -51,14 +50,13 @@ def input_tensor_spec(spec: ArchSpec) -> TensorSpec:
 
 
 def num_outputs(spec: ArchSpec) -> int:
-    t = spec.task
-    if t.type is TaskType.REGRESSION:
-        return t.num_targets
-    if t.num_classes is None:
-        raise ArchBuildError("task.num_classes", "requerido para clasificación")
-    if t.num_classes == 2 and spec.loss.type == "bce" and not t.multilabel:
-        return 1
-    return t.num_classes
+    """Tamaño de la salida que espera la tarea (lo define su adaptador, ADR-0017)."""
+    from perceptron.tasks import get_adapter
+
+    try:
+        return get_adapter(spec.task.type).num_outputs(spec)
+    except ValueError as e:
+        raise ArchBuildError("task", str(e)) from None
 
 
 def topological_order(spec: ArchSpec) -> tuple[list[str], dict[str, list[str]]]:
@@ -241,12 +239,11 @@ def build_model(
 
     output = specs[order[-1]]
     expected = ctx.num_outputs
-    if output.kind is not TensorKind.FEATURES or output.dim != expected:
-        raise ArchBuildError(
-            f"nodes[{len(spec.nodes) - 1}]",
-            f"la salida debe ser un vector de {expected} valores y es "
-            f"{output.kind.value} {list(output.shape)}",
-        )
+    from perceptron.tasks import get_adapter
+
+    problem = get_adapter(spec.task.type).check_output(output.kind.value, output.shape, spec)
+    if problem:
+        raise ArchBuildError(f"nodes[{len(spec.nodes) - 1}]", problem)
 
     model: nn.Module
     if materialize:

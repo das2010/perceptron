@@ -4,16 +4,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
-import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 
 from perceptron.archspec.builder import build_model
 from perceptron.archspec.schema import ArchSpec
 from perceptron.core.errors import NotFoundError
-from perceptron.data.pipeline.pipeline import FittedPipeline, decode_regression
+from perceptron.data.pipeline.pipeline import FittedPipeline
 from perceptron.domain.enums import TaskType
+from perceptron.tasks import Predictions, get_adapter
 from perceptron.training.config import (
     ARCHSPEC_FILE,
     BEST_CKPT,
@@ -37,13 +38,6 @@ class TrainedModel:
         return self.spec.task.type
 
 
-@dataclass
-class Predictions:
-    y_true: np.ndarray | None
-    y_pred: np.ndarray  # clase (índice) o valor en la escala original
-    proba: np.ndarray | None  # [n, k] para clasificación
-
-
 def load_trained(run_dir: Path, *, prefer: str = BEST_CKPT) -> TrainedModel:
     ckpt_dir = run_dir / CHECKPOINTS_DIR
     ckpt = ckpt_dir / prefer
@@ -64,26 +58,11 @@ def load_trained(run_dir: Path, *, prefer: str = BEST_CKPT) -> TrainedModel:
     return TrainedModel(spec=spec, pipeline=pipeline, model=model, checkpoint=ckpt)
 
 
-@torch.no_grad()
-def predict(
-    trained: TrainedModel, ds: Dataset[tuple[torch.Tensor, ...]], batch_size: int = 256
-) -> Predictions:
-    loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
-    outs, ys = [], []
-    for batch in loader:
-        *inputs, y = batch
-        outs.append(trained.model(*inputs))
-        ys.append(y)
-    out = torch.cat(outs) if outs else torch.zeros(0, 1)
-    y_true = torch.cat(ys).numpy() if ys else None
-    if trained.task is TaskType.REGRESSION:
-        pred = decode_regression(trained.pipeline, out.squeeze(-1).numpy())
-        if y_true is not None:
-            y_true = decode_regression(trained.pipeline, y_true)
-        return Predictions(y_true=y_true, y_pred=pred, proba=None)
-    if trained.spec.loss.type == "bce":
-        p1 = torch.sigmoid(out.squeeze(-1))
-        proba = torch.stack([1 - p1, p1], dim=1)
-    else:
-        proba = out.softmax(-1)
-    return Predictions(y_true=y_true, y_pred=proba.argmax(-1).numpy(), proba=proba.numpy())
+def predict(trained: TrainedModel, ds: Dataset[Any], batch_size: int = 256) -> Predictions:
+    loader = DataLoader(
+        ds, batch_size=batch_size, shuffle=False, collate_fn=getattr(ds, "collate_fn", None)
+    )
+    with torch.no_grad():
+        return get_adapter(trained.task).predict(
+            trained.model, loader, trained.spec, trained.pipeline
+        )

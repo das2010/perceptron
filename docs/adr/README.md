@@ -18,5 +18,6 @@
 | [0014](0014-dependencias-ml-y-torch-cpu.md) | Dependencias de ML, índice CPU de PyTorch y licencias | aceptado |
 | [0015](0015-un-subproceso-por-run.md) | Un subproceso por run/trial con eventos JSONL | aceptado |
 | [0016](0016-formato-dataset-version.md) | Formato en disco de DatasetVersion | aceptado |
+| [0017](0017-task-adapters.md) | Adaptadores de tarea (TaskAdapter) | aceptado |
 
 Plantilla: SPEC §18.3.

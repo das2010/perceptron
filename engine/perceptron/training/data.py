@@ -124,6 +124,7 @@ def make_loader(
         multiprocessing_context="spawn" if num_workers > 0 else None,
         drop_last=shuffle and len(ds) > batch_size,  # type: ignore[arg-type]
         generator=generator,
+        collate_fn=getattr(ds, "collate_fn", None),
     )
 
 
