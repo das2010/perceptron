@@ -29,7 +29,8 @@ DEFAULT_SUBSET = 0.3
 
 def spec_epochs(spec: ArchSpec) -> int:
     epochs = spec.training.epochs
-    return int(epochs.default if isinstance(epochs, HP) else epochs)
+    value = epochs.default if isinstance(epochs, HP) else epochs
+    return int(value) if isinstance(value, int | float) else 30
 
 
 @dataclass

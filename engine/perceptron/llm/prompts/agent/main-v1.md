@@ -1,5 +1,5 @@
 ---
-description: Agente autónomo de ML (SPEC §7.11): una acción por paso, con schema.
+description: "Agente autónomo de ML (SPEC §7.11): una acción por paso, con schema."
 variables: []
 ---
 ## system

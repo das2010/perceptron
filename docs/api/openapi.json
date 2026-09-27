@@ -1,6 +1,331 @@
 {
   "components": {
     "schemas": {
+      "AgentCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "approval": {
+            "$ref": "#/components/schemas/ApprovalPolicy"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/AgentLimits"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "pipeline_id"
+        ],
+        "title": "AgentCreate",
+        "type": "object"
+      },
+      "AgentLaunch": {
+        "properties": {
+          "agent_run": {
+            "$ref": "#/components/schemas/AgentRun"
+          },
+          "job": {
+            "$ref": "#/components/schemas/Job"
+          }
+        },
+        "required": [
+          "agent_run",
+          "job"
+        ],
+        "title": "AgentLaunch",
+        "type": "object"
+      },
+      "AgentLimits": {
+        "description": "Límites duros que aplica el sistema, no el LLM (RF-AGT-02).",
+        "properties": {
+          "max_disk_mb": {
+            "default": 5000,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Disk Mb",
+            "type": "number"
+          },
+          "max_epochs_per_trial": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Epochs Per Trial"
+          },
+          "max_iterations": {
+            "default": 4,
+            "description": "Estudios que puede lanzar",
+            "minimum": 1.0,
+            "title": "Max Iterations",
+            "type": "integer"
+          },
+          "max_llm_cost_usd": {
+            "default": 2.0,
+            "minimum": 0.0,
+            "title": "Max Llm Cost Usd",
+            "type": "number"
+          },
+          "max_steps": {
+            "default": 30,
+            "description": "Decisiones del LLM",
+            "minimum": 1.0,
+            "title": "Max Steps",
+            "type": "integer"
+          },
+          "max_time_s": {
+            "default": 3600,
+            "exclusiveMinimum": 0.0,
+            "title": "Max Time S",
+            "type": "number"
+          },
+          "max_trials": {
+            "default": 30,
+            "minimum": 1.0,
+            "title": "Max Trials",
+            "type": "integer"
+          },
+          "selection_metric": {
+            "default": "val_loss",
+            "description": "Métrica de validación",
+            "title": "Selection Metric",
+            "type": "string"
+          }
+        },
+        "title": "AgentLimits",
+        "type": "object"
+      },
+      "AgentRun": {
+        "additionalProperties": false,
+        "description": "Una ejecución del agente autónomo (RF-AGT-01..05): límites, bitácora y resultado.",
+        "properties": {
+          "approval": {
+            "additionalProperties": true,
+            "description": "ApprovalPolicy",
+            "title": "Approval",
+            "type": "object"
+          },
+          "archspecs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Archspecs",
+            "type": "array"
+          },
+          "best_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Run Id"
+          },
+          "cost_usd": {
+            "default": 0.0,
+            "minimum": 0.0,
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "fallback": {
+            "default": false,
+            "title": "Fallback",
+            "type": "boolean"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "iterations": {
+            "default": 0,
+            "description": "Estudios lanzados",
+            "minimum": 0.0,
+            "title": "Iterations",
+            "type": "integer"
+          },
+          "last_family": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Family"
+          },
+          "limits": {
+            "additionalProperties": true,
+            "description": "AgentLimits",
+            "title": "Limits",
+            "type": "object"
+          },
+          "log": {
+            "description": "Bitácora (RF-AGT-04)",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Log",
+            "type": "array"
+          },
+          "model_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version Id"
+          },
+          "pending_action": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Action"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AgentState",
+            "default": "running"
+          },
+          "steps": {
+            "default": 0,
+            "description": "Decisiones del LLM",
+            "minimum": 0.0,
+            "title": "Steps",
+            "type": "integer"
+          },
+          "stop_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Reason"
+          },
+          "strategies": {
+            "additionalProperties": true,
+            "description": "Estrategias propuestas",
+            "title": "Strategies",
+            "type": "object"
+          },
+          "studies": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Studies",
+            "type": "array"
+          },
+          "test_metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Test Metrics",
+            "type": "object"
+          },
+          "trials": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Trials",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "dataset_version_id",
+          "pipeline_id"
+        ],
+        "title": "AgentRun",
+        "type": "object"
+      },
+      "AgentState": {
+        "description": "Estados del ciclo autónomo (SPEC §7.11).",
+        "enum": [
+          "running",
+          "awaiting_approval",
+          "stopped",
+          "finished",
+          "failed"
+        ],
+        "title": "AgentState",
+        "type": "string"
+      },
       "Alert": {
         "properties": {
           "code": {
@@ -85,6 +410,49 @@
         ],
         "title": "AlertSeverity",
         "type": "string"
+      },
+      "ApprovalBody": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          }
+        },
+        "title": "ApprovalBody",
+        "type": "object"
+      },
+      "ApprovalPolicy": {
+        "description": "Cuándo pedir aprobación humana antes de lanzar un estudio (RF-AGT-03).",
+        "properties": {
+          "budget_pct": {
+            "default": 50,
+            "exclusiveMinimum": 0.0,
+            "maximum": 100.0,
+            "title": "Budget Pct",
+            "type": "number"
+          },
+          "mode": {
+            "default": "never",
+            "enum": [
+              "never",
+              "each_iteration",
+              "family_change",
+              "budget_pct"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "ApprovalPolicy",
+        "type": "object"
       },
       "ArchEstimates": {
         "properties": {
@@ -2706,6 +3074,12 @@
             "minimum": 0.0,
             "title": "Output Per Mtok",
             "type": "number"
+          },
+          "request_extra": {
+            "additionalProperties": true,
+            "description": "Campos extra del request (p. ej. Ollama `think`)",
+            "title": "Request Extra",
+            "type": "object"
           },
           "structured_output": {
             "default": true,
@@ -5799,6 +6173,66 @@
         "title": "TorchInfo",
         "type": "object"
       },
+      "TournamentBody": {
+        "additionalProperties": false,
+        "properties": {
+          "archspec_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 2,
+            "title": "Archspec Ids",
+            "type": "array"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Device"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fraction": {
+            "default": 0.1,
+            "description": "Fracción de las épocas",
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Fraction",
+            "type": "number"
+          },
+          "metric": {
+            "default": "val_loss",
+            "title": "Metric",
+            "type": "string"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "subset": {
+            "default": 0.3,
+            "description": "Fracción de train por época",
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Subset",
+            "type": "number"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "pipeline_id",
+          "archspec_ids"
+        ],
+        "title": "TournamentBody",
+        "type": "object"
+      },
       "TrainingSpec": {
         "additionalProperties": false,
         "properties": {
@@ -6151,6 +6585,194 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/agent/runs/{agent_id}": {
+      "get": {
+        "operationId": "getAgentRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Agent Run",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/agent/runs/{agent_id}/approve": {
+      "post": {
+        "operationId": "approveAgentRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve Agent Run",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/agent/runs/{agent_id}/reject": {
+      "post": {
+        "operationId": "rejectAgentRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reject Agent Run",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/api/v1/agent/runs/{agent_id}/stop": {
+      "post": {
+        "operationId": "stopAgentRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "agent_id",
+            "required": true,
+            "schema": {
+              "title": "Agent Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stop Agent Run",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
     "/api/v1/arch/to-code": {
       "post": {
         "operationId": "archToCode",
@@ -7216,6 +7838,58 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/agent/runs": {
+      "post": {
+        "operationId": "createAgentRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentLaunch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Agent Run",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/arch/propose": {
       "post": {
         "description": "2–4 propuestas del LLM validadas, o la de reglas como fallback (RF-ARC-01..04).\n\nCada propuesta ya queda guardada como ArchSpec (origin llm/rules): el usuario elige una\npor `archspec.id`, la edita o las descarta.",
@@ -7264,6 +7938,59 @@
           }
         },
         "summary": "Propose Architecture",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/arch/tournament": {
+      "post": {
+        "description": "Entrena cada propuesta con presupuesto corto; la mejor en validación gana (RF-ARC-03).",
+        "operationId": "runTournament",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TournamentBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Tournament",
         "tags": [
           "arch"
         ]
