@@ -202,6 +202,9 @@ class LLMRoles:
         if skip:
             return rules(skip)
         n = min(max(n, 2), 4)
+        compact = self.gateway.compact(LLMPurpose.ARCHITECT, project)
+        if compact:
+            n = 2  # modelos locales: generar ArchSpecs completas es lo más caro
 
         def fix(c: ArchCandidate) -> ArchSpec:
             # input y task salen de los datos, no son decisión de diseño.
@@ -225,7 +228,7 @@ class LLMRoles:
             card=card,
             hardware=hardware_summary(hw),
             pipeline=fitted.spec.model_dump(mode="json"),
-            catalog=catalog_for(card, rec.spec.task.type),
+            catalog=catalog_for(card, rec.spec.task.type, compact=compact),
             constraints={
                 "base_archspec": rec.spec.model_dump(mode="json", exclude={"provenance"}),
                 "allow_pretrained": not offline_mode(),

@@ -49,6 +49,9 @@ class ModelInfo(BaseModel):
     request_extra: dict[str, Any] = Field(
         default_factory=dict, description="Campos extra del request (p. ej. Ollama `think`)"
     )
+    compact: bool | None = Field(
+        default=None, description="Payload compacto; None = según el proveedor (locales sí)"
+    )
 
     def cost(self, input_tokens: int, output_tokens: int) -> float:
         return (input_tokens * self.input_per_mtok + output_tokens * self.output_per_mtok) / 1e6
@@ -126,6 +129,10 @@ class Resolved(BaseModel):
     model_id: str
     model: ModelInfo
     ref: PurposeRef
+
+    @property
+    def compact(self) -> bool:
+        return self.model.compact if self.model.compact is not None else self.provider.is_local
 
 
 def load_catalog(path: Path | None = None) -> Catalog:

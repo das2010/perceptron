@@ -307,3 +307,34 @@ def test_encrypted_secrets_roundtrip(tmp_path: Path) -> None:
     assert again.get("ANTHROPIC_API_KEY") == "sk-secreto"
     again.delete("ANTHROPIC_API_KEY")
     assert again.get("ANTHROPIC_API_KEY") is None
+
+
+def test_compact_payload_for_local_models(ctx: EngineContext, project: Project) -> None:
+    from perceptron.llm.compact import compact_payload
+
+    data = {
+        "card": {
+            "columns": [{"numeric": {"histogram": [1, 2], "quantiles": {"p05": 1, "p50": 2}}}]
+        },
+        "runs": [{"history": [{"epoch": float(i)} for i in range(30)]} for _ in range(6)],
+        "catalog": [{"key": f"b{i}", "description": "larga"} for i in range(15)],
+    }
+    out = compact_payload(data)
+    col = out["card"]["columns"][0]["numeric"]
+    assert "histogram" not in col and col["quantiles"] == {"p50": 2}
+    assert len(out["runs"]) == 4 and len(out["runs"][0]["history"]) == 8
+    assert len(out["catalog"]) == 15 and "description" not in out["catalog"][0]
+
+    fake = FakeLLMProvider().script("architect", {"value": 1})
+    gw = _gateway(ctx, fake, settings=LLMSettings(enabled=True, profile="ollama"))
+    assert gw.compact(LLMPurpose.ARCHITECT, project)
+    card_ctx = LLMContext(evidence=[{"i": i} for i in range(10)])
+    out_call = gw.structured(
+        LLMPurpose.ARCHITECT,
+        Answer,
+        card_ctx,
+        project=project,
+        prompt_vars={"n_min": 2, "n_max": 2},
+    )
+    assert len(datos(fake.calls()[0])["evidence"]) == 4 and "compacto" in out_call.redactions
+    assert not _gateway(ctx, fake).compact(LLMPurpose.ARCHITECT, project)  # Claude: completo

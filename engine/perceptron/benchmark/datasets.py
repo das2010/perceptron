@@ -91,7 +91,7 @@ def download(url: str, dest: Path) -> Path:
     if expected and expected != digest:
         raise ValueError(f"checksum inválido para {dest.name}: {digest} ≠ {expected}")
     if not expected:
-        logger.warning("sha256 sin fijar", extra={"file": dest.name, "sha256": digest})
+        logger.warning(f"sha256 sin fijar: {dest.name} {digest}")
     return dest
 
 

@@ -32,6 +32,7 @@ from perceptron.domain.enums import LLMPurpose, PrivacyLevel
 from perceptron.domain.models import LLMCall, Project, Workspace
 from perceptron.llm.budget import OUTPUT_FRACTION, BudgetLedger, estimate_tokens
 from perceptron.llm.cache import LLMCache, cache_key
+from perceptron.llm.compact import compact_payload
 from perceptron.llm.config import LLMConfig, ProviderInfo, Resolved
 from perceptron.llm.errors import (
     LLMOutputInvalidError,
@@ -178,6 +179,13 @@ class Gateway:
             )
         return res
 
+    def compact(self, purpose: LLMPurpose, project: Project) -> bool:
+        """¿Este propósito va a un modelo que recibe el payload compacto?"""
+        try:
+            return self.resolve(purpose, project).compact
+        except LLMUnavailableError:
+            return False
+
     def available(self, purpose: LLMPurpose, project: Project) -> bool:
         try:
             self.resolve(purpose, project)
@@ -208,6 +216,9 @@ class Gateway:
         res = self.resolve(purpose, project)
         level = self.effective_level(project, local=res.provider.is_local)
         filtered = PrivacyFilter(level, self.policy).apply(ctx, vision=res.model.vision)
+        if res.compact:  # modelos locales lentos: menos tokens (después del filtro)
+            filtered.data = compact_payload(filtered.data)
+            filtered.redactions = [*filtered.redactions, "compacto"]
         prompt = self.prompts.get(purpose, prompt_name, res.ref.prompt_version)
         system, user = prompt.render(filtered.data, **(prompt_vars or {}))
         return res, prompt, filtered, system, user
