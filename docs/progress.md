@@ -8,18 +8,19 @@ La columna **Capa** es la capa de §14 donde se implementa.
 | Entregable (§14) | Estado |
 |---|---|
 | Monorepo §12, `CLAUDE.md`, README | ✅ |
-| Tooling Python (uv, Ruff, mypy, pytest) | ✅ configurado · ⚠️ sin ejecutar localmente (ver nota) |
+| Tooling Python (uv, Ruff, mypy, pytest) | ✅ en CI: ruff + mypy (46 archivos) + 57 tests en Windows y Linux |
 | Tooling frontend (pnpm, Vite, ESLint, Prettier, Vitest) | ✅ lint, typecheck, 17 tests y build en verde |
-| CI Windows + Linux (`.github/workflows/ci.yml`) | ✅ definido · pendiente de remoto en GitHub |
+| CI Windows + Linux (`.github/workflows/ci.yml`) | ✅ verde en `das2010/perceptron` |
 | Config y logging estructurado | ✅ `perceptron.core` |
 | Modelos de dominio base (§6) | ✅ `perceptron.domain` (20 entidades) |
 | Almacenamiento local (SQLite + filesystem) | ✅ `perceptron.storage` |
-| OpenAPI → TypeScript | ✅ `pnpm gen:api` · `docs/api/openapi.json` provisional hasta poder ejecutar el Engine |
+| OpenAPI → TypeScript | ✅ `pnpm gen:api`; el job de contrato verifica que no haya drift |
 | Fixtures por caso de uso | ✅ `fixtures/` UC-01…UC-10, determinísticos |
 | ADRs de §2 | ✅ `docs/adr/` 0001–0013 |
 
-**Criterios de aceptación:** `pnpm test` ✅ local · `uv run pytest` y `perceptron --version` ⏳ pendientes: en esta máquina una
-política de seguridad bloquea la ejecución de `.venv\Scripts\python.exe` (lanzador del venv). Hay que habilitarlo (IT) o validar en CI.
+**Criterios de aceptación: ✅ cumplidos en CI** — `uv run pytest` (57 tests, cobertura ≥ 80 % en core/domain), `pnpm test` y
+`perceptron --version` pasan en `ubuntu-latest` y `windows-latest`. En la máquina de desarrollo local una política de seguridad
+bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta que IT lo habilite.
 
 ## Requisitos funcionales
 
