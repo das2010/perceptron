@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -320,6 +320,7 @@ class Workflow:
         control: StudyControl | None = None,
         on_event: Callable[[RunEvent], None] | None = None,
         study: Study | None = None,
+        limit_train_batches: float | None = None,
     ) -> tuple[Study, StudyResult]:
         project = self.project(project_id)
         dv = self.dataset(dataset_version_id)
@@ -346,6 +347,7 @@ class Workflow:
             device=device or hw.recommended_device,
             seed=strategy.seed,
             pretrained_allowed=not offline_mode(),
+            limit_train_batches=limit_train_batches,
         )
         recorders: dict[str, RunRecorder] = {}
         tags = {
@@ -516,6 +518,7 @@ class QuickstartResult:
     report: Report | None = None
     llm_calls: int = 0
     llm_cost_usd: float = 0.0
+    tournament: list[dict[str, Any]] = field(default_factory=list)
 
     def summary(self) -> dict[str, Any]:
         best = self.study_result.best_trial
@@ -560,6 +563,7 @@ class QuickstartResult:
             "llm_calls": self.llm_calls,
             "llm_cost_usd": round(self.llm_cost_usd, 6),
             "report_origin": self.report.origin if self.report else None,
+            "tournament": self.tournament,
         }
 
 
@@ -600,9 +604,26 @@ def quickstart(
     pipeline = wf.propose_pipeline(dv.id)
     budget = Budget(max_trials=trials, max_epochs_per_trial=max_epochs, max_time_s=max_time_s)
     arch_origin, fallback = Origin.RULES, None
+    tournament: list[dict[str, Any]] = []
     if llm:
         proposals = wf.roles.propose_architectures(dv.id, pipeline.id, mode="auto")
-        archspec, why = proposals.options[0].record, proposals.options[0].rationale
+        chosen = proposals.options[0]
+        if len(proposals.options) > 1:
+            from perceptron.services.tournament import mini_tournament
+
+            t = mini_tournament(
+                wf,
+                project.id,
+                dv.id,
+                pipeline.id,
+                [o.record.id for o in proposals.options],
+                device=device,
+            )
+            tournament = [
+                {"architecture": e.name, "metric": e.metric, "status": e.status} for e in t.entries
+            ]
+            chosen = next((o for o in proposals.options if o.record.id == t.winner), chosen)
+        archspec, why = chosen.record, chosen.rationale
         arch_origin, fallback = proposals.origin, proposals.fallback_reason
     else:
         archspec, why = wf.propose_architecture(dv.id, pipeline.id)
@@ -641,6 +662,7 @@ def quickstart(
         report=report,
         llm_calls=len(calls),
         llm_cost_usd=sum(c.cost_usd for c in calls),
+        tournament=tournament,
     )
 
 

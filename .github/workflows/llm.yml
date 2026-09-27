@@ -1,0 +1,144 @@
+name: LLM (aceptación real)
+
+# Aceptación de la Capa 2 con proveedores reales (SPEC §14, §15.3, §15.4). No corre en
+# cada PR: los PR usan FakeLLMProvider. Manual (workflow_dispatch) y nocturno.
+# Claude necesita el secret ANTHROPIC_API_KEY; sin él, sus jobs se saltean con aviso.
+
+on:
+  workflow_dispatch:
+    inputs:
+      providers:
+        description: "Proveedores"
+        type: choice
+        options: [all, claude, ollama]
+        default: all
+      benchmark:
+        description: "Correr también el benchmark O2 (Claude)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 5 * * *"
+
+concurrency:
+  group: llm-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PERCEPTRON_LLM__PROJECT_BUDGET_USD: "4"
+  OLLAMA_MODEL: "qwen3:4b"
+
+jobs:
+  acceptance:
+    name: agente ${{ matrix.provider }} ${{ matrix.uc }}
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [claude, ollama]
+        uc: [uc01, uc04, uc09]
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      PERCEPTRON_LLM__PROFILE: ${{ matrix.provider == 'claude' && 'anthropic' || 'ollama' }}
+      PERCEPTRON_AGENT_MAX_COST: ${{ matrix.provider == 'claude' && '1.5' || '1' }}
+      PERCEPTRON_AGENT_MAX_STEPS: ${{ matrix.provider == 'claude' && '10' || '6' }}
+      PERCEPTRON_AGENT_MAX_TIME: ${{ matrix.provider == 'claude' && '2400' || '7200' }}
+      PERCEPTRON_REPORT_DIR: ${{ github.workspace }}/llm-reports
+    steps:
+      - uses: actions/checkout@v4
+      - name: ¿Hay clave?
+        id: key
+        run: |
+          wanted="${{ inputs.providers || 'all' }}"
+          if [ "$wanted" != "all" ] && [ "$wanted" != "${{ matrix.provider }}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ matrix.provider }}" = "claude" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::notice::Sin ANTHROPIC_API_KEY: se saltea ${{ matrix.provider }} ${{ matrix.uc }}"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: astral-sh/setup-uv@v6
+        if: steps.key.outputs.skip != 'true'
+        with:
+          enable-cache: true
+      - name: Install
+        if: steps.key.outputs.skip != 'true'
+        run: uv sync --all-packages --locked
+      - name: Ollama
+        if: steps.key.outputs.skip != 'true' && matrix.provider == 'ollama'
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags && break || sleep 2; done
+          ollama pull "$OLLAMA_MODEL"
+      - name: Agente ${{ matrix.uc }}
+        if: steps.key.outputs.skip != 'true'
+        run: uv run pytest -m llm_live -s -v engine/tests/live -k ${{ matrix.uc }}
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.key.outputs.skip != 'true'
+        with:
+          name: agente-${{ matrix.provider }}-${{ matrix.uc }}
+          path: llm-reports
+          if-no-files-found: ignore
+
+  golden:
+    name: golden ${{ matrix.provider }}
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [claude, ollama]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      PERCEPTRON_LLM__PROFILE: ${{ matrix.provider == 'claude' && 'anthropic' || 'ollama' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: ¿Hay clave?
+        id: key
+        run: |
+          wanted="${{ inputs.providers || 'all' }}"
+          if [ "$wanted" != "all" ] && [ "$wanted" != "${{ matrix.provider }}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ matrix.provider }}" = "claude" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::notice::Sin ANTHROPIC_API_KEY: se saltean los golden de Claude"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: astral-sh/setup-uv@v6
+        if: steps.key.outputs.skip != 'true'
+        with:
+          enable-cache: true
+      - name: Install
+        if: steps.key.outputs.skip != 'true'
+        run: uv sync --all-packages --locked
+      - name: Ollama
+        if: steps.key.outputs.skip != 'true' && matrix.provider == 'ollama'
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags && break || sleep 2; done
+          ollama pull "$OLLAMA_MODEL"
+      - name: Golden tests
+        if: steps.key.outputs.skip != 'true'
+        run: uv run pytest -m golden -v engine/tests/golden
+
+  benchmark:
+    name: benchmark O2
+    if: github.event_name == 'workflow_dispatch' && inputs.benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      PERCEPTRON_LLM__PROFILE: anthropic
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install
+        run: uv sync --all-packages --locked
+      - name: Benchmark
+        run: uv run perceptron bench run --out bench-report --max-cost 2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-o2
+          path: bench-report
+          if-no-files-found: ignore

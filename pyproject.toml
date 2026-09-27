@@ -95,7 +95,7 @@ warn_required_dynamic_aliases = true
 # ---------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
 testpaths = ["engine/tests"]
-addopts = "-ra --strict-markers -m 'not e2e'"
+addopts = "-ra --strict-markers -m 'not e2e and not llm_live and not golden'"
 # Un test colgado falla en vez de bloquear el CI (ej.: deadlock de DataLoader).
 timeout = 600
 markers = [
@@ -103,6 +103,8 @@ markers = [
   "gpu: requiere GPU (job nocturno)",
   "e2e: aceptación de punta a punta (job e2e de CI)",
   "network: necesita internet (descarga modelos de prueba)",
+  "llm_live: aceptación con proveedores LLM reales (workflow llm.yml, manual/nocturno)",
+  "golden: golden tests de prompts contra proveedores reales (workflow llm.yml)",
 ]
 
 [tool.coverage.run]

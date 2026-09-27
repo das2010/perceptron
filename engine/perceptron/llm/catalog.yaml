@@ -68,7 +68,7 @@ providers:
       # Qwen3 (Apache-2.0): chico, corre en CPU y respeta JSON Schema vía `format`.
       "qwen3:4b":
         { structured_output: true, tool_use: true, vision: false, context_window: 32768,
-          license: Apache-2.0, verified: true }
+          license: Apache-2.0, verified: true, request_extra: { think: false } }
 
 # Perfiles: qué modelo atiende cada propósito (LLMPurpose). Un proyecto elige un perfil
 # por nombre (`Project.llm_profile_id`); si no, se usa el activo o `default_profile`.

@@ -49,6 +49,11 @@ def register(app: typer.Typer) -> None:
     app.add_typer(hpo_app, name="hpo")
     app.add_typer(model_app, name="model")
     app.add_typer(llm_app, name="llm")
+    from perceptron.cli.agent import agent_app
+    from perceptron.cli.bench import bench_app
+
+    app.add_typer(agent_app, name="agent")
+    app.add_typer(bench_app, name="bench")
     app.command("train")(train)
     app.command("eval")(evaluate)
     app.command("quickstart")(quickstart)
