@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Literal
 
 from perceptron.archspec.schema import ArchSpec, resolve
+from perceptron.domain.enums import Origin
 from perceptron.hpo.strategy import Budget, HPOStrategy, Objective, default_search_space
 from perceptron.training.module import monitor_mode
 
@@ -41,6 +42,7 @@ def recommend_strategy(
             search_space=space,
             objectives=objectives,
             budget=budget,
+            origin=Origin.RULES,
             rationale="Hay más de un objetivo: NSGA-II busca el frente de Pareto.",
         )
     if trials <= 1 or not space:
@@ -50,6 +52,7 @@ def recommend_strategy(
             search_space=[],
             objectives=objectives,
             budget=budget.model_copy(update={"max_trials": 1}),
+            origin=Origin.RULES,
             rationale="Presupuesto mínimo: se entrena una vez con defaults sólidos.",
         )
     discrete = [p for p in space if p.type != "float"]
@@ -90,5 +93,6 @@ def recommend_strategy(
         search_space=space,
         objectives=objectives,
         budget=budget,
+        origin=Origin.RULES,
         rationale=why,
     )

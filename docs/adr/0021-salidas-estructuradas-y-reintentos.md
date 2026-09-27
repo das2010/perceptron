@@ -1,0 +1,12 @@
+# ADR-0021: Salidas estructuradas validadas con reintento y fallback por reglas
+- Estado: aceptado
+- Fecha: 2026-09-27
+- Contexto: RF-LLM-04 exige JSON contra schema, validado con Pydantic y reintentado con el error (máx. 3); RF-ARC-04 y RF-WIZ-03 exigen fallback por reglas; CLAUDE.md exige que toda salida que modifica el sistema sea validable y aceptable/rechazable por el usuario. Los proveedores ofrecen mecanismos distintos (tool forzado, `json_schema`, `format`) y algunos modelos locales ninguno.
+- Decisión:
+  - `Gateway.structured(purpose, OutputModel, LLMContext, validator=…)`: el schema Pydantic viaja como tool forzado (Anthropic), `response_format` (OpenAI y compatibles), `responseJsonSchema` (Gemini) o `format` (Ollama); si el modelo no declara `structured_output` se pide JSON en el texto y se extrae.
+  - Validación en dos niveles: Pydantic y un validador de dominio del rol (p. ej. `validate_archspec(...).feedback()`, rangos del catálogo para HPO). El error se reenvía como mensaje del usuario; hasta `max_attempts` (3) intentos, cada uno auditado.
+  - Lo que depende de los datos no lo decide el LLM: `input` y `task` de la ArchSpec, los defaults del espacio de búsqueda (trial 0 = plantilla), el presupuesto (se acota al del usuario) y las métricas del informe (salen de la evaluación).
+  - Si el LLM no está disponible, se pasa del presupuesto o no valida, cada rol usa la regla de Capa 1 e informa el motivo (`fallback_reason`). Todo queda como propuesta (ArchSpec con `origin=llm`, estrategia con `llm_call_id`) que el usuario acepta o edita.
+  - El agente de la Capa 2b decide con la misma técnica: una acción por paso como unión discriminada con schema, en vez de tool-calling nativo, para que funcione igual con modelos locales.
+- Consecuencias: el comportamiento es uniforme entre proveedores y verificable con `FakeLLMProvider`; la calidad depende del modelo pero nunca rompe el flujo.
+- Alternativas consideradas: modo "strict" de cada proveedor (limita el schema de ArchSpec: uniones, `$defs`); parsear texto libre (frágil).

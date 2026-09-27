@@ -68,7 +68,11 @@ class ValidationReport(BaseModel):
 
     def feedback(self) -> str:
         """Texto compacto para reenviar al LLM en el reintento (RF-LLM-04)."""
-        return "\n".join(f"[{i.stage.value}] {i.path}: {i.message}" for i in self.errors)
+        return "\n".join(
+            f"[{i.stage.value}] {i.path}: {i.message}"
+            + (f" (sugerencia: {i.suggestion})" if i.suggestion else "")
+            for i in self.errors
+        )
 
 
 def offline_mode() -> bool:

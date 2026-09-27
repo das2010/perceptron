@@ -144,6 +144,115 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/labels/prelabel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prelabel
+         * @description Pre-etiquetado de texto con el LLM (requiere privacidad L2+, RF-LBL-02).
+         */
+        post: operations["prelabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/llm/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Audit
+         * @description Cada llamada con el payload tal como salió (post-filtro), proveedor y modelo.
+         */
+        get: operations["listLlmAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/llm/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profiles */
+        get: operations["getLlmProfiles"];
+        /** Put Profiles */
+        put: operations["putLlmProfiles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/llm/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Providers */
+        get: operations["listLlmProviders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/llm/providers/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Provider */
+        put: operations["putLlmProvider"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/llm/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test Llm */
+        post: operations["testLlm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pipelines/{pipeline_id}": {
         parameters: {
             query?: never;
@@ -227,7 +336,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Propose Architecture */
+        /**
+         * Propose Architecture
+         * @description 2–4 propuestas del LLM validadas, o la de reglas como fallback (RF-ARC-01..04).
+         *
+         *     Cada propuesta ya queda guardada como ArchSpec (origin llm/rules): el usuario elige una
+         *     por `archspec.id`, la edita o las descarta.
+         */
         post: operations["proposeArchitecture"];
         delete?: never;
         options?: never;
@@ -263,6 +378,23 @@ export interface paths {
         put?: never;
         /** Hpo Strategy */
         post: operations["recommendHpoStrategy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/labels/guide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Labeling Guide */
+        post: operations["createLabelingGuide"];
         delete?: never;
         options?: never;
         head?: never;
@@ -388,6 +520,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/diagnosis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Diagnosis
+         * @description Diagnóstico guardado; si no hay (o `refresh`), se calcula (reglas + LLM).
+         */
+        get: operations["getRunDiagnosis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/evaluate": {
         parameters: {
             query?: never;
@@ -450,6 +602,23 @@ export interface paths {
         put?: never;
         /** Register Model */
         post: operations["registerModel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Report */
+        post: operations["createRunReport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -642,12 +811,45 @@ export interface components {
          * @enum {string}
          */
         AlertSeverity: "info" | "warning" | "high";
+        /** ArchEstimates */
+        ArchEstimates: {
+            /** Epoch Time S */
+            epoch_time_s?: number | null;
+            /** Memory Mb */
+            memory_mb?: number | null;
+            /** Num Params */
+            num_params?: number | null;
+        };
         /** ArchProposal */
         ArchProposal: {
             archspec: components["schemas"]["ArchSpecRecord"];
+            /** Confidence */
+            confidence?: number | null;
+            /** Cons */
+            cons?: string[];
+            estimates?: components["schemas"]["ArchEstimates"];
+            /** Pros */
+            pros?: string[];
             /** Rationale */
             rationale: string;
+            /** Risks */
+            risks?: string[];
+            /** Title */
+            title: string;
             validation: components["schemas"]["ValidationReport"];
+        };
+        /** ArchProposals */
+        ArchProposals: {
+            /**
+             * Fallback Reason
+             * @description Por qué se usaron reglas o se descartaron propuestas
+             */
+            fallback_reason?: string | null;
+            /** Llm Call Id */
+            llm_call_id?: string | null;
+            origin: components["schemas"]["Origin"];
+            /** Proposals */
+            proposals: components["schemas"]["ArchProposal"][];
         };
         /** ArchSpec */
         ArchSpec: {
@@ -858,6 +1060,17 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** ClassGuide */
+        ClassGuide: {
+            /** Definition */
+            definition: string;
+            /** Edge Cases */
+            edge_cases?: string[];
+            /** Name */
+            name: string;
+            /** Positive Examples */
+            positive_examples?: string[];
+        };
         /** ClassificationMetrics */
         ClassificationMetrics: {
             /** Accuracy */
@@ -1043,6 +1256,23 @@ export interface components {
          * @enum {string}
          */
         Device: "cuda" | "rocm" | "xpu" | "cpu";
+        /** Diagnosis */
+        Diagnosis: {
+            /** Actions */
+            actions?: components["schemas"]["SuggestedAction"][];
+            /** Llm Call Id */
+            llm_call_id?: string | null;
+            /**
+             * Origin
+             * @default rules
+             * @enum {string}
+             */
+            origin: "rules" | "llm";
+            /** Problems */
+            problems?: components["schemas"]["Problem"][];
+            /** Summary */
+            summary: string;
+        };
         /** EarlyStopping */
         EarlyStopping: {
             /** Mode */
@@ -1150,6 +1380,22 @@ export interface components {
             /** Vram Total Gb */
             vram_total_gb: number;
         };
+        /** GuideBody */
+        GuideBody: {
+            /**
+             * Classes
+             * @description Clase → descripción del usuario
+             */
+            classes: {
+                [key: string]: string;
+            };
+            /**
+             * Mode
+             * @default auto
+             * @enum {string}
+             */
+            mode: "auto" | "llm" | "rules";
+        };
         /**
          * HP
          * @description Referencia a un hiperparámetro ajustable con su valor por defecto.
@@ -1163,8 +1409,15 @@ export interface components {
         /** HPOStrategy */
         HPOStrategy: {
             budget?: components["schemas"]["Budget"];
+            /** Llm Call Id */
+            llm_call_id?: string | null;
             /** Objectives */
             objectives?: components["schemas"]["Objective"][];
+            /**
+             * @description Quién propuso la estrategia
+             * @default manual
+             */
+            origin: components["schemas"]["Origin"];
             /**
              * Parallelism
              * @default 1
@@ -1384,6 +1637,183 @@ export interface components {
              */
             status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
         };
+        /**
+         * LLMCall
+         * @description Registro de auditoría de una llamada al LLM (RF-PRV-03).
+         */
+        LLMCall: {
+            /**
+             * Attempt
+             * @description Intento dentro de la llamada (RF-LLM-04)
+             * @default 1
+             */
+            attempt: number;
+            /**
+             * Cache Hit
+             * @default false
+             */
+            cache_hit: boolean;
+            /**
+             * Cost Usd
+             * @default 0
+             */
+            cost_usd: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Error */
+            error?: string | null;
+            /** Id */
+            id?: string;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Latency S
+             * @default 0
+             */
+            latency_s: number;
+            /** Model */
+            model: string;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+            /**
+             * Payload
+             * @description Payload enviado, ya filtrado por PrivacyFilter
+             */
+            payload: {
+                [key: string]: unknown;
+            };
+            privacy_level: components["schemas"]["PrivacyLevel"];
+            /** Project Id */
+            project_id: string;
+            /** Prompt Version */
+            prompt_version?: string | null;
+            /** Provider */
+            provider: string;
+            purpose: components["schemas"]["LLMPurpose"];
+            /**
+             * Redactions
+             * @description Qué quitó o enmascaró el PrivacyFilter
+             */
+            redactions?: string[];
+            /** Response */
+            response?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Scope
+             * @description Ámbito del presupuesto: run, agente…
+             */
+            scope?: string | null;
+            /** Session Id */
+            session_id?: string | null;
+            /**
+             * Status
+             * @default ok
+             * @enum {string}
+             */
+            status: "ok" | "invalid" | "error";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+        };
+        /**
+         * LLMProfile
+         * @description Qué modelo atiende cada propósito (RF-LLM-03).
+         */
+        LLMProfile: {
+            /** Provider */
+            provider: string;
+            /** Purposes */
+            purposes?: {
+                [key: string]: components["schemas"]["PurposeRef"];
+            };
+        };
+        /**
+         * LLMPurpose
+         * @description Propósitos del LLM, cada uno con su perfil de modelo (RF-LLM-03).
+         * @enum {string}
+         */
+        LLMPurpose: "copilot" | "architect" | "hpo_strategist" | "diagnostician" | "agent" | "reporter" | "labeler";
+        /** LLMTestBody */
+        LLMTestBody: {
+            /** Project Id */
+            project_id?: string | null;
+            /** @default copilot */
+            purpose: components["schemas"]["LLMPurpose"];
+        };
+        /** LLMTestResult */
+        LLMTestResult: {
+            /** Error */
+            error?: string | null;
+            /** Latency S */
+            latency_s?: number | null;
+            /** Model */
+            model?: string | null;
+            /** Ok */
+            ok: boolean;
+            /** Provider */
+            provider?: string | null;
+        };
+        /**
+         * LabelKind
+         * @enum {string}
+         */
+        LabelKind: "class" | "multilabel" | "box" | "mask" | "temporal_event";
+        /** LabelSet */
+        LabelSet: {
+            /** Classes */
+            classes?: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /** Id */
+            id?: string;
+            kind: components["schemas"]["LabelKind"];
+            /**
+             * Path
+             * @description Ruta relativa al proyecto
+             */
+            path?: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+        };
+        /** LabelingGuide */
+        LabelingGuide: {
+            /** Classes */
+            classes: components["schemas"]["ClassGuide"][];
+            /** General Rules */
+            general_rules?: string[];
+        };
         /** LossSpec */
         LossSpec: {
             /**
@@ -1407,6 +1837,72 @@ export interface components {
          * @enum {string}
          */
         Modality: "tabular" | "image" | "text" | "timeseries" | "audio";
+        /** ModelCard */
+        ModelCard: {
+            /** Data */
+            data: string;
+            /** Ethical Considerations */
+            ethical_considerations?: string[];
+            /** Intended Use */
+            intended_use: string;
+            /** Limitations */
+            limitations?: string[];
+            /** Metrics */
+            metrics?: {
+                [key: string]: number;
+            };
+            /** Training */
+            training: string;
+        };
+        /**
+         * ModelInfo
+         * @description Capacidades declaradas de un modelo: el sistema degrada funciones según ellas.
+         */
+        ModelInfo: {
+            /**
+             * Context Window
+             * @default 32768
+             */
+            context_window: number;
+            /**
+             * Input Per Mtok
+             * @default 0
+             */
+            input_per_mtok: number;
+            /** License */
+            license?: string | null;
+            /**
+             * Output Per Mtok
+             * @default 0
+             */
+            output_per_mtok: number;
+            /**
+             * Structured Output
+             * @default true
+             */
+            structured_output: boolean;
+            /**
+             * Temperature
+             * @description Acepta temperatura explícita
+             * @default true
+             */
+            temperature: boolean;
+            /**
+             * Tool Use
+             * @default false
+             */
+            tool_use: boolean;
+            /**
+             * Verified
+             * @default false
+             */
+            verified: boolean;
+            /**
+             * Vision
+             * @default false
+             */
+            vision: boolean;
+        };
         /**
          * ModelStage
          * @enum {string}
@@ -1624,12 +2120,42 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** PrelabelBody */
+        PrelabelBody: {
+            /** Column */
+            column?: string | null;
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            guide: components["schemas"]["LabelingGuide"];
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+        };
         /**
          * PrivacyLevel
          * @description Qué puede recibir el LLM (SPEC §7.7.3).
          * @enum {string}
          */
         PrivacyLevel: "L0" | "L1" | "L2" | "L3";
+        /** Problem */
+        Problem: {
+            /** Evidence */
+            evidence: string;
+            /** Explanation */
+            explanation: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "overfitting" | "underfitting" | "divergence" | "lr_too_high" | "lr_too_low" | "plateau" | "class_imbalance" | "data_bottleneck" | "stopped_too_early" | "other";
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "low" | "medium" | "high";
+        };
         /**
          * ProfileCard
          * @description Resumen agregado del dataset (solo train + val; el test sellado no se perfila).
@@ -1667,6 +2193,24 @@ export interface components {
             target: components["schemas"]["TargetProfile"] | null;
             text?: components["schemas"]["TextProfile"] | null;
             vision_task?: components["schemas"]["VisionTaskProfile"] | null;
+        };
+        /** ProfilesUpdate */
+        ProfilesUpdate: {
+            /** Active */
+            active?: string | null;
+            /** Profiles */
+            profiles?: {
+                [key: string]: components["schemas"]["LLMProfile"];
+            };
+        };
+        /** ProfilesView */
+        ProfilesView: {
+            /** Active */
+            active: string;
+            /** Profiles */
+            profiles: {
+                [key: string]: components["schemas"]["LLMProfile"];
+            };
         };
         /** Project */
         Project: {
@@ -1734,6 +2278,8 @@ export interface components {
              * @default
              */
             goal: string;
+            /** Llm Profile Id */
+            llm_profile_id?: string | null;
             /** Modalities */
             modalities?: components["schemas"]["Modality"][];
             /** Name */
@@ -1752,6 +2298,8 @@ export interface components {
             description?: string | null;
             /** Goal */
             goal?: string | null;
+            /** Llm Profile Id */
+            llm_profile_id?: string | null;
             /** Modalities */
             modalities?: components["schemas"]["Modality"][] | null;
             /** Name */
@@ -1781,6 +2329,20 @@ export interface components {
         ProposeArchBody: {
             /** Dataset Version Id */
             dataset_version_id: string;
+            device?: components["schemas"]["Device"] | null;
+            /**
+             * Mode
+             * @description auto: LLM si está disponible; si no, reglas (RF-ARC-04)
+             * @default auto
+             * @enum {string}
+             */
+            mode: "auto" | "llm" | "rules";
+            /**
+             * N
+             * @description Propuestas pedidas al LLM (RF-ARC-01)
+             * @default 3
+             */
+            n: number;
             /** Pipeline Id */
             pipeline_id: string;
         };
@@ -1802,6 +2364,78 @@ export interface components {
             /** Template */
             template?: string | null;
         };
+        /** ProviderUpdate */
+        ProviderUpdate: {
+            /**
+             * Api Key
+             * @description Solo escritura: va al keychain
+             */
+            api_key?: string | null;
+            /** Api Key Ref */
+            api_key_ref?: string | null;
+            /** Base Url */
+            base_url?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "anthropic" | "openai" | "gemini" | "moonshot" | "openai_compat" | "ollama" | "fake";
+            /** Local */
+            local?: boolean | null;
+            /** Models */
+            models?: {
+                [key: string]: components["schemas"]["ModelInfo"];
+            } | null;
+            /**
+             * Timeout S
+             * @default 120
+             */
+            timeout_s: number;
+        };
+        /** ProviderView */
+        ProviderView: {
+            /** Api Key Ref */
+            api_key_ref: string | null;
+            /** Base Url */
+            base_url: string | null;
+            /** Has Key */
+            has_key: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "anthropic" | "openai" | "gemini" | "moonshot" | "openai_compat" | "ollama" | "fake";
+            /** Local */
+            local: boolean;
+            /** Models */
+            models: {
+                [key: string]: components["schemas"]["ModelInfo"];
+            };
+            /** Name */
+            name: string;
+        };
+        /** PurposeRef */
+        PurposeRef: {
+            /**
+             * Max Tokens
+             * @default 4096
+             */
+            max_tokens: number;
+            /** Model */
+            model: string;
+            /** Prompt Version */
+            prompt_version?: string | null;
+            /**
+             * Provider
+             * @description Otro proveedor para este propósito
+             */
+            provider?: string | null;
+            /**
+             * Temperature
+             * @default 0.2
+             */
+            temperature: number | null;
+        };
         /** RegressionMetrics */
         RegressionMetrics: {
             /** Mae */
@@ -1816,6 +2450,39 @@ export interface components {
             rmse: number;
             /** Smape */
             smape: number;
+        };
+        /** Report */
+        Report: {
+            /** Llm Call Id */
+            llm_call_id?: string | null;
+            /** Markdown */
+            markdown: string;
+            model_card: components["schemas"]["ModelCard"];
+            /**
+             * Origin
+             * @default rules
+             * @enum {string}
+             */
+            origin: "rules" | "llm";
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+        };
+        /** ReportBody */
+        ReportBody: {
+            /**
+             * Language
+             * @default español
+             * @enum {string}
+             */
+            language: "español" | "english";
+            /**
+             * Mode
+             * @default auto
+             * @enum {string}
+             */
+            mode: "auto" | "llm" | "rules";
         };
         /** Run */
         Run: {
@@ -2127,6 +2794,17 @@ export interface components {
             /** Archspec Id */
             archspec_id: string;
             budget?: components["schemas"]["Budget"];
+            /**
+             * Dataset Version Id
+             * @description Dataset para darle al estratega el perfil (opcional)
+             */
+            dataset_version_id?: string | null;
+            /**
+             * Mode
+             * @default auto
+             * @enum {string}
+             */
+            mode: "auto" | "llm" | "rules";
         };
         /** Study */
         Study: {
@@ -2184,6 +2862,23 @@ export interface components {
         StudyLaunch: {
             job: components["schemas"]["Job"];
             study: components["schemas"]["Study"];
+        };
+        /** SuggestedAction */
+        SuggestedAction: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "change_hparam" | "add_regularization" | "add_augmentation" | "change_architecture" | "more_epochs" | "fewer_epochs" | "rebalance" | "more_data" | "none";
+            /** Rationale */
+            rationale: string;
+            /**
+             * Target
+             * @description Hiperparámetro o bloque afectado
+             */
+            target?: string | null;
+            /** Value */
+            value?: unknown;
         };
         /** TableSchema */
         TableSchema: {
@@ -2754,6 +3449,214 @@ export interface operations {
             };
         };
     };
+    prelabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrelabelBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelSet"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listLlmAudit: {
+        parameters: {
+            query: {
+                project: string;
+                purpose?: components["schemas"]["LLMPurpose"] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LLMCall"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getLlmProfiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfilesView"];
+                };
+            };
+        };
+    };
+    putLlmProfiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfilesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfilesView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listLlmProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderView"][];
+                };
+            };
+        };
+    };
+    putLlmProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    testLlm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LLMTestBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LLMTestResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     updatePipeline: {
         parameters: {
             query?: never;
@@ -3005,7 +3908,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ArchProposal"];
+                    "application/json": components["schemas"]["ArchProposals"];
                 };
             };
             /** @description Validation Error */
@@ -3072,6 +3975,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HPOStrategy"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createLabelingGuide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuideBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelingGuide"];
                 };
             };
             /** @description Validation Error */
@@ -3320,6 +4258,40 @@ export interface operations {
             };
         };
     };
+    getRunDiagnosis: {
+        parameters: {
+            query?: {
+                mode?: "auto" | "llm" | "rules";
+                refresh?: boolean;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Diagnosis"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     evaluateRun: {
         parameters: {
             query?: never;
@@ -3431,6 +4403,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelVersion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createRunReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
                 };
             };
             /** @description Validation Error */

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from fastapi import Request
 
@@ -15,6 +15,9 @@ from perceptron.storage.db import Database
 from perceptron.storage.filesystem import ProjectFiles
 from perceptron.storage.repositories import SqlRepository
 
+if TYPE_CHECKING:
+    from perceptron.llm.gateway import Gateway
+
 E = TypeVar("E", bound=Entity)
 
 
@@ -25,6 +28,7 @@ class EngineContext:
     events: EventBus = field(default_factory=EventBus)
     _repos: dict[type[Any], SqlRepository[Any]] = field(default_factory=dict, repr=False)
     _jobs: JobManager | None = field(default=None, repr=False)
+    _llm: Any = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         self.projects = SqlRepository(self.db, Project)
@@ -48,6 +52,18 @@ class EngineContext:
         if self._jobs is None:
             self._jobs = JobManager(self.events)
         return self._jobs
+
+    @property
+    def llm(self) -> Gateway:
+        """LLM Gateway (Capa 2). Se crea al primer uso; en tests se reemplaza con `use_llm`."""
+        if self._llm is None:
+            from perceptron.llm.gateway import Gateway
+
+            self._llm = Gateway.from_settings(self.settings, self.db)
+        return cast("Gateway", self._llm)
+
+    def use_llm(self, gateway: Gateway) -> None:
+        self._llm = gateway
 
     def close(self) -> None:
         if self._jobs is not None:

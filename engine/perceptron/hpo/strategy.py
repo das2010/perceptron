@@ -8,6 +8,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, model_validator
 
 from perceptron.archspec.schema import HP, ArchSpec
+from perceptron.domain.enums import Origin
 
 StrategyName = Literal["single", "random", "grid", "tpe", "cmaes", "nsga2"]
 PrunerName = Literal["none", "median", "asha", "hyperband"]
@@ -94,6 +95,8 @@ class HPOStrategy(BaseModel):
     parallelism: int = Field(default=1, ge=1)
     seed: int = 42
     rationale: str | None = None
+    origin: Origin = Field(default=Origin.MANUAL, description="Quién propuso la estrategia")
+    llm_call_id: str | None = None
 
     @property
     def multi_objective(self) -> bool:

@@ -26,6 +26,10 @@ WorkspaceOpt = Annotated[
     Path | None, typer.Option("--workspace", "-w", help="Directorio del workspace")
 ]
 JsonOpt = Annotated[bool, typer.Option("--json", help="Salida JSON")]
+LlmOpt = Annotated[
+    bool,
+    typer.Option("--llm/--no-llm", help="Proponer con el LLM (cae a reglas si no está disponible)"),
+]
 ProjectOpt = Annotated[str, typer.Option("--project", "-p", help="Id del proyecto")]
 
 data_app = typer.Typer(help="Ingesta y profiling de datos", no_args_is_help=True)
@@ -33,6 +37,9 @@ pipeline_app = typer.Typer(help="Pipelines de preparación", no_args_is_help=Tru
 arch_app = typer.Typer(help="Arquitecturas (ArchSpec)", no_args_is_help=True)
 hpo_app = typer.Typer(help="Optimización de hiperparámetros", no_args_is_help=True)
 model_app = typer.Typer(help="Modelos registrados", no_args_is_help=True)
+llm_app = typer.Typer(
+    help="Capa LLM: proveedores, perfiles, auditoría y roles", no_args_is_help=True
+)
 
 
 def register(app: typer.Typer) -> None:
@@ -41,6 +48,7 @@ def register(app: typer.Typer) -> None:
     app.add_typer(arch_app, name="arch")
     app.add_typer(hpo_app, name="hpo")
     app.add_typer(model_app, name="model")
+    app.add_typer(llm_app, name="llm")
     app.command("train")(train)
     app.command("eval")(evaluate)
     app.command("quickstart")(quickstart)
@@ -152,19 +160,41 @@ def pipeline_propose(
 def arch_propose(
     dataset: Annotated[str, typer.Argument()],
     pipeline: Annotated[str, typer.Option("--pipeline", help="Id del pipeline")],
+    llm: LlmOpt = False,
+    n: Annotated[int, typer.Option(min=2, max=4, help="Propuestas pedidas al LLM")] = 3,
     workspace: WorkspaceOpt = None,
     as_json: JsonOpt = False,
 ) -> None:
-    """Arquitectura recomendada por reglas (RF-ARC-04)."""
+    """Propuestas de arquitectura: del LLM (RF-ARC-01) o por reglas (RF-ARC-04)."""
     from perceptron.services.workflow import Workflow
 
     with _ctx(workspace) as ctx:
-        record, why = Workflow(ctx).propose_architecture(dataset, pipeline)
-        _out(
-            {"archspec": record.model_dump(mode="json"), "rationale": why},
-            as_json,
-            f"{record.id}  {record.name}\n  {why}",
+        out = Workflow(ctx).roles.propose_architectures(
+            dataset, pipeline, mode="auto" if llm else "rules", n=n
         )
+        data = {
+            "origin": out.origin.value,
+            "llm_call_id": out.llm_call_id,
+            "fallback_reason": out.fallback_reason,
+            "proposals": [
+                {
+                    "archspec": o.record.model_dump(mode="json"),
+                    "title": o.title,
+                    "rationale": o.rationale,
+                    "pros": o.pros,
+                    "cons": o.cons,
+                    "risks": o.risks,
+                    "confidence": o.confidence,
+                    "estimates": o.estimates,
+                }
+                for o in out.options
+            ],
+        }
+        head = f"Origen: {out.origin.value}"
+        if out.fallback_reason:
+            head += f" ({out.fallback_reason})"
+        lines = [head] + [f"{o.record.id}  {o.title}\n  {o.rationale}" for o in out.options]
+        _out(data, as_json, "\n".join(lines))
 
 
 @arch_app.command("validate")
@@ -219,14 +249,21 @@ def hpo_strategy(
     archspec: Annotated[str, typer.Argument(help="Id de la ArchSpec")],
     trials: Annotated[int, typer.Option(help="Máximo de trials")] = 20,
     max_epochs: Annotated[int | None, typer.Option(help="Épocas máximas por trial")] = None,
+    llm: LlmOpt = False,
+    dataset: Annotated[str | None, typer.Option(help="Dataset (perfil para el LLM)")] = None,
     workspace: WorkspaceOpt = None,
     as_json: JsonOpt = False,
 ) -> None:
-    """Estrategia de HPO recomendada (RF-HPO-02, por reglas)."""
+    """Estrategia de HPO recomendada (RF-HPO-02): LLM estratega o reglas."""
     from perceptron.services.workflow import Workflow
 
     with _ctx(workspace) as ctx:
-        s = Workflow(ctx).hpo_strategy(archspec, _budget(trials, max_epochs, None))
+        s = Workflow(ctx).hpo_strategy(
+            archspec,
+            _budget(trials, max_epochs, None),
+            mode="auto" if llm else "rules",
+            dataset_version_id=dataset,
+        )
         _out(
             s,
             as_json,
@@ -343,6 +380,8 @@ def quickstart(
     max_epochs: Annotated[int | None, typer.Option(help="Épocas máximas por trial")] = None,
     max_time: Annotated[float | None, typer.Option(help="Tiempo máximo total (s)")] = None,
     device: Annotated[Device | None, typer.Option()] = None,
+    llm: LlmOpt = False,
+    goal: Annotated[str | None, typer.Option(help="Objetivo en palabras (para el LLM)")] = None,
     workspace: WorkspaceOpt = None,
     as_json: JsonOpt = False,
 ) -> None:
@@ -363,6 +402,8 @@ def quickstart(
             max_time_s=max_time,
             device=device,
             on_event=_progress,
+            llm=llm,
+            goal=goal,
         )
         s = res.summary()
         human = [
@@ -383,3 +424,118 @@ def quickstart(
             )
         human.append(f"Modelo registrado: {s['model_version_id']}")
         _out(s, as_json, "\n".join(human))
+
+
+# ------------------------------------------------------------------ capa LLM
+
+
+@llm_app.command("providers")
+def llm_providers(workspace: WorkspaceOpt = None, as_json: JsonOpt = False) -> None:
+    """Proveedores configurados (sin mostrar claves)."""
+    from perceptron.api.routers.llm import provider_views
+
+    with _ctx(workspace) as ctx:
+        views = provider_views(ctx)
+        human = "\n".join(
+            f"{v.name:14} {v.kind:13} {'local' if v.local else 'nube':5} "
+            f"clave: {'sí' if v.has_key else 'no'}  modelos: {', '.join(v.models)}"
+            for v in views
+        )
+        _out([v.model_dump(mode="json") for v in views], as_json, human)
+
+
+@llm_app.command("profiles")
+def llm_profiles(workspace: WorkspaceOpt = None, as_json: JsonOpt = False) -> None:
+    """Perfiles por propósito y el activo (RF-LLM-03)."""
+    with _ctx(workspace) as ctx:
+        cfg = ctx.llm.config
+        profiles = cfg.profiles()
+        human = [f"Activo: {cfg.active_profile()}"]
+        for name, prof in profiles.items():
+            human.append(f"{name} ({prof.provider})")
+            human += [f"  {p.value:15} {ref.model}" for p, ref in prof.purposes.items()]
+        data = {
+            "active": cfg.active_profile(),
+            "profiles": {k: v.model_dump(mode="json") for k, v in profiles.items()},
+        }
+        _out(data, as_json, "\n".join(human))
+
+
+@llm_app.command("test")
+def llm_test(
+    project: Annotated[str | None, typer.Option("--project", "-p")] = None,
+    workspace: WorkspaceOpt = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Prueba de conexión con el perfil activo (o el del proyecto)."""
+    from perceptron.api.routers.llm import LLMTestBody, test_llm
+
+    with _ctx(workspace) as ctx:
+        res = test_llm(LLMTestBody(project_id=project), ctx)
+        if res.ok:
+            human = f"ok · {res.provider}/{res.model} · {res.latency_s}s"
+        else:
+            human = f"ERROR: {res.error}"
+        _out(res, as_json, human)
+        if not res.ok:
+            raise typer.Exit(1)
+
+
+@llm_app.command("audit")
+def llm_audit(
+    project: ProjectOpt,
+    limit: Annotated[int, typer.Option()] = 20,
+    workspace: WorkspaceOpt = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Qué se envió al LLM en cada llamada (RF-PRV-03)."""
+    from perceptron.domain.models import LLMCall
+
+    with _ctx(workspace) as ctx:
+        calls = list(ctx.repo(LLMCall).list(filters={"project_id": project}, limit=limit))
+        lines = []
+        for c in calls:
+            cached = " (caché)" if c.cache_hit else ""
+            lines.append(
+                f"{c.created_at:%Y-%m-%d %H:%M:%S} {c.purpose.value:14} {c.provider}/{c.model} "
+                f"{c.privacy_level.value} {c.status} intento {c.attempt} "
+                f"${c.cost_usd:.4f}{cached} {' '.join(c.redactions)}"
+            )
+        _out(
+            [c.model_dump(mode="json") for c in calls], as_json, "\n".join(lines) or "sin llamadas"
+        )
+
+
+@llm_app.command("diagnose")
+def llm_diagnose(
+    run: Annotated[str, typer.Argument(help="Id del run")],
+    llm: LlmOpt = True,
+    workspace: WorkspaceOpt = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Diagnóstico del entrenamiento: reglas + LLM (Diagnosticador)."""
+    from perceptron.services.workflow import Workflow
+
+    with _ctx(workspace) as ctx:
+        d = Workflow(ctx).roles.diagnose(run, mode="auto" if llm else "rules")
+        lines = [f"{d.summary} [{d.origin}]"]
+        lines += [f"  - {p.kind} ({p.severity}): {p.evidence}" for p in d.problems]
+        for a in d.actions:
+            value = "" if a.value is None else f" = {a.value}"
+            lines.append(f"  → {a.kind} {a.target or ''}{value}: {a.rationale}")
+        _out(d, as_json, "\n".join(lines))
+
+
+@llm_app.command("report")
+def llm_report(
+    run: Annotated[str, typer.Argument(help="Id del run evaluado")],
+    llm: LlmOpt = True,
+    workspace: WorkspaceOpt = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Informe final en Markdown + model card (Informante)."""
+    from perceptron.services.workflow import Workflow
+
+    with _ctx(workspace) as ctx:
+        r = Workflow(ctx).roles.report(run, mode="auto" if llm else "rules")
+        _out(r, as_json, r.markdown)

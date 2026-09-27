@@ -34,6 +34,11 @@ class Purpose(StrEnum):
     TRAINING = "training"
     PROFILING = "profiling"
     FINAL_EVALUATION = "final_evaluation"
+    # Auditoría de privacidad (RF-PRV-03): busca fugas en todo el dataset, no entrena ni elige.
+    PRIVACY_AUDIT = "privacy_audit"
+
+
+_READS_TEST = frozenset({Purpose.FINAL_EVALUATION, Purpose.PRIVACY_AUDIT})
 
 
 class SealedTestSetError(PerceptronError):
@@ -90,7 +95,7 @@ class DatasetView:
         """Filas del split pedido (todas las no-test si `split` es None)."""
         lf = pl.scan_parquet(self.data_file)
         if split == TEST:
-            if purpose is not Purpose.FINAL_EVALUATION:
+            if purpose not in _READS_TEST:
                 raise SealedTestSetError(
                     "El test set está sellado: solo la evaluación final puede leerlo",
                     details={"purpose": purpose.value},
@@ -98,7 +103,7 @@ class DatasetView:
             return lf.filter(pl.col(SPLIT_COLUMN) == TEST)
         if split is not None:
             return lf.filter(pl.col(SPLIT_COLUMN) == split)
-        if purpose is Purpose.FINAL_EVALUATION:
+        if purpose in _READS_TEST:
             return lf
         return lf.filter(pl.col(SPLIT_COLUMN) != TEST)
 

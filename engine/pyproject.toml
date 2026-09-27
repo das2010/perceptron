@@ -16,6 +16,8 @@ dependencies = [
   "platformdirs>=4.2",
   "python-ulid>=3.0",
   "pyyaml>=6.0",
+  "httpx>=0.27",
+  "jinja2>=3.1",
 ]
 
 [project.scripts]
@@ -45,8 +47,17 @@ ml = [
   "pycocotools>=2.0.8",
   "lightgbm>=4.5",
 ]
-# Capa 2
-llm = []
+# Capa 2 (ADR-0020): SDKs de Anthropic y OpenAI (también Kimi y compatibles), keychain y
+# cifrado de claves. Gemini y Ollama van por HTTP (httpx, en la base).
+llm = [
+  "anthropic>=0.40",
+  "openai>=1.50",
+  "keyring>=25",
+  "cryptography>=43",
+]
+# NER para PII en texto libre (L2, ADR-0022): `presidio-analyzer` y `presidio-anonymizer` se
+# instalan aparte junto con un modelo NER de licencia compatible. No es un extra: spaCy
+# restringe numpy y el lock resuelve todos los extras juntos.
 
 [build-system]
 requires = ["hatchling"]

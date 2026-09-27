@@ -86,13 +86,91 @@
         "title": "AlertSeverity",
         "type": "string"
       },
+      "ArchEstimates": {
+        "properties": {
+          "epoch_time_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch Time S"
+          },
+          "memory_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Mb"
+          },
+          "num_params": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Params"
+          }
+        },
+        "title": "ArchEstimates",
+        "type": "object"
+      },
       "ArchProposal": {
         "properties": {
           "archspec": {
             "$ref": "#/components/schemas/ArchSpecRecord"
           },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "cons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cons",
+            "type": "array"
+          },
+          "estimates": {
+            "$ref": "#/components/schemas/ArchEstimates"
+          },
+          "pros": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pros",
+            "type": "array"
+          },
           "rationale": {
             "title": "Rationale",
+            "type": "string"
+          },
+          "risks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Risks",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
             "type": "string"
           },
           "validation": {
@@ -101,10 +179,54 @@
         },
         "required": [
           "archspec",
+          "title",
           "rationale",
           "validation"
         ],
         "title": "ArchProposal",
+        "type": "object"
+      },
+      "ArchProposals": {
+        "properties": {
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por qué se usaron reglas o se descartaron propuestas",
+            "title": "Fallback Reason"
+          },
+          "llm_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Call Id"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ArchProposal"
+            },
+            "title": "Proposals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "proposals",
+          "origin"
+        ],
+        "title": "ArchProposals",
         "type": "object"
       },
       "ArchSpec": {
@@ -591,6 +713,38 @@
           "count"
         ],
         "title": "CategoryCount",
+        "type": "object"
+      },
+      "ClassGuide": {
+        "properties": {
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "edge_cases": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Edge Cases",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "positive_examples": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Positive Examples",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "definition"
+        ],
+        "title": "ClassGuide",
         "type": "object"
       },
       "ClassificationMetrics": {
@@ -1091,6 +1245,53 @@
         "title": "Device",
         "type": "string"
       },
+      "Diagnosis": {
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/SuggestedAction"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "llm_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Call Id"
+          },
+          "origin": {
+            "default": "rules",
+            "enum": [
+              "rules",
+              "llm"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/Problem"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary"
+        ],
+        "title": "Diagnosis",
+        "type": "object"
+      },
       "EarlyStopping": {
         "additionalProperties": false,
         "properties": {
@@ -1323,6 +1524,35 @@
         "title": "GPUInfo",
         "type": "object"
       },
+      "GuideBody": {
+        "additionalProperties": false,
+        "properties": {
+          "classes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Clase → descripción del usuario",
+            "minProperties": 1,
+            "title": "Classes",
+            "type": "object"
+          },
+          "mode": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "llm",
+              "rules"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "classes"
+        ],
+        "title": "GuideBody",
+        "type": "object"
+      },
       "HP": {
         "additionalProperties": false,
         "description": "Referencia a un hiperparámetro ajustable con su valor por defecto.",
@@ -1365,6 +1595,17 @@
           "budget": {
             "$ref": "#/components/schemas/Budget"
           },
+          "llm_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Call Id"
+          },
           "objectives": {
             "items": {
               "$ref": "#/components/schemas/Objective"
@@ -1372,6 +1613,11 @@
             "minItems": 1,
             "title": "Objectives",
             "type": "array"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin",
+            "default": "manual",
+            "description": "Quién propuso la estrategia"
           },
           "parallelism": {
             "default": 1,
@@ -1937,6 +2183,389 @@
         "title": "Job",
         "type": "object"
       },
+      "LLMCall": {
+        "additionalProperties": false,
+        "description": "Registro de auditoría de una llamada al LLM (RF-PRV-03).",
+        "properties": {
+          "attempt": {
+            "default": 1,
+            "description": "Intento dentro de la llamada (RF-LLM-04)",
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "cache_hit": {
+            "default": false,
+            "title": "Cache Hit",
+            "type": "boolean"
+          },
+          "cost_usd": {
+            "default": 0.0,
+            "minimum": 0.0,
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "latency_s": {
+            "default": 0.0,
+            "minimum": 0.0,
+            "title": "Latency S",
+            "type": "number"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output_tokens": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "description": "Payload enviado, ya filtrado por PrivacyFilter",
+            "title": "Payload",
+            "type": "object"
+          },
+          "privacy_level": {
+            "$ref": "#/components/schemas/PrivacyLevel"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/LLMPurpose"
+          },
+          "redactions": {
+            "description": "Qué quitó o enmascaró el PrivacyFilter",
+            "items": {
+              "type": "string"
+            },
+            "title": "Redactions",
+            "type": "array"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ámbito del presupuesto: run, agente…",
+            "title": "Scope"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "default": "ok",
+            "enum": [
+              "ok",
+              "invalid",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "purpose",
+          "provider",
+          "model",
+          "privacy_level",
+          "payload"
+        ],
+        "title": "LLMCall",
+        "type": "object"
+      },
+      "LLMProfile": {
+        "additionalProperties": false,
+        "description": "Qué modelo atiende cada propósito (RF-LLM-03).",
+        "properties": {
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "purposes": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PurposeRef"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/LLMPurpose"
+            },
+            "title": "Purposes",
+            "type": "object"
+          }
+        },
+        "required": [
+          "provider"
+        ],
+        "title": "LLMProfile",
+        "type": "object"
+      },
+      "LLMPurpose": {
+        "description": "Propósitos del LLM, cada uno con su perfil de modelo (RF-LLM-03).",
+        "enum": [
+          "copilot",
+          "architect",
+          "hpo_strategist",
+          "diagnostician",
+          "agent",
+          "reporter",
+          "labeler"
+        ],
+        "title": "LLMPurpose",
+        "type": "string"
+      },
+      "LLMTestBody": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/LLMPurpose",
+            "default": "copilot"
+          }
+        },
+        "title": "LLMTestBody",
+        "type": "object"
+      },
+      "LLMTestResult": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "latency_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency S"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "title": "LLMTestResult",
+        "type": "object"
+      },
+      "LabelKind": {
+        "enum": [
+          "class",
+          "multilabel",
+          "box",
+          "mask",
+          "temporal_event"
+        ],
+        "title": "LabelKind",
+        "type": "string"
+      },
+      "LabelSet": {
+        "additionalProperties": false,
+        "properties": {
+          "classes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LabelKind"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ruta relativa al proyecto",
+            "title": "Path"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "kind"
+        ],
+        "title": "LabelSet",
+        "type": "object"
+      },
+      "LabelingGuide": {
+        "properties": {
+          "classes": {
+            "items": {
+              "$ref": "#/components/schemas/ClassGuide"
+            },
+            "minItems": 1,
+            "title": "Classes",
+            "type": "array"
+          },
+          "general_rules": {
+            "items": {
+              "type": "string"
+            },
+            "title": "General Rules",
+            "type": "array"
+          }
+        },
+        "required": [
+          "classes"
+        ],
+        "title": "LabelingGuide",
+        "type": "object"
+      },
       "LossSpec": {
         "additionalProperties": false,
         "properties": {
@@ -2000,6 +2629,113 @@
         ],
         "title": "Modality",
         "type": "string"
+      },
+      "ModelCard": {
+        "properties": {
+          "data": {
+            "title": "Data",
+            "type": "string"
+          },
+          "ethical_considerations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ethical Considerations",
+            "type": "array"
+          },
+          "intended_use": {
+            "title": "Intended Use",
+            "type": "string"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "training": {
+            "title": "Training",
+            "type": "string"
+          }
+        },
+        "required": [
+          "intended_use",
+          "data",
+          "training"
+        ],
+        "title": "ModelCard",
+        "type": "object"
+      },
+      "ModelInfo": {
+        "additionalProperties": false,
+        "description": "Capacidades declaradas de un modelo: el sistema degrada funciones según ellas.",
+        "properties": {
+          "context_window": {
+            "default": 32768,
+            "minimum": 1.0,
+            "title": "Context Window",
+            "type": "integer"
+          },
+          "input_per_mtok": {
+            "default": 0.0,
+            "minimum": 0.0,
+            "title": "Input Per Mtok",
+            "type": "number"
+          },
+          "license": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "License"
+          },
+          "output_per_mtok": {
+            "default": 0.0,
+            "minimum": 0.0,
+            "title": "Output Per Mtok",
+            "type": "number"
+          },
+          "structured_output": {
+            "default": true,
+            "title": "Structured Output",
+            "type": "boolean"
+          },
+          "temperature": {
+            "default": true,
+            "description": "Acepta temperatura explícita",
+            "title": "Temperature",
+            "type": "boolean"
+          },
+          "tool_use": {
+            "default": false,
+            "title": "Tool Use",
+            "type": "boolean"
+          },
+          "verified": {
+            "default": false,
+            "title": "Verified",
+            "type": "boolean"
+          },
+          "vision": {
+            "default": false,
+            "title": "Vision",
+            "type": "boolean"
+          }
+        },
+        "title": "ModelInfo",
+        "type": "object"
       },
       "ModelStage": {
         "enum": [
@@ -2546,6 +3282,42 @@
         "title": "PipelineUpdate",
         "type": "object"
       },
+      "PrelabelBody": {
+        "additionalProperties": false,
+        "properties": {
+          "column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Column"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "guide": {
+            "$ref": "#/components/schemas/LabelingGuide"
+          },
+          "limit": {
+            "default": 100,
+            "maximum": 2000.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "guide"
+        ],
+        "title": "PrelabelBody",
+        "type": "object"
+      },
       "PrivacyLevel": {
         "description": "Qué puede recibir el LLM (SPEC §7.7.3).",
         "enum": [
@@ -2556,6 +3328,51 @@
         ],
         "title": "PrivacyLevel",
         "type": "string"
+      },
+      "Problem": {
+        "properties": {
+          "evidence": {
+            "title": "Evidence",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "overfitting",
+              "underfitting",
+              "divergence",
+              "lr_too_high",
+              "lr_too_low",
+              "plateau",
+              "class_imbalance",
+              "data_bottleneck",
+              "stopped_too_early",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "severity",
+          "evidence",
+          "explanation"
+        ],
+        "title": "Problem",
+        "type": "object"
       },
       "ProfileCard": {
         "description": "Resumen agregado del dataset (solo train + val; el test sellado no se perfila).",
@@ -2707,6 +3524,52 @@
         "title": "ProfileCard",
         "type": "object"
       },
+      "ProfilesUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "profiles": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LLMProfile"
+            },
+            "title": "Profiles",
+            "type": "object"
+          }
+        },
+        "title": "ProfilesUpdate",
+        "type": "object"
+      },
+      "ProfilesView": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "string"
+          },
+          "profiles": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LLMProfile"
+            },
+            "title": "Profiles",
+            "type": "object"
+          }
+        },
+        "required": [
+          "active",
+          "profiles"
+        ],
+        "title": "ProfilesView",
+        "type": "object"
+      },
       "Project": {
         "additionalProperties": false,
         "properties": {
@@ -2842,6 +3705,17 @@
             "title": "Goal",
             "type": "string"
           },
+          "llm_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Profile Id"
+          },
           "modalities": {
             "items": {
               "$ref": "#/components/schemas/Modality"
@@ -2922,6 +3796,17 @@
               }
             ],
             "title": "Goal"
+          },
+          "llm_profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Profile Id"
           },
           "modalities": {
             "anyOf": [
@@ -3028,6 +3913,35 @@
             "title": "Dataset Version Id",
             "type": "string"
           },
+          "device": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Device"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "default": "auto",
+            "description": "auto: LLM si está disponible; si no, reglas (RF-ARC-04)",
+            "enum": [
+              "auto",
+              "llm",
+              "rules"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "n": {
+            "default": 3,
+            "description": "Propuestas pedidas al LLM (RF-ARC-01)",
+            "maximum": 4.0,
+            "minimum": 2.0,
+            "title": "N",
+            "type": "integer"
+          },
           "pipeline_id": {
             "title": "Pipeline Id",
             "type": "string"
@@ -3109,6 +4023,223 @@
         "title": "Provenance",
         "type": "object"
       },
+      "ProviderUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo escritura: va al keychain",
+            "title": "Api Key"
+          },
+          "api_key_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Ref"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "kind": {
+            "enum": [
+              "anthropic",
+              "openai",
+              "gemini",
+              "moonshot",
+              "openai_compat",
+              "ollama",
+              "fake"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "local": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local"
+          },
+          "models": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/ModelInfo"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Models"
+          },
+          "timeout_s": {
+            "default": 120.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Timeout S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "ProviderUpdate",
+        "type": "object"
+      },
+      "ProviderView": {
+        "properties": {
+          "api_key_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Ref"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "has_key": {
+            "title": "Has Key",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "anthropic",
+              "openai",
+              "gemini",
+              "moonshot",
+              "openai_compat",
+              "ollama",
+              "fake"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "local": {
+            "title": "Local",
+            "type": "boolean"
+          },
+          "models": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ModelInfo"
+            },
+            "title": "Models",
+            "type": "object"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "base_url",
+          "api_key_ref",
+          "local",
+          "has_key",
+          "models"
+        ],
+        "title": "ProviderView",
+        "type": "object"
+      },
+      "PurposeRef": {
+        "additionalProperties": false,
+        "properties": {
+          "max_tokens": {
+            "default": 4096,
+            "maximum": 64000.0,
+            "minimum": 64.0,
+            "title": "Max Tokens",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Otro proveedor para este propósito",
+            "title": "Provider"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 0.2,
+            "title": "Temperature"
+          }
+        },
+        "required": [
+          "model"
+        ],
+        "title": "PurposeRef",
+        "type": "object"
+      },
       "RegressionMetrics": {
         "properties": {
           "mae": {
@@ -3152,6 +4283,79 @@
           "median_abs_error"
         ],
         "title": "RegressionMetrics",
+        "type": "object"
+      },
+      "Report": {
+        "properties": {
+          "llm_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Call Id"
+          },
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          },
+          "model_card": {
+            "$ref": "#/components/schemas/ModelCard"
+          },
+          "origin": {
+            "default": "rules",
+            "enum": [
+              "rules",
+              "llm"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "markdown",
+          "model_card"
+        ],
+        "title": "Report",
+        "type": "object"
+      },
+      "ReportBody": {
+        "additionalProperties": false,
+        "properties": {
+          "language": {
+            "default": "español",
+            "enum": [
+              "español",
+              "english"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
+          "mode": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "llm",
+              "rules"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "ReportBody",
         "type": "object"
       },
       "Run": {
@@ -3948,6 +5152,28 @@
           },
           "budget": {
             "$ref": "#/components/schemas/Budget"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dataset para darle al estratega el perfil (opcional)",
+            "title": "Dataset Version Id"
+          },
+          "mode": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "llm",
+              "rules"
+            ],
+            "title": "Mode",
+            "type": "string"
           }
         },
         "required": [
@@ -4079,6 +5305,50 @@
           "job"
         ],
         "title": "StudyLaunch",
+        "type": "object"
+      },
+      "SuggestedAction": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "change_hparam",
+              "add_regularization",
+              "add_augmentation",
+              "change_architecture",
+              "more_epochs",
+              "fewer_epochs",
+              "rebalance",
+              "more_data",
+              "none"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hiperparámetro o bloque afectado",
+            "title": "Target"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "kind",
+          "rationale"
+        ],
+        "title": "SuggestedAction",
         "type": "object"
       },
       "TableSchema": {
@@ -5307,6 +6577,316 @@
         ]
       }
     },
+    "/api/v1/labels/prelabel": {
+      "post": {
+        "description": "Pre-etiquetado de texto con el LLM (requiere privacidad L2+, RF-LBL-02).",
+        "operationId": "prelabel",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrelabelBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelSet"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Prelabel",
+        "tags": [
+          "labels"
+        ]
+      }
+    },
+    "/api/v1/llm/audit": {
+      "get": {
+        "description": "Cada llamada con el payload tal como salió (post-filtro), proveedor y modelo.",
+        "operationId": "listLlmAudit",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project",
+            "required": true,
+            "schema": {
+              "title": "Project",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purpose",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LLMPurpose"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Purpose"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LLMCall"
+                  },
+                  "title": "Response Listllmaudit",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Audit",
+        "tags": [
+          "llm"
+        ]
+      }
+    },
+    "/api/v1/llm/profiles": {
+      "get": {
+        "operationId": "getLlmProfiles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfilesView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Profiles",
+        "tags": [
+          "llm"
+        ]
+      },
+      "put": {
+        "operationId": "putLlmProfiles",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfilesUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfilesView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Profiles",
+        "tags": [
+          "llm"
+        ]
+      }
+    },
+    "/api/v1/llm/providers": {
+      "get": {
+        "operationId": "listLlmProviders",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProviderView"
+                  },
+                  "title": "Response Listllmproviders",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Providers",
+        "tags": [
+          "llm"
+        ]
+      }
+    },
+    "/api/v1/llm/providers/{name}": {
+      "put": {
+        "operationId": "putLlmProvider",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProviderView"
+                  },
+                  "title": "Response Putllmprovider",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Provider",
+        "tags": [
+          "llm"
+        ]
+      }
+    },
+    "/api/v1/llm/test": {
+      "post": {
+        "operationId": "testLlm",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LLMTestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMTestResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Llm",
+        "tags": [
+          "llm"
+        ]
+      }
+    },
     "/api/v1/pipelines/{pipeline_id}": {
       "put": {
         "operationId": "updatePipeline",
@@ -5638,6 +7218,7 @@
     },
     "/api/v1/projects/{project_id}/arch/propose": {
       "post": {
+        "description": "2–4 propuestas del LLM validadas, o la de reglas como fallback (RF-ARC-01..04).\n\nCada propuesta ya queda guardada como ArchSpec (origin llm/rules): el usuario elige una\npor `archspec.id`, la edita o las descarta.",
         "operationId": "proposeArchitecture",
         "parameters": [
           {
@@ -5665,7 +7246,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ArchProposal"
+                  "$ref": "#/components/schemas/ArchProposals"
                 }
               }
             },
@@ -5783,6 +7364,58 @@
         "summary": "Hpo Strategy",
         "tags": [
           "hpo"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/labels/guide": {
+      "post": {
+        "operationId": "createLabelingGuide",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuideBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelingGuide"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Labeling Guide",
+        "tags": [
+          "labels"
         ]
       }
     },
@@ -6138,6 +7771,74 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/diagnosis": {
+      "get": {
+        "description": "Diagnóstico guardado; si no hay (o `refresh`), se calcula (reglas + LLM).",
+        "operationId": "getRunDiagnosis",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "default": "auto",
+              "enum": [
+                "auto",
+                "llm",
+                "rules"
+              ],
+              "title": "Mode",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "refresh",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Refresh",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Diagnosis"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Diagnosis",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/evaluate": {
       "post": {
         "operationId": "evaluateRun",
@@ -6307,6 +8008,58 @@
         "summary": "Register Model",
         "tags": [
           "models"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/report": {
+      "post": {
+        "operationId": "createRunReport",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Report",
+        "tags": [
+          "runs"
         ]
       }
     },

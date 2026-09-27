@@ -21,5 +21,8 @@
 | [0017](0017-task-adapters.md) | Adaptadores de tarea (TaskAdapter) | aceptado |
 | [0018](0018-audio-soundfile-dsp-propio.md) | Audio con soundfile y DSP propio (sin torchaudio) | aceptado |
 | [0019](0019-deteccion-segmentacion-ocr.md) | Detección, segmentación y OCR desde cero en la Capa 1b | aceptado |
+| [0020](0020-dependencias-llm-y-secretos.md) | Dependencias de la capa LLM y almacenamiento de claves | aceptado |
+| [0021](0021-salidas-estructuradas-y-reintentos.md) | Salidas estructuradas validadas con reintento y fallback | aceptado |
+| [0022](0022-pii-sin-modelos-gpl.md) | Enmascarado de PII en L2 sin modelos GPL | aceptado |
 
 Plantilla: SPEC §18.3.

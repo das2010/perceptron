@@ -76,14 +76,18 @@ def test_full_flow_uc01(client: TestClient, fixtures_dir: Path) -> None:
     )
     assert len(prev["x_num"]) == 4 and prev["classes"] == ["0", "1"]
 
-    prop = _ok(
+    proposals = _ok(
         client.post(
             f"{API}/projects/{pid}/arch/propose",
             json={"dataset_version_id": dv["id"], "pipeline_id": pipe["id"]},
         ),
         201,
     )
+    # Sin LLM configurado (tests herméticos) cae a reglas y lo informa (RF-ARC-04).
+    assert proposals["origin"] == "rules" and proposals["fallback_reason"]
+    prop = proposals["proposals"][0]
     assert prop["validation"]["valid"] and prop["rationale"]
+    assert prop["estimates"]["num_params"] > 0
     spec = prop["archspec"]["spec"]
     assert _ok(client.post(f"{API}/arch/validate", json=spec))["valid"]
     code = _ok(client.post(f"{API}/arch/to-code", json=spec))["code"]
