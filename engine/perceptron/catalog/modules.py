@@ -286,12 +286,14 @@ class HFTextEncoder(nn.Module):
 
     def __init__(self, model: str, pretrained: bool, pad_id: int, pooling: str = "cls") -> None:
         super().__init__()
-        from transformers import AutoConfig, AutoModel
+        import transformers
 
+        auto: Any = transformers.AutoModel  # transformers no está completamente tipado
+        config: Any = transformers.AutoConfig
         body: Any = (
-            AutoModel.from_pretrained(model)
+            auto.from_pretrained(model)
             if pretrained
-            else AutoModel.from_config(AutoConfig.from_pretrained(model))
+            else auto.from_config(config.from_pretrained(model))
         )
         self.body: Any = body
         self.pad_id = pad_id
@@ -316,3 +318,173 @@ class FeatureStub(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return torch.zeros(x.shape[0], self.out_features, device=x.device)
+
+
+class RNNEncoder(nn.Module):
+    """LSTM/GRU sobre [B, L, C] → estado final [B, hidden]."""
+
+    def __init__(
+        self, in_dim: int, hidden: int, layers: int, dropout: float, cell: str = "lstm"
+    ) -> None:
+        super().__init__()
+        rnn = nn.LSTM if cell == "lstm" else nn.GRU
+        self.rnn = rnn(
+            in_dim,
+            hidden,
+            num_layers=layers,
+            batch_first=True,
+            dropout=dropout if layers > 1 else 0.0,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out, _ = self.rnn(x)
+        last: torch.Tensor = out[:, -1]
+        return last
+
+
+class TCN(nn.Module):
+    """Temporal Convolutional Network: convoluciones causales dilatadas con residuales."""
+
+    def __init__(
+        self, in_dim: int, channels: int, levels: int, kernel: int, dropout: float
+    ) -> None:
+        super().__init__()
+        self.layers = nn.ModuleList()
+        self.pads: list[int] = []
+        d = in_dim
+        for i in range(levels):
+            dilation = 2**i
+            self.pads.append((kernel - 1) * dilation)
+            self.layers.append(
+                nn.ModuleDict(
+                    {
+                        "conv": nn.Conv1d(d, channels, kernel, dilation=dilation),
+                        "skip": nn.Conv1d(d, channels, 1) if d != channels else nn.Identity(),
+                        "drop": nn.Dropout(dropout),
+                    }
+                )
+            )
+            d = channels
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        h = x.transpose(1, 2)
+        for layer, pad in zip(self.layers, self.pads, strict=True):
+            y = layer["conv"](torch.nn.functional.pad(h, (pad, 0)))
+            h = torch.relu(layer["drop"](torch.relu(y)) + layer["skip"](h))
+        out: torch.Tensor = h.transpose(1, 2)
+        return out
+
+
+class NBeats(nn.Module):
+    """N-BEATS genérico (Oreshkin et al., 2020): bloques FC con backcast residual.
+
+    Entrada [B, L, C] (se aplana); salida: pronóstico [B, horizon].
+    """
+
+    def __init__(
+        self,
+        lookback: int,
+        channels: int,
+        horizon: int,
+        hidden: int,
+        blocks: int,
+        layers: int,
+        dropout: float,
+    ) -> None:
+        super().__init__()
+        size = lookback * channels
+        self.blocks = nn.ModuleList()
+        for _ in range(blocks):
+            mods: list[nn.Module] = []
+            d = size
+            for _ in range(layers):
+                mods += [nn.Linear(d, hidden), nn.ReLU(), nn.Dropout(dropout)]
+                d = hidden
+            self.blocks.append(
+                nn.ModuleDict(
+                    {
+                        "fc": nn.Sequential(*mods),
+                        "back": nn.Linear(hidden, size),
+                        "fore": nn.Linear(hidden, horizon),
+                    }
+                )
+            )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        residual = x.flatten(1)
+        forecast = torch.zeros(x.shape[0], self.blocks[0]["fore"].out_features, device=x.device)
+        for block in self.blocks:
+            h = block["fc"](residual)
+            residual = residual - block["back"](h)
+            forecast = forecast + block["fore"](h)
+        return forecast
+
+
+class PatchTST(nn.Module):
+    """PatchTST simplificado (Nie et al., 2023): parches temporales + encoder Transformer."""
+
+    def __init__(
+        self,
+        lookback: int,
+        channels: int,
+        patch_len: int,
+        stride: int,
+        d_model: int,
+        heads: int,
+        layers: int,
+        dropout: float,
+    ) -> None:
+        super().__init__()
+        self.patch_len, self.stride = patch_len, stride
+        self.n_patches = (max(lookback, patch_len) - patch_len) // stride + 1
+        self.embed = nn.Linear(patch_len * channels, d_model)
+        self.pos = nn.Parameter(torch.zeros(1, self.n_patches, d_model))
+        layer = nn.TransformerEncoderLayer(
+            d_model, heads, d_model * 2, dropout, batch_first=True, norm_first=True
+        )
+        self.encoder = nn.TransformerEncoder(layer, layers, enable_nested_tensor=False)
+        self.norm = nn.LayerNorm(d_model)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        patches = x.unfold(1, self.patch_len, self.stride)  # [B, P, C, patch]
+        tokens = self.embed(patches.flatten(2)) + self.pos
+        out: torch.Tensor = self.norm(self.encoder(tokens).mean(dim=1))
+        return out
+
+
+class SeriesAutoencoder(nn.Module):
+    """Autoencoder de ventanas [B, L, C] → [B, L, C] (anomalías por error de reconstrucción)."""
+
+    def __init__(
+        self, lookback: int, channels: int, hidden: int, latent: int, kind: str = "conv"
+    ) -> None:
+        super().__init__()
+        self.kind = kind
+        if kind == "lstm":
+            self.enc = nn.LSTM(channels, hidden, batch_first=True)
+            self.to_latent = nn.Linear(hidden, latent)
+            self.from_latent = nn.Linear(latent, hidden)
+            self.dec = nn.LSTM(hidden, hidden, batch_first=True)
+            self.out = nn.Linear(hidden, channels)
+        else:
+            self.net = nn.Sequential(
+                nn.Flatten(),
+                nn.Linear(lookback * channels, hidden),
+                nn.ReLU(),
+                nn.Linear(hidden, latent),
+                nn.ReLU(),
+                nn.Linear(latent, hidden),
+                nn.ReLU(),
+                nn.Linear(hidden, lookback * channels),
+            )
+        self.lookback, self.channels = lookback, channels
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.kind == "lstm":
+            h, _ = self.enc(x)
+            z = self.from_latent(torch.relu(self.to_latent(h[:, -1])))
+            d, _ = self.dec(z.unsqueeze(1).expand(-1, self.lookback, -1).contiguous())
+            rec: torch.Tensor = self.out(d)
+            return rec
+        flat: torch.Tensor = self.net(x)
+        return flat.view(-1, self.lookback, self.channels)

@@ -636,7 +636,7 @@ export interface components {
          * AlertCode
          * @enum {string}
          */
-        AlertCode: "class_imbalance" | "target_leakage" | "id_column" | "future_dates" | "constant_column" | "high_nulls" | "duplicate_rows" | "insufficient_data" | "corrupt_files" | "near_duplicates" | "mixed_resolutions" | "mixed_channels" | "missing_target";
+        AlertCode: "class_imbalance" | "target_leakage" | "id_column" | "future_dates" | "constant_column" | "high_nulls" | "duplicate_rows" | "insufficient_data" | "corrupt_files" | "near_duplicates" | "mixed_resolutions" | "mixed_channels" | "missing_target" | "duplicate_texts" | "long_texts";
         /**
          * AlertSeverity
          * @enum {string}
@@ -1204,6 +1204,7 @@ export interface components {
         };
         /** IngestBody */
         IngestBody: {
+            modality?: components["schemas"]["Modality"] | null;
             /** Overrides */
             overrides?: {
                 [key: string]: components["schemas"]["SemanticType"];
@@ -1231,8 +1232,19 @@ export interface components {
             kind: "tabular" | "image" | "spectrogram" | "sequence" | "tokens";
             /** Num Numeric */
             num_numeric?: number | null;
+            /**
+             * Pad Id
+             * @description Tokens: id de padding
+             * @default 0
+             */
+            pad_id: number;
             /** Shape */
             shape?: number[] | null;
+            /**
+             * Vocab Size
+             * @description Tokens: tamaño del vocabulario
+             */
+            vocab_size?: number | null;
         };
         /** Issue */
         Issue: {
@@ -1514,6 +1526,7 @@ export interface components {
             /** Steps */
             steps?: components["schemas"]["StepSpec"][];
             target: components["schemas"]["TargetSpec"] | null;
+            text?: components["schemas"]["TextSpec"] | null;
         };
         /** PipelineUpdate */
         PipelineUpdate: {
@@ -1560,6 +1573,7 @@ export interface components {
                 [key: string]: number;
             };
             target: components["schemas"]["TargetProfile"] | null;
+            text?: components["schemas"]["TextProfile"] | null;
         };
         /** Project */
         Project: {
@@ -1846,7 +1860,7 @@ export interface components {
          * SourceKind
          * @enum {string}
          */
-        SourceKind: "table" | "image_folder";
+        SourceKind: "table" | "image_folder" | "text_folder";
         /** SourcePreview */
         SourcePreview: {
             /** Columns */
@@ -2055,6 +2069,76 @@ export interface components {
          * @enum {string}
          */
         TaskType: "classification" | "regression" | "forecasting" | "anomaly_detection" | "object_detection" | "segmentation" | "ocr" | "sound_event_detection";
+        /**
+         * TextProfile
+         * @description Texto (RF-PRF-03): solo agregados; el vocabulario no se expone.
+         */
+        TextProfile: {
+            /** Column */
+            column: string;
+            /** Duplicate Fraction */
+            duplicate_fraction: number;
+            /** Empty Fraction */
+            empty_fraction: number;
+            /** Language */
+            language: string | null;
+            /** Language Confidence */
+            language_confidence: number;
+            /** Tokens P50 */
+            tokens_p50: number | null;
+            /** Tokens P95 */
+            tokens_p95: number | null;
+            /** Vocabulary Size */
+            vocabulary_size: number;
+        };
+        /** TextSpec */
+        TextSpec: {
+            /**
+             * Accents
+             * @default true
+             */
+            accents: boolean;
+            /** Column */
+            column: string;
+            /** Hf Model */
+            hf_model?: string | null;
+            /**
+             * Lowercase
+             * @default true
+             */
+            lowercase: boolean;
+            /**
+             * Max Length
+             * @default 64
+             */
+            max_length: number;
+            /**
+             * Min Freq
+             * @default 1
+             */
+            min_freq: number;
+            /**
+             * Numbers
+             * @default false
+             */
+            numbers: boolean;
+            /**
+             * Tokenizer
+             * @default word
+             * @enum {string}
+             */
+            tokenizer: "word" | "hf";
+            /**
+             * Urls
+             * @default true
+             */
+            urls: boolean;
+            /**
+             * Vocab Size
+             * @default 20000
+             */
+            vocab_size: number;
+        };
         /** TextStats */
         TextStats: {
             /** Mean Length */

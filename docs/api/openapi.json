@@ -67,7 +67,9 @@
           "near_duplicates",
           "mixed_resolutions",
           "mixed_channels",
-          "missing_target"
+          "missing_target",
+          "duplicate_texts",
+          "long_texts"
         ],
         "title": "AlertCode",
         "type": "string"
@@ -1486,6 +1488,16 @@
       "IngestBody": {
         "additionalProperties": false,
         "properties": {
+          "modality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Modality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "overrides": {
             "anyOf": [
               {
@@ -1577,6 +1589,13 @@
             ],
             "title": "Num Numeric"
           },
+          "pad_id": {
+            "default": 0,
+            "description": "Tokens: id de padding",
+            "minimum": 0.0,
+            "title": "Pad Id",
+            "type": "integer"
+          },
           "shape": {
             "anyOf": [
               {
@@ -1590,6 +1609,19 @@
               }
             ],
             "title": "Shape"
+          },
+          "vocab_size": {
+            "anyOf": [
+              {
+                "minimum": 2.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tokens: tamaño del vocabulario",
+            "title": "Vocab Size"
           }
         },
         "required": [
@@ -2273,6 +2305,16 @@
                 "type": "null"
               }
             ]
+          },
+          "text": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -2403,6 +2445,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/TargetProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextProfile"
               },
               {
                 "type": "null"
@@ -3207,7 +3259,8 @@
       "SourceKind": {
         "enum": [
           "table",
-          "image_folder"
+          "image_folder",
+          "text_folder"
         ],
         "title": "SourceKind",
         "type": "string"
@@ -3751,6 +3804,148 @@
         ],
         "title": "TaskType",
         "type": "string"
+      },
+      "TextProfile": {
+        "description": "Texto (RF-PRF-03): solo agregados; el vocabulario no se expone.",
+        "properties": {
+          "column": {
+            "title": "Column",
+            "type": "string"
+          },
+          "duplicate_fraction": {
+            "title": "Duplicate Fraction",
+            "type": "number"
+          },
+          "empty_fraction": {
+            "title": "Empty Fraction",
+            "type": "number"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "language_confidence": {
+            "title": "Language Confidence",
+            "type": "number"
+          },
+          "tokens_p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tokens P50"
+          },
+          "tokens_p95": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tokens P95"
+          },
+          "vocabulary_size": {
+            "title": "Vocabulary Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "column",
+          "language",
+          "language_confidence",
+          "tokens_p50",
+          "tokens_p95",
+          "vocabulary_size",
+          "empty_fraction",
+          "duplicate_fraction"
+        ],
+        "title": "TextProfile",
+        "type": "object"
+      },
+      "TextSpec": {
+        "properties": {
+          "accents": {
+            "default": true,
+            "title": "Accents",
+            "type": "boolean"
+          },
+          "column": {
+            "title": "Column",
+            "type": "string"
+          },
+          "hf_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hf Model"
+          },
+          "lowercase": {
+            "default": true,
+            "title": "Lowercase",
+            "type": "boolean"
+          },
+          "max_length": {
+            "default": 64,
+            "maximum": 4096.0,
+            "minimum": 4.0,
+            "title": "Max Length",
+            "type": "integer"
+          },
+          "min_freq": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Min Freq",
+            "type": "integer"
+          },
+          "numbers": {
+            "default": false,
+            "title": "Numbers",
+            "type": "boolean"
+          },
+          "tokenizer": {
+            "default": "word",
+            "enum": [
+              "word",
+              "hf"
+            ],
+            "title": "Tokenizer",
+            "type": "string"
+          },
+          "urls": {
+            "default": true,
+            "title": "Urls",
+            "type": "boolean"
+          },
+          "vocab_size": {
+            "default": 20000,
+            "minimum": 10.0,
+            "title": "Vocab Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "column"
+        ],
+        "title": "TextSpec",
+        "type": "object"
       },
       "TextStats": {
         "properties": {
