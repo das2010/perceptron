@@ -16,6 +16,7 @@ import polars as pl
 from pydantic import BaseModel, Field
 
 from perceptron.data.pipeline.steps import OrdinalEncode, State, StepSpec, build_step
+from perceptron.data.series import SeriesConfig
 from perceptron.data.splits import FOLD_COLUMN, SPLIT_COLUMN
 from perceptron.domain.enums import Modality, TaskType
 
@@ -58,6 +59,12 @@ class TextSpec(BaseModel):
     max_length: int = Field(default=64, ge=4, le=4096)
 
 
+class SeriesSpec(BaseModel):
+    config: SeriesConfig
+    calendar: bool = True
+    jitter: float = Field(default=0.0, ge=0, le=0.5, description="Ruido gaussiano en train")
+
+
 class PipelineSpec(BaseModel):
     pipeline_version: str = PIPELINE_VERSION
     modality: Modality
@@ -65,6 +72,7 @@ class PipelineSpec(BaseModel):
     steps: list[StepSpec] = Field(default_factory=list)
     image: ImageSpec | None = None
     text: TextSpec | None = None
+    series: SeriesSpec | None = None
     rationale: list[str] = Field(default_factory=list, description="Por qué se eligió cada paso")
 
 
@@ -80,6 +88,7 @@ class FittedPipeline(BaseModel):
     image_mean: list[float] | None = None
     image_std: list[float] | None = None
     vocab: list[str] | None = None
+    series_state: dict[str, Any] | None = None
     pad_id: int = 0
 
     @property
@@ -102,6 +111,8 @@ def _fit_target(spec: TargetSpec, s: pl.Series) -> dict[str, Any]:
         x = s.cast(pl.Float64).drop_nulls()
         mean, std = float(x.mean() or 0.0), float(x.std() or 1.0)  # type: ignore[arg-type]
         return {"target_mean": mean, "target_std": std or 1.0} if spec.standardize else {}
+    if spec.task is not TaskType.CLASSIFICATION:
+        return {}
     return {"classes": sorted(s.drop_nulls().cast(pl.String).unique().to_list())}
 
 
@@ -144,6 +155,12 @@ def fit_pipeline(spec: PipelineSpec, train: pl.DataFrame) -> FittedPipeline:
         return fitted
     if spec.modality is Modality.TEXT:
         return _fit_text(fitted, train)
+    if spec.modality is Modality.TIMESERIES:
+        if spec.series is None:
+            raise ValueError("pipeline de series sin `series`")
+        from perceptron.data.pipeline.series_windows import fit_series
+
+        return fitted.model_copy(update={"series_state": fit_series(spec.series.config, train)})
 
     target_name = spec.target.name if spec.target else None
     df = train.drop([c for c in (*_INTERNAL, target_name) if c and c in train.columns])

@@ -345,12 +345,52 @@ def _build_hf_text(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContex
     )
 
 
+def _build_rnn(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    return m.RNNEncoder(t.shape[-1], p["hidden"], p["layers"], p["dropout"], p["cell"])
+
+
+def _build_tcn(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    return m.TCN(t.shape[-1], p["channels"], p["levels"], p["kernel"], p["dropout"])
+
+
+def _build_nbeats(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    return m.NBeats(
+        t.shape[0], t.shape[1], ctx.num_outputs, p["hidden"], p["blocks"], p["layers"], p["dropout"]
+    )
+
+
+def _build_patchtst(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    if p["d_model"] % p["heads"]:
+        raise ValueError("d_model debe ser múltiplo de heads")
+    patch = min(p["patch_len"], t.shape[0])
+    return m.PatchTST(
+        t.shape[0],
+        t.shape[1],
+        patch,
+        p["stride"],
+        p["d_model"],
+        p["heads"],
+        p["layers"],
+        p["dropout"],
+    )
+
+
+def _build_series_ae(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    return m.SeriesAutoencoder(t.shape[0], t.shape[1], p["hidden"], p["latent"], p["kind"])
+
+
 def _p(t: str, default: Any, **kw: Any) -> ParamSpec:
     return ParamSpec(type=t, default=default, **kw)  # type: ignore[arg-type]
 
 
 _DROPOUT = _p("float", 0.1, low=0.0, high=0.7, tunable=True, description="Probabilidad de dropout")
 _T, _I, _TXT = (Modality.TABULAR,), (Modality.IMAGE,), (Modality.TEXT,)
+_TS = (Modality.TIMESERIES,)
 _FEAT, _FMAP, _SEQ = TensorKind.FEATURES, TensorKind.FEATURE_MAP, TensorKind.SEQUENCE
 
 BLOCKS: dict[str, BlockSpec] = {
@@ -447,6 +487,80 @@ BLOCKS: dict[str, BlockSpec] = {
             _FMAP,
             _build_adapter,
             {"out_channels": _p("int", 3, low=1, high=2048)},
+        ),
+        BlockSpec(
+            "seq.rnn",
+            "LSTM/GRU sobre la ventana temporal (estado final)",
+            (_SEQ,),
+            _FEAT,
+            _build_rnn,
+            {
+                "cell": _p("str", "lstm", choices=["lstm", "gru"]),
+                "hidden": _p("int", 64, low=8, high=512, log=True, tunable=True),
+                "layers": _p("int", 1, low=1, high=4, tunable=True),
+                "dropout": _p("float", 0.1, low=0.0, high=0.5, tunable=True),
+            },
+            modalities=_TS,
+        ),
+        BlockSpec(
+            "seq.tcn",
+            "Temporal Convolutional Network (convoluciones causales dilatadas)",
+            (_SEQ,),
+            _SEQ,
+            _build_tcn,
+            {
+                "channels": _p("int", 32, low=8, high=256, log=True, tunable=True),
+                "levels": _p("int", 3, low=1, high=8, tunable=True),
+                "kernel": _p("int", 3, low=2, high=7),
+                "dropout": _p("float", 0.1, low=0.0, high=0.5, tunable=True),
+            },
+            modalities=_TS,
+        ),
+        BlockSpec(
+            "seq.nbeats",
+            "N-BEATS genérico: bloques FC con backcast residual (pronóstico directo)",
+            (_SEQ,),
+            _FEAT,
+            _build_nbeats,
+            {
+                "hidden": _p("int", 128, low=16, high=1024, log=True, tunable=True),
+                "blocks": _p("int", 3, low=1, high=8, tunable=True),
+                "layers": _p("int", 2, low=1, high=4),
+                "dropout": _p("float", 0.0, low=0.0, high=0.5, tunable=True),
+            },
+            tasks=(TaskType.FORECASTING,),
+            modalities=_TS,
+            is_backbone=False,
+        ),
+        BlockSpec(
+            "seq.patchtst",
+            "PatchTST: parches temporales + encoder Transformer",
+            (_SEQ,),
+            _FEAT,
+            _build_patchtst,
+            {
+                "patch_len": _p("int", 8, low=2, high=64),
+                "stride": _p("int", 4, low=1, high=64),
+                "d_model": _p("int", 64, low=16, high=256, choices=[32, 64, 128], tunable=True),
+                "heads": _p("int", 4, choices=[2, 4, 8]),
+                "layers": _p("int", 2, low=1, high=6, tunable=True),
+                "dropout": _p("float", 0.1, low=0.0, high=0.5, tunable=True),
+            },
+            modalities=_TS,
+        ),
+        BlockSpec(
+            "seq.autoencoder",
+            "Autoencoder de ventanas (anomalías por error de reconstrucción)",
+            (_SEQ,),
+            _SEQ,
+            _build_series_ae,
+            {
+                "kind": _p("str", "conv", choices=["conv", "lstm"]),
+                "hidden": _p("int", 64, low=8, high=512, log=True, tunable=True),
+                "latent": _p("int", 8, low=2, high=128, log=True, tunable=True),
+            },
+            tasks=(TaskType.ANOMALY_DETECTION,),
+            modalities=_TS,
         ),
         BlockSpec("pool.global_avg", "Promedio global espacial", (_FMAP,), _FEAT, _build_pool),
         BlockSpec(

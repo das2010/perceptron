@@ -94,6 +94,28 @@ def _ctor(
             use = bool(p["pretrained"]) and pretrained
             args = f"{p['model']!r}, pretrained={use}, pad_id={i.pad_id}, pooling={p['pooling']!r}"
             return f"HFTextEncoder({args})", "HFTextEncoder"
+        case "seq.rnn":
+            args = f"{i.shape[-1]}, {p['hidden']}, {p['layers']}, {p['dropout']!r}, {p['cell']!r}"
+            return f"RNNEncoder({args})", "RNNEncoder"
+        case "seq.tcn":
+            args = f"{i.shape[-1]}, {p['channels']}, {p['levels']}, {p['kernel']}, {p['dropout']!r}"
+            return f"TCN({args})", "TCN"
+        case "seq.nbeats":
+            args = (
+                f"{i.shape[0]}, {i.shape[1]}, {n_out}, {p['hidden']}, {p['blocks']}, "
+                f"{p['layers']}, {p['dropout']!r}"
+            )
+            return f"NBeats({args})", "NBeats"
+        case "seq.patchtst":
+            patch = min(p["patch_len"], i.shape[0])
+            args = (
+                f"{i.shape[0]}, {i.shape[1]}, {patch}, {p['stride']}, {p['d_model']}, "
+                f"{p['heads']}, {p['layers']}, {p['dropout']!r}"
+            )
+            return f"PatchTST({args})", "PatchTST"
+        case "seq.autoencoder":
+            args = f"{i.shape[0]}, {i.shape[1]}, {p['hidden']}, {p['latent']}, {p['kind']!r}"
+            return f"SeriesAutoencoder({args})", "SeriesAutoencoder"
         case "merge.concat":
             return "Concat()", "Concat"
         case "merge.add":

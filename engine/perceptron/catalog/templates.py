@@ -289,3 +289,96 @@ def text_template(
         metrics=_metrics(task),
         provenance=Provenance(origin=Origin.RULES, template=template, rationale=rationale),
     )
+
+
+def series_template(
+    backbone: str,
+    *,
+    task: TaskType,
+    lookback: int,
+    channels: int,
+    horizon: int = 1,
+    epochs: int = 40,
+    rationale: str | None = None,
+) -> ArchSpec:
+    """Forecasting: `nbeats`, `lstm`, `gru`, `tcn`, `patchtst`. Anomalías: `ae_conv`, `ae_lstm`."""
+    inp = InputSpec(kind="sequence", shape=[lookback, channels], from_pipeline="series")
+    if task is TaskType.ANOMALY_DETECTION:
+        kind = "lstm" if backbone == "ae_lstm" else "conv"
+        nodes = [
+            Node(
+                id="autoencoder",
+                block="seq.autoencoder",
+                params={
+                    "kind": kind,
+                    "hidden": HP(hp="hidden", default=64),
+                    "latent": HP(hp="latent", default=8),
+                },
+            )
+        ]
+        loss = LossSpec(type="mse")
+        metrics: list[str] = []
+        task_spec = TaskSpec(type=task)
+    else:
+        if backbone == "nbeats":
+            nodes = [
+                Node(
+                    id="nbeats",
+                    block="seq.nbeats",
+                    params={
+                        "hidden": HP(hp="hidden", default=128),
+                        "blocks": HP(hp="blocks", default=3),
+                    },
+                )
+            ]
+        elif backbone in ("lstm", "gru"):
+            nodes = [
+                Node(
+                    id="encoder",
+                    block="seq.rnn",
+                    params={"cell": backbone, "hidden": HP(hp="hidden", default=64)},
+                ),
+                Node(id="head", block="head.linear"),
+            ]
+        elif backbone == "tcn":
+            nodes = [
+                Node(
+                    id="encoder",
+                    block="seq.tcn",
+                    params={"channels": HP(hp="channels", default=32)},
+                ),
+                Node(id="pool", block="pool.sequence", params={"mode": "last"}),
+                Node(id="head", block="head.linear"),
+            ]
+        elif backbone == "patchtst":
+            nodes = [
+                Node(
+                    id="encoder",
+                    block="seq.patchtst",
+                    params={"d_model": HP(hp="d_model", default=64)},
+                ),
+                Node(id="head", block="head.linear"),
+            ]
+        else:
+            raise ValueError(f"plantilla de series desconocida: {backbone}")
+        loss = LossSpec(type="mae")
+        metrics = ["mae", "rmse"]
+        task_spec = TaskSpec(type=task, horizon=horizon)
+    return ArchSpec(
+        name=f"series-{backbone}",
+        modality=Modality.TIMESERIES,
+        task=task_spec,
+        input=inp,
+        nodes=nodes,
+        edges=_chain([n.id for n in nodes]),
+        loss=loss,
+        optimizer=OptimizerSpec(
+            type="adamw",
+            lr=HP(hp="lr", default=1e-3),
+            weight_decay=HP(hp="weight_decay", default=1e-4),
+        ),
+        scheduler=SchedulerSpec(type="one_cycle"),
+        training=_training(epochs, patience=6),
+        metrics=metrics,
+        provenance=Provenance(origin=Origin.RULES, template=backbone, rationale=rationale),
+    )

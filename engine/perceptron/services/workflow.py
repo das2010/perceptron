@@ -117,6 +117,7 @@ class Workflow:
         overrides: dict[str, SemanticType] | None = None,
         source_record: DataSource | None = None,
         modality: Modality | None = None,
+        series_overrides: dict[str, Any] | None = None,
     ) -> DatasetVersion:
         project = self.project(project_id)
         src = source_record
@@ -139,6 +140,7 @@ class Workflow:
                     overrides=overrides,
                     source_id=src.id,
                     modality=modality,
+                    series_overrides=series_overrides,
                 ),
             )
         existing = self.ctx.repo(DatasetVersion).list(
@@ -493,6 +495,7 @@ def quickstart(
     name: str | None = None,
     target: str | None = None,
     modality: Modality | None = None,
+    series_overrides: dict[str, Any] | None = None,
     trials: int = 10,
     max_epochs: int | None = None,
     max_time_s: float | None = None,
@@ -504,7 +507,9 @@ def quickstart(
     wf = Workflow(ctx, tracker)
     project = ctx.projects.add(Project(name=name or source.stem, goal="quickstart"))
     ctx.files.init_project(project)
-    dv = wf.ingest(project.id, source, target=target, modality=modality)
+    dv = wf.ingest(
+        project.id, source, target=target, modality=modality, series_overrides=series_overrides
+    )
     card = wf.profile(dv.id)
     pipeline = wf.propose_pipeline(dv.id)
     archspec, why = wf.propose_architecture(dv.id, pipeline.id)

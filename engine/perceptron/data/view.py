@@ -15,6 +15,7 @@ import polars as pl
 
 from perceptron.core.errors import NotFoundError, PerceptronError
 from perceptron.data.schema import TableSchema
+from perceptron.data.series import SeriesConfig
 from perceptron.data.splits import SPLIT_COLUMN, TEST
 from perceptron.domain.enums import Modality
 
@@ -58,6 +59,11 @@ class DatasetView:
     @property
     def data_file(self) -> Path:
         return self.root / (TABLE_FILE if self.modality in TABLE_MODALITIES else INDEX_FILE)
+
+    @property
+    def series(self) -> SeriesConfig | None:
+        raw = self.meta.get("series")
+        return SeriesConfig.model_validate(raw) if raw else None
 
     @property
     def text_column(self) -> str | None:

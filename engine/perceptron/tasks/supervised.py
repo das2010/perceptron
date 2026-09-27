@@ -133,7 +133,11 @@ class ClassificationAdapter(TaskAdapter):
         )
 
     def evaluate(
-        self, preds: Predictions, spec: ArchSpec, pipeline: FittedPipeline
+        self,
+        preds: Predictions,
+        spec: ArchSpec,
+        pipeline: FittedPipeline,
+        calibration: dict[str, Any] | None = None,
     ) -> TaskEvaluation:
         from perceptron.evaluation.metrics import classification_metrics
 
@@ -198,7 +202,11 @@ class RegressionAdapter(TaskAdapter):
         return Predictions(y_true=y_true, y_pred=pred)
 
     def evaluate(
-        self, preds: Predictions, spec: ArchSpec, pipeline: FittedPipeline
+        self,
+        preds: Predictions,
+        spec: ArchSpec,
+        pipeline: FittedPipeline,
+        calibration: dict[str, Any] | None = None,
     ) -> TaskEvaluation:
         from perceptron.evaluation.metrics import regression_metrics
 

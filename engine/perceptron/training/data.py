@@ -55,6 +55,62 @@ class TextDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         return self.ids[i], self.y[i]
 
 
+class SeriesForecastDataset(Dataset[tuple[torch.Tensor, ...]]):
+    """Ventanas lookback → horizonte cuyo horizonte cae en `split`."""
+
+    def __init__(
+        self, fitted: FittedPipeline, df: pl.DataFrame, split: str, *, train: bool
+    ) -> None:
+        from perceptron.data.pipeline.series_windows import forecast_windows
+
+        sspec = fitted.spec.series
+        if sspec is None or fitted.series_state is None:
+            raise ValueError("pipeline de series sin ajustar")
+        w = forecast_windows(sspec.config, fitted.series_state, df, split, calendar=sspec.calendar)
+        self.x = torch.tensor(w.x)
+        self.y = torch.tensor(w.y)
+        self.mean = torch.tensor(w.mean)
+        self.std = torch.tensor(w.std)
+        self.naive = torch.tensor(w.naive)
+        self.scale = torch.tensor(w.mase_scale)
+        self.series = w.series
+        self.jitter = sspec.jitter if train else 0.0
+
+    def __len__(self) -> int:
+        return len(self.y)
+
+    def __getitem__(self, i: int) -> tuple[torch.Tensor, ...]:
+        x = self.x[i]
+        if self.jitter:
+            x = x + self.jitter * torch.randn_like(x)
+        return x, self.y[i], self.mean[i], self.std[i], self.naive[i], self.scale[i]
+
+
+class SeriesAnomalyDataset(Dataset[tuple[torch.Tensor, ...]]):
+    """Una ventana por punto; para entrenar se usan solo ventanas sin anomalías."""
+
+    def __init__(
+        self, fitted: FittedPipeline, df: pl.DataFrame, split: str, *, normal_only: bool
+    ) -> None:
+        from perceptron.data.pipeline.series_windows import anomaly_windows
+
+        sspec = fitted.spec.series
+        if sspec is None or fitted.series_state is None:
+            raise ValueError("pipeline de series sin ajustar")
+        w = anomaly_windows(sspec.config, fitted.series_state, df, split, calendar=sspec.calendar)
+        keep = w.normal if normal_only else np.ones(len(w.label), dtype=bool)
+        self.x = torch.tensor(w.x[keep])
+        self.label = torch.tensor(w.label[keep])
+        self.normal = torch.tensor(w.normal[keep])
+        self.series = [s for s, k in zip(w.series, keep, strict=True) if k]
+
+    def __len__(self) -> int:
+        return len(self.label)
+
+    def __getitem__(self, i: int) -> tuple[torch.Tensor, ...]:
+        return self.x[i], self.label[i], self.normal[i]
+
+
 class ImageDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
     """Lee las imágenes desde disco en cada acceso (no carga el dataset en memoria)."""
 
@@ -89,6 +145,15 @@ def make_dataset(
     train: bool,
     purpose: Purpose = Purpose.TRAINING,
 ) -> Dataset[Any]:
+    if view.modality is Modality.TIMESERIES:
+        # Las ventanas necesitan la historia previa al split: se lee todo lo permitido.
+        full = view.read(None, purpose=purpose)
+        target = fitted.spec.target
+        if target and target.task is TaskType.ANOMALY_DETECTION:
+            return SeriesAnomalyDataset(
+                fitted, full, split, normal_only=purpose is Purpose.TRAINING
+            )
+        return SeriesForecastDataset(fitted, full, split, train=train)
     df = view.read(split, purpose=purpose)
     if view.modality is Modality.TABULAR:
         return TabularDataset(fitted, df)
@@ -107,7 +172,10 @@ def auto_num_workers(modality: Modality, n_train: int) -> int:
 
     Con más datos se usan pocos workers; siempre con `spawn` (ver `make_loader`).
     """
-    if modality in (Modality.TABULAR, Modality.TEXT) or n_train < SMALL_DATASET:
+    if (
+        modality in (Modality.TABULAR, Modality.TEXT, Modality.TIMESERIES)
+        or n_train < SMALL_DATASET
+    ):
         return 0
     cpus = os.cpu_count() or 1
     return 0 if sys.platform == "win32" and cpus <= 4 else min(4, max(cpus - 1, 0))

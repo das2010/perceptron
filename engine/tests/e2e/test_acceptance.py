@@ -57,3 +57,24 @@ def test_uc03_text(workspace_dir: Path, fixtures_dir: Path) -> None:
     assert s["trials"] == 10
     assert s["model_version_id"]
     assert s["test_metrics"]["accuracy"] > 0.9
+
+
+def test_uc07_forecasting(workspace_dir: Path, fixtures_dir: Path) -> None:
+    s = _quickstart(
+        workspace_dir, fixtures_dir / "uc07_demand" / "demanda.csv", "--max-epochs", "60"
+    )
+    assert s["modality"] == "timeseries"
+    assert s["architecture"] == "series-nbeats"
+    assert s["model_version_id"]
+    assert s["test_metrics"]["smape"] < 15
+    assert s["test_metrics"]["mase"] < 1
+
+
+def test_uc08_anomalies(workspace_dir: Path, fixtures_dir: Path) -> None:
+    s = _quickstart(
+        workspace_dir, fixtures_dir / "uc08_telemetry" / "telemetria.csv", "--max-epochs", "30"
+    )
+    assert s["modality"] == "timeseries"
+    assert s["architecture"] == "series-ae_conv"
+    assert s["model_version_id"]
+    assert s["test_metrics"]["f1"] > 0.7

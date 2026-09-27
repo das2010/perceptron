@@ -334,18 +334,34 @@ def uc07_demand(rng: random.Random) -> Files:
 
 
 def uc08_telemetry(rng: random.Random) -> Files:
-    """Serie temporal: telemetría de sensores con anomalías etiquetadas."""
+    """Serie temporal: 2 días de telemetría (1 muestra/min) con anomalías etiquetadas.
+
+    Hay anomalías de tres tipos (pico de temperatura, escalón sostenido, ráfaga de
+    vibración) repartidas en todo el período, así train, val y test tienen casos.
+    """
+    minutes = 2 * 1440
+    events: list[tuple[int, int, str]] = []
+    start = 150
+    while start < minutes - 40:
+        length = rng.randint(6, 18)
+        events.append((start, start + length, rng.choice(["pico", "escalon", "vibracion"])))
+        start += rng.randint(170, 260)
+    kind_at = {t: kind for a, b, kind in events for t in range(a, b)}
     rows = []
-    for t in range(1440):  # 1 día a 1 muestra/min
+    for t in range(minutes):
         temp = 60 + 5 * math.sin(2 * math.pi * t / 1440) + rng.gauss(0, 0.5)
-        vib = 0.3 + rng.gauss(0, 0.03)
-        anomaly = 0
-        if 600 <= t < 615 or 1100 <= t < 1105:
-            temp += 12
-            vib += 0.5
-            anomaly = 1
-        ts = f"2026-01-15T{t // 60:02d}:{t % 60:02d}:00"
-        rows.append([ts, "S1", round(temp, 3), round(vib, 4), anomaly])
+        vib = 0.3 + 0.02 * math.sin(2 * math.pi * t / 60) + rng.gauss(0, 0.03)
+        kind = kind_at.get(t)
+        if kind == "pico":
+            temp += 10 + rng.gauss(0, 1)
+        elif kind == "escalon":
+            temp += 4
+            vib += 0.15
+        elif kind == "vibracion":
+            vib += 0.6 + rng.gauss(0, 0.1)
+        day, minute = divmod(t, 1440)
+        ts = f"2026-01-{15 + day:02d}T{minute // 60:02d}:{minute % 60:02d}:00"
+        rows.append([ts, "S1", round(temp, 3), round(vib, 4), int(kind is not None)])
     return {
         "uc08_telemetry/telemetria.csv": csv_bytes(
             ["timestamp", "sensor", "temperatura", "vibracion", "anomalia"], rows

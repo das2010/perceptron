@@ -9,6 +9,7 @@ from perceptron.data.pipeline.pipeline import (
     AugmentSpec,
     ImageSpec,
     PipelineSpec,
+    SeriesSpec,
     TargetSpec,
     TextSpec,
 )
@@ -47,6 +48,8 @@ def propose_pipeline(
     )
     if card.modality is Modality.IMAGE:
         return _propose_image(card, target, image_size, pretrained)
+    if card.modality is Modality.TIMESERIES:
+        return _propose_series(card)
     if card.modality is Modality.TEXT:
         return _propose_text(card, target, hf_model if pretrained else None)
     if card.modality is not Modality.TABULAR:
@@ -185,3 +188,33 @@ def _propose_text(
         )
         text = TextSpec(column=tp.column, min_freq=1 if small else 2, max_length=max_length)
     return PipelineSpec(modality=Modality.TEXT, target=target, text=text, rationale=why)
+
+
+def _propose_series(card: ProfileCard) -> PipelineSpec:
+    sp = card.series
+    if sp is None:
+        raise ValueError("el ProfileCard no tiene perfil de series")
+    cfg = sp.config
+    anomaly = cfg.task is TaskType.ANOMALY_DETECTION
+    why = [
+        f"{sp.num_series} serie(s); ventana de {cfg.lookback} pasos"
+        + ("" if anomaly else f" para pronosticar {cfg.horizon} pasos."),
+        "Cada serie se estandariza con su media y desvío de train (se desescala al predecir).",
+    ]
+    if sp.season:
+        why.append(
+            f"Estacionalidad detectada cada {sp.season} pasos (se usa para MASE y el baseline)."
+        )
+    if anomaly:
+        why.append(
+            "Anomalías: se aprende a reconstruir ventanas normales; un error alto indica anomalía."
+        )
+    else:
+        why.append("Se agregan features de calendario (seno/coseno) según la frecuencia.")
+    target = TargetSpec(name=cfg.target, task=cfg.task)
+    return PipelineSpec(
+        modality=Modality.TIMESERIES,
+        target=target,
+        series=SeriesSpec(config=cfg, calendar=not anomaly),
+        rationale=why,
+    )

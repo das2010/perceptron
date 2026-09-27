@@ -40,6 +40,7 @@ class TaskSpec(BaseModel):
     num_classes: int | None = Field(default=None, ge=2)
     multilabel: bool = False
     num_targets: int = Field(default=1, ge=1, description="Regresión multi-salida")
+    horizon: int | None = Field(default=None, ge=1, description="Forecasting: pasos a futuro")
 
 
 class InputSpec(BaseModel):

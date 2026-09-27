@@ -9,7 +9,9 @@ import json
 from pathlib import Path
 from typing import Any
 
+import torch
 from pydantic import BaseModel, Field
+from torch.utils.data import DataLoader
 
 from perceptron.data.view import DatasetView, Purpose
 from perceptron.domain.enums import ModelStage, TaskType
@@ -46,7 +48,16 @@ def evaluate_run(run_dir: Path, dataset_dir: Path, *, split: str = "test") -> Ev
     ds = make_dataset(view, trained.pipeline, split, train=False, purpose=Purpose.FINAL_EVALUATION)
     preds = predict(trained, ds)
     run_id = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))["run_id"]
-    result = get_adapter(trained.task).evaluate(preds, trained.spec, trained.pipeline)
+    adapter = get_adapter(trained.task)
+    calibration: dict[str, Any] = {}
+    if adapter.needs_calibration:
+        val_ds = make_dataset(
+            view, trained.pipeline, "val", train=False, purpose=Purpose.FINAL_EVALUATION
+        )
+        loader = DataLoader(val_ds, batch_size=256, shuffle=False)
+        with torch.no_grad():
+            calibration = adapter.calibrate(trained.model, loader, trained.spec)
+    result = adapter.evaluate(preds, trained.spec, trained.pipeline, calibration)
     detail = dict(result.detail)
     report = EvaluationReport(
         run_id=run_id,

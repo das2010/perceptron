@@ -14,6 +14,7 @@ from perceptron.core.errors import ValidationError
 from perceptron.core.ids import IdPrefix, new_id
 from perceptron.core.paths import ProjectPaths
 from perceptron.data.schema import SemanticType, TableSchema, infer_schema
+from perceptron.data.series import SeriesConfig, detect_series, temporal_split_per_series
 from perceptron.data.sources.files import (
     SourceKind,
     image_folder_index,
@@ -50,6 +51,8 @@ class IngestRequest:
     overrides: dict[str, SemanticType] | None = None
     source_id: str | None = None
     modality: Modality | None = None
+    series: SeriesConfig | None = None
+    series_overrides: dict[str, object] | None = None
 
 
 def _materialize_table(
@@ -136,7 +139,26 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
             if detected.kind is SourceKind.TABLE:
                 schema, df = _materialize_table(detected.path, staging, req)
                 text_col = text_column(schema)
-                modality = req.modality or (Modality.TEXT if text_col else Modality.TABULAR)
+                series_cfg = req.series
+                if (
+                    series_cfg is None
+                    and req.modality in (None, Modality.TIMESERIES)
+                    and not text_col
+                ):
+                    series_cfg = detect_series(schema, df)
+                if series_cfg is not None and req.series_overrides:
+                    series_cfg = SeriesConfig.model_validate(
+                        {**series_cfg.model_dump(), **req.series_overrides}
+                    )
+                if req.modality is Modality.TIMESERIES and series_cfg is None:
+                    raise ValidationError(
+                        "no se pudo inferir la serie: indicá la columna de tiempo y el target"
+                    )
+                auto = Modality.TIMESERIES if series_cfg else Modality.TABULAR
+                modality = req.modality or (Modality.TEXT if text_col else auto)
+                if modality is Modality.TIMESERIES and series_cfg is not None:
+                    extra_meta["series"] = series_cfg.model_dump(mode="json")
+                    schema = schema.model_copy(update={"target": series_cfg.target})
                 if modality is Modality.TEXT:
                     text_col = text_col or next(
                         (c.name for c in schema.columns if c.semantic is SemanticType.TEXT), None
@@ -156,7 +178,12 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
                 data_file = INDEX_FILE
 
         split_req = req.split or _default_split(schema, modality)
-        df = assign_splits(df, split_req, schema.target)
+        if modality is Modality.TIMESERIES and "series" in extra_meta:
+            cfg = SeriesConfig.model_validate(extra_meta["series"])
+            split_req = SplitRequest(strategy=SplitStrategy.TEMPORAL, time_column=cfg.time_column)
+            df = temporal_split_per_series(df, cfg)
+        else:
+            df = assign_splits(df, split_req, schema.target)
         df.write_parquet(staging / data_file, compression="zstd", statistics=True)
         write_json(staging / SCHEMA_FILE, schema.model_dump(mode="json"))
         write_json(

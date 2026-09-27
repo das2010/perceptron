@@ -18,6 +18,7 @@ from perceptron.data.profiling.images import profile_images
 from perceptron.data.profiling.tabular import profile_columns, profile_target
 from perceptron.data.profiling.text import profile_text, text_alerts
 from perceptron.data.schema import SemanticType
+from perceptron.data.series import profile_series
 from perceptron.data.splits import FOLD_COLUMN, SPLIT_COLUMN, TEST
 from perceptron.data.view import DatasetView, Purpose
 from perceptron.domain.enums import Modality
@@ -57,6 +58,9 @@ def profile_dataset(
         dup_fraction = round(1 - rows.unique().height / max(rows.height, 1), 4)
         alerts += duplicate_alert(dup_fraction)
         num_features = len(schema.feature_columns)
+    series = None
+    if view.modality is Modality.TIMESERIES and view.series:
+        series = profile_series(feature_df, view.series)
     text = None
     if view.modality is Modality.TEXT and view.text_column:
         text = profile_text(feature_df, view.text_column)
@@ -74,6 +78,7 @@ def profile_dataset(
         columns=[] if view.modality is Modality.IMAGE else columns,
         images=images,
         text=text,
+        series=series,
         duplicate_row_fraction=dup_fraction,
         alerts=alerts,
     )

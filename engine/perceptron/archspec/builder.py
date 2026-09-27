@@ -46,6 +46,10 @@ def input_tensor_spec(spec: ArchSpec) -> TensorSpec:
         if not inp.shape or len(inp.shape) != 3:
             raise ArchBuildError("input.shape", "se espera [C, H, W]")
         return TensorSpec(TensorKind.IMAGE, tuple(inp.shape))
+    if inp.kind == "sequence":
+        if not inp.shape or len(inp.shape) != 2:
+            raise ArchBuildError("input.shape", "se espera [L, C] (ventana × canales)")
+        return TensorSpec(TensorKind.SEQUENCE, tuple(inp.shape))
     if inp.kind == "tokens":
         if not inp.shape or len(inp.shape) != 1:
             raise ArchBuildError("input.shape", "se espera [L] (largo máximo de la secuencia)")

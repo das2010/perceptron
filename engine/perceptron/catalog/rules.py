@@ -135,6 +135,48 @@ def _text(card: ProfileCard, fitted: FittedPipeline, task: TaskType) -> Recommen
     return Recommendation("textcnn", spec, why)
 
 
+LARGE_SERIES_WINDOWS = 20_000
+
+
+def _series(card: ProfileCard, fitted: FittedPipeline, gpu: float) -> Recommendation:
+    from perceptron.catalog.templates import series_template
+    from perceptron.data.pipeline.series_windows import channels
+
+    sspec = fitted.spec.series
+    if sspec is None:
+        raise ValueError("pipeline de series sin configuración")
+    cfg = sspec.config
+    c = len(channels(cfg, sspec.calendar))
+    if cfg.task is TaskType.ANOMALY_DETECTION:
+        why = (
+            "Autoencoder de ventanas: aprende la forma normal de la señal; un error de "
+            "reconstrucción alto marca una anomalía (umbral calibrado en validación)."
+        )
+        spec = series_template(
+            "ae_conv", task=cfg.task, lookback=cfg.lookback, channels=c, rationale=why
+        )
+        return Recommendation("ae_conv", spec, why)
+    windows = card.num_samples  # cota superior del n.º de ventanas de train
+    if gpu >= GPU_MIN_GB and windows >= LARGE_SERIES_WINDOWS:
+        why = "Muchas ventanas y GPU: PatchTST captura dependencias largas con atención."
+        backbone = "patchtst"
+    else:
+        why = (
+            "N-BEATS: MLP profundo con backcast residual, fuerte en forecasting univariado y "
+            "rápido en CPU."
+        )
+        backbone = "nbeats"
+    spec = series_template(
+        backbone,
+        task=cfg.task,
+        lookback=cfg.lookback,
+        channels=c,
+        horizon=cfg.horizon,
+        rationale=why,
+    )
+    return Recommendation(backbone, spec, why)
+
+
 def recommend(
     card: ProfileCard,
     fitted: FittedPipeline,
@@ -153,4 +195,6 @@ def recommend(
         return _image(card, fitted, task, gpu, can_download)
     if card.modality is Modality.TEXT:
         return _text(card, fitted, task)
+    if card.modality is Modality.TIMESERIES:
+        return _series(card, fitted, gpu)
     raise NotImplementedError(f"reglas para {card.modality} llegan en Capa 1b")

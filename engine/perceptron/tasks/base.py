@@ -89,9 +89,23 @@ class TaskAdapter(ABC):
         pipeline: FittedPipeline,
     ) -> Predictions: ...
 
+    def calibrate(
+        self, model: nn.Module, val_loader: torch.utils.data.DataLoader[Any], spec: ArchSpec
+    ) -> dict[str, Any]:
+        """Ajustes post-entrenamiento sobre val (p. ej. umbral de anomalías). Por defecto nada."""
+        return {}
+
+    @property
+    def needs_calibration(self) -> bool:
+        return type(self).calibrate is not TaskAdapter.calibrate
+
     @abstractmethod
     def evaluate(
-        self, preds: Predictions, spec: ArchSpec, pipeline: FittedPipeline
+        self,
+        preds: Predictions,
+        spec: ArchSpec,
+        pipeline: FittedPipeline,
+        calibration: dict[str, Any] | None = None,
     ) -> TaskEvaluation: ...
 
 
