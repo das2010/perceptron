@@ -38,6 +38,7 @@ def test_uc01_churn(workspace_dir: Path, fixtures_dir: Path) -> None:
     assert s["trials"] == 10
     assert s["model_version_id"]
     assert s["test_metrics"]["roc_auc"] > 0.75
+    assert s["baseline"] and "roc_auc" in s["baseline"]["metrics"]  # referencia LightGBM
 
 
 def test_uc04_defects(workspace_dir: Path, fixtures_dir: Path) -> None:

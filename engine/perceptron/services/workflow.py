@@ -436,6 +436,25 @@ class Workflow:
             raise NotFoundError(f"el run {run_id} no fue evaluado")
         return EvaluationReport.model_validate(json.loads(path.read_text(encoding="utf-8")))
 
+    def baseline(
+        self, dataset_version_id: str, pipeline_id: str, project_id: str
+    ) -> dict[str, Any] | None:
+        """LightGBM de referencia (§5.1): mismo pipeline y test sellado; se registra en MLflow."""
+        from perceptron.evaluation.baseline import lightgbm_baseline
+
+        dv = self.dataset(dataset_version_id)
+        try:
+            result = lightgbm_baseline(self.view(dv), self.fitted_pipeline(pipeline_id, dv.id))
+        except (ImportError, ValueError) as e:
+            logger.warning("baseline no disponible", extra={"error": str(e)})
+            return None
+        rid = self.tracker.start_run(
+            project_id, "baseline-lightgbm", {"perceptron.baseline": "lightgbm"}
+        )
+        self.tracker.log_metrics(rid, {f"test.{k}": v for k, v in result["metrics"].items()})
+        self.tracker.end_run(rid, "FINISHED")
+        return result
+
     def register(self, run_id: str) -> ModelVersion:
         run = self.ctx.repo(Run).get(run_id)
         dv = self.dataset(run.dataset_version_id)
@@ -465,6 +484,7 @@ class QuickstartResult:
     study_result: StudyResult
     evaluation: EvaluationReport | None
     model_version: ModelVersion | None
+    baseline: dict[str, Any] | None = None
 
     def summary(self) -> dict[str, Any]:
         best = self.study_result.best_trial
@@ -489,6 +509,7 @@ class QuickstartResult:
             "best_params": best.params if best else None,
             "test_metrics": self.evaluation.metrics if self.evaluation else None,
             "model_version_id": self.model_version.id if self.model_version else None,
+            "baseline": self.baseline,
         }
 
 
@@ -534,6 +555,9 @@ def quickstart(
     if result.best_trial is not None:
         _, evaluation = wf.evaluate(result.best_trial.run_id)
         mv = wf.register(result.best_trial.run_id)
+    baseline = None
+    if dv.modality is Modality.TABULAR and evaluation is not None:
+        baseline = wf.baseline(dv.id, pipeline.id, project.id)
     return QuickstartResult(
         project=ctx.projects.get(project.id),
         dataset=dv,
@@ -546,6 +570,7 @@ def quickstart(
         study_result=result,
         evaluation=evaluation,
         model_version=mv,
+        baseline=baseline,
     )
 
 

@@ -17,6 +17,7 @@ from perceptron.domain.enums import Modality, TaskType
 from perceptron.training.hardware import HardwareReport
 
 _VISION_TASKS = (TaskType.OBJECT_DETECTION, TaskType.SEGMENTATION, TaskType.OCR)
+IMBALANCE_OVERSAMPLE = 0.2
 SMALL_TABULAR = 2_000
 LARGE_TABULAR = 50_000
 SMALL_IMAGES = 5_000
@@ -49,6 +50,13 @@ def _tabular(
             cardinalities=[fitted.cardinalities[c] for c in fitted.categorical_features],
             rationale=why,
         )
+        imbalance = card.target.imbalance_ratio if card.target else None
+        if imbalance is not None and imbalance < IMBALANCE_OVERSAMPLE:
+            spec.training.oversample = True
+            why += (
+                f" Clases desbalanceadas (ratio {imbalance:.2f}): se sobremuestrea la minoritaria."
+            )
+            spec.provenance.rationale = why
         return Recommendation(template, spec, why)
 
     if n < SMALL_TABULAR:

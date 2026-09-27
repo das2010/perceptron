@@ -133,7 +133,14 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         if cfg.num_workers == "auto"
         else int(cfg.num_workers)
     )
-    train_dl = make_loader(train_ds, batch_size, shuffle=True, num_workers=workers, seed=cfg.seed)
+    train_dl = make_loader(
+        train_ds,
+        batch_size,
+        shuffle=True,
+        num_workers=workers,
+        seed=cfg.seed,
+        oversample=spec.training.oversample,
+    )
     val_dl = make_loader(val_ds, batch_size, shuffle=False, num_workers=workers, seed=cfg.seed)
 
     module = PerceptronModule(

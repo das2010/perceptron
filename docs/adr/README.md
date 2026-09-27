@@ -20,5 +20,6 @@
 | [0016](0016-formato-dataset-version.md) | Formato en disco de DatasetVersion | aceptado |
 | [0017](0017-task-adapters.md) | Adaptadores de tarea (TaskAdapter) | aceptado |
 | [0018](0018-audio-soundfile-dsp-propio.md) | Audio con soundfile y DSP propio (sin torchaudio) | aceptado |
+| [0019](0019-deteccion-segmentacion-ocr.md) | Detección, segmentación y OCR desde cero en la Capa 1b | aceptado |
 
 Plantilla: SPEC §18.3.

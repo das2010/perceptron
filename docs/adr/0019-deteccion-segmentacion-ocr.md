@@ -1,0 +1,7 @@
+# ADR-0019: Detección, segmentación y OCR desde cero en la Capa 1b
+- Estado: aceptado
+- Fecha: 2026-09-27
+- Contexto: SPEC §8 lista Faster R-CNN / RetinaNet / FCOS de torchvision, U-Net con encoder timm y TrOCR para visión avanzada. Los detectores de torchvision calculan la loss dentro del modelo en modo train y devuelven listas de dicts, lo que no encaja con el grafo ArchSpec de un solo `forward` ni con los adaptadores de tarea (ADR-0017). Además rinden con pesos preentrenados, que el CI (offline, CPU) no puede validar.
+- Decisión: En la 1b se implementan modelos declarativos y entrenables desde cero: `detection.centernet_small` (CenterNet: heatmap de centros + tamaño + offset, focal loss, decodificación por picos), `seg.unet_small` (U-Net, CE + Dice) y `ocr.crnn` (CNN + BiLSTM + CTC). Métricas: mAP@[.5:.95]/mAP@.5 por clase (torchmetrics + pycocotools), IoU/Dice por clase, CER/WER/exact match.
+- Consecuencias: el flujo completo funciona offline y en CPU, y se valida en la matriz e2e (UC-04 detección, UC-05, UC-06). Quedan pendientes, con adaptador propio: detectores de torchvision con backbone preentrenado (licencia BSD de torchvision; pesos a verificar por modelo), U-Net con encoder de timm y TrOCR (licencia a verificar). Se agregan cuando haya GPU en CI o un job nocturno con red.
+- Alternativas consideradas: envolver los detectores de torchvision en un bloque que oculte la loss interna (rompe la separación modelo/tarea y el to-code); YOLO de Ultralytics (AGPL, incompatible con el producto comercial, §16).

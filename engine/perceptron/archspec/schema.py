@@ -110,6 +110,7 @@ class TrainingSpec(BaseModel):
     gradient_clip: float | None = 1.0
     early_stopping: EarlyStopping | None = Field(default_factory=EarlyStopping)
     freeze_backbone_epochs: int = Field(default=0, ge=0)
+    oversample: bool = Field(default=False, description="Muestreo balanceado por clase (RF-TRN-10)")
 
 
 class Provenance(BaseModel):

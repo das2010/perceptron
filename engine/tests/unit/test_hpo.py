@@ -259,3 +259,21 @@ def test_default_space_and_recommendation() -> None:
         spec, Budget(max_trials=20), extra_objectives=[Objective(metric="num_params")]
     )
     assert multi.strategy == "nsga2"
+
+
+def test_balanced_sampler_equalizes_classes() -> None:
+    import torch
+
+    from perceptron.training.data import balanced_sampler
+
+    class DS(torch.utils.data.Dataset):  # type: ignore[type-arg]
+        y = torch.tensor([0] * 90 + [1] * 10)
+
+        def __len__(self) -> int:
+            return 100
+
+    sampler = balanced_sampler(DS(), torch.Generator().manual_seed(0))
+    assert sampler is not None
+    drawn = torch.tensor(list(iter(sampler)))
+    minority_share = (DS.y[drawn] == 1).float().mean().item()
+    assert 0.35 < minority_share < 0.65  # ≈ 50 % en vez de 10 %
