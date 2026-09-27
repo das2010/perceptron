@@ -261,15 +261,15 @@ def _propose_vision_task(card: ProfileCard) -> PipelineSpec:
         raise ValueError("el ProfileCard no tiene perfil de la tarea de visión")
     w50 = img.width_quantiles.get("p50") or 64
     h50 = img.height_quantiles.get("p50") or 64
+    why: list[str] = []
     if vt.task is TaskType.OCR:
         height = 32
         width = int(max(32, min(1024, round(w50 * height / max(h50, 1) / 4) * 4)))
         image = ImageSpec(size=height, width=width, channels=1, normalize="dataset")
-        why = [f"Líneas de texto a {height}×{width} px en escala de grises."]
+        why.append(f"Líneas de texto a {height}×{width} px en escala de grises.")
         classes = None
     else:
         size = int(min(512, max(32, round(max(w50, h50) / 32) * 32)))
-        why: list[str] = []
         area = vt.box_area_fraction_p50
         if vt.task is TaskType.OBJECT_DETECTION and area:
             # El detector reduce ×4: el objeto mediano debe medir ≥ MIN_OBJECT_PX (≥ 4 celdas).

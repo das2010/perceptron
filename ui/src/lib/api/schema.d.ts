@@ -1176,6 +1176,12 @@ export interface components {
              * @enum {string}
              */
             pruner: "none" | "median" | "asha" | "hyperband";
+            /**
+             * Pruner Warmup Epochs
+             * @description Épocas sin poda al inicio
+             * @default 1
+             */
+            pruner_warmup_epochs: number;
             /** Rationale */
             rationale?: string | null;
             /** Search Space */

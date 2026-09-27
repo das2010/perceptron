@@ -1390,6 +1390,13 @@
             "title": "Pruner",
             "type": "string"
           },
+          "pruner_warmup_epochs": {
+            "default": 1,
+            "description": "Épocas sin poda al inicio",
+            "minimum": 0.0,
+            "title": "Pruner Warmup Epochs",
+            "type": "integer"
+          },
           "rationale": {
             "anyOf": [
               {
