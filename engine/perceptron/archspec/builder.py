@@ -46,7 +46,13 @@ def input_tensor_spec(spec: ArchSpec) -> TensorSpec:
         if not inp.shape or len(inp.shape) != 3:
             raise ArchBuildError("input.shape", "se espera [C, H, W]")
         return TensorSpec(TensorKind.IMAGE, tuple(inp.shape))
-    raise ArchBuildError("input.kind", f"'{inp.kind}' se soporta desde la Capa 1b")
+    if inp.kind == "tokens":
+        if not inp.shape or len(inp.shape) != 1:
+            raise ArchBuildError("input.shape", "se espera [L] (largo máximo de la secuencia)")
+        return TensorSpec(
+            TensorKind.TOKENS, tuple(inp.shape), vocab_size=inp.vocab_size or 0, pad_id=inp.pad_id
+        )
+    raise ArchBuildError("input.kind", f"'{inp.kind}' todavía no está soportado")
 
 
 def num_outputs(spec: ArchSpec) -> int:
@@ -164,6 +170,8 @@ def _dummy(t: TensorSpec, device: torch.device, batch: int = 2) -> tuple[torch.T
             torch.zeros(batch, t.num_numeric, device=device),
             torch.zeros(batch, len(t.cardinalities), dtype=torch.long, device=device),
         )
+    if t.kind is TensorKind.TOKENS:
+        return (torch.zeros(batch, *t.shape, dtype=torch.long, device=device),)
     return (torch.zeros(batch, *t.shape, device=device),)
 
 
@@ -190,7 +198,7 @@ def build_model(
 ) -> BuildResult:
     """Construye el modelo. Con `materialize=False` solo hace la pasada `meta` (validación)."""
     order, preds = topological_order(spec)
-    ctx = BuildContext(num_outputs=num_outputs(spec), pretrained_allowed=False)
+    ctx = BuildContext(num_outputs=num_outputs(spec), pretrained_allowed=False, meta=True)
     specs: dict[str, TensorSpec] = {INPUT_NODE: input_tensor_spec(spec)}
     params_by_node: dict[str, dict[str, Any]] = {}
     meta = torch.device("meta")

@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 import typer
 
 from perceptron.core.config import Settings
-from perceptron.domain.enums import Device
+from perceptron.domain.enums import Device, Modality
 
 if TYPE_CHECKING:
     from perceptron.api.context import EngineContext
@@ -86,6 +86,7 @@ def data_ingest(
     source: Annotated[Path, typer.Argument(help="Archivo, carpeta de imágenes o ZIP")],
     project: ProjectOpt,
     target: Annotated[str | None, typer.Option(help="Columna objetivo")] = None,
+    modality: Annotated[Modality | None, typer.Option(help="Forzar la modalidad")] = None,
     workspace: WorkspaceOpt = None,
     as_json: JsonOpt = False,
 ) -> None:
@@ -93,7 +94,7 @@ def data_ingest(
     from perceptron.services.workflow import Workflow
 
     with _ctx(workspace) as ctx:
-        dv = Workflow(ctx).ingest(project, source, target=target)
+        dv = Workflow(ctx).ingest(project, source, target=target, modality=modality)
         split = dv.split
         _out(
             dv,
@@ -323,6 +324,7 @@ def quickstart(
         str | None, typer.Option(help="Columna objetivo (se infiere si falta)")
     ] = None,
     name: Annotated[str | None, typer.Option(help="Nombre del proyecto")] = None,
+    modality: Annotated[Modality | None, typer.Option(help="Forzar la modalidad")] = None,
     trials: Annotated[int, typer.Option(help="Trials de HPO")] = 10,
     max_epochs: Annotated[int | None, typer.Option(help="Épocas máximas por trial")] = None,
     max_time: Annotated[float | None, typer.Option(help="Tiempo máximo total (s)")] = None,
@@ -339,6 +341,7 @@ def quickstart(
             source,
             name=name,
             target=target,
+            modality=modality,
             trials=trials,
             max_epochs=max_epochs,
             max_time_s=max_time,

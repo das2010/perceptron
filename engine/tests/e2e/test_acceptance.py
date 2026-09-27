@@ -46,3 +46,14 @@ def test_uc04_defects(workspace_dir: Path, fixtures_dir: Path) -> None:
     assert s["trials"] == 10
     assert s["model_version_id"]
     assert s["test_metrics"]["accuracy"] > 0.8
+
+
+def test_uc03_text(workspace_dir: Path, fixtures_dir: Path) -> None:
+    s = _quickstart(
+        workspace_dir, fixtures_dir / "uc03_tickets_es" / "tickets.jsonl", "--max-epochs", "20"
+    )
+    assert s["modality"] == "text"
+    assert s["architecture"] == "text-textcnn"
+    assert s["trials"] == 10
+    assert s["model_version_id"]
+    assert s["test_metrics"]["accuracy"] > 0.9

@@ -19,6 +19,7 @@ from perceptron.data.sources.files import (
     image_folder_index,
     open_source,
     scan_table,
+    text_folder_table,
     write_table_parquet,
 )
 from perceptron.data.splits import SplitRequest, assign_splits, split_counts
@@ -48,6 +49,7 @@ class IngestRequest:
     split: SplitRequest | None = None
     overrides: dict[str, SemanticType] | None = None
     source_id: str | None = None
+    modality: Modality | None = None
 
 
 def _materialize_table(
@@ -79,6 +81,37 @@ def _materialize_images(src: Path, staging: Path) -> tuple[TableSchema, pl.DataF
     return schema, df
 
 
+MAX_TEXT_SIDE_COLUMNS = 2
+
+
+def text_column(schema: TableSchema) -> str | None:
+    """La columna de texto principal si la tabla es 'texto + pocas columnas más'."""
+    texts = [
+        c.name
+        for c in schema.columns
+        if c.semantic is SemanticType.TEXT and c.name != schema.target
+    ]
+    others = [
+        c
+        for c in schema.columns
+        if c.name != schema.target and c.semantic not in (SemanticType.ID, SemanticType.TEXT)
+    ]
+    if len(texts) == 1 and len(others) <= MAX_TEXT_SIDE_COLUMNS:
+        return texts[0]
+    return None
+
+
+def _materialize_text_folder(src: Path, req: IngestRequest) -> tuple[TableSchema, pl.DataFrame]:
+    df = text_folder_table(src)
+    if df.height == 0:
+        raise ValidationError("no se encontraron archivos .txt")
+    has_labels = df["label"].null_count() < df.height
+    schema = infer_schema(df, target="label" if has_labels else None).with_overrides(
+        {"path": SemanticType.ID, "text": SemanticType.TEXT, "label": SemanticType.CATEGORICAL}
+    )
+    return schema, df
+
+
 def _default_split(schema: TableSchema, modality: Modality) -> SplitRequest:
     """Estratificado si hay target categórico; temporal si hay una columna de fecha."""
     if modality is Modality.TABULAR:
@@ -98,10 +131,24 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
     staging = paths.datasets_dir / f".staging-{new_id(IdPrefix.DATASET_VERSION)}"
     staging.mkdir(parents=True)
     try:
+        extra_meta: dict[str, object] = {}
         with open_source(req.source) as detected:
             if detected.kind is SourceKind.TABLE:
-                modality = Modality.TABULAR
                 schema, df = _materialize_table(detected.path, staging, req)
+                text_col = text_column(schema)
+                modality = req.modality or (Modality.TEXT if text_col else Modality.TABULAR)
+                if modality is Modality.TEXT:
+                    text_col = text_col or next(
+                        (c.name for c in schema.columns if c.semantic is SemanticType.TEXT), None
+                    )
+                    if text_col is None:
+                        raise ValidationError("modalidad texto sin ninguna columna de texto")
+                    extra_meta["text_column"] = text_col
+                data_file = TABLE_FILE
+            elif detected.kind is SourceKind.TEXT_FOLDER:
+                modality = Modality.TEXT
+                schema, df = _materialize_text_folder(detected.path, req)
+                extra_meta["text_column"] = "text"
                 data_file = TABLE_FILE
             else:
                 modality = Modality.IMAGE
@@ -114,7 +161,7 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
         write_json(staging / SCHEMA_FILE, schema.model_dump(mode="json"))
         write_json(
             staging / META_FILE,
-            {"modality": modality.value, "split": split_req.model_dump(mode="json")},
+            {"modality": modality.value, "split": split_req.model_dump(mode="json"), **extra_meta},
         )
 
         manifest = build_manifest(staging)

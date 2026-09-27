@@ -24,6 +24,8 @@ class TensorKind(StrEnum):
     FEATURES = "features"  # [B, D]
     FEATURE_MAP = "feature_map"  # [B, C, H, W]
     IMAGE = "image"  # [B, C, H, W] de entrada
+    TOKENS = "tokens"  # [B, L] ids enteros
+    SEQUENCE = "sequence"  # [B, L, D]
 
 
 @dataclass(frozen=True)
@@ -32,6 +34,8 @@ class TensorSpec:
     shape: tuple[int, ...]  # sin batch
     num_numeric: int = 0
     cardinalities: tuple[int, ...] = ()
+    vocab_size: int = 0
+    pad_id: int = 0
 
     @property
     def channels(self) -> int:
@@ -71,6 +75,7 @@ BuildFn = Callable[[dict[str, Any], list[TensorSpec], "BuildContext"], nn.Module
 class BuildContext:
     num_outputs: int
     pretrained_allowed: bool = True
+    meta: bool = False  # pasada de inferencia de shapes: no descargar ni cargar pesos
 
 
 @dataclass(frozen=True)
@@ -164,6 +169,57 @@ TIMM_WEIGHTS: dict[str, WeightInfo] = {
 }
 
 
+class TextModelInfo(BaseModel):
+    """Encoders de texto de Hugging Face curados (revisar en la auditoría de Capa 7)."""
+
+    model: str
+    hidden_size: int
+    license: str
+    commercial_ok: bool
+    params_m: float
+    languages: list[str]
+
+
+HF_TEXT_MODELS: dict[str, TextModelInfo] = {
+    t.model: t
+    for t in [
+        TextModelInfo(
+            model="distilbert-base-multilingual-cased",
+            hidden_size=768,
+            license="Apache-2.0",
+            commercial_ok=True,
+            params_m=134,
+            languages=["multi"],
+        ),
+        TextModelInfo(
+            model="FacebookAI/xlm-roberta-base",
+            hidden_size=768,
+            license="MIT",
+            commercial_ok=True,
+            params_m=278,
+            languages=["multi"],
+        ),
+        TextModelInfo(
+            model="dccuchile/bert-base-spanish-wwm-cased",
+            hidden_size=768,
+            license="CC-BY-4.0",
+            commercial_ok=True,
+            params_m=110,
+            languages=["es"],
+        ),
+        TextModelInfo(
+            model="hf-internal-testing/tiny-random-bert",
+            hidden_size=32,
+            license="Apache-2.0",
+            commercial_ok=True,
+            params_m=0.1,
+            languages=["test"],
+        ),
+    ]
+}
+DEFAULT_HF_TEXT_MODEL = "distilbert-base-multilingual-cased"
+
+
 # ----------------------------------------------------------------- builders
 
 
@@ -253,13 +309,49 @@ def _build_add(_: dict[str, Any], inputs: list[TensorSpec], __: BuildContext) ->
     return m.Add()
 
 
+def _build_text_embedding(
+    p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext
+) -> nn.Module:
+    t = _single(inputs)
+    if not t.vocab_size:
+        raise ValueError("la entrada de tokens no declara vocab_size")
+    return m.TextEmbedding(t.vocab_size, p["dim"], p["dropout"], t.pad_id)
+
+
+def _build_textcnn(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    return m.TextCNN(t.shape[-1], p["filters"], list(p["kernel_sizes"]), p["dropout"])
+
+
+def _build_bilstm(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    return m.BiLSTMEncoder(t.shape[-1], p["hidden"], p["layers"], p["dropout"])
+
+
+def _build_seq_pool(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    _single(inputs)
+    return m.SequencePool(p["mode"])
+
+
+def _build_hf_text(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    info = HF_TEXT_MODELS.get(p["model"])
+    if info is None:
+        raise ValueError(f"encoder de texto no curado: {p['model']}")
+    if ctx.meta:
+        return m.FeatureStub(info.hidden_size)
+    return m.HFTextEncoder(
+        info.model, bool(p["pretrained"]) and ctx.pretrained_allowed, t.pad_id, p["pooling"]
+    )
+
+
 def _p(t: str, default: Any, **kw: Any) -> ParamSpec:
     return ParamSpec(type=t, default=default, **kw)  # type: ignore[arg-type]
 
 
 _DROPOUT = _p("float", 0.1, low=0.0, high=0.7, tunable=True, description="Probabilidad de dropout")
-_T, _I = (Modality.TABULAR,), (Modality.IMAGE,)
-_FEAT, _FMAP = TensorKind.FEATURES, TensorKind.FEATURE_MAP
+_T, _I, _TXT = (Modality.TABULAR,), (Modality.IMAGE,), (Modality.TEXT,)
+_FEAT, _FMAP, _SEQ = TensorKind.FEATURES, TensorKind.FEATURE_MAP, TensorKind.SEQUENCE
 
 BLOCKS: dict[str, BlockSpec] = {
     b.key: b
@@ -357,11 +449,68 @@ BLOCKS: dict[str, BlockSpec] = {
             {"out_channels": _p("int", 3, low=1, high=2048)},
         ),
         BlockSpec("pool.global_avg", "Promedio global espacial", (_FMAP,), _FEAT, _build_pool),
+        BlockSpec(
+            "text.embedding",
+            "Embeddings de tokens (vocabulario propio)",
+            (TensorKind.TOKENS,),
+            _SEQ,
+            _build_text_embedding,
+            {"dim": _p("int", 128, low=16, high=512, log=True, tunable=True), "dropout": _DROPOUT},
+            modalities=_TXT,
+        ),
+        BlockSpec(
+            "text.cnn",
+            "TextCNN: convoluciones 1D de varios anchos + max-pooling",
+            (_SEQ,),
+            _FEAT,
+            _build_textcnn,
+            {
+                "filters": _p("int", 128, low=16, high=512, log=True, tunable=True),
+                "kernel_sizes": _p("int_list", [2, 3, 4], description="Anchos de ventana"),
+                "dropout": _p("float", 0.3, low=0.0, high=0.7, tunable=True),
+            },
+            modalities=_TXT,
+        ),
+        BlockSpec(
+            "text.bilstm",
+            "LSTM bidireccional sobre la secuencia",
+            (_SEQ,),
+            _SEQ,
+            _build_bilstm,
+            {
+                "hidden": _p("int", 128, low=16, high=512, log=True, tunable=True),
+                "layers": _p("int", 1, low=1, high=3, tunable=True),
+                "dropout": _p("float", 0.2, low=0.0, high=0.6, tunable=True),
+            },
+        ),
+        BlockSpec(
+            "pool.sequence",
+            "Pooling temporal (media, máximo o último paso)",
+            (_SEQ,),
+            _FEAT,
+            _build_seq_pool,
+            {"mode": _p("str", "mean", choices=["mean", "max", "last"])},
+        ),
+        BlockSpec(
+            "text.hf_encoder",
+            "Encoder preentrenado de Hugging Face (lista curada con licencias)",
+            (TensorKind.TOKENS,),
+            _FEAT,
+            _build_hf_text,
+            {
+                "model": _p("str", DEFAULT_HF_TEXT_MODEL, choices=sorted(HF_TEXT_MODELS)),
+                "pretrained": _p("bool", True),
+                "pooling": _p("str", "cls", choices=["cls", "mean"]),
+                "freeze": _p("str", "none", description="none | until_epoch:N"),
+            },
+            modalities=_TXT,
+            is_backbone=True,
+        ),
         BlockSpec("norm.batchnorm", "Batch normalization", (_FEAT, _FMAP), _FEAT, _build_bn),
         BlockSpec(
             "reg.dropout",
             "Dropout",
-            (_FEAT, _FMAP),
+            (_FEAT, _FMAP, _SEQ),
             _FEAT,
             _build_dropout,
             {"p": _p("float", 0.2, low=0.0, high=0.8, tunable=True)},

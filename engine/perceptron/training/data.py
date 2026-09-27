@@ -18,6 +18,7 @@ from perceptron.data.pipeline.pipeline import (
     encode_target,
     image_transforms,
     transform_tabular,
+    transform_text,
 )
 from perceptron.data.view import DatasetView, Purpose
 from perceptron.domain.enums import Modality, TaskType
@@ -36,6 +37,22 @@ class TabularDataset(Dataset[tuple[torch.Tensor, ...]]):
 
     def __getitem__(self, i: int) -> tuple[torch.Tensor, ...]:
         return self.x_num[i], self.x_cat[i], self.y[i]
+
+
+class TextDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
+    def __init__(self, fitted: FittedPipeline, df: pl.DataFrame) -> None:
+        self.ids = torch.tensor(transform_text(fitted, df))
+        target = fitted.spec.target
+        if target and target.name in df.columns:
+            self.y = torch.tensor(encode_target(fitted, df[target.name]))
+        else:
+            self.y = torch.zeros(len(self.ids), dtype=torch.long)
+
+    def __len__(self) -> int:
+        return len(self.y)
+
+    def __getitem__(self, i: int) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.ids[i], self.y[i]
 
 
 class ImageDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
@@ -77,6 +94,8 @@ def make_dataset(
         return TabularDataset(fitted, df)
     if view.modality is Modality.IMAGE:
         return ImageDataset(fitted, df, view.files_dir, train=train)
+    if view.modality is Modality.TEXT:
+        return TextDataset(fitted, df)
     raise NotImplementedError(f"datasets para {view.modality} llegan en Capa 1b")
 
 
@@ -88,7 +107,7 @@ def auto_num_workers(modality: Modality, n_train: int) -> int:
 
     Con más datos se usan pocos workers; siempre con `spawn` (ver `make_loader`).
     """
-    if modality is Modality.TABULAR or n_train < SMALL_DATASET:
+    if modality in (Modality.TABULAR, Modality.TEXT) or n_train < SMALL_DATASET:
         return 0
     cpus = os.cpu_count() or 1
     return 0 if sys.platform == "win32" and cpus <= 4 else min(4, max(cpus - 1, 0))

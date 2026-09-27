@@ -31,6 +31,7 @@ TABLE_SUFFIXES = {".csv", ".tsv", ".txt", ".xlsx", ".xls", ".parquet", ".json", 
 class SourceKind(StrEnum):
     TABLE = "table"
     IMAGE_FOLDER = "image_folder"
+    TEXT_FOLDER = "text_folder"
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +121,9 @@ def open_source(path: Path) -> Iterator[DetectedSource]:
     if any(_iter_images(path)):
         yield DetectedSource(SourceKind.IMAGE_FOLDER, path)
         return
+    if any(_iter_texts(path)):
+        yield DetectedSource(SourceKind.TEXT_FOLDER, path)
+        return
     raise ValidationError(
         "la carpeta no contiene imágenes en formato clase/archivo", details={"path": str(path)}
     )
@@ -139,6 +143,32 @@ def _iter_images(root: Path) -> Iterator[Path]:
     for p in sorted(root.rglob("*")):
         if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS:
             yield p
+
+
+def _iter_texts(root: Path) -> Iterator[Path]:
+    for p in sorted(root.rglob("*.txt")):
+        if p.is_file():
+            yield p
+
+
+def text_folder_table(root: Path) -> pl.DataFrame:
+    """Carpeta `clase/archivo.txt` → tabla (`path`, `text`, `label`)."""
+    rows = []
+    for p in _iter_texts(root):
+        rel = p.relative_to(root)
+        raw = p.read_bytes()
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            text = raw.decode("cp1252")
+        rows.append(
+            {
+                "path": rel.as_posix(),
+                "text": text.strip(),
+                "label": rel.parts[0] if len(rel.parts) > 1 else None,
+            }
+        )
+    return pl.DataFrame(rows, schema={"path": pl.String, "text": pl.String, "label": pl.String})
 
 
 def link_or_copy(src: Path, dst: Path) -> None:

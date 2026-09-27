@@ -157,10 +157,17 @@ _MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio"]
 _DEVICES = ["el celular", "la notebook", "Chrome", "la app de escritorio"]
 
 
+_GREETINGS = ["", "Hola,", "Buenas tardes.", "Buen día,", "Estimados:", "Hola equipo,"]
+_CLOSINGS = ["", "Gracias.", "Saludos.", "Es urgente.", "Quedo atento.", "¿Me pueden ayudar?"]
+_PRODUCTS = ["", "en el portal", "en la app", "en mi cuenta empresa", "desde ayer", "otra vez"]
+
+
 def _ticket_text(rng: random.Random, category: str) -> str:
-    return rng.choice(_TICKET_TEMPLATES[category]).format(
+    body = rng.choice(_TICKET_TEMPLATES[category]).format(
         m=rng.choice(_MONTHS), d=rng.choice(_DEVICES)
     )
+    parts = [rng.choice(_GREETINGS), body, rng.choice(_PRODUCTS), rng.choice(_CLOSINGS)]
+    return " ".join(p for p in parts if p)
 
 
 def uc02_tickets_time(rng: random.Random) -> Files:

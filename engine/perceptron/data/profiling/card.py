@@ -52,6 +52,8 @@ class AlertCode(StrEnum):
     MIXED_RESOLUTIONS = "mixed_resolutions"
     MIXED_CHANNELS = "mixed_channels"
     MISSING_TARGET = "missing_target"
+    DUPLICATE_TEXTS = "duplicate_texts"
+    LONG_TEXTS = "long_texts"
 
 
 class Alert(BaseModel):
@@ -122,6 +124,19 @@ class ImageProfile(BaseModel):
     near_duplicate_fraction: float
 
 
+class TextProfile(BaseModel):
+    """Texto (RF-PRF-03): solo agregados; el vocabulario no se expone."""
+
+    column: str
+    language: str | None
+    language_confidence: float
+    tokens_p50: float | None
+    tokens_p95: float | None
+    vocabulary_size: int
+    empty_fraction: float
+    duplicate_fraction: float
+
+
 class ProfileCard(BaseModel):
     """Resumen agregado del dataset (solo train + val; el test sellado no se perfila)."""
 
@@ -136,6 +151,7 @@ class ProfileCard(BaseModel):
     target: TargetProfile | None
     columns: list[ColumnProfile]
     images: ImageProfile | None = None
+    text: TextProfile | None = None
     duplicate_row_fraction: float | None = None
     alerts: list[Alert] = Field(default_factory=list)
 

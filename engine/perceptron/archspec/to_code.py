@@ -77,6 +77,23 @@ def _ctor(
             return f"nn.Dropout({p['p']!r})", None
         case "head.linear":
             return f"nn.Linear({i.dim}, {p.get('out_features') or n_out})", None
+        case "text.embedding":
+            return (
+                f"TextEmbedding({i.vocab_size}, {p['dim']}, {p['dropout']!r}, {i.pad_id})",
+                "TextEmbedding",
+            )
+        case "text.cnn":
+            ks = list(p["kernel_sizes"])
+            return f"TextCNN({i.shape[-1]}, {p['filters']}, {ks}, {p['dropout']!r})", "TextCNN"
+        case "text.bilstm":
+            args = f"{i.shape[-1]}, {p['hidden']}, {p['layers']}, {p['dropout']!r}"
+            return f"BiLSTMEncoder({args})", "BiLSTMEncoder"
+        case "pool.sequence":
+            return f"SequencePool({p['mode']!r})", "SequencePool"
+        case "text.hf_encoder":
+            use = bool(p["pretrained"]) and pretrained
+            args = f"{p['model']!r}, pretrained={use}, pad_id={i.pad_id}, pooling={p['pooling']!r}"
+            return f"HFTextEncoder({args})", "HFTextEncoder"
         case "merge.concat":
             return "Concat()", "Concat"
         case "merge.add":

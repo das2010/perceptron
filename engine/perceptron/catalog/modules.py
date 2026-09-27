@@ -213,3 +213,106 @@ class Add(nn.Module):
         for x in xs[1:]:
             out = out + x
         return out
+
+
+class TextEmbedding(nn.Module):
+    """Ids de tokens [B, L] → vectores [B, L, D] (el índice de padding queda en cero)."""
+
+    def __init__(self, vocab_size: int, dim: int, dropout: float, pad_id: int = 0) -> None:
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, dim, padding_idx=pad_id)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        out: torch.Tensor = self.dropout(self.embedding(ids))
+        return out
+
+
+class TextCNN(nn.Module):
+    """TextCNN (Kim, 2014): convoluciones 1D de varios anchos + max-pooling en el tiempo."""
+
+    def __init__(self, in_dim: int, filters: int, kernel_sizes: list[int], dropout: float) -> None:
+        super().__init__()
+        self.convs = nn.ModuleList(
+            nn.Conv1d(in_dim, filters, k, padding=k // 2) for k in kernel_sizes
+        )
+        self.dropout = nn.Dropout(dropout)
+        self.out_features = filters * len(kernel_sizes)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.transpose(1, 2)
+        pooled = [torch.relu(conv(x)).amax(dim=-1) for conv in self.convs]
+        out: torch.Tensor = self.dropout(torch.cat(pooled, dim=1))
+        return out
+
+
+class BiLSTMEncoder(nn.Module):
+    """LSTM bidireccional: [B, L, D] → [B, L, 2·hidden]."""
+
+    def __init__(self, in_dim: int, hidden: int, layers: int, dropout: float) -> None:
+        super().__init__()
+        self.lstm = nn.LSTM(
+            in_dim,
+            hidden,
+            num_layers=layers,
+            batch_first=True,
+            bidirectional=True,
+            dropout=dropout if layers > 1 else 0.0,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out, _ = self.lstm(x)
+        result: torch.Tensor = out
+        return result
+
+
+class SequencePool(nn.Module):
+    """[B, L, D] → [B, D] por media, máximo o último paso."""
+
+    def __init__(self, mode: str = "mean") -> None:
+        super().__init__()
+        self.mode = mode
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.mode == "max":
+            return x.amax(dim=1)
+        if self.mode == "last":
+            return x[:, -1]
+        return x.mean(dim=1)
+
+
+class HFTextEncoder(nn.Module):
+    """Encoder de Hugging Face (lista curada) con pooling [CLS] o media enmascarada."""
+
+    def __init__(self, model: str, pretrained: bool, pad_id: int, pooling: str = "cls") -> None:
+        super().__init__()
+        from transformers import AutoConfig, AutoModel
+
+        body: Any = (
+            AutoModel.from_pretrained(model)
+            if pretrained
+            else AutoModel.from_config(AutoConfig.from_pretrained(model))
+        )
+        self.body: Any = body
+        self.pad_id = pad_id
+        self.pooling = pooling
+        self.out_features = int(body.config.hidden_size)
+
+    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        mask = (ids != self.pad_id).long()
+        hidden: torch.Tensor = self.body(input_ids=ids, attention_mask=mask).last_hidden_state
+        if self.pooling == "mean":
+            m = mask.unsqueeze(-1).to(hidden.dtype)
+            return (hidden * m).sum(1) / m.sum(1).clamp(min=1)
+        return hidden[:, 0]
+
+
+class FeatureStub(nn.Module):
+    """Sustituto sin pesos para inferir shapes en `meta` sin descargar modelos."""
+
+    def __init__(self, out_features: int) -> None:
+        super().__init__()
+        self.out_features = out_features
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.zeros(x.shape[0], self.out_features, device=x.device)

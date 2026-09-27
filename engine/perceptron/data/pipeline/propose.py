@@ -5,7 +5,13 @@ Cada decisión queda explicada en `rationale` (la UI la muestra en "¿Por qué?"
 
 from __future__ import annotations
 
-from perceptron.data.pipeline.pipeline import AugmentSpec, ImageSpec, PipelineSpec, TargetSpec
+from perceptron.data.pipeline.pipeline import (
+    AugmentSpec,
+    ImageSpec,
+    PipelineSpec,
+    TargetSpec,
+    TextSpec,
+)
 from perceptron.data.pipeline.steps import StepSpec
 from perceptron.data.profiling.card import ColumnProfile, ProfileCard
 from perceptron.data.schema import SemanticType
@@ -24,7 +30,11 @@ def _needs_log(c: ColumnProfile) -> bool:
 
 
 def propose_pipeline(
-    card: ProfileCard, *, image_size: int | None = None, pretrained: bool = False
+    card: ProfileCard,
+    *,
+    image_size: int | None = None,
+    pretrained: bool = False,
+    hf_model: str | None = None,
 ) -> PipelineSpec:
     target = (
         TargetSpec(
@@ -37,6 +47,8 @@ def propose_pipeline(
     )
     if card.modality is Modality.IMAGE:
         return _propose_image(card, target, image_size, pretrained)
+    if card.modality is Modality.TEXT:
+        return _propose_text(card, target, hf_model if pretrained else None)
     if card.modality is not Modality.TABULAR:
         raise NotImplementedError(f"pipeline para {card.modality} llega en Capa 1b")
 
@@ -148,3 +160,28 @@ def _propose_image(
         ),
         rationale=why,
     )
+
+
+def _propose_text(
+    card: ProfileCard, target: TargetSpec | None, hf_model: str | None
+) -> PipelineSpec:
+    tp = card.text
+    if tp is None:
+        raise ValueError("el ProfileCard no tiene perfil de texto")
+    p95 = tp.tokens_p95 or 32
+    max_length = int(min(256, max(16, round(p95 * 1.25))))
+    small = card.num_samples < 5_000
+    why = [
+        f"Se normaliza el texto de '{tp.column}' (minúsculas, URLs como marcador).",
+        f"Largo máximo {max_length} tokens (p95 = {p95:.0f}); lo más largo se trunca.",
+    ]
+    if hf_model:
+        why.append(f"Tokenizador del encoder preentrenado {hf_model}.")
+        text = TextSpec(column=tp.column, tokenizer="hf", hf_model=hf_model, max_length=max_length)
+    else:
+        why.append(
+            "Vocabulario propio a nivel palabra ajustado con train"
+            + (" (incluye palabras de 1 aparición: dataset chico)." if small else ".")
+        )
+        text = TextSpec(column=tp.column, min_freq=1 if small else 2, max_length=max_length)
+    return PipelineSpec(modality=Modality.TEXT, target=target, text=text, rationale=why)

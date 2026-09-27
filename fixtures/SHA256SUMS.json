@@ -1,7 +1,7 @@
 {
   "uc01_churn/churn.csv": "b268d0dbf41e2110bffc2ddc528c51ee4af1007a90429df3d679e9645ab45b4b",
-  "uc02_tickets_time/tickets.csv": "508be8a46f729f179c83c00c4a7d672ec2ef4198b1cf2c928547c47e4351c115",
-  "uc03_tickets_es/tickets.jsonl": "2d29a7c2d34e45035ab710f6b34a4b26f176935c871163232f19c0fd77c0f813",
+  "uc02_tickets_time/tickets.csv": "4e4493237f5b803b218a570434c0425ea8f30c77ac93ed7fc7076ba19ddf48b9",
+  "uc03_tickets_es/tickets.jsonl": "a38130088e01620374e44a65fa58fc0e44681e67d85f509e5c2ac55846e2bcfa",
   "uc04_defects/annotations_coco.json": "c14181faf28b168e33f7ebfd66bdfee8e059535319df8f2d29d7f257ccc1149b",
   "uc04_defects/defect/pieza_001.png": "261affb9ca77fa74065268ff041c88acfd6ddabdfe10f10957d550b5ca26b90c",
   "uc04_defects/defect/pieza_003.png": "5f9d0f7806de7974208dfba8142bd7e701544928e5fc1ffae826a0e85f0d8375",

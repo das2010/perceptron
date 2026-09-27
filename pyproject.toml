@@ -54,6 +54,7 @@ ignore = [
   "PLC0415",  # imports diferidos: arranque rápido de la CLI
   "PLR0917",  # comandos Typer: cada opción es un parámetro
   "PLR0911", "PLR0912", "PLR0915",  # funciones de despacho / tablas de decisión
+  "SIM905",  # listas de palabras como "a b c".split() son más legibles
   "N812",  # convenciones `import lightning as L`, `functional as F`
   "RUF001", "RUF002", "RUF003",  # caracteres ambiguos: textos en español
 ]
@@ -101,6 +102,7 @@ markers = [
   "slow: tests lentos (entrenamiento)",
   "gpu: requiere GPU (job nocturno)",
   "e2e: aceptación de punta a punta (job e2e de CI)",
+  "network: necesita internet (descarga modelos de prueba)",
 ]
 
 [tool.coverage.run]

@@ -55,6 +55,8 @@ class InputSpec(BaseModel):
     shape: list[int] | None = None
     num_numeric: int | None = Field(default=None, ge=0)
     cardinalities: list[int] | None = None
+    vocab_size: int | None = Field(default=None, ge=2, description="Tokens: tamaño del vocabulario")
+    pad_id: int = Field(default=0, ge=0, description="Tokens: id de padding")
     from_pipeline: str | None = None
 
 

@@ -16,6 +16,7 @@ from typing import Any
 from perceptron.api.context import EngineContext
 from perceptron.archspec.schema import ArchSpec
 from perceptron.archspec.validate import ValidationReport, offline_mode, validate_archspec
+from perceptron.catalog.registry import DEFAULT_HF_TEXT_MODEL
 from perceptron.catalog.rules import recommend
 from perceptron.core.errors import NotFoundError, ValidationError
 from perceptron.core.ids import IdPrefix, new_id
@@ -31,6 +32,7 @@ from perceptron.data.view import DatasetView
 from perceptron.domain.enums import (
     DataSourceType,
     Device,
+    Modality,
     Origin,
     ProjectStatus,
     RunStatus,
@@ -114,6 +116,7 @@ class Workflow:
         split: SplitRequest | None = None,
         overrides: dict[str, SemanticType] | None = None,
         source_record: DataSource | None = None,
+        modality: Modality | None = None,
     ) -> DatasetVersion:
         project = self.project(project_id)
         src = source_record
@@ -135,6 +138,7 @@ class Workflow:
                     split=split,
                     overrides=overrides,
                     source_id=src.id,
+                    modality=modality,
                 ),
             )
         existing = self.ctx.repo(DatasetVersion).list(
@@ -187,7 +191,9 @@ class Workflow:
         dv = self.dataset(dataset_version_id)
         card = self.profile_card(dv.id)
         use_pretrained = (not offline_mode()) if pretrained is None else pretrained
-        spec = propose_pipeline(card, pretrained=use_pretrained and self._has_gpu())
+        spec = propose_pipeline(
+            card, pretrained=use_pretrained and self._has_gpu(), hf_model=DEFAULT_HF_TEXT_MODEL
+        )
         pipeline = Pipeline(
             project_id=dv.project_id,
             name=f"auto-{dv.content_hash[:8]}",
@@ -486,6 +492,7 @@ def quickstart(
     *,
     name: str | None = None,
     target: str | None = None,
+    modality: Modality | None = None,
     trials: int = 10,
     max_epochs: int | None = None,
     max_time_s: float | None = None,
@@ -497,7 +504,7 @@ def quickstart(
     wf = Workflow(ctx, tracker)
     project = ctx.projects.add(Project(name=name or source.stem, goal="quickstart"))
     ctx.files.init_project(project)
-    dv = wf.ingest(project.id, source, target=target)
+    dv = wf.ingest(project.id, source, target=target, modality=modality)
     card = wf.profile(dv.id)
     pipeline = wf.propose_pipeline(dv.id)
     archspec, why = wf.propose_architecture(dv.id, pipeline.id)

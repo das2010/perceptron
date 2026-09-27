@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from perceptron.archspec.schema import ArchSpec
 from perceptron.archspec.validate import offline_mode
-from perceptron.catalog.templates import image_template, tabular_template
+from perceptron.catalog.templates import image_template, tabular_template, text_template
 from perceptron.data.pipeline.pipeline import FittedPipeline
 from perceptron.data.profiling.card import ProfileCard
 from perceptron.domain.enums import Modality, TaskType
@@ -100,6 +100,41 @@ def _image(
     return rec("mobilenetv3_small_100", why, pretrained=True, freeze=3)
 
 
+def _text(card: ProfileCard, fitted: FittedPipeline, task: TaskType) -> Recommendation:
+    tspec = fitted.spec.text
+    if tspec is None:
+        raise ValueError("pipeline de texto sin configuración de texto")
+    num_classes = fitted.num_classes if task is not TaskType.REGRESSION else None
+    if tspec.tokenizer == "hf":
+        why = f"Encoder preentrenado {tspec.hf_model}: transfiere conocimiento del idioma."
+        spec = text_template(
+            "hf",
+            task=task,
+            num_classes=num_classes,
+            max_length=tspec.max_length,
+            pad_id=fitted.pad_id,
+            hf_model=tspec.hf_model,
+            pretrained=True,
+            freeze_epochs=1,
+            rationale=why,
+        )
+        return Recommendation(f"hf:{tspec.hf_model}", spec, why)
+    why = (
+        f"{card.num_samples} textos sin encoder preentrenado disponible: TextCNN sobre "
+        "embeddings propios es rápido en CPU y fuerte para clasificar textos cortos."
+    )
+    spec = text_template(
+        "textcnn",
+        task=task,
+        num_classes=num_classes,
+        max_length=tspec.max_length,
+        vocab_size=len(fitted.vocab or []),
+        pad_id=fitted.pad_id,
+        rationale=why,
+    )
+    return Recommendation("textcnn", spec, why)
+
+
 def recommend(
     card: ProfileCard,
     fitted: FittedPipeline,
@@ -116,4 +151,6 @@ def recommend(
         return _tabular(card, fitted, task, gpu)
     if card.modality is Modality.IMAGE:
         return _image(card, fitted, task, gpu, can_download)
+    if card.modality is Modality.TEXT:
+        return _text(card, fitted, task)
     raise NotImplementedError(f"reglas para {card.modality} llegan en Capa 1b")

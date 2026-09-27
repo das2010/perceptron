@@ -45,12 +45,26 @@ class ImageSpec(BaseModel):
     augment: list[AugmentSpec] = Field(default_factory=list)
 
 
+class TextSpec(BaseModel):
+    column: str
+    lowercase: bool = True
+    accents: bool = True
+    urls: bool = True
+    numbers: bool = False
+    tokenizer: Literal["word", "hf"] = "word"
+    hf_model: str | None = None
+    vocab_size: int = Field(default=20_000, ge=10)
+    min_freq: int = Field(default=1, ge=1)
+    max_length: int = Field(default=64, ge=4, le=4096)
+
+
 class PipelineSpec(BaseModel):
     pipeline_version: str = PIPELINE_VERSION
     modality: Modality
     target: TargetSpec | None
     steps: list[StepSpec] = Field(default_factory=list)
     image: ImageSpec | None = None
+    text: TextSpec | None = None
     rationale: list[str] = Field(default_factory=list, description="Por qué se eligió cada paso")
 
 
@@ -65,6 +79,8 @@ class FittedPipeline(BaseModel):
     target_std: float | None = None
     image_mean: list[float] | None = None
     image_std: list[float] | None = None
+    vocab: list[str] | None = None
+    pad_id: int = 0
 
     @property
     def num_classes(self) -> int | None:
@@ -126,6 +142,8 @@ def fit_pipeline(spec: PipelineSpec, train: pl.DataFrame) -> FittedPipeline:
 
     if spec.modality is Modality.IMAGE:
         return fitted
+    if spec.modality is Modality.TEXT:
+        return _fit_text(fitted, train)
 
     target_name = spec.target.name if spec.target else None
     df = train.drop([c for c in (*_INTERNAL, target_name) if c and c in train.columns])
@@ -228,3 +246,62 @@ def image_transforms(fitted: FittedPipeline, *, train: bool) -> Any:
                     ops.append(v2.TrivialAugmentWide())
     ops += [v2.ToDtype(torch.float32, scale=True), v2.Normalize(mean, std)]
     return v2.Compose(ops)
+
+
+# ------------------------------------------------------------------ texto
+
+
+def _texts(spec: TextSpec, df: pl.DataFrame) -> list[str]:
+    from perceptron.data.text import normalize
+
+    raw = df[spec.column].cast(pl.String).fill_null("").to_list()
+    return [
+        normalize(
+            t, lowercase=spec.lowercase, accents=spec.accents, urls=spec.urls, numbers=spec.numbers
+        )
+        for t in raw
+    ]
+
+
+_HF_TOKENIZERS: dict[str, Any] = {}
+
+
+def hf_tokenizer(name: str) -> Any:
+    if name not in _HF_TOKENIZERS:
+        from transformers import AutoTokenizer
+
+        _HF_TOKENIZERS[name] = AutoTokenizer.from_pretrained(name)
+    return _HF_TOKENIZERS[name]
+
+
+def _fit_text(fitted: FittedPipeline, train: pl.DataFrame) -> FittedPipeline:
+    from perceptron.data.text import PAD, build_vocab
+
+    spec = fitted.spec.text
+    if spec is None:
+        raise ValueError("pipeline de texto sin `text`")
+    if spec.tokenizer == "hf":
+        if not spec.hf_model:
+            raise ValueError("tokenizer 'hf' requiere hf_model")
+        tok = hf_tokenizer(spec.hf_model)
+        return fitted.model_copy(update={"pad_id": int(tok.pad_token_id or 0)})
+    vocab = build_vocab(_texts(spec, train), max_size=spec.vocab_size, min_freq=spec.min_freq)
+    return fitted.model_copy(update={"vocab": vocab, "pad_id": PAD})
+
+
+def transform_text(fitted: FittedPipeline, df: pl.DataFrame) -> np.ndarray:
+    """Textos → ids [n, max_length] (int64), con padding y truncado."""
+    from perceptron.data.text import encode
+
+    spec = fitted.spec.text
+    if spec is None:
+        raise ValueError("pipeline de texto sin `text`")
+    texts = _texts(spec, df)
+    if spec.tokenizer == "hf" and spec.hf_model:
+        tok = hf_tokenizer(spec.hf_model)
+        enc = tok(texts, padding="max_length", truncation=True, max_length=spec.max_length)
+        return np.asarray(enc["input_ids"], dtype=np.int64)
+    index = {w: i for i, w in enumerate(fitted.vocab or [])}
+    return np.asarray([encode(t, index, spec.max_length) for t in texts], dtype=np.int64).reshape(
+        len(texts), spec.max_length
+    )

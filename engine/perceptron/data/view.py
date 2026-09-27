@@ -26,6 +26,9 @@ MANIFEST_FILE = "manifest.json"
 FILES_DIR = "files"
 
 
+TABLE_MODALITIES = frozenset({Modality.TABULAR, Modality.TEXT, Modality.TIMESERIES})
+
+
 class Purpose(StrEnum):
     TRAINING = "training"
     PROFILING = "profiling"
@@ -54,7 +57,12 @@ class DatasetView:
 
     @property
     def data_file(self) -> Path:
-        return self.root / (TABLE_FILE if self.modality is Modality.TABULAR else INDEX_FILE)
+        return self.root / (TABLE_FILE if self.modality in TABLE_MODALITIES else INDEX_FILE)
+
+    @property
+    def text_column(self) -> str | None:
+        col = self.meta.get("text_column")
+        return str(col) if col else None
 
     @property
     def files_dir(self) -> Path:

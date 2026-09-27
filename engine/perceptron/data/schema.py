@@ -28,6 +28,7 @@ _PATH_SUFFIX = re.compile(
 
 MAX_CATEGORICAL_UNIQUE = 50
 TEXT_MIN_AVG_LEN = 30
+TEXT_MIN_AVG_WORDS = 4
 
 
 class SemanticType(StrEnum):
@@ -148,7 +149,8 @@ def _infer_column(s: pl.Series, n_rows: int) -> SemanticType:
         avg_len = series_mean(strs.str.len_chars())
         if all_unique and (id_named or avg_len < TEXT_MIN_AVG_LEN / 2):
             return SemanticType.ID
-        if avg_len >= TEXT_MIN_AVG_LEN:
+        avg_words = series_mean(strs.str.split(" ").list.len())
+        if avg_len >= TEXT_MIN_AVG_LEN or avg_words >= TEXT_MIN_AVG_WORDS:
             return SemanticType.TEXT
         if n_unique <= 2:
             return SemanticType.BOOLEAN
