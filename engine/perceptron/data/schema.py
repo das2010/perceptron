@@ -73,12 +73,36 @@ class TableSchema(BaseModel):
         return self.model_copy(update={"columns": cols})
 
 
-def _string_parses_as_datetime(s: pl.Series) -> bool:
+DATETIME_FORMATS = (
+    None,  # inferido por Polars
+    "%Y-%m-%d",
+    "%d/%m/%Y",
+    "%d-%m-%Y",
+    "%Y/%m/%d",
+    "%m/%d/%Y",
+    "%Y-%m-%d %H:%M:%S",
+    "%Y-%m-%dT%H:%M:%S",
+    "%d/%m/%Y %H:%M",
+)
+
+
+def datetime_format(s: pl.Series) -> str | None:
+    """Formato con el que parsea ≥ 90 % de la muestra ('' = inferido), o None si no es fecha."""
     sample = s.drop_nulls().head(200)
-    if sample.is_empty():
-        return False
-    parsed = sample.str.to_datetime(strict=False)
-    return parsed.null_count() / len(sample) < 0.1
+    if sample.is_empty() or not sample.str.contains(r"\d").all():
+        return None
+    for fmt in DATETIME_FORMATS:
+        try:
+            parsed = sample.str.to_datetime(format=fmt, strict=False)
+        except pl.exceptions.PolarsError:
+            continue
+        if parsed.null_count() / len(sample) < 0.1:
+            return fmt or ""
+    return None
+
+
+def _string_parses_as_datetime(s: pl.Series) -> bool:
+    return datetime_format(s) is not None
 
 
 def series_mean(s: pl.Series) -> float:
