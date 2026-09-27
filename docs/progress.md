@@ -39,6 +39,35 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 
+## Capa 1b — texto, series, audio, visión avanzada
+
+| Sub-hito | Estado |
+|---|---|
+| 0. Refactor TaskAdapter (ADR-0017) | ✅ |
+| 1. Texto — UC-03 | ✅ |
+| 2. Series — UC-07 forecasting, UC-08 anomalías | ✅ |
+| 3. Audio — UC-09 (ADR-0018) | ✅ |
+| 4. Visión avanzada — UC-04 detección, UC-05, UC-06 (ADR-0019) | ✅ |
+| 5. Baseline LightGBM, oversampling | ✅ |
+
+**Aceptación (matriz e2e, `quickstart` con 10 trials en CPU, sin descargar pesos):**
+
+| Caso | Arquitectura (reglas) | Test sellado | Umbral |
+|---|---|---|---|
+| UC-01 churn | MLP | ROC-AUC 0,906 (LightGBM de referencia: 0,910) | > 0,75 |
+| UC-03 tickets (texto) | TextCNN | accuracy 1,0 | > 0,9 |
+| UC-04 defectos — clasificación | CNN compacta | accuracy 1,0 | > 0,8 |
+| UC-04 defectos — detección | CenterNet compacto | mAP@.5 1,0 | > 0,5 |
+| UC-05 daños (segmentación) | U-Net compacta | IoU daño 1,0 | > 0,5 |
+| UC-06 remitos (OCR) | CRNN + CTC | CER 0,0 | < 0,1 |
+| UC-07 demanda (forecasting) | N-BEATS + RevIN | sMAPE 4,5 %, MASE 0,79 (naive 0,97) | < 15 % y < 1 |
+| UC-08 telemetría (anomalías) | autoencoder conv | F1 0,71 (recall 1,0, ROC-AUC 0,99) | > 0,7 |
+| UC-09 motores (audio) | CNN compacta sobre log-mel | accuracy 1,0 | > 0,8 |
+
+Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo funciona, no rendimiento en datos reales (eso lo mide el benchmark O2, §15.4).
+
+**Pendiente, documentado:** detectores de torchvision y U-Net con encoder timm (ADR-0019), detección de eventos sonoros (SED), LoRA/PEFT, fusión tabular + texto (UC-02).
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
@@ -48,26 +77,26 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | RF-PRJ-03 |  | 3 | Exportar/importar proyecto como paquete .perceptron (zip con manifiesto; datos… | ⬜ pendiente |
 | RF-PRJ-04 |  | 5 | Promover un proyecto local a proyecto de equipo (sube metadata, datasets y runs… | ⬜ pendiente |
 | RF-PRJ-05 |  | 3 | Historial de actividad del proyecto (quién hizo qué, cuándo). | ⬜ pendiente |
-| RF-ING-01 | sí | 1 | Archivos locales: CSV, TSV, XLSX, Parquet, JSON/JSONL; carpetas de imágenes… | 🟡 tabular (CSV/TSV/XLSX/Parquet/JSON/JSONL, streaming) e imágenes clase/archivo + ZIP; audio y texto en 1b |
-| RF-ING-02 |  | 1/4 | Formatos de anotación: COCO, Pascal VOC, YOLO (txt), máscaras PNG, CSV de eventos de… | ⬜ pendiente |
+| RF-ING-01 | sí | 1 | Archivos locales: CSV, TSV, XLSX, Parquet, JSON/JSONL; carpetas de imágenes… | ✅ tabular, imágenes, texto (tabla o clase/*.txt), audio (wav/flac/mp3/ogg), ZIP |
+| RF-ING-02 |  | 1/4 | Formatos de anotación: COCO, Pascal VOC, YOLO (txt), máscaras PNG, CSV de eventos de… | ✅ COCO, Pascal VOC, YOLO, máscaras PNG, CSV de OCR; eventos de audio pendiente |
 | RF-ING-03 |  | 4 | Bases de datos: SQL Server, PostgreSQL, MySQL/MariaDB, SQLite, vía query SQL con vista… | ⬜ pendiente |
 | RF-ING-04 |  | 4 | Datasets públicos: Hugging Face Datasets y Kaggle (con credenciales del usuario),… | ⬜ pendiente |
 | RF-ING-05 |  | 6 | APIs REST (paginación, auth por header/token, mapeo JSON → tabla) y streaming (Kafka,… | ⬜ pendiente |
 | RF-ING-06 | sí | 1 | Inferencia de esquema y tipos (numérico, categórico, fecha, texto, id, ruta de… | ✅ `data.schema`: tipos semánticos + candidatos a target, override manual |
 | RF-ING-07 | sí | 1 | Cada ingesta crea un DatasetVersion inmutable con hash de contenido. | ✅ `DatasetVersion` inmutable content-addressed (ADR-0016) |
-| RF-ING-08 | sí | 1 | Particionado: aleatorio estratificado, por grupo (evitar leakage entre entidades),… | ✅ aleatorio, estratificado, grupo, temporal, k-fold; test sellado (`data.view`) |
+| RF-ING-08 | sí | 1 | Particionado: aleatorio estratificado, por grupo (evitar leakage entre entidades),… | ✅ aleatorio, estratificado, grupo, temporal (por serie), k-fold; test sellado |
 | RF-ING-09 |  | 1 | Soporte hasta ~10 GB: los datos no tabulares se leen en streaming desde disco; los… | 🟡 streaming para tabulares (Polars `sink_parquet`) e imágenes desde disco; shards en 1b |
 | RF-PRF-01 | sí | 1 | Estadísticas por columna (tabular): tipo, nulos, cardinalidad, distribución, outliers,… | ✅ `profiling.tabular` |
 | RF-PRF-02 | sí | 1 | Imágenes: resolución, canales, formatos, corruptas, duplicados/casi-duplicados (hash… | ✅ `profiling.images` (dHash + LSH para casi duplicados) |
-| RF-PRF-03 |  | 1 | Texto: idioma, longitud en tokens, vocabulario, duplicados, balance. | ⬜ pendiente |
-| RF-PRF-04 |  | 1 | Series: frecuencia, gaps, estacionalidad, tendencia, número de series, horizonte factible. | ⬜ pendiente |
-| RF-PRF-05 |  | 1 | Audio: duración, sample rate, canales, silencio, clipping, SNR estimado. | ⬜ pendiente |
+| RF-PRF-03 |  | 1 | Texto: idioma, longitud en tokens, vocabulario, duplicados, balance. | ✅ `profiling.text` (idioma, largo en tokens, vocabulario, duplicados) |
+| RF-PRF-04 |  | 1 | Series: frecuencia, gaps, estacionalidad, tendencia, número de series, horizonte factible. | ✅ `data.series` (frecuencia, gaps, estacionalidad, tendencia, horizonte factible) |
+| RF-PRF-05 |  | 1 | Audio: duración, sample rate, canales, silencio, clipping, SNR estimado. | ✅ `profiling.audio` (duración, sample rate, canales, silencio, clipping, SNR) |
 | RF-PRF-06 | sí | 1 | Alertas: desbalance, target con fuga (feature casi idéntica al target, ids, fechas… | ✅ `profiling.alerts` |
 | RF-PRF-07 | sí | 1 | Genera un Dataset Profile Card (JSON + vista) que es la entrada principal del LLM en… | ✅ `ProfileCard` sin valores individuales (test de propiedad) |
 | RF-PRF-08 |  | 1 | Estimación de complejidad y costo: tamaño efectivo, memoria estimada por batch, tiempo… | ⬜ pendiente |
 | RF-PIP-01 | sí | 1/3 | El sistema propone automáticamente un pipeline según profiling (imputación, encoding,… | ✅ `pipeline.propose` con justificación por paso |
 | RF-PIP-02 |  | 1/3 | Editor visual (React Flow) de un DAG de pasos: agregar, quitar, reordenar,… | ⬜ pendiente |
-| RF-PIP-03 |  | 1/3 | Catálogo de pasos por modalidad (extensible por plugins): | 🟡 catálogo tabular + imagen; texto/series/audio en 1b |
+| RF-PIP-03 |  | 1/3 | Catálogo de pasos por modalidad (extensible por plugins): | ✅ tabular, imagen, texto, series, audio (augmentations incluidas) |
 | RF-PIP-04 | sí | 1/3 | El pipeline se serializa (JSON) y se ajusta solo con train (fit/transform separado)… | ✅ fit solo con train, estado JSON empaquetable |
 | RF-PIP-05 |  | 1/3 | El LLM puede sugerir cambios al pipeline con justificación; el usuario acepta/rechaza… | ⬜ pendiente |
 | RF-LBL-01 |  | 4 | Herramientas de etiquetado: clase por muestra (imagen/texto/audio), multi-etiqueta,… | ⬜ pendiente |
@@ -100,7 +129,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | RF-ARC-06 |  | 3 | Modo experto — código libre: el LLM (o el usuario) escribe un… | ⬜ pendiente |
 | RF-ARC-07 |  | 1/2 | Conversión ArchSpec → código PyTorch legible ("ver como código") para aprendizaje y… | ✅ `archspec.to_code` (equivalencia verificada con pesos) |
 | RF-HPO-01 | sí | 1 | Estrategias soportadas: | ✅ single/random/grid/TPE/CMA-ES/NSGA-II + median/ASHA/Hyperband |
-| RF-HPO-02 | sí | 1 | El LLM estratega recibe el escenario (tamaño de datos, costo por trial, presupuesto,… | 🟡 recomendación por reglas; estratega LLM en Capa 2 |
+| RF-HPO-02 | sí | 1 | El LLM estratega recibe el escenario (tamaño de datos, costo por trial, presupuesto,… | 🟡 recomendación por reglas (ASHA ≥ 30 trials, si no mediana con calentamiento); estratega LLM en Capa 2 |
 | RF-HPO-03 | sí | 1 | Presupuesto configurable en el wizard: tiempo total, n.º de trials, preset, métrica… | ✅ corte por trials, tiempo y métrica objetivo |
 | RF-HPO-04 |  | 1 | Paralelismo de trials según recursos: varias GPUs → un trial por GPU; en servidor,… | ⬜ pendiente |
 | RF-HPO-05 |  | 1 | Reanudación de estudios interrumpidos (almacenamiento Optuna en SQLite/PostgreSQL). | ✅ reanudación desde SQLite |
@@ -113,8 +142,8 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | RF-TRN-06 | sí | 1 | Progreso en vivo por WebSocket: época, batch, loss, métricas, LR, throughput, uso de… | ✅ eventos JSONL → EventBus → `WS /runs/{rid}/live` |
 | RF-TRN-07 |  | 1 | Pausar, reanudar (desde checkpoint), cancelar. | ✅ cancelar, pausar y reanudar desde checkpoint |
 | RF-TRN-08 |  | 1 | Multi-GPU en un nodo (DDP vía Lightning) cuando hay >1 GPU. | ⬜ pendiente |
-| RF-TRN-09 |  | 1 | Técnicas de fine-tuning: congelar backbone, descongelado progresivo, LR… | 🟡 congelado del backbone N épocas; LoRA/PEFT en 1b |
-| RF-TRN-10 |  | 1 | Manejo de desbalance: pesos de clase, focal loss, sobremuestreo, umbral óptimo… | ⬜ pendiente |
+| RF-TRN-09 |  | 1 | Técnicas de fine-tuning: congelar backbone, descongelado progresivo, LR… | 🟡 congelado del backbone (timm y encoders HF); LoRA/PEFT pendiente |
+| RF-TRN-10 |  | 1 | Manejo de desbalance: pesos de clase, focal loss, sobremuestreo, umbral óptimo… | ✅ pesos de clase, focal, oversampling, umbral óptimo en el reporte |
 | RF-TRN-11 |  | 1 | Caché de modelos preentrenados: descarga única, verificación de checksum, uso offline,… | ⬜ pendiente |
 | RF-AGT-01 |  | 2 | Herramientas del agente (tool use): get_profile, get_project_goal,… | ⬜ pendiente |
 | RF-AGT-02 |  | 2 | Límites duros aplicados por el sistema (no por el LLM): tiempo, n.º de iteraciones,… | ⬜ pendiente |
@@ -125,7 +154,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | RF-TRK-02 | sí | 1 | La UI de Perceptron muestra runs y comparaciones de forma nativa (no depende de la UI… | 🟡 runs y comparación por API; vistas de UI en Capa 3 |
 | RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | ⬜ pendiente |
 | RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | ⬜ pendiente |
-| RF-EVL-01 | sí | 1 | Métricas por tarea: | 🟡 clasificación y regresión; resto de tareas en 1b |
+| RF-EVL-01 | sí | 1 | Métricas por tarea: | ✅ clasificación, regresión, forecasting (MASE, backtesting, naive), anomalías, detección (mAP), segmentación (IoU/Dice), OCR (CER/WER); SED pendiente |
 | RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | ⬜ pendiente |
 | RF-EVL-03 |  | 1/4 | Análisis de errores: explorador de muestras mal predichas con filtros, slices… | ⬜ pendiente |
 | RF-EVL-04 |  | 1/4 | Fairness: el usuario marca atributos sensibles; métricas por subgrupo (Fairlearn:… | ⬜ pendiente |
