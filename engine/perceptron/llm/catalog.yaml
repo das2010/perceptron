@@ -28,12 +28,16 @@ providers:
     kind: openai
     api_key_ref: OPENAI_API_KEY
     models:
+      # Modelos de razonamiento: sin temperatura y con esfuerzo bajo, para que el
+      # razonamiento no consuma todo `max_completion_tokens` y la respuesta llegue vacía.
       gpt-5:
         { structured_output: true, tool_use: true, vision: true, context_window: 400000,
-          input_per_mtok: 1.25, output_per_mtok: 10.0, temperature: false, verified: false }
+          input_per_mtok: 1.25, output_per_mtok: 10.0, temperature: false, verified: false,
+          request_extra: { reasoning_effort: low } }
       gpt-5-mini:
         { structured_output: true, tool_use: true, vision: true, context_window: 400000,
-          input_per_mtok: 0.25, output_per_mtok: 2.0, temperature: false, verified: false }
+          input_per_mtok: 0.25, output_per_mtok: 2.0, temperature: false, verified: false,
+          request_extra: { reasoning_effort: low } }
   gemini:
     kind: gemini
     api_key_ref: GEMINI_API_KEY
@@ -96,13 +100,13 @@ profiles:
   openai:
     provider: openai
     purposes:
-      copilot: { model: gpt-5 }
-      architect: { model: gpt-5, max_tokens: 8192 }
-      hpo_strategist: { model: gpt-5 }
-      diagnostician: { model: gpt-5 }
-      agent: { model: gpt-5, max_tokens: 8192 }
-      reporter: { model: gpt-5-mini, max_tokens: 8192 }
-      labeler: { model: gpt-5-mini }
+      copilot: { model: gpt-5, max_tokens: 8192 }
+      architect: { model: gpt-5, max_tokens: 16000 }
+      hpo_strategist: { model: gpt-5, max_tokens: 12000 }
+      diagnostician: { model: gpt-5, max_tokens: 12000 }
+      agent: { model: gpt-5, max_tokens: 16000 }
+      reporter: { model: gpt-5-mini, max_tokens: 16000 }
+      labeler: { model: gpt-5-mini, max_tokens: 12000 }
   gemini:
     provider: gemini
     purposes:

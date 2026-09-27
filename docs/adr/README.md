@@ -24,5 +24,6 @@
 | [0020](0020-dependencias-llm-y-secretos.md) | Dependencias de la capa LLM y almacenamiento de claves | aceptado |
 | [0021](0021-salidas-estructuradas-y-reintentos.md) | Salidas estructuradas validadas con reintento y fallback | aceptado |
 | [0022](0022-pii-sin-modelos-gpl.md) | Enmascarado de PII en L2 sin modelos GPL | aceptado |
+| [0023](0023-aceptacion-con-openai.md) | Aceptación de la Capa 2 también con OpenAI | aceptado |
 
 Plantilla: SPEC §18.3.

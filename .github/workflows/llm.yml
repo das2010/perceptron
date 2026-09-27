@@ -2,7 +2,8 @@ name: LLM (aceptación real)
 
 # Aceptación de la Capa 2 con proveedores reales (SPEC §14, §15.3, §15.4). No corre en
 # cada PR: los PR usan FakeLLMProvider. Manual (workflow_dispatch) y nocturno.
-# Claude necesita el secret ANTHROPIC_API_KEY; sin él, sus jobs se saltean con aviso.
+# Claude necesita el secret ANTHROPIC_API_KEY y OpenAI, OPENAI_API_KEY; sin la clave, esos
+# jobs se saltean con aviso. Ollama (local) no necesita clave.
 
 on:
   workflow_dispatch:
@@ -10,12 +11,17 @@ on:
       providers:
         description: "Proveedores"
         type: choice
-        options: [all, claude, ollama]
+        options: [all, claude, openai, ollama]
         default: all
       benchmark:
-        description: "Correr también el benchmark O2 (Claude)"
+        description: "Correr también el benchmark O2"
         type: boolean
         default: false
+      benchmark_provider:
+        description: "Proveedor del benchmark"
+        type: choice
+        options: [openai, claude]
+        default: openai
   schedule:
     - cron: "0 5 * * *"
 
@@ -33,16 +39,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        provider: [claude, ollama]
+        provider: [claude, openai, ollama]
         uc: [uc01, uc04, uc09]
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      PERCEPTRON_LLM__PROFILE: ${{ matrix.provider == 'claude' && 'anthropic' || 'ollama' }}
-      PERCEPTRON_AGENT_MAX_COST: ${{ matrix.provider == 'claude' && '1.5' || '1' }}
-      PERCEPTRON_AGENT_MAX_STEPS: ${{ matrix.provider == 'claude' && '10' || '6' }}
-      PERCEPTRON_AGENT_MAX_TIME: ${{ matrix.provider == 'claude' && '2400' || '7200' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PERCEPTRON_LLM__PROFILE: ${{ matrix.provider == 'claude' && 'anthropic' || matrix.provider }}
+      PERCEPTRON_AGENT_MAX_COST: ${{ matrix.provider == 'ollama' && '1' || '1.5' }}
+      PERCEPTRON_AGENT_MAX_STEPS: ${{ matrix.provider == 'ollama' && '6' || '10' }}
+      PERCEPTRON_AGENT_MAX_TIME: ${{ matrix.provider == 'ollama' && '7200' || '2400' }}
       PERCEPTRON_REPORT_DIR: ${{ github.workspace }}/llm-reports
     steps:
       - uses: actions/checkout@v4
@@ -52,8 +59,9 @@ jobs:
           wanted="${{ inputs.providers || 'all' }}"
           if [ "$wanted" != "all" ] && [ "$wanted" != "${{ matrix.provider }}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.provider }}" = "claude" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::notice::Sin ANTHROPIC_API_KEY: se saltea ${{ matrix.provider }} ${{ matrix.uc }}"
+          elif { [ "${{ matrix.provider }}" = "claude" ] && [ -z "$ANTHROPIC_API_KEY" ]; } ||
+               { [ "${{ matrix.provider }}" = "openai" ] && [ -z "$OPENAI_API_KEY" ]; }; then
+            echo "::notice::Sin clave de ${{ matrix.provider }}: se saltea ${{ matrix.uc }}"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: astral-sh/setup-uv@v6
@@ -69,6 +77,9 @@ jobs:
           curl -fsSL https://ollama.com/install.sh | sh
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags && break || sleep 2; done
           ollama pull "$OLLAMA_MODEL"
+      - name: Conexión con el LLM
+        if: steps.key.outputs.skip != 'true'
+        run: uv run perceptron llm test
       - name: Agente ${{ matrix.uc }}
         if: steps.key.outputs.skip != 'true'
         run: uv run pytest -m llm_live -s -v engine/tests/live -k ${{ matrix.uc }}
@@ -84,12 +95,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        provider: [claude, ollama]
+        provider: [claude, openai, ollama]
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      PERCEPTRON_LLM__PROFILE: ${{ matrix.provider == 'claude' && 'anthropic' || 'ollama' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PERCEPTRON_LLM__PROFILE: ${{ matrix.provider == 'claude' && 'anthropic' || matrix.provider }}
     steps:
       - uses: actions/checkout@v4
       - name: ¿Hay clave?
@@ -98,8 +110,9 @@ jobs:
           wanted="${{ inputs.providers || 'all' }}"
           if [ "$wanted" != "all" ] && [ "$wanted" != "${{ matrix.provider }}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ matrix.provider }}" = "claude" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::notice::Sin ANTHROPIC_API_KEY: se saltean los golden de Claude"
+          elif { [ "${{ matrix.provider }}" = "claude" ] && [ -z "$ANTHROPIC_API_KEY" ]; } ||
+               { [ "${{ matrix.provider }}" = "openai" ] && [ -z "$OPENAI_API_KEY" ]; }; then
+            echo "::notice::Sin clave de ${{ matrix.provider }}: se saltean sus golden"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: astral-sh/setup-uv@v6
@@ -115,6 +128,9 @@ jobs:
           curl -fsSL https://ollama.com/install.sh | sh
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags && break || sleep 2; done
           ollama pull "$OLLAMA_MODEL"
+      - name: Conexión con el LLM
+        if: steps.key.outputs.skip != 'true'
+        run: uv run perceptron llm test
       - name: Golden tests
         if: steps.key.outputs.skip != 'true'
         run: uv run pytest -m golden -v engine/tests/golden
@@ -126,7 +142,8 @@ jobs:
     timeout-minutes: 300
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      PERCEPTRON_LLM__PROFILE: anthropic
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PERCEPTRON_LLM__PROFILE: ${{ inputs.benchmark_provider == 'claude' && 'anthropic' || 'openai' }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -134,6 +151,8 @@ jobs:
           enable-cache: true
       - name: Install
         run: uv sync --all-packages --locked
+      - name: Conexión con el LLM
+        run: uv run perceptron llm test
       - name: Benchmark
         run: uv run perceptron bench run --out bench-report --max-cost 2
       - uses: actions/upload-artifact@v4

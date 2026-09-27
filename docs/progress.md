@@ -88,7 +88,7 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 |---|---|
 | 5. Mini-torneo de arquitecturas (RF-ARC-03) | ✅ `services.tournament`, `POST /projects/{id}/arch/tournament`, en `quickstart --llm` |
 | 6. Agente autónomo (RF-AGT-01..05, ADR-0021) | ✅ `agent/` (acciones con schema, límites, aprobaciones, bitácora, fallback); API `/agent/runs`, CLI `perceptron agent` |
-| 7. Aceptación con Claude y Ollama + golden tests | 🟡 workflow `llm.yml` (manual + nocturno); pendiente cargar `ANTHROPIC_API_KEY` y registrar los resultados |
+| 7. Aceptación con Claude u OpenAI (ADR-0023) y Ollama + golden tests | 🟡 workflow `llm.yml` (manual + nocturno); pendiente cargar `OPENAI_API_KEY` o `ANTHROPIC_API_KEY` y registrar los resultados |
 | 8. Benchmark O2 (3 datasets públicos) | 🟡 harness `perceptron bench run` (Adult, Fashion-MNIST, FSDD); pendiente primera corrida |
 
 **Aceptación 2b en cada PR (FakeLLMProvider):** guiones del agente sobre UC-01 que cubren camino feliz, feedback del validador, límites, aprobación, fallback a reglas, detención, que el agente nunca ve el test y la auditoría sin fugas en L1. **Aceptación real (§14):** `gh workflow run llm.yml` → matriz Claude/Ollama × UC-01/04/09, golden tests y (opcional) benchmark.

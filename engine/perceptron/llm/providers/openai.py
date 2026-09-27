@@ -65,6 +65,7 @@ class OpenAIProvider(LLMProvider):
                 }
             else:
                 kwargs["response_format"] = {"type": "json_object"}
+        kwargs.update(model.request_extra)
         return kwargs
 
     def complete(self, request: LLMRequest, model: ModelInfo) -> LLMResponse:
@@ -78,6 +79,11 @@ class OpenAIProvider(LLMProvider):
             raise LLMProviderError(f"{self.kind}: respuesta sin opciones")
         choice = resp.choices[0]
         text = choice.message.content or ""
+        if not text and choice.finish_reason == "length":
+            raise LLMProviderError(
+                f"{self.kind}: se agotó max_tokens antes de responder (subí el tope del perfil)",
+                details={"provider": self.kind, "finish_reason": "length"},
+            )
         data = None
         if request.output_schema is not None and text:
             try:
