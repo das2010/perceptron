@@ -11,8 +11,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List Projects */
         get: operations["listProjects"];
         put?: never;
+        /** Create Project */
         post: operations["createProject"];
         delete?: never;
         options?: never;
@@ -27,12 +29,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Get Project */
         get: operations["getProject"];
         put?: never;
         post?: never;
+        /** Delete Project */
         delete: operations["deleteProject"];
         options?: never;
         head?: never;
+        /** Update Project */
         patch: operations["updateProject"];
         trace?: never;
     };
@@ -43,6 +48,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Health */
         get: operations["getHealth"];
         put?: never;
         post?: never;
@@ -59,6 +65,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** Version */
         get: operations["getVersion"];
         put?: never;
         post?: never;
@@ -74,12 +81,17 @@ export interface components {
     schemas: {
         /** HTTPValidationError */
         HTTPValidationError: {
+            /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
         /** Health */
         Health: {
-            /** @constant */
+            /**
+             * Status
+             * @constant
+             */
             status: "ok";
+            /** Version */
             version: string;
         };
         /**
@@ -89,20 +101,35 @@ export interface components {
         Modality: "tabular" | "image" | "text" | "timeseries" | "audio";
         /**
          * PrivacyLevel
+         * @description Qué puede recibir el LLM (SPEC §7.7.3).
          * @enum {string}
          */
         PrivacyLevel: "L0" | "L1" | "L2" | "L3";
         /** Project */
         Project: {
-            /** Format: date-time */
+            /**
+             * Created At
+             * Format: date-time
+             */
             created_at?: string;
-            /** @default  */
+            /**
+             * Description
+             * @default
+             */
             description: string;
-            /** @default  */
+            /**
+             * Goal
+             * @description Objetivo en lenguaje natural del usuario
+             * @default
+             */
             goal: string;
+            /** Id */
             id?: string;
+            /** Llm Profile Id */
             llm_profile_id?: string | null;
+            /** Modalities */
             modalities?: components["schemas"]["Modality"][];
+            /** Name */
             name: string;
             /** @default L1 */
             privacy_level: components["schemas"]["PrivacyLevel"];
@@ -110,39 +137,71 @@ export interface components {
             scope: components["schemas"]["ProjectScope"];
             /** @default draft */
             status: components["schemas"]["ProjectStatus"];
+            /** Target Metric */
             target_metric?: string | null;
             task?: components["schemas"]["TaskType"] | null;
+            /**
+             * Template
+             * @description Plantilla UC-xx de origen
+             */
             template?: string | null;
-            /** Format: date-time */
+            /**
+             * Updated At
+             * Format: date-time
+             */
             updated_at?: string;
-            /** @default 1 */
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
             version: number;
+            /** Workspace Id */
             workspace_id?: string | null;
         };
         /** ProjectCreate */
         ProjectCreate: {
-            /** @default  */
+            /**
+             * Description
+             * @default
+             */
             description: string;
-            /** @default  */
+            /**
+             * Goal
+             * @default
+             */
             goal: string;
+            /** Modalities */
             modalities?: components["schemas"]["Modality"][];
+            /** Name */
             name: string;
             /** @default L1 */
             privacy_level: components["schemas"]["PrivacyLevel"];
+            /** Target Metric */
             target_metric?: string | null;
             task?: components["schemas"]["TaskType"] | null;
+            /** Template */
             template?: string | null;
         };
         /** ProjectPatch */
         ProjectPatch: {
+            /** Description */
             description?: string | null;
+            /** Goal */
             goal?: string | null;
+            /** Modalities */
             modalities?: components["schemas"]["Modality"][] | null;
+            /** Name */
             name?: string | null;
             privacy_level?: components["schemas"]["PrivacyLevel"] | null;
             status?: components["schemas"]["ProjectStatus"] | null;
+            /** Target Metric */
             target_metric?: string | null;
             task?: components["schemas"]["TaskType"] | null;
+            /**
+             * Version
+             * @description Versión conocida por el cliente (bloqueo optimista)
+             */
             version: number;
         };
         /**
@@ -157,6 +216,7 @@ export interface components {
         ProjectStatus: "draft" | "active" | "archived";
         /**
          * RuntimeMode
+         * @description Dónde corre este Engine (SPEC §4.3).
          * @enum {string}
          */
         RuntimeMode: "desktop" | "server";
@@ -167,15 +227,25 @@ export interface components {
         TaskType: "classification" | "regression" | "forecasting" | "anomaly_detection" | "object_detection" | "segmentation" | "ocr" | "sound_event_detection";
         /** ValidationError */
         ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
             loc: (string | number)[];
+            /** Message */
             msg: string;
+            /** Error Type */
             type: string;
         };
         /** VersionInfo */
         VersionInfo: {
             mode: components["schemas"]["RuntimeMode"];
+            /** Platform */
             platform: string;
+            /** Python */
             python: string;
+            /** Version */
             version: string;
         };
     };

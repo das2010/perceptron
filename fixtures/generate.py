@@ -34,8 +34,24 @@ Files = dict[str, bytes]
 # ----------------------------------------------------------------- helpers binarios
 
 
+def zlib_stored(data: bytes) -> bytes:
+    """Stream zlib con bloques deflate sin compresión (RFC 1950/1951).
+
+    No usa `zlib.compress`: su salida depende de la implementación (zlib vs zlib-ng),
+    lo que rompía el determinismo entre máquinas y versiones de Python.
+    """
+    out = bytearray(b"\x78\x01")
+    step = 0xFFFF
+    for i in range(0, max(len(data), 1), step):
+        block = data[i : i + step]
+        final = 1 if i + step >= len(data) else 0
+        out += struct.pack("<BHH", final, len(block), len(block) ^ 0xFFFF) + block
+    out += struct.pack(">I", zlib.adler32(data))
+    return bytes(out)
+
+
 def png_bytes(pixels: list[list[tuple[int, int, int]]]) -> bytes:
-    """PNG RGB 8-bit sin compresión especial (zlib nivel 9, determinístico)."""
+    """PNG RGB 8-bit, determinístico en cualquier plataforma."""
     height, width = len(pixels), len(pixels[0])
     raw = b"".join(b"\x00" + bytes(c for px in row for c in px) for row in pixels)
 
@@ -43,12 +59,8 @@ def png_bytes(pixels: list[list[tuple[int, int, int]]]) -> bytes:
         return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data))
 
     ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-    return (
-        b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", ihdr)
-        + chunk(b"IDAT", zlib.compress(raw, 9))
-        + chunk(b"IEND", b"")
-    )
+    idat = zlib_stored(raw)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", idat) + chunk(b"IEND", b"")
 
 
 def png_gray(mask: list[list[int]]) -> bytes:

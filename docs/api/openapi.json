@@ -7,6 +7,7 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             },
+            "title": "Detail",
             "type": "array"
           }
         },
@@ -17,9 +18,11 @@
         "properties": {
           "status": {
             "const": "ok",
+            "title": "Status",
             "type": "string"
           },
           "version": {
+            "title": "Version",
             "type": "string"
           }
         },
@@ -42,6 +45,7 @@
         "type": "string"
       },
       "PrivacyLevel": {
+        "description": "Qué puede recibir el LLM (SPEC §7.7.3).",
         "enum": [
           "L0",
           "L1",
@@ -56,17 +60,22 @@
         "properties": {
           "created_at": {
             "format": "date-time",
+            "title": "Created At",
             "type": "string"
           },
           "description": {
             "default": "",
+            "title": "Description",
             "type": "string"
           },
           "goal": {
             "default": "",
+            "description": "Objetivo en lenguaje natural del usuario",
+            "title": "Goal",
             "type": "string"
           },
           "id": {
+            "title": "Id",
             "type": "string"
           },
           "llm_profile_id": {
@@ -77,17 +86,20 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Llm Profile Id"
           },
           "modalities": {
             "items": {
               "$ref": "#/components/schemas/Modality"
             },
+            "title": "Modalities",
             "type": "array"
           },
           "name": {
             "maxLength": 200,
             "minLength": 1,
+            "title": "Name",
             "type": "string"
           },
           "privacy_level": {
@@ -110,7 +122,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Target Metric"
           },
           "task": {
             "anyOf": [
@@ -130,15 +143,20 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "description": "Plantilla UC-xx de origen",
+            "title": "Template"
           },
           "updated_at": {
             "format": "date-time",
+            "title": "Updated At",
             "type": "string"
           },
           "version": {
             "default": 1,
-            "minimum": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
             "type": "integer"
           },
           "workspace_id": {
@@ -149,7 +167,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Workspace Id"
           }
         },
         "required": [
@@ -163,21 +182,25 @@
         "properties": {
           "description": {
             "default": "",
+            "title": "Description",
             "type": "string"
           },
           "goal": {
             "default": "",
+            "title": "Goal",
             "type": "string"
           },
           "modalities": {
             "items": {
               "$ref": "#/components/schemas/Modality"
             },
+            "title": "Modalities",
             "type": "array"
           },
           "name": {
             "maxLength": 200,
             "minLength": 1,
+            "title": "Name",
             "type": "string"
           },
           "privacy_level": {
@@ -192,7 +215,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Target Metric"
           },
           "task": {
             "anyOf": [
@@ -212,7 +236,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Template"
           }
         },
         "required": [
@@ -232,7 +257,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Description"
           },
           "goal": {
             "anyOf": [
@@ -242,7 +268,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Goal"
           },
           "modalities": {
             "anyOf": [
@@ -255,7 +282,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Modalities"
           },
           "name": {
             "anyOf": [
@@ -267,7 +295,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Name"
           },
           "privacy_level": {
             "anyOf": [
@@ -297,7 +326,8 @@
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Target Metric"
           },
           "task": {
             "anyOf": [
@@ -310,7 +340,9 @@
             ]
           },
           "version": {
-            "minimum": 1,
+            "description": "Versión conocida por el cliente (bloqueo optimista)",
+            "minimum": 1.0,
+            "title": "Version",
             "type": "integer"
           }
         },
@@ -338,6 +370,7 @@
         "type": "string"
       },
       "RuntimeMode": {
+        "description": "Dónde corre este Engine (SPEC §4.3).",
         "enum": [
           "desktop",
           "server"
@@ -361,6 +394,13 @@
       },
       "ValidationError": {
         "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
           "loc": {
             "items": {
               "anyOf": [
@@ -372,12 +412,15 @@
                 }
               ]
             },
+            "title": "Location",
             "type": "array"
           },
           "msg": {
+            "title": "Message",
             "type": "string"
           },
           "type": {
+            "title": "Error Type",
             "type": "string"
           }
         },
@@ -395,12 +438,15 @@
             "$ref": "#/components/schemas/RuntimeMode"
           },
           "platform": {
+            "title": "Platform",
             "type": "string"
           },
           "python": {
+            "title": "Python",
             "type": "string"
           },
           "version": {
+            "title": "Version",
             "type": "string"
           }
         },
@@ -433,6 +479,7 @@
               "default": 100,
               "maximum": 500,
               "minimum": 1,
+              "title": "Limit",
               "type": "integer"
             }
           },
@@ -443,6 +490,7 @@
             "schema": {
               "default": 0,
               "minimum": 0,
+              "title": "Offset",
               "type": "integer"
             }
           }
@@ -455,6 +503,7 @@
                   "items": {
                     "$ref": "#/components/schemas/Project"
                   },
+                  "title": "Response Listprojects",
                   "type": "array"
                 }
               }
@@ -472,6 +521,7 @@
             "description": "Validation Error"
           }
         },
+        "summary": "List Projects",
         "tags": [
           "projects"
         ]
@@ -510,6 +560,7 @@
             "description": "Validation Error"
           }
         },
+        "summary": "Create Project",
         "tags": [
           "projects"
         ]
@@ -524,6 +575,7 @@
             "name": "project_id",
             "required": true,
             "schema": {
+              "title": "Project Id",
               "type": "string"
             }
           }
@@ -543,6 +595,7 @@
             "description": "Validation Error"
           }
         },
+        "summary": "Delete Project",
         "tags": [
           "projects"
         ]
@@ -555,6 +608,7 @@
             "name": "project_id",
             "required": true,
             "schema": {
+              "title": "Project Id",
               "type": "string"
             }
           }
@@ -581,6 +635,7 @@
             "description": "Validation Error"
           }
         },
+        "summary": "Get Project",
         "tags": [
           "projects"
         ]
@@ -593,6 +648,7 @@
             "name": "project_id",
             "required": true,
             "schema": {
+              "title": "Project Id",
               "type": "string"
             }
           }
@@ -629,6 +685,7 @@
             "description": "Validation Error"
           }
         },
+        "summary": "Update Project",
         "tags": [
           "projects"
         ]
@@ -649,6 +706,7 @@
             "description": "Successful Response"
           }
         },
+        "summary": "Health",
         "tags": [
           "system"
         ]
@@ -669,6 +727,7 @@
             "description": "Successful Response"
           }
         },
+        "summary": "Version",
         "tags": [
           "system"
         ]

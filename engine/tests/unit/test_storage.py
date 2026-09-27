@@ -71,7 +71,8 @@ def test_kinds_are_isolated(db: Database) -> None:
 def test_manifest_hash_is_content_addressed(tmp_path: Path) -> None:
     root = tmp_path / "datos con espacio"
     (root / "sub dir").mkdir(parents=True)
-    (root / "a.csv").write_text("x,y\n1,2\n", encoding="utf-8")
+    # write_bytes: en Windows write_text traduciría "\n" a "\r\n" y cambiaría los tamaños.
+    (root / "a.csv").write_bytes(b"x,y\n1,2\n")
     (root / "sub dir" / "imagen ñ.png").write_bytes(b"\x89PNG fake")
 
     m1 = build_manifest(root)
@@ -89,7 +90,7 @@ def test_manifest_hash_is_content_addressed(tmp_path: Path) -> None:
     assert build_manifest(other).content_hash == m1.content_hash
 
     # Modificar un archivo cambia el hash y aparece en el diff
-    (other / "a.csv").write_text("x,y\n1,3\n", encoding="utf-8")
+    (other / "a.csv").write_bytes(b"x,y\n1,3\n")
     (other / "nuevo.txt").write_text("n", encoding="utf-8")
     m2 = build_manifest(other)
     assert m2.content_hash != m1.content_hash
