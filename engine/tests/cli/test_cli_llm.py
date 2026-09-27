@@ -43,7 +43,31 @@ def test_quickstart_llm_falls_back_and_reports(
                     {
                         "title": "Informe",
                         "summary": "ok",
-                        "markdown": "# Informe LLM",
+                        "markdown": "# Informe
+
+## Resumen
+
+Funciona.
+
+## Datos
+
+x
+
+## Modelo
+
+x
+
+## Resultados
+
+x
+
+## Errores y límites
+
+x
+
+## Recomendaciones
+
+x",
                         "model_card": {"intended_use": "x", "data": "y", "training": "z"},
                     }
                 ],
