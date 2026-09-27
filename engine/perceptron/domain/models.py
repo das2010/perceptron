@@ -137,6 +137,9 @@ class DatasetVersion(Entity):
     project_id: str
     source_id: str | None = None
     content_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
+    modality: Modality | None = None
+    target: str | None = None
+    path: str | None = Field(default=None, description="Directorio relativo al proyecto")
     num_samples: int = Field(ge=0)
     size_bytes: int = Field(default=0, ge=0)
     split: Split | None = None

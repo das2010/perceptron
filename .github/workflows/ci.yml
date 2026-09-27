@@ -17,6 +17,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -28,10 +29,12 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-      - name: Mypy
-        run: uv run mypy
       - name: Pytest
         run: uv run pytest --cov --cov-report=term --cov-report=xml
+      # Mypy corre aunque fallen los tests: así un solo run informa ambos.
+      - name: Mypy
+        if: success() || failure()
+        run: uv run mypy
       - name: Coverage >= 80% en core/domain (SPEC §13.6)
         run: uv run coverage report --include="*/perceptron/core/*,*/perceptron/domain/*" --fail-under=80
       - name: CLI smoke
@@ -58,6 +61,21 @@ jobs:
       - run: pnpm -C ui test
       - run: pnpm -C ui build
 
+  e2e:
+    name: aceptación e2e (UC-01, UC-04)
+    # Solo Linux: Windows cuenta doble en minutos de Actions de repos privados.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --locked
+      - name: Quickstart UC-01 y UC-04 (10 trials, CPU, sin descargar pesos)
+        run: uv run pytest -m e2e -s -v engine/tests/e2e
+
   contract:
     name: OpenAPI ↔ TypeScript
     runs-on: ubuntu-latest
@@ -74,6 +92,14 @@ jobs:
       - run: pnpm gen:api
       - name: Tipos generados al día
         run: git diff --exit-code -- docs/api/openapi.json ui/src/lib/api/schema.d.ts
+      - name: Publicar contrato regenerado (para commitearlo)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-contract
+          path: |
+            docs/api/openapi.json
+            ui/src/lib/api/schema.d.ts
 
   fixtures:
     name: fixtures deterministas

@@ -13,6 +13,13 @@ from perceptron.core.config import LoggingSettings, Settings
 # Rutas con espacios y caracteres no ASCII (SPEC §13.5).
 AWKWARD_DIR = "Carpeta con ñ, acentos (áéí) y espacios"
 
+FIXTURES_DIR = Path(__file__).resolve().parents[2] / "fixtures"
+
+
+@pytest.fixture
+def fixtures_dir() -> Path:
+    return FIXTURES_DIR
+
 
 @pytest.fixture
 def workspace_dir(tmp_path: Path) -> Path:

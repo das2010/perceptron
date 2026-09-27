@@ -7,15 +7,18 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-  "perceptron-engine",
+  "perceptron-engine[ml]",
   "perceptron-server",
   "pytest>=8",
   "pytest-cov>=5",
   "hypothesis>=6",
+  "pytest-timeout>=2.3",
   "httpx>=0.27",
   "ruff>=0.6",
   "mypy>=1.11",
   "types-pyyaml",
+  "types-psutil",
+  "xlsxwriter>=3.2",
 ]
 
 [tool.uv]
@@ -27,6 +30,15 @@ members = ["engine", "server"]
 [tool.uv.sources]
 perceptron-engine = { workspace = true }
 perceptron-server = { workspace = true }
+# Desarrollo y CI con wheels CPU de PyTorch (ADR-0014). La app instala la variante
+# según el hardware detectado (RF-TRN-02, Capa 3).
+torch = [{ index = "pytorch-cpu" }]
+torchvision = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 # ---------------------------------------------------------------- ruff
 [tool.ruff]
@@ -41,12 +53,14 @@ ignore = [
   "PLR2004",  # valores mágicos en comparaciones
   "PLC0415",  # imports diferidos: arranque rápido de la CLI
   "PLR0917",  # comandos Typer: cada opción es un parámetro
+  "PLR0911", "PLR0912", "PLR0915",  # funciones de despacho / tablas de decisión
+  "N812",  # convenciones `import lightning as L`, `functional as F`
   "RUF001", "RUF002", "RUF003",  # caracteres ambiguos: textos en español
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "engine/tests/**" = ["S101", "S105", "S106", "PLR2004", "PLC0415"]
-"fixtures/**" = ["S311", "E501", "PLR0912", "PLR0914", "PLR0915"]
+"fixtures/**" = ["S311", "E501", "PLR0914"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["perceptron", "perceptron_server"]
@@ -67,6 +81,11 @@ files = ["engine/perceptron"]
 module = ["perceptron.core.*", "perceptron.domain.*", "perceptron.archspec.*", "perceptron.llm.*"]
 strict = true
 
+# Librerías de ML sin stubs completos
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "timm.*", "mlflow.*", "torchvision.*", "fastexcel.*", "scipy.*", "cmaes.*"]
+ignore_missing_imports = true
+
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true
@@ -75,10 +94,13 @@ warn_required_dynamic_aliases = true
 # ---------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
 testpaths = ["engine/tests"]
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers -m 'not e2e'"
+# Un test colgado falla en vez de bloquear el CI (ej.: deadlock de DataLoader).
+timeout = 600
 markers = [
   "slow: tests lentos (entrenamiento)",
   "gpu: requiere GPU (job nocturno)",
+  "e2e: aceptación de punta a punta (job e2e de CI)",
 ]
 
 [tool.coverage.run]

@@ -17,12 +17,16 @@ import typer
 from pydantic import SecretStr
 
 from perceptron import __version__
+from perceptron.cli import ml
 from perceptron.core.config import Settings
 from perceptron.domain.enums import Modality, PrivacyLevel, TaskType
 
 app = typer.Typer(name="perceptron", help="Perceptron Engine CLI", no_args_is_help=True)
 project_app = typer.Typer(help="Gestión de proyectos", no_args_is_help=True)
 app.add_typer(project_app, name="project")
+system_app = typer.Typer(help="Información del sistema", no_args_is_help=True)
+app.add_typer(system_app, name="system")
+ml.register(app)
 
 WorkspaceOpt = Annotated[
     Path | None, typer.Option("--workspace", "-w", help="Directorio del workspace")
@@ -103,6 +107,35 @@ def openapi(
         output.write_text(text, encoding="utf-8", newline="\n")
     else:
         sys.stdout.write(text)
+
+
+@system_app.command("hardware")
+def system_hardware(workspace: WorkspaceOpt = None, as_json: JsonOpt = False) -> None:
+    """Hardware detectado y dispositivo recomendado (RF-TRN-01)."""
+    from perceptron.training.hardware import detect_hardware
+
+    report = detect_hardware(_settings(workspace).workspace_dir)
+    if as_json:
+        typer.echo(report.model_dump_json(indent=2))
+        return
+    typer.echo(f"SO:      {report.os} · Python {report.python}")
+    typer.echo(f"CPU:     {report.cpu.model} ({report.cpu.logical_cores} hilos)")
+    typer.echo(f"RAM:     {report.ram_available_gb} / {report.ram_total_gb} GB libres")
+    typer.echo(f"Disco:   {report.disk_free_gb} GB libres")
+    for g in report.gpus:
+        typer.echo(f"GPU {g.index}:   {g.name} [{g.backend.value}] {g.vram_total_gb} GB")
+    torch_desc = (
+        f"{report.torch.version} ({report.torch.variant})"
+        if report.torch.installed
+        else "no instalado"
+    )
+    typer.echo(f"PyTorch: {torch_desc}")
+    typer.echo(
+        f"Recomendado: dispositivo {report.recommended_device.value}, "
+        f"variante de PyTorch {report.recommended_torch_variant}"
+    )
+    for note in report.notes:
+        typer.echo(f"Nota: {note}")
 
 
 @project_app.command("list")
