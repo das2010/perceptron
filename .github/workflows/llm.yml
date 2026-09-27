@@ -42,7 +42,7 @@ jobs:
         provider: [claude, openai, ollama]
         uc: [uc01, uc04, uc09]
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 300
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -75,7 +75,12 @@ jobs:
         if: steps.key.outputs.skip != 'true' && matrix.provider == 'ollama'
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags && break || sleep 2; done
+          # El instalador no siempre deja el servicio corriendo en el runner.
+          if ! curl -sf http://127.0.0.1:11434/api/tags > /dev/null; then
+            nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          fi
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:11434/api/tags > /dev/null && break; sleep 2; done
+          curl -sf http://127.0.0.1:11434/api/tags > /dev/null || { cat "$RUNNER_TEMP/ollama.log"; exit 1; }
           ollama pull "$OLLAMA_MODEL"
       - name: Conexión con el LLM
         if: steps.key.outputs.skip != 'true'
@@ -97,7 +102,7 @@ jobs:
       matrix:
         provider: [claude, openai, ollama]
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 240
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -126,7 +131,12 @@ jobs:
         if: steps.key.outputs.skip != 'true' && matrix.provider == 'ollama'
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:11434/api/tags && break || sleep 2; done
+          # El instalador no siempre deja el servicio corriendo en el runner.
+          if ! curl -sf http://127.0.0.1:11434/api/tags > /dev/null; then
+            nohup ollama serve > "$RUNNER_TEMP/ollama.log" 2>&1 &
+          fi
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:11434/api/tags > /dev/null && break; sleep 2; done
+          curl -sf http://127.0.0.1:11434/api/tags > /dev/null || { cat "$RUNNER_TEMP/ollama.log"; exit 1; }
           ollama pull "$OLLAMA_MODEL"
       - name: Conexión con el LLM
         if: steps.key.outputs.skip != 'true'

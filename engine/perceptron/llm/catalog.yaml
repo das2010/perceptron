@@ -68,6 +68,8 @@ providers:
     kind: ollama
     base_url: http://127.0.0.1:11434
     local: true
+    # En CPU un modelo de 4B tarda minutos con prompts de miles de tokens.
+    timeout_s: 1800
     models:
       # Qwen3 (Apache-2.0): chico, corre en CPU y respeta JSON Schema vía `format`.
       "qwen3:4b":

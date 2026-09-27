@@ -14,6 +14,7 @@ from perceptron.llm.providers.base import LLMProvider
 from perceptron.llm.types import LLMRequest, LLMResponse, Usage
 
 DEFAULT_URL = "http://127.0.0.1:11434"
+MAX_CTX = 32_768
 
 
 class OllamaProvider(LLMProvider):
@@ -26,7 +27,11 @@ class OllamaProvider(LLMProvider):
             if m.images:
                 msg["images"] = [i.data_b64 for i in m.images]
             messages.append(msg)
-        options: dict[str, Any] = {"num_predict": request.max_tokens}
+        # Ollama usa un contexto chico por defecto y trunca en silencio: se fija el del modelo.
+        options: dict[str, Any] = {
+            "num_predict": request.max_tokens,
+            "num_ctx": min(model.context_window, MAX_CTX),
+        }
         if request.temperature is not None and model.temperature:
             options["temperature"] = request.temperature
         body: dict[str, Any] = {
