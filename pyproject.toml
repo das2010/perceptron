@@ -12,6 +12,7 @@ dev = [
   "pytest>=8",
   "pytest-cov>=5",
   "hypothesis>=6",
+  "pytest-timeout>=2.3",
   "httpx>=0.27",
   "ruff>=0.6",
   "mypy>=1.11",
@@ -94,6 +95,8 @@ warn_required_dynamic_aliases = true
 [tool.pytest.ini_options]
 testpaths = ["engine/tests"]
 addopts = "-ra --strict-markers -m 'not e2e'"
+# Un test colgado falla en vez de bloquear el CI (ej.: deadlock de DataLoader).
+timeout = 600
 markers = [
   "slow: tests lentos (entrenamiento)",
   "gpu: requiere GPU (job nocturno)",

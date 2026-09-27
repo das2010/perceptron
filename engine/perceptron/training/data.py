@@ -80,9 +80,15 @@ def make_dataset(
     raise NotImplementedError(f"datasets para {view.modality} llegan en Capa 1b")
 
 
-def auto_num_workers(modality: Modality) -> int:
-    """Tabular en memoria → 0. Imágenes: pocos workers (el spawn de Windows es caro)."""
-    if modality is Modality.TABULAR:
+SMALL_DATASET = 2_000
+
+
+def auto_num_workers(modality: Modality, n_train: int) -> int:
+    """Tabular en memoria o datasets chicos → 0 (arrancar workers cuesta más que leer).
+
+    Con más datos se usan pocos workers; siempre con `spawn` (ver `make_loader`).
+    """
+    if modality is Modality.TABULAR or n_train < SMALL_DATASET:
         return 0
     cpus = os.cpu_count() or 1
     return 0 if sys.platform == "win32" and cpus <= 4 else min(4, max(cpus - 1, 0))
@@ -107,6 +113,9 @@ def make_loader(
         num_workers=num_workers,
         pin_memory=torch.cuda.is_available(),
         persistent_workers=num_workers > 0,
+        # `spawn` y no `fork`: el worker de entrenamiento ya tiene hilos (lector de órdenes por
+        # stdin) y hacer fork de un proceso con hilos puede dejar locks tomados (deadlock).
+        multiprocessing_context="spawn" if num_workers > 0 else None,
         drop_last=shuffle and len(ds) > batch_size,  # type: ignore[arg-type]
         generator=generator,
     )

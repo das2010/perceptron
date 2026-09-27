@@ -85,7 +85,7 @@ class JobManager:
             with log_context(job_id=job.id):
                 result = fn(ctx)
             job.result = result.model_dump(mode="json") if isinstance(result, BaseModel) else result
-            if job.status != "cancelled":
+            if not ctx.cancelled:
                 job.status = "succeeded"
         except Exception as e:
             logger.exception("job falló", extra={"job_id": job.id})

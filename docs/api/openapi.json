@@ -1,6 +1,350 @@
 {
   "components": {
     "schemas": {
+      "Alert": {
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/AlertCode"
+          },
+          "column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Column"
+          },
+          "evidence": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Evidence",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/AlertSeverity"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "message"
+        ],
+        "title": "Alert",
+        "type": "object"
+      },
+      "AlertCode": {
+        "enum": [
+          "class_imbalance",
+          "target_leakage",
+          "id_column",
+          "future_dates",
+          "constant_column",
+          "high_nulls",
+          "duplicate_rows",
+          "insufficient_data",
+          "corrupt_files",
+          "near_duplicates",
+          "mixed_resolutions",
+          "mixed_channels",
+          "missing_target"
+        ],
+        "title": "AlertCode",
+        "type": "string"
+      },
+      "AlertSeverity": {
+        "enum": [
+          "info",
+          "warning",
+          "high"
+        ],
+        "title": "AlertSeverity",
+        "type": "string"
+      },
+      "ArchProposal": {
+        "properties": {
+          "archspec": {
+            "$ref": "#/components/schemas/ArchSpecRecord"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ValidationReport"
+          }
+        },
+        "required": [
+          "archspec",
+          "rationale",
+          "validation"
+        ],
+        "title": "ArchProposal",
+        "type": "object"
+      },
+      "ArchSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "archspec_version": {
+            "default": "1.0",
+            "title": "Archspec Version",
+            "type": "string"
+          },
+          "edges": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array"
+            },
+            "minItems": 1,
+            "title": "Edges",
+            "type": "array"
+          },
+          "input": {
+            "$ref": "#/components/schemas/InputSpec"
+          },
+          "loss": {
+            "$ref": "#/components/schemas/LossSpec"
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "modality": {
+            "$ref": "#/components/schemas/Modality"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/Node"
+            },
+            "minItems": 1,
+            "title": "Nodes",
+            "type": "array"
+          },
+          "optimizer": {
+            "$ref": "#/components/schemas/OptimizerSpec"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "scheduler": {
+            "$ref": "#/components/schemas/SchedulerSpec"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskSpec"
+          },
+          "training": {
+            "$ref": "#/components/schemas/TrainingSpec"
+          }
+        },
+        "required": [
+          "name",
+          "modality",
+          "task",
+          "input",
+          "nodes",
+          "edges",
+          "loss"
+        ],
+        "title": "ArchSpec",
+        "type": "object"
+      },
+      "ArchSpecRecord": {
+        "additionalProperties": false,
+        "description": "Referencia persistida a una ArchSpec (§9) o a código experto (RF-ARC-06).",
+        "properties": {
+          "code_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code Path"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin",
+            "default": "manual"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "spec": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spec"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "name",
+          "content_hash"
+        ],
+        "title": "ArchSpecRecord",
+        "type": "object"
+      },
+      "AugmentSpec": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "hflip",
+              "vflip",
+              "rotation",
+              "color_jitter",
+              "random_resized_crop",
+              "trivial_augment"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "AugmentSpec",
+        "type": "object"
+      },
+      "Budget": {
+        "properties": {
+          "max_epochs_per_trial": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Epochs Per Trial"
+          },
+          "max_time_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Time S"
+          },
+          "max_trials": {
+            "default": 20,
+            "minimum": 1.0,
+            "title": "Max Trials",
+            "type": "integer"
+          },
+          "target_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Corta al alcanzarlo (1er objetivo)",
+            "title": "Target Value"
+          },
+          "trial_timeout_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trial Timeout S"
+          }
+        },
+        "title": "Budget",
+        "type": "object"
+      },
       "CPUInfo": {
         "properties": {
           "arch": {
@@ -44,6 +388,596 @@
         "title": "CPUInfo",
         "type": "object"
       },
+      "CategoricalStats": {
+        "properties": {
+          "other_count": {
+            "description": "Filas en categorías omitidas (raras o fuera del top)",
+            "title": "Other Count",
+            "type": "integer"
+          },
+          "top": {
+            "description": "Solo categorías con ≥ 5 filas",
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Top",
+            "type": "array"
+          }
+        },
+        "required": [
+          "top",
+          "other_count"
+        ],
+        "title": "CategoricalStats",
+        "type": "object"
+      },
+      "CategoryCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "count"
+        ],
+        "title": "CategoryCount",
+        "type": "object"
+      },
+      "ClassificationMetrics": {
+        "properties": {
+          "accuracy": {
+            "title": "Accuracy",
+            "type": "number"
+          },
+          "balanced_accuracy": {
+            "title": "Balanced Accuracy",
+            "type": "number"
+          },
+          "confusion_matrix": {
+            "items": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "title": "Confusion Matrix",
+            "type": "array"
+          },
+          "ece": {
+            "title": "Ece",
+            "type": "number"
+          },
+          "f1_macro": {
+            "title": "F1 Macro",
+            "type": "number"
+          },
+          "f1_micro": {
+            "title": "F1 Micro",
+            "type": "number"
+          },
+          "f1_weighted": {
+            "title": "F1 Weighted",
+            "type": "number"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "log_loss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log Loss"
+          },
+          "optimal_threshold": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ThresholdInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "per_class": {
+            "items": {
+              "$ref": "#/components/schemas/PerClass"
+            },
+            "title": "Per Class",
+            "type": "array"
+          },
+          "pr_auc": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pr Auc"
+          },
+          "precision_macro": {
+            "title": "Precision Macro",
+            "type": "number"
+          },
+          "recall_macro": {
+            "title": "Recall Macro",
+            "type": "number"
+          },
+          "roc_auc": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roc Auc"
+          }
+        },
+        "required": [
+          "accuracy",
+          "balanced_accuracy",
+          "precision_macro",
+          "recall_macro",
+          "f1_macro",
+          "f1_micro",
+          "f1_weighted",
+          "roc_auc",
+          "pr_auc",
+          "log_loss",
+          "ece",
+          "per_class",
+          "confusion_matrix",
+          "labels"
+        ],
+        "title": "ClassificationMetrics",
+        "type": "object"
+      },
+      "CodeResponse": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "CodeResponse",
+        "type": "object"
+      },
+      "ColumnProfile": {
+        "properties": {
+          "categorical": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CategoricalStats"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dtype": {
+            "title": "Dtype",
+            "type": "string"
+          },
+          "n_unique": {
+            "title": "N Unique",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "null_fraction": {
+            "title": "Null Fraction",
+            "type": "number"
+          },
+          "numeric": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NumericStats"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "semantic": {
+            "$ref": "#/components/schemas/SemanticType"
+          },
+          "target_association": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "|Pearson| (numérica) o V de Cramér (categórica) con el target",
+            "title": "Target Association"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextStats"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "semantic",
+          "dtype",
+          "null_fraction",
+          "n_unique"
+        ],
+        "title": "ColumnProfile",
+        "type": "object"
+      },
+      "ColumnSchema": {
+        "properties": {
+          "dtype": {
+            "title": "Dtype",
+            "type": "string"
+          },
+          "n_unique": {
+            "title": "N Unique",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "nullable": {
+            "title": "Nullable",
+            "type": "boolean"
+          },
+          "semantic": {
+            "$ref": "#/components/schemas/SemanticType"
+          }
+        },
+        "required": [
+          "name",
+          "dtype",
+          "semantic",
+          "nullable",
+          "n_unique"
+        ],
+        "title": "ColumnSchema",
+        "type": "object"
+      },
+      "CompareBody": {
+        "properties": {
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Run Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "run_ids"
+        ],
+        "title": "CompareBody",
+        "type": "object"
+      },
+      "Condition": {
+        "description": "El parámetro solo se sugiere si `param` vale `equals` (espacios condicionales).",
+        "properties": {
+          "equals": {
+            "title": "Equals"
+          },
+          "param": {
+            "title": "Param",
+            "type": "string"
+          }
+        },
+        "required": [
+          "param",
+          "equals"
+        ],
+        "title": "Condition",
+        "type": "object"
+      },
+      "Curves": {
+        "properties": {
+          "error_histogram": {
+            "description": "[centro, n]",
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Error Histogram",
+            "type": "array"
+          },
+          "pr": {
+            "description": "[recall, precision]",
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Pr",
+            "type": "array"
+          },
+          "reliability": {
+            "description": "[confianza, acierto, n]",
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Reliability",
+            "type": "array"
+          },
+          "residuals": {
+            "description": "[predicción, residuo]",
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Residuals",
+            "type": "array"
+          },
+          "roc": {
+            "description": "[fpr, tpr]",
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Roc",
+            "type": "array"
+          }
+        },
+        "title": "Curves",
+        "type": "object"
+      },
+      "DataSource": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "description": "Sin secretos: usar `secret_refs` (keychain/vault)",
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "inferred_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inferred Schema"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "secret_refs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Secret Refs",
+            "type": "object"
+          },
+          "type": {
+            "$ref": "#/components/schemas/DataSourceType"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "name",
+          "type"
+        ],
+        "title": "DataSource",
+        "type": "object"
+      },
+      "DataSourceType": {
+        "enum": [
+          "file",
+          "folder",
+          "db",
+          "hf",
+          "kaggle",
+          "api",
+          "stream"
+        ],
+        "title": "DataSourceType",
+        "type": "string"
+      },
+      "DatasetVersion": {
+        "additionalProperties": false,
+        "description": "Snapshot inmutable identificado por el hash de su manifiesto (RF-ING-07).",
+        "properties": {
+          "content_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "modality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Modality"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "num_samples": {
+            "minimum": 0.0,
+            "title": "Num Samples",
+            "type": "integer"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Directorio relativo al proyecto",
+            "title": "Path"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "size_bytes": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "split": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Split"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "transformation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transformation"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "content_hash",
+          "num_samples"
+        ],
+        "title": "DatasetVersion",
+        "type": "object"
+      },
       "Device": {
         "enum": [
           "cuda",
@@ -53,6 +987,157 @@
         ],
         "title": "Device",
         "type": "string"
+      },
+      "EarlyStopping": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "min",
+                  "max"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "monitor": {
+            "default": "val_loss",
+            "title": "Monitor",
+            "type": "string"
+          },
+          "patience": {
+            "default": 5,
+            "minimum": 1.0,
+            "title": "Patience",
+            "type": "integer"
+          }
+        },
+        "title": "EarlyStopping",
+        "type": "object"
+      },
+      "Evaluation": {
+        "additionalProperties": false,
+        "properties": {
+          "artifacts": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Artifacts",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "split": {
+            "default": "test",
+            "title": "Split",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id"
+        ],
+        "title": "Evaluation",
+        "type": "object"
+      },
+      "EvaluationReport": {
+        "properties": {
+          "checkpoint": {
+            "title": "Checkpoint",
+            "type": "string"
+          },
+          "classification": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClassificationMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "curves": {
+            "$ref": "#/components/schemas/Curves"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Resumen plano (tracking, comparación de runs)",
+            "title": "Metrics",
+            "type": "object"
+          },
+          "num_samples": {
+            "title": "Num Samples",
+            "type": "integer"
+          },
+          "regression": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegressionMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "split": {
+            "default": "test",
+            "title": "Split",
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          }
+        },
+        "required": [
+          "run_id",
+          "task",
+          "num_samples",
+          "metrics",
+          "checkpoint"
+        ],
+        "title": "EvaluationReport",
+        "type": "object"
       },
       "GPUInfo": {
         "properties": {
@@ -117,6 +1202,113 @@
           "vram_total_gb"
         ],
         "title": "GPUInfo",
+        "type": "object"
+      },
+      "HP": {
+        "additionalProperties": false,
+        "description": "Referencia a un hiperparámetro ajustable con su valor por defecto.",
+        "properties": {
+          "default": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "hp": {
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "title": "Hp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hp",
+          "default"
+        ],
+        "title": "HP",
+        "type": "object"
+      },
+      "HPOStrategy": {
+        "properties": {
+          "budget": {
+            "$ref": "#/components/schemas/Budget"
+          },
+          "objectives": {
+            "items": {
+              "$ref": "#/components/schemas/Objective"
+            },
+            "minItems": 1,
+            "title": "Objectives",
+            "type": "array"
+          },
+          "parallelism": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Parallelism",
+            "type": "integer"
+          },
+          "pruner": {
+            "default": "median",
+            "enum": [
+              "none",
+              "median",
+              "asha",
+              "hyperband"
+            ],
+            "title": "Pruner",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "search_space": {
+            "items": {
+              "$ref": "#/components/schemas/SearchParam"
+            },
+            "title": "Search Space",
+            "type": "array"
+          },
+          "seed": {
+            "default": 42,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "strategy": {
+            "default": "tpe",
+            "enum": [
+              "single",
+              "random",
+              "grid",
+              "tpe",
+              "cmaes",
+              "nsga2"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "title": "HPOStrategy",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -215,6 +1407,419 @@
         "title": "Health",
         "type": "object"
       },
+      "ImageProfile": {
+        "properties": {
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Channels",
+            "type": "array"
+          },
+          "corrupt": {
+            "title": "Corrupt",
+            "type": "integer"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "formats": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Formats",
+            "type": "array"
+          },
+          "height_quantiles": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Height Quantiles",
+            "type": "object"
+          },
+          "near_duplicate_fraction": {
+            "title": "Near Duplicate Fraction",
+            "type": "number"
+          },
+          "near_duplicate_pairs": {
+            "title": "Near Duplicate Pairs",
+            "type": "integer"
+          },
+          "resolutions": {
+            "description": "Resoluciones WxH frecuentes (≥ k filas)",
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Resolutions",
+            "type": "array"
+          },
+          "width_quantiles": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Width Quantiles",
+            "type": "object"
+          }
+        },
+        "required": [
+          "count",
+          "corrupt",
+          "resolutions",
+          "width_quantiles",
+          "height_quantiles",
+          "channels",
+          "formats",
+          "near_duplicate_pairs",
+          "near_duplicate_fraction"
+        ],
+        "title": "ImageProfile",
+        "type": "object"
+      },
+      "ImageSpec": {
+        "properties": {
+          "augment": {
+            "items": {
+              "$ref": "#/components/schemas/AugmentSpec"
+            },
+            "title": "Augment",
+            "type": "array"
+          },
+          "channels": {
+            "default": 3,
+            "enum": [
+              1,
+              3
+            ],
+            "title": "Channels",
+            "type": "integer"
+          },
+          "normalize": {
+            "default": "imagenet",
+            "enum": [
+              "imagenet",
+              "dataset"
+            ],
+            "title": "Normalize",
+            "type": "string"
+          },
+          "size": {
+            "default": 224,
+            "maximum": 1024.0,
+            "minimum": 16.0,
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "title": "ImageSpec",
+        "type": "object"
+      },
+      "IngestBody": {
+        "additionalProperties": false,
+        "properties": {
+          "overrides": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/SemanticType"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overrides"
+          },
+          "split": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SplitRequest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "title": "IngestBody",
+        "type": "object"
+      },
+      "InputSpec": {
+        "additionalProperties": false,
+        "description": "Entrada del modelo.\n\n- `tabular`: `num_numeric` columnas numéricas + categóricas con `cardinalities`.\n- `image` / `spectrogram`: `shape` = [C, H, W].",
+        "properties": {
+          "cardinalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cardinalities"
+          },
+          "from_pipeline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Pipeline"
+          },
+          "kind": {
+            "enum": [
+              "tabular",
+              "image",
+              "spectrogram",
+              "sequence",
+              "tokens"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "num_numeric": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Numeric"
+          },
+          "shape": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shape"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "InputSpec",
+        "type": "object"
+      },
+      "Issue": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/Stage"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestion"
+          }
+        },
+        "required": [
+          "stage",
+          "severity",
+          "path",
+          "message"
+        ],
+        "title": "Issue",
+        "type": "object"
+      },
+      "Job": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "progress": {
+            "additionalProperties": true,
+            "title": "Progress",
+            "type": "object"
+          },
+          "refs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Ids relacionados (study_id, …)",
+            "title": "Refs",
+            "type": "object"
+          },
+          "result": {
+            "title": "Result"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "default": "queued",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind"
+        ],
+        "title": "Job",
+        "type": "object"
+      },
+      "LossSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "class_weights": {
+            "anyOf": [
+              {
+                "enum": [
+                  "auto",
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              }
+            ],
+            "default": "none",
+            "title": "Class Weights"
+          },
+          "label_smoothing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HP"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "default": 0.0,
+            "title": "Label Smoothing"
+          },
+          "type": {
+            "enum": [
+              "cross_entropy",
+              "bce",
+              "focal",
+              "mse",
+              "mae",
+              "huber"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "LossSpec",
+        "type": "object"
+      },
       "Modality": {
         "enum": [
           "tabular",
@@ -226,6 +1831,521 @@
         "title": "Modality",
         "type": "string"
       },
+      "ModelStage": {
+        "enum": [
+          "candidate",
+          "staging",
+          "production",
+          "archived"
+        ],
+        "title": "ModelStage",
+        "type": "string"
+      },
+      "ModelVersion": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model_card": {
+            "additionalProperties": true,
+            "title": "Model Card",
+            "type": "object"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "signature": {
+            "additionalProperties": true,
+            "title": "Signature",
+            "type": "object"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ModelStage",
+            "default": "candidate"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "run_id"
+        ],
+        "title": "ModelVersion",
+        "type": "object"
+      },
+      "Node": {
+        "additionalProperties": false,
+        "properties": {
+          "block": {
+            "title": "Block",
+            "type": "string"
+          },
+          "id": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_\\-]*$",
+            "title": "Id",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/HP"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "items": {},
+                  "type": "array"
+                },
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Params",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "block"
+        ],
+        "title": "Node",
+        "type": "object"
+      },
+      "NumericStats": {
+        "properties": {
+          "histogram": {
+            "description": "Conteos en bins equiespaciados entre p01 y p99",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Histogram",
+            "type": "array"
+          },
+          "mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean"
+          },
+          "outlier_fraction": {
+            "description": "Fuera de [Q1 − 1,5·IQR, Q3 + 1,5·IQR]",
+            "title": "Outlier Fraction",
+            "type": "number"
+          },
+          "quantiles": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "p05, p25, p50, p75, p95",
+            "title": "Quantiles",
+            "type": "object"
+          },
+          "skew": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skew"
+          },
+          "std": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Std"
+          }
+        },
+        "required": [
+          "mean",
+          "std",
+          "quantiles",
+          "histogram",
+          "outlier_fraction"
+        ],
+        "title": "NumericStats",
+        "type": "object"
+      },
+      "Objective": {
+        "properties": {
+          "direction": {
+            "default": "minimize",
+            "enum": [
+              "minimize",
+              "maximize"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "metric": {
+            "default": "val_loss",
+            "title": "Metric",
+            "type": "string"
+          }
+        },
+        "title": "Objective",
+        "type": "object"
+      },
+      "OptimizerSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "lr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HP"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "default": 0.001,
+            "title": "Lr"
+          },
+          "momentum": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HP"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Momentum"
+          },
+          "type": {
+            "default": "adamw",
+            "enum": [
+              "adamw",
+              "adam",
+              "sgd"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "weight_decay": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HP"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "default": 0.0,
+            "title": "Weight Decay"
+          }
+        },
+        "title": "OptimizerSpec",
+        "type": "object"
+      },
+      "Origin": {
+        "description": "Quién originó una configuración (ArchSpec, Study).",
+        "enum": [
+          "manual",
+          "llm",
+          "agent",
+          "rules"
+        ],
+        "title": "Origin",
+        "type": "string"
+      },
+      "PerClass": {
+        "properties": {
+          "f1": {
+            "title": "F1",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "precision": {
+            "title": "Precision",
+            "type": "number"
+          },
+          "recall": {
+            "title": "Recall",
+            "type": "number"
+          },
+          "support": {
+            "title": "Support",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "precision",
+          "recall",
+          "f1",
+          "support"
+        ],
+        "title": "PerClass",
+        "type": "object"
+      },
+      "Pipeline": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "graph": {
+            "additionalProperties": true,
+            "description": "DAG de pasos (§7.4)",
+            "title": "Graph",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin",
+            "default": "rules"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "name"
+        ],
+        "title": "Pipeline",
+        "type": "object"
+      },
+      "PipelinePreview": {
+        "properties": {
+          "categorical_features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categorical Features",
+            "type": "array"
+          },
+          "classes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classes"
+          },
+          "numeric_features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Numeric Features",
+            "type": "array"
+          },
+          "x_cat": {
+            "items": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "title": "X Cat",
+            "type": "array"
+          },
+          "x_num": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "X Num",
+            "type": "array"
+          }
+        },
+        "required": [
+          "numeric_features",
+          "categorical_features",
+          "x_num",
+          "x_cat",
+          "classes"
+        ],
+        "title": "PipelinePreview",
+        "type": "object"
+      },
+      "PipelinePreviewBody": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "rows": {
+            "default": 10,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Rows",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dataset_version_id"
+        ],
+        "title": "PipelinePreviewBody",
+        "type": "object"
+      },
+      "PipelineSpec": {
+        "properties": {
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "modality": {
+            "$ref": "#/components/schemas/Modality"
+          },
+          "pipeline_version": {
+            "default": "1.0",
+            "title": "Pipeline Version",
+            "type": "string"
+          },
+          "rationale": {
+            "description": "Por qué se eligió cada paso",
+            "items": {
+              "type": "string"
+            },
+            "title": "Rationale",
+            "type": "array"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/StepSpec"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "modality",
+          "target"
+        ],
+        "title": "PipelineSpec",
+        "type": "object"
+      },
+      "PipelineUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "graph": {
+            "$ref": "#/components/schemas/PipelineSpec"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "graph"
+        ],
+        "title": "PipelineUpdate",
+        "type": "object"
+      },
       "PrivacyLevel": {
         "description": "Qué puede recibir el LLM (SPEC §7.7.3).",
         "enum": [
@@ -236,6 +2356,116 @@
         ],
         "title": "PrivacyLevel",
         "type": "string"
+      },
+      "ProfileCard": {
+        "description": "Resumen agregado del dataset (solo train + val; el test sellado no se perfila).",
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/Alert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "card_version": {
+            "default": "1.0",
+            "title": "Card Version",
+            "type": "string"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ColumnProfile"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Hash"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version Id"
+          },
+          "duplicate_row_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicate Row Fraction"
+          },
+          "images": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "modality": {
+            "$ref": "#/components/schemas/Modality"
+          },
+          "num_features": {
+            "title": "Num Features",
+            "type": "integer"
+          },
+          "num_samples": {
+            "title": "Num Samples",
+            "type": "integer"
+          },
+          "profiled_samples": {
+            "title": "Profiled Samples",
+            "type": "integer"
+          },
+          "split_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Split Counts",
+            "type": "object"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "modality",
+          "num_samples",
+          "profiled_samples",
+          "split_counts",
+          "num_features",
+          "target",
+          "columns"
+        ],
+        "title": "ProfileCard",
+        "type": "object"
       },
       "Project": {
         "additionalProperties": false,
@@ -551,6 +2781,289 @@
         "title": "ProjectStatus",
         "type": "string"
       },
+      "ProposeArchBody": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "pipeline_id"
+        ],
+        "title": "ProposeArchBody",
+        "type": "object"
+      },
+      "ProposePipelineBody": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "pretrained": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pretrained"
+          }
+        },
+        "required": [
+          "dataset_version_id"
+        ],
+        "title": "ProposePipelineBody",
+        "type": "object"
+      },
+      "Provenance": {
+        "additionalProperties": false,
+        "properties": {
+          "llm_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Call Id"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin",
+            "default": "manual"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template"
+          }
+        },
+        "title": "Provenance",
+        "type": "object"
+      },
+      "RegressionMetrics": {
+        "properties": {
+          "mae": {
+            "title": "Mae",
+            "type": "number"
+          },
+          "mape": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mape"
+          },
+          "median_abs_error": {
+            "title": "Median Abs Error",
+            "type": "number"
+          },
+          "r2": {
+            "title": "R2",
+            "type": "number"
+          },
+          "rmse": {
+            "title": "Rmse",
+            "type": "number"
+          },
+          "smape": {
+            "title": "Smape",
+            "type": "number"
+          }
+        },
+        "required": [
+          "mae",
+          "rmse",
+          "mape",
+          "smape",
+          "r2",
+          "median_abs_error"
+        ],
+        "title": "RegressionMetrics",
+        "type": "object"
+      },
+      "Run": {
+        "additionalProperties": false,
+        "properties": {
+          "archspec_id": {
+            "title": "Archspec Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "device": {
+            "$ref": "#/components/schemas/Device",
+            "default": "cpu"
+          },
+          "diagnosis": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diagnosis"
+          },
+          "environment": {
+            "additionalProperties": true,
+            "title": "Environment",
+            "type": "object"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "hyperparams": {
+            "additionalProperties": true,
+            "title": "Hyperparams",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "mlflow_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mlflow Run Id"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "seed": {
+            "default": 42,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus",
+            "default": "queued"
+          },
+          "study_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Study Id"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "archspec_id",
+          "pipeline_id",
+          "dataset_version_id"
+        ],
+        "title": "Run",
+        "type": "object"
+      },
+      "RunStatus": {
+        "enum": [
+          "queued",
+          "running",
+          "paused",
+          "succeeded",
+          "failed",
+          "cancelled"
+        ],
+        "title": "RunStatus",
+        "type": "string"
+      },
       "RuntimeMode": {
         "description": "Dónde corre este Engine (SPEC §4.3).",
         "enum": [
@@ -559,6 +3072,716 @@
         ],
         "title": "RuntimeMode",
         "type": "string"
+      },
+      "SchedulerSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "params": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Params",
+            "type": "object"
+          },
+          "type": {
+            "default": "none",
+            "enum": [
+              "none",
+              "one_cycle",
+              "cosine",
+              "step",
+              "plateau"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "title": "SchedulerSpec",
+        "type": "object"
+      },
+      "SearchParam": {
+        "properties": {
+          "choices": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choices"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Condition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High"
+          },
+          "log": {
+            "default": false,
+            "title": "Log",
+            "type": "boolean"
+          },
+          "low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
+          },
+          "type": {
+            "enum": [
+              "int",
+              "float",
+              "categorical"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "SearchParam",
+        "type": "object"
+      },
+      "SemanticType": {
+        "enum": [
+          "numeric",
+          "categorical",
+          "boolean",
+          "datetime",
+          "text",
+          "id",
+          "filepath"
+        ],
+        "title": "SemanticType",
+        "type": "string"
+      },
+      "Severity": {
+        "enum": [
+          "error",
+          "warning"
+        ],
+        "title": "Severity",
+        "type": "string"
+      },
+      "SourceCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "path": {
+            "description": "Archivo, carpeta o ZIP accesible por el Engine",
+            "title": "Path",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/DataSourceType",
+            "default": "file"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "SourceCreate",
+        "type": "object"
+      },
+      "SourceKind": {
+        "enum": [
+          "table",
+          "image_folder"
+        ],
+        "title": "SourceKind",
+        "type": "string"
+      },
+      "SourcePreview": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "schema": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TableSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "columns",
+          "rows"
+        ],
+        "title": "SourcePreview",
+        "type": "object"
+      },
+      "Split": {
+        "additionalProperties": false,
+        "properties": {
+          "folds": {
+            "anyOf": [
+              {
+                "minimum": 2.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folds"
+          },
+          "group_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Column"
+          },
+          "seed": {
+            "default": 42,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "strategy": {
+            "$ref": "#/components/schemas/SplitStrategy"
+          },
+          "test": {
+            "minimum": 0.0,
+            "title": "Test",
+            "type": "integer"
+          },
+          "test_sealed": {
+            "default": true,
+            "description": "El test no se usa en HPO (RF-ING-08)",
+            "title": "Test Sealed",
+            "type": "boolean"
+          },
+          "time_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Column"
+          },
+          "train": {
+            "minimum": 0.0,
+            "title": "Train",
+            "type": "integer"
+          },
+          "val": {
+            "minimum": 0.0,
+            "title": "Val",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "strategy",
+          "train",
+          "val",
+          "test"
+        ],
+        "title": "Split",
+        "type": "object"
+      },
+      "SplitRequest": {
+        "properties": {
+          "folds": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 2.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Folds"
+          },
+          "group_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Column"
+          },
+          "seed": {
+            "default": 42,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "strategy": {
+            "$ref": "#/components/schemas/SplitStrategy",
+            "default": "stratified"
+          },
+          "test_fraction": {
+            "default": 0.15,
+            "exclusiveMaximum": 1.0,
+            "minimum": 0.0,
+            "title": "Test Fraction",
+            "type": "number"
+          },
+          "time_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Column"
+          },
+          "val_fraction": {
+            "default": 0.15,
+            "exclusiveMaximum": 1.0,
+            "minimum": 0.0,
+            "title": "Val Fraction",
+            "type": "number"
+          }
+        },
+        "title": "SplitRequest",
+        "type": "object"
+      },
+      "SplitStrategy": {
+        "enum": [
+          "random",
+          "stratified",
+          "group",
+          "temporal",
+          "kfold"
+        ],
+        "title": "SplitStrategy",
+        "type": "string"
+      },
+      "Stage": {
+        "enum": [
+          "schema",
+          "blocks",
+          "graph",
+          "shapes",
+          "resources",
+          "weights"
+        ],
+        "title": "Stage",
+        "type": "string"
+      },
+      "StepSpec": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "columns"
+        ],
+        "title": "StepSpec",
+        "type": "object"
+      },
+      "StrategyBody": {
+        "additionalProperties": false,
+        "properties": {
+          "archspec_id": {
+            "title": "Archspec Id",
+            "type": "string"
+          },
+          "budget": {
+            "$ref": "#/components/schemas/Budget"
+          }
+        },
+        "required": [
+          "archspec_id"
+        ],
+        "title": "StrategyBody",
+        "type": "object"
+      },
+      "Study": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "additionalProperties": true,
+            "title": "Budget",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "objectives": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Objectives",
+            "type": "array"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin",
+            "default": "manual"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "strategy": {
+            "additionalProperties": true,
+            "description": "HPOStrategy (§7.9)",
+            "title": "Strategy",
+            "type": "object"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "name"
+        ],
+        "title": "Study",
+        "type": "object"
+      },
+      "StudyCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "archspec_id": {
+            "title": "Archspec Id",
+            "type": "string"
+          },
+          "budget": {
+            "$ref": "#/components/schemas/Budget"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Device"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HPOStrategy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "pipeline_id",
+          "archspec_id"
+        ],
+        "title": "StudyCreate",
+        "type": "object"
+      },
+      "StudyLaunch": {
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/Job"
+          },
+          "study": {
+            "$ref": "#/components/schemas/Study"
+          }
+        },
+        "required": [
+          "study",
+          "job"
+        ],
+        "title": "StudyLaunch",
+        "type": "object"
+      },
+      "TableSchema": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ColumnSchema"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "target_candidates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Target Candidates",
+            "type": "array"
+          }
+        },
+        "required": [
+          "columns"
+        ],
+        "title": "TableSchema",
+        "type": "object"
+      },
+      "TargetProfile": {
+        "properties": {
+          "classes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CategoryCount"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classes"
+          },
+          "imbalance_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "minoritaria / mayoritaria",
+            "title": "Imbalance Ratio"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "numeric": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NumericStats"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "semantic": {
+            "$ref": "#/components/schemas/SemanticType"
+          },
+          "task_hint": {
+            "$ref": "#/components/schemas/TaskType"
+          }
+        },
+        "required": [
+          "name",
+          "semantic",
+          "task_hint"
+        ],
+        "title": "TargetProfile",
+        "type": "object"
+      },
+      "TargetSpec": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "standardize": {
+            "default": false,
+            "description": "Solo regresión",
+            "title": "Standardize",
+            "type": "boolean"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          }
+        },
+        "required": [
+          "name",
+          "task"
+        ],
+        "title": "TargetSpec",
+        "type": "object"
+      },
+      "TaskSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "multilabel": {
+            "default": false,
+            "title": "Multilabel",
+            "type": "boolean"
+          },
+          "num_classes": {
+            "anyOf": [
+              {
+                "minimum": 2.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Classes"
+          },
+          "num_targets": {
+            "default": 1,
+            "description": "Regresión multi-salida",
+            "minimum": 1.0,
+            "title": "Num Targets",
+            "type": "integer"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TaskType"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "TaskSpec",
+        "type": "object"
       },
       "TaskType": {
         "enum": [
@@ -573,6 +3796,83 @@
         ],
         "title": "TaskType",
         "type": "string"
+      },
+      "TextStats": {
+        "properties": {
+          "mean_length": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Length"
+          },
+          "mean_words": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Words"
+          },
+          "p95_length": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95 Length"
+          }
+        },
+        "required": [
+          "mean_length",
+          "p95_length",
+          "mean_words"
+        ],
+        "title": "TextStats",
+        "type": "object"
+      },
+      "ThresholdInfo": {
+        "properties": {
+          "criterion": {
+            "default": "max_f1",
+            "title": "Criterion",
+            "type": "string"
+          },
+          "f1": {
+            "title": "F1",
+            "type": "number"
+          },
+          "precision": {
+            "title": "Precision",
+            "type": "number"
+          },
+          "recall": {
+            "title": "Recall",
+            "type": "number"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "threshold",
+          "f1",
+          "precision",
+          "recall"
+        ],
+        "title": "ThresholdInfo",
+        "type": "object"
       },
       "TorchInfo": {
         "properties": {
@@ -608,6 +3908,80 @@
           "installed"
         ],
         "title": "TorchInfo",
+        "type": "object"
+      },
+      "TrainingSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "batch_size": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HP"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "const": "auto",
+                "type": "string"
+              }
+            ],
+            "default": "auto",
+            "title": "Batch Size"
+          },
+          "early_stopping": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EarlyStopping"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "epochs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HP"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "default": 30,
+            "title": "Epochs"
+          },
+          "freeze_backbone_epochs": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Freeze Backbone Epochs",
+            "type": "integer"
+          },
+          "gradient_clip": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1.0,
+            "title": "Gradient Clip"
+          },
+          "precision": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "32",
+              "16-mixed",
+              "bf16-mixed"
+            ],
+            "title": "Precision",
+            "type": "string"
+          }
+        },
+        "title": "TrainingSpec",
         "type": "object"
       },
       "ValidationError": {
@@ -650,6 +4024,83 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "ValidationReport": {
+        "properties": {
+          "estimated_memory_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Memory Mb"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "num_params": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Params"
+          },
+          "output_shape": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Shape"
+          },
+          "spec": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArchSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trainable_params": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainable Params"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "title": "ValidationReport",
+        "type": "object"
+      },
       "VersionInfo": {
         "properties": {
           "mode": {
@@ -685,6 +4136,537 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/arch/to-code": {
+      "post": {
+        "operationId": "archToCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchSpec"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Arch To Code",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/arch/validate": {
+      "post": {
+        "operationId": "validateArchitecture",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Body",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Architecture",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/catalog/blocks": {
+      "get": {
+        "operationId": "listCatalogBlocks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "modality",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Modality"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Modality"
+            }
+          },
+          {
+            "in": "query",
+            "name": "task",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TaskType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Task"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Listcatalogblocks",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Catalog Blocks",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/datasets/{dataset_version_id}": {
+      "get": {
+        "operationId": "getDataset",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_version_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetVersion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dataset",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/api/v1/datasets/{dataset_version_id}/profile": {
+      "get": {
+        "operationId": "getProfile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_version_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileCard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Profile",
+        "tags": [
+          "data"
+        ]
+      },
+      "post": {
+        "operationId": "profileDataset",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_version_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileCard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Profile",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/api/v1/datasets/{dataset_version_id}/samples": {
+      "get": {
+        "description": "Muestras para la UI (el test sellado no se expone).",
+        "operationId": "getDatasetSamples",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_version_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "split",
+            "required": false,
+            "schema": {
+              "default": "train",
+              "title": "Split",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Getdatasetsamples",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset Samples",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/api/v1/jobs": {
+      "get": {
+        "operationId": "listJobs",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Job"
+                  },
+                  "title": "Response Listjobs",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Jobs",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}": {
+      "get": {
+        "operationId": "getJob",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Job",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/v1/pipelines/{pipeline_id}": {
+      "put": {
+        "operationId": "updatePipeline",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pipeline_id",
+            "required": true,
+            "schema": {
+              "title": "Pipeline Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PipelineUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pipeline"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Pipeline",
+        "tags": [
+          "pipelines"
+        ]
+      }
+    },
+    "/api/v1/pipelines/{pipeline_id}/preview": {
+      "post": {
+        "description": "Pipeline ajustado aplicado a las primeras filas de train (vista previa, RF-PIP-02).",
+        "operationId": "previewPipeline",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pipeline_id",
+            "required": true,
+            "schema": {
+              "title": "Pipeline Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PipelinePreviewBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelinePreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Pipeline",
+        "tags": [
+          "pipelines"
+        ]
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "operationId": "listProjects",
@@ -906,6 +4888,955 @@
         "summary": "Update Project",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/arch/propose": {
+      "post": {
+        "operationId": "proposeArchitecture",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeArchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchProposal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Propose Architecture",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/datasets": {
+      "get": {
+        "operationId": "listDatasets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DatasetVersion"
+                  },
+                  "title": "Response Listdatasets",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Datasets",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/hpo/strategy": {
+      "post": {
+        "operationId": "recommendHpoStrategy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StrategyBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HPOStrategy"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hpo Strategy",
+        "tags": [
+          "hpo"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/models": {
+      "get": {
+        "operationId": "listModels",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ModelVersion"
+                  },
+                  "title": "Response Listmodels",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Models",
+        "tags": [
+          "models"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/pipelines/propose": {
+      "post": {
+        "operationId": "proposePipeline",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposePipelineBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pipeline"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Propose Pipeline",
+        "tags": [
+          "pipelines"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/runs": {
+      "get": {
+        "operationId": "listRuns",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "study_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Study Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Run"
+                  },
+                  "title": "Response Listruns",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Runs",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/sources": {
+      "post": {
+        "operationId": "createSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Source",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/studies": {
+      "post": {
+        "operationId": "createStudy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudyCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyLaunch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Study",
+        "tags": [
+          "hpo"
+        ]
+      }
+    },
+    "/api/v1/runs/compare": {
+      "post": {
+        "operationId": "compareRuns",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompareBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Compareruns",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare Runs",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}": {
+      "get": {
+        "operationId": "getRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/evaluate": {
+      "post": {
+        "operationId": "evaluateRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evaluate Run",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/evaluation": {
+      "get": {
+        "operationId": "getEvaluation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Evaluation",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/evaluations": {
+      "get": {
+        "operationId": "listEvaluations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Evaluation"
+                  },
+                  "title": "Response Listevaluations",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Evaluations",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/register": {
+      "post": {
+        "operationId": "registerModel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelVersion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Model",
+        "tags": [
+          "models"
+        ]
+      }
+    },
+    "/api/v1/sources/{source_id}/ingest": {
+      "post": {
+        "operationId": "ingestSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetVersion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingest Source",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/api/v1/sources/{source_id}/preview": {
+      "post": {
+        "operationId": "previewSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcePreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Source",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}": {
+      "get": {
+        "operationId": "getStudy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Study"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Study",
+        "tags": [
+          "hpo"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/cancel": {
+      "post": {
+        "operationId": "cancelStudy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Study",
+        "tags": [
+          "hpo"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/pause": {
+      "post": {
+        "description": "Detiene el estudio; los trials terminados quedan en el storage y se puede reanudar.",
+        "operationId": "pauseStudy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pause Study",
+        "tags": [
+          "hpo"
+        ]
+      }
+    },
+    "/api/v1/studies/{study_id}/resume": {
+      "post": {
+        "operationId": "resumeStudy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyLaunch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resume Study",
+        "tags": [
+          "hpo"
         ]
       }
     },

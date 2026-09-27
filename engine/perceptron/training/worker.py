@@ -128,7 +128,11 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
     batch_size = (
         auto_batch_size(view.modality, n_train) if bs_cfg in (None, "auto") else int(bs_cfg)
     )
-    workers = auto_num_workers(view.modality) if cfg.num_workers == "auto" else int(cfg.num_workers)
+    workers = (
+        auto_num_workers(view.modality, n_train)
+        if cfg.num_workers == "auto"
+        else int(cfg.num_workers)
+    )
     train_dl = make_loader(train_ds, batch_size, shuffle=True, num_workers=workers, seed=cfg.seed)
     val_dl = make_loader(val_ds, batch_size, shuffle=False, num_workers=workers, seed=cfg.seed)
 

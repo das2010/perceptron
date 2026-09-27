@@ -78,7 +78,7 @@ def preview_source(
                 kind=detected.kind,
                 columns=df.columns,
                 rows=df.head(limit).to_dicts(),
-                schema=infer_schema(df),
+                schema_=infer_schema(df),
             )
         return SourcePreview(kind=detected.kind, columns=["path", "label"], rows=[])
 

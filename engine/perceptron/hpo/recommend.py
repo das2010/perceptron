@@ -41,7 +41,7 @@ def recommend_strategy(
             budget=budget,
             rationale="Hay más de un objetivo: NSGA-II busca el frente de Pareto.",
         )
-    if trials <= 2 or not space:
+    if trials <= 1 or not space:
         return HPOStrategy(
             strategy="single",
             pruner="none",

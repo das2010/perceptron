@@ -288,7 +288,7 @@ class Workflow:
         record = self.ctx.repo(ArchSpecRecord).get(archspec_id)
         fitted = self.fitted_pipeline(pipeline_id, dv.id)
         hw = detect_hardware(self.ctx.settings.workspace_dir)
-        study = study or Study(
+        st = study or Study(
             project_id=project.id,
             name=f"hpo-{record.name}",
             strategy=strategy.model_dump(mode="json"),
@@ -296,12 +296,12 @@ class Workflow:
             objectives=[o.metric for o in strategy.objectives],
             origin=Origin.RULES,
         )
-        if self.ctx.repo(Study).find(study.id) is None:
-            self.ctx.repo(Study).add(study)
+        if self.ctx.repo(Study).find(st.id) is None:
+            self.ctx.repo(Study).add(st)
         ppaths = self.ctx.settings.paths.project(project.id)
         base = RunConfig(
-            run_id=study.id,
-            run_dir=ppaths.run(study.id),
+            run_id=st.id,
+            run_dir=ppaths.run(st.id),
             dataset_dir=self.view(dv).root,
             archspec=record.spec or {},
             pipeline=fitted.model_dump(mode="json"),
@@ -312,7 +312,7 @@ class Workflow:
         recorders: dict[str, RunRecorder] = {}
         tags = {
             "perceptron.project": project.id,
-            "perceptron.study": study.id,
+            "perceptron.study": st.id,
             "perceptron.dataset": dv.content_hash,
             "perceptron.origin": record.origin.value,
         }
@@ -323,7 +323,7 @@ class Workflow:
                 Run(
                     id=cfg.run_id,
                     project_id=project.id,
-                    study_id=study.id,
+                    study_id=st.id,
                     archspec_id=record.id,
                     pipeline_id=pipeline_id,
                     dataset_version_id=dv.id,
@@ -361,19 +361,19 @@ class Workflow:
                 )
             )
 
-        with log_context(project_id=project.id, job_id=study.id):
+        with log_context(project_id=project.id, job_id=st.id):
             result = run_study(
                 strategy,
                 base,
                 storage=ppaths.root / "hpo" / "optuna.db",
-                study_name=study.id,
+                study_name=st.id,
                 control=control,
                 bus=self.ctx.events,
                 on_run_event=on_run_event,
                 on_trial_end=on_trial_end,
             )
         summary = result.model_dump(mode="json")
-        current = self.ctx.repo(Study).get(study.id)
+        current = self.ctx.repo(Study).get(st.id)
         self.ctx.repo(Study).update(
             current.model_copy(
                 update={
