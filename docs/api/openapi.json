@@ -69,7 +69,10 @@
           "mixed_channels",
           "missing_target",
           "duplicate_texts",
-          "long_texts"
+          "long_texts",
+          "clipping",
+          "mixed_sample_rates",
+          "silent_audio"
         ],
         "title": "AlertCode",
         "type": "string"
@@ -259,6 +262,165 @@
           "content_hash"
         ],
         "title": "ArchSpecRecord",
+        "type": "object"
+      },
+      "AudioProfile": {
+        "description": "Audio (RF-PRF-05).",
+        "properties": {
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Channels",
+            "type": "array"
+          },
+          "clipping_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clipping Fraction"
+          },
+          "corrupt": {
+            "title": "Corrupt",
+            "type": "integer"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "duration_quantiles": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Duration Quantiles",
+            "type": "object"
+          },
+          "sample_rates": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Sample Rates",
+            "type": "array"
+          },
+          "silence_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Silence Fraction"
+          },
+          "snr_db": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snr Db"
+          }
+        },
+        "required": [
+          "count",
+          "corrupt",
+          "duration_quantiles",
+          "sample_rates",
+          "channels",
+          "silence_fraction",
+          "clipping_fraction",
+          "snr_db"
+        ],
+        "title": "AudioProfile",
+        "type": "object"
+      },
+      "AudioSpec": {
+        "properties": {
+          "duration_s": {
+            "default": 1.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 60.0,
+            "title": "Duration S",
+            "type": "number"
+          },
+          "features": {
+            "default": "mel",
+            "enum": [
+              "mel",
+              "mfcc"
+            ],
+            "title": "Features",
+            "type": "string"
+          },
+          "freq_mask": {
+            "default": 0,
+            "description": "SpecAugment: ancho máx. en bandas",
+            "minimum": 0.0,
+            "title": "Freq Mask",
+            "type": "integer"
+          },
+          "n_mels": {
+            "default": 64,
+            "maximum": 256.0,
+            "minimum": 8.0,
+            "title": "N Mels",
+            "type": "integer"
+          },
+          "n_mfcc": {
+            "default": 20,
+            "maximum": 128.0,
+            "minimum": 4.0,
+            "title": "N Mfcc",
+            "type": "integer"
+          },
+          "noise": {
+            "default": 0.0,
+            "description": "Ruido gaussiano (train)",
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Noise",
+            "type": "number"
+          },
+          "sample_rate": {
+            "default": 16000,
+            "maximum": 96000.0,
+            "minimum": 4000.0,
+            "title": "Sample Rate",
+            "type": "integer"
+          },
+          "time_mask": {
+            "default": 0,
+            "description": "SpecAugment: ancho máx. en frames",
+            "minimum": 0.0,
+            "title": "Time Mask",
+            "type": "integer"
+          },
+          "time_shift": {
+            "default": 0.0,
+            "description": "Desplazamiento máx. (fracción)",
+            "maximum": 0.5,
+            "minimum": 0.0,
+            "title": "Time Shift",
+            "type": "number"
+          }
+        },
+        "title": "AudioSpec",
         "type": "object"
       },
       "AugmentSpec": {
@@ -2263,6 +2425,16 @@
       },
       "PipelineSpec": {
         "properties": {
+          "audio": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AudioSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "image": {
             "anyOf": [
               {
@@ -2373,6 +2545,16 @@
             },
             "title": "Alerts",
             "type": "array"
+          },
+          "audio": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AudioProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "card_version": {
             "default": "1.0",
@@ -3481,7 +3663,8 @@
         "enum": [
           "table",
           "image_folder",
-          "text_folder"
+          "text_folder",
+          "audio_folder"
         ],
         "title": "SourceKind",
         "type": "string"

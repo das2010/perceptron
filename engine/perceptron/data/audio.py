@@ -65,7 +65,8 @@ def resample(x: np.ndarray, sr_from: int, sr_to: int) -> np.ndarray:
     from scipy.signal import resample_poly
 
     frac = Fraction(sr_to, sr_from).limit_denominator(1000)
-    return resample_poly(x, frac.numerator, frac.denominator, axis=-1).astype(np.float32)
+    out: np.ndarray = resample_poly(x, frac.numerator, frac.denominator, axis=-1)
+    return out.astype(np.float32)
 
 
 def fix_length(x: np.ndarray, samples: int) -> np.ndarray:

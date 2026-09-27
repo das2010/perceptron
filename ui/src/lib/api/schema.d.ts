@@ -636,7 +636,7 @@ export interface components {
          * AlertCode
          * @enum {string}
          */
-        AlertCode: "class_imbalance" | "target_leakage" | "id_column" | "future_dates" | "constant_column" | "high_nulls" | "duplicate_rows" | "insufficient_data" | "corrupt_files" | "near_duplicates" | "mixed_resolutions" | "mixed_channels" | "missing_target" | "duplicate_texts" | "long_texts";
+        AlertCode: "class_imbalance" | "target_leakage" | "id_column" | "future_dates" | "constant_column" | "high_nulls" | "duplicate_rows" | "insufficient_data" | "corrupt_files" | "near_duplicates" | "mixed_resolutions" | "mixed_channels" | "missing_target" | "duplicate_texts" | "long_texts" | "clipping" | "mixed_sample_rates" | "silent_audio";
         /**
          * AlertSeverity
          * @enum {string}
@@ -713,6 +713,83 @@ export interface components {
              * @default 1
              */
             version: number;
+        };
+        /**
+         * AudioProfile
+         * @description Audio (RF-PRF-05).
+         */
+        AudioProfile: {
+            /** Channels */
+            channels: components["schemas"]["CategoryCount"][];
+            /** Clipping Fraction */
+            clipping_fraction: number | null;
+            /** Corrupt */
+            corrupt: number;
+            /** Count */
+            count: number;
+            /** Duration Quantiles */
+            duration_quantiles: {
+                [key: string]: number | null;
+            };
+            /** Sample Rates */
+            sample_rates: components["schemas"]["CategoryCount"][];
+            /** Silence Fraction */
+            silence_fraction: number | null;
+            /** Snr Db */
+            snr_db: number | null;
+        };
+        /** AudioSpec */
+        AudioSpec: {
+            /**
+             * Duration S
+             * @default 1
+             */
+            duration_s: number;
+            /**
+             * Features
+             * @default mel
+             * @enum {string}
+             */
+            features: "mel" | "mfcc";
+            /**
+             * Freq Mask
+             * @description SpecAugment: ancho máx. en bandas
+             * @default 0
+             */
+            freq_mask: number;
+            /**
+             * N Mels
+             * @default 64
+             */
+            n_mels: number;
+            /**
+             * N Mfcc
+             * @default 20
+             */
+            n_mfcc: number;
+            /**
+             * Noise
+             * @description Ruido gaussiano (train)
+             * @default 0
+             */
+            noise: number;
+            /**
+             * Sample Rate
+             * @default 16000
+             */
+            sample_rate: number;
+            /**
+             * Time Mask
+             * @description SpecAugment: ancho máx. en frames
+             * @default 0
+             */
+            time_mask: number;
+            /**
+             * Time Shift
+             * @description Desplazamiento máx. (fracción)
+             * @default 0
+             */
+            time_shift: number;
         };
         /** AugmentSpec */
         AugmentSpec: {
@@ -1511,6 +1588,7 @@ export interface components {
         };
         /** PipelineSpec */
         PipelineSpec: {
+            audio?: components["schemas"]["AudioSpec"] | null;
             image?: components["schemas"]["ImageSpec"] | null;
             modality: components["schemas"]["Modality"];
             /**
@@ -1548,6 +1626,7 @@ export interface components {
         ProfileCard: {
             /** Alerts */
             alerts?: components["schemas"]["Alert"][];
+            audio?: components["schemas"]["AudioProfile"] | null;
             /**
              * Card Version
              * @default 1.0
@@ -1938,7 +2017,7 @@ export interface components {
          * SourceKind
          * @enum {string}
          */
-        SourceKind: "table" | "image_folder" | "text_folder";
+        SourceKind: "table" | "image_folder" | "text_folder" | "audio_folder";
         /** SourcePreview */
         SourcePreview: {
             /** Columns */

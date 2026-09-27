@@ -84,7 +84,7 @@ strict = true
 
 # Librerías de ML sin stubs completos
 [[tool.mypy.overrides]]
-module = ["sklearn.*", "timm.*", "mlflow.*", "torchvision.*", "fastexcel.*", "scipy.*", "cmaes.*"]
+module = ["sklearn.*", "timm.*", "mlflow.*", "torchvision.*", "fastexcel.*", "scipy.*", "cmaes.*", "soundfile.*", "pycocotools.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]
