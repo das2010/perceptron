@@ -1908,6 +1908,11 @@ export interface components {
             /** Choices */
             choices?: unknown[] | null;
             condition?: components["schemas"]["Condition"] | null;
+            /**
+             * Default
+             * @description Valor de la plantilla: se prueba primero (trial 0)
+             */
+            default?: unknown;
             /** High */
             high?: number | null;
             /**
@@ -2378,6 +2383,11 @@ export interface components {
              * @default 1
              */
             gradient_clip: number | null;
+            /**
+             * Min Epochs
+             * @description Épocas mínimas antes de early stopping (None = 1/3)
+             */
+            min_epochs?: number | null;
             /**
              * Oversample
              * @description Muestreo balanceado por clase (RF-TRN-10)

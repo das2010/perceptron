@@ -3379,6 +3379,10 @@
               }
             ]
           },
+          "default": {
+            "description": "Valor de la plantilla: se prueba primero (trial 0)",
+            "title": "Default"
+          },
           "high": {
             "anyOf": [
               {
@@ -4583,6 +4587,19 @@
             ],
             "default": 1.0,
             "title": "Gradient Clip"
+          },
+          "min_epochs": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Épocas mínimas antes de early stopping (None = 1/3)",
+            "title": "Min Epochs"
           },
           "oversample": {
             "default": false,

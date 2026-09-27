@@ -62,9 +62,11 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | UC-06 remitos (OCR) | CRNN + CTC | CER 0,0 | < 0,1 |
 | UC-07 demanda (forecasting) | N-BEATS + RevIN | sMAPE 4,5 %, MASE 0,79 (naive 0,97) | < 15 % y < 1 |
 | UC-08 telemetría (anomalías) | autoencoder conv | F1 0,71 (recall 1,0, ROC-AUC 0,99) | > 0,7 |
-| UC-09 motores (audio) | CNN compacta sobre log-mel | accuracy 1,0 | > 0,8 |
+| UC-09 motores (audio) | CRNN sobre log-mel | accuracy 1,0 | > 0,8 |
 
 Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo funciona, no rendimiento en datos reales (eso lo mide el benchmark O2, §15.4).
+
+**Estabilidad del quickstart:** el HPO arranca siempre por la configuración de la plantilla (trial 0) y, con presupuestos chicos, el early stopping y la poda por mediana esperan un tercio de las épocas antes de cortar. Sin esto, UC-09 quedaba en 0,72 (una meseta de validación cerca de la época 10).
 
 **Pendiente, documentado:** detectores de torchvision y U-Net con encoder timm (ADR-0019), detección de eventos sonoros (SED), LoRA/PEFT, fusión tabular + texto (UC-02).
 
