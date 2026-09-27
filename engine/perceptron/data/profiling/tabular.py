@@ -100,7 +100,12 @@ def association(
     col: ColumnSchema, s: pl.Series, target: pl.Series, target_sem: SemanticType
 ) -> float | None:
     numeric_like = (SemanticType.NUMERIC, SemanticType.BOOLEAN)
-    if col.semantic in numeric_like and target_sem in numeric_like:
+    if (
+        col.semantic in numeric_like
+        and target_sem in numeric_like
+        and s.dtype.is_numeric()
+        and target.dtype.is_numeric()
+    ):
         return _pearson(s, target)
     if col.semantic in (SemanticType.CATEGORICAL, SemanticType.BOOLEAN) or target_sem in (
         SemanticType.CATEGORICAL,

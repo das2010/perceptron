@@ -95,7 +95,8 @@ def test_near_duplicate_pairs() -> None:
 
 # ------------------------------------------------------------------ privacidad L1
 
-_marker = st.integers(min_value=10_000_000, max_value=99_999_999)
+# Múltiplos de 10 000 coinciden con su propio redondeo a 4 cifras (un agregado, no un valor).
+_marker = st.integers(min_value=10_000_000, max_value=99_999_999).filter(lambda m: m % 10_000)
 
 
 @settings(
