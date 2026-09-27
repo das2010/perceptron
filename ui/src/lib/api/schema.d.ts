@@ -2164,6 +2164,11 @@ export interface components {
          */
         ModelInfo: {
             /**
+             * Compact
+             * @description Payload compacto; None = según el proveedor (locales sí)
+             */
+            compact?: boolean | null;
+            /**
              * Context Window
              * @default 32768
              */

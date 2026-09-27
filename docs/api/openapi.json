@@ -3046,6 +3046,18 @@
         "additionalProperties": false,
         "description": "Capacidades declaradas de un modelo: el sistema degrada funciones según ellas.",
         "properties": {
+          "compact": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Payload compacto; None = según el proveedor (locales sí)",
+            "title": "Compact"
+          },
           "context_window": {
             "default": 32768,
             "minimum": 1.0,

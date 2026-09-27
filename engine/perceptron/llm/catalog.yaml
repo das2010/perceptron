@@ -11,6 +11,7 @@ providers:
   anthropic:
     kind: anthropic
     api_key_ref: ANTHROPIC_API_KEY
+    timeout_s: 600
     models:
       claude-sonnet-5:
         { structured_output: true, tool_use: true, vision: true, context_window: 200000,
@@ -27,6 +28,8 @@ providers:
   openai:
     kind: openai
     api_key_ref: OPENAI_API_KEY
+    # Los modelos de razonamiento tardan varios minutos en generar 2–4 ArchSpec completas.
+    timeout_s: 600
     models:
       # Modelos de razonamiento: sin temperatura y con esfuerzo bajo, para que el
       # razonamiento no consuma todo `max_completion_tokens` y la respuesta llegue vacía.

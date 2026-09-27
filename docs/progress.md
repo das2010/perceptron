@@ -88,8 +88,18 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 |---|---|
 | 5. Mini-torneo de arquitecturas (RF-ARC-03) | ✅ `services.tournament`, `POST /projects/{id}/arch/tournament`, en `quickstart --llm` |
 | 6. Agente autónomo (RF-AGT-01..05, ADR-0021) | ✅ `agent/` (acciones con schema, límites, aprobaciones, bitácora, fallback); API `/agent/runs`, CLI `perceptron agent` |
-| 7. Aceptación con Claude u OpenAI (ADR-0023) y Ollama + golden tests | 🟡 workflow `llm.yml` (manual + nocturno); pendiente cargar `OPENAI_API_KEY` o `ANTHROPIC_API_KEY` y registrar los resultados |
-| 8. Benchmark O2 (3 datasets públicos) | 🟡 harness `perceptron bench run` (Adult, Fashion-MNIST, FSDD); pendiente primera corrida |
+| 7. Aceptación con OpenAI (ADR-0023) y Ollama + golden tests | 🟡 OpenAI ✅ (tabla abajo); Ollama en CPU completa los UC solo vía fallback → modo compacto en curso |
+| 8. Benchmark O2 (3 datasets públicos) | ✅ O2 cumplido con OpenAI: brecha −0,8 % / 0 % / 0 % ([reporte](benchmarks/2026-09-27.md)) |
+
+**Aceptación real con OpenAI (`llm.yml`, 2026-09-27, perfil `openai`, L1):**
+
+| Caso | Test sellado | Umbral | Iteraciones / trials | Llamadas LLM | Costo | Fugas L1 |
+|---|---|---|---|---|---|---|
+| UC-01 churn | ROC-AUC 0,918 | > 0,75 | 2 / 12 | 10 | $0,18 | 0 |
+| UC-04 defectos | accuracy 1,0 | > 0,8 | 2 / 7 | 8 | $0,11 | 0 |
+| UC-09 motores | accuracy 1,0 | > 0,8 | 1 / 4 | 6 | $0,06 | 0 |
+
+Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arquitecto con timeout del SDK (120 s) → subido a 600 s. Con Ollama (qwen3:4b, CPU del runner): los tres UC terminan dentro del presupuesto y sin fugas, pero cerrando por fallback tras la primera decisión (timeouts de 30 min por llamada); golden: informe y guía ✅.
 
 **Aceptación 2b en cada PR (FakeLLMProvider):** guiones del agente sobre UC-01 que cubren camino feliz, feedback del validador, límites, aprobación, fallback a reglas, detención, que el agente nunca ve el test y la auditoría sin fugas en L1. **Aceptación real (§14):** `gh workflow run llm.yml` → matriz Claude/Ollama × UC-01/04/09, golden tests y (opcional) benchmark.
 
