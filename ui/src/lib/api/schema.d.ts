@@ -865,34 +865,6 @@ export interface components {
             /** Param */
             param: string;
         };
-        /** Curves */
-        Curves: {
-            /**
-             * Error Histogram
-             * @description [centro, n]
-             */
-            error_histogram?: number[][];
-            /**
-             * Pr
-             * @description [recall, precision]
-             */
-            pr?: number[][];
-            /**
-             * Reliability
-             * @description [confianza, acierto, n]
-             */
-            reliability?: number[][];
-            /**
-             * Residuals
-             * @description [predicción, residuo]
-             */
-            residuals?: number[][];
-            /**
-             * Roc
-             * @description [fpr, tpr]
-             */
-            roc?: number[][];
-        };
         /** DataSource */
         DataSource: {
             /**
@@ -1050,7 +1022,17 @@ export interface components {
             /** Checkpoint */
             checkpoint: string;
             classification?: components["schemas"]["ClassificationMetrics"] | null;
-            curves?: components["schemas"]["Curves"];
+            /** Curves */
+            curves?: {
+                [key: string]: number[][];
+            };
+            /**
+             * Details
+             * @description Detalle propio de cada tarea
+             */
+            details?: {
+                [key: string]: unknown;
+            };
             /**
              * Metrics
              * @description Resumen plano (tracking, comparación de runs)

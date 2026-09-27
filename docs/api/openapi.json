@@ -705,67 +705,6 @@
         "title": "Condition",
         "type": "object"
       },
-      "Curves": {
-        "properties": {
-          "error_histogram": {
-            "description": "[centro, n]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Error Histogram",
-            "type": "array"
-          },
-          "pr": {
-            "description": "[recall, precision]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Pr",
-            "type": "array"
-          },
-          "reliability": {
-            "description": "[confianza, acierto, n]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Reliability",
-            "type": "array"
-          },
-          "residuals": {
-            "description": "[predicción, residuo]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Residuals",
-            "type": "array"
-          },
-          "roc": {
-            "description": "[fpr, tpr]",
-            "items": {
-              "items": {
-                "type": "number"
-              },
-              "type": "array"
-            },
-            "title": "Roc",
-            "type": "array"
-          }
-        },
-        "title": "Curves",
-        "type": "object"
-      },
       "DataSource": {
         "additionalProperties": false,
         "properties": {
@@ -1092,7 +1031,23 @@
             ]
           },
           "curves": {
-            "$ref": "#/components/schemas/Curves"
+            "additionalProperties": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "title": "Curves",
+            "type": "object"
+          },
+          "details": {
+            "additionalProperties": true,
+            "description": "Detalle propio de cada tarea",
+            "title": "Details",
+            "type": "object"
           },
           "metrics": {
             "additionalProperties": {
