@@ -191,9 +191,7 @@ def detect_hardware(workspace_dir: Path | None = None) -> HardwareReport:
 
     driver = _nvidia_driver()
     if driver and not any(g.backend is Device.CUDA for g in gpus):
-        notes.append(
-            f"Hay una GPU NVIDIA (driver {driver}) pero el PyTorch instalado no usa CUDA."
-        )
+        notes.append(f"Hay una GPU NVIDIA (driver {driver}) pero el PyTorch instalado no usa CUDA.")
 
     disk_path = workspace_dir if workspace_dir and workspace_dir.exists() else Path.home()
     vm = psutil.virtual_memory()
