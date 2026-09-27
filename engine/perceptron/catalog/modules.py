@@ -588,3 +588,32 @@ class CRNN(nn.Module):
         seq, _ = self.rnn(f)
         logits: torch.Tensor = self.out(seq)
         return logits
+
+
+class AudioCRNN(nn.Module):
+    """CRNN para audio: convoluciones que reducen solo la frecuencia + GRU sobre el tiempo.
+
+    Entrada: espectrograma [B, 1, bandas, frames]; salida: [B, 4·hidden] (media y máximo
+    temporal de la GRU bidireccional). A diferencia del pooling global de una CNN,
+    conserva patrones temporales (modulaciones, golpes periódicos).
+    """
+
+    def __init__(self, in_chans: int, bins: int, width: int, hidden: int, dropout: float) -> None:
+        super().__init__()
+        blocks: list[nn.Module] = []
+        c = in_chans
+        for i in range(3):
+            out = width * 2**i
+            blocks += [_conv_bn(c, out), nn.MaxPool2d((2, 1))]
+            c = out
+        self.cnn = nn.Sequential(*blocks)
+        self.rnn = nn.GRU(c * (bins // 8), hidden, batch_first=True, bidirectional=True)
+        self.dropout = nn.Dropout(dropout)
+        self.out_features = hidden * 4
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        f = self.cnn(x)  # [B, C, bins/8, T]
+        seq, _ = self.rnn(f.permute(0, 3, 1, 2).flatten(2))  # [B, T, 2·hidden]
+        pooled = torch.cat([seq.mean(dim=1), seq.amax(dim=1)], dim=1)
+        out: torch.Tensor = self.dropout(pooled)
+        return out

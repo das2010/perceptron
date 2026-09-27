@@ -14,7 +14,9 @@ from typer.testing import CliRunner
 
 from perceptron.cli.main import app
 
-pytestmark = pytest.mark.e2e
+# El límite de pytest-timeout (600 s) detecta cuelgues en tests normales; un e2e con
+# 10 trials puede tardar más. El job de CI tiene su propio timeout-minutes.
+pytestmark = [pytest.mark.e2e, pytest.mark.timeout(2400)]
 
 
 @pytest.fixture(autouse=True)
@@ -84,7 +86,7 @@ def test_uc08_anomalies(workspace_dir: Path, fixtures_dir: Path) -> None:
 def test_uc09_audio(workspace_dir: Path, fixtures_dir: Path) -> None:
     s = _quickstart(workspace_dir, fixtures_dir / "uc09_motor_audio", "--max-epochs", "30")
     assert s["modality"] == "audio"
-    assert s["architecture"] == "audio-small_cnn"
+    assert s["architecture"] == "audio-crnn"
     assert s["model_version_id"]
     assert s["test_metrics"]["accuracy"] > 0.8
 

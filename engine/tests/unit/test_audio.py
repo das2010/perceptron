@@ -110,7 +110,7 @@ def test_uc09_end_to_end_prep(
     assert abs(float(x.mean())) < 3
 
     rec = recommend(card, fitted)
-    assert rec.template == "small_cnn"
+    assert rec.template == "crnn"
     assert rec.spec.modality is Modality.AUDIO
     assert rec.spec.input.kind == "spectrogram"
     assert validate_archspec(rec.spec).valid
@@ -129,3 +129,25 @@ def test_image_dataset_normalization_stats_are_fitted(
     fitted = fit_pipeline(spec, view.read("train"), view.files_dir)
     assert fitted.image_mean is not None and len(fitted.image_mean) == 3
     assert 0.4 < fitted.image_mean[0] < 0.7  # piezas grises
+
+
+def test_audio_crnn_forward_and_code() -> None:
+    from typing import Any
+
+    from perceptron.archspec.to_code import archspec_to_code
+    from perceptron.catalog.templates import audio_template
+    from perceptron.domain.enums import TaskType
+
+    spec = audio_template("crnn", task=TaskType.CLASSIFICATION, num_classes=4, bins=64, frames=101)
+    assert validate_archspec(spec).valid, validate_archspec(spec).feedback()
+    built = build_model(spec)
+    x = torch.randn(2, 1, 64, 101)
+    assert built.model(x).shape == (2, 4)
+    ns: dict[str, Any] = {"__name__": "gen"}
+    exec(compile(archspec_to_code(spec), "<gen>", "exec"), ns)  # noqa: S102 - código propio
+    gen = ns["Model"]()
+    gen.load_state_dict({k.removeprefix("blocks."): v for k, v in built.model.state_dict().items()})
+    built.model.eval()
+    gen.eval()
+    with torch.no_grad():
+        assert torch.allclose(built.model(x), gen(x), atol=1e-5)

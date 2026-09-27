@@ -116,6 +116,9 @@ def _ctor(
         case "seq.autoencoder":
             args = f"{i.shape[0]}, {i.shape[1]}, {p['hidden']}, {p['latent']}, {p['kind']!r}"
             return f"SeriesAutoencoder({args})", "SeriesAutoencoder"
+        case "audio.crnn":
+            args = f"{i.channels}, {i.shape[1]}, {p['width']}, {p['hidden']}, {p['dropout']!r}"
+            return f"AudioCRNN({args})", "AudioCRNN"
         case "detection.centernet_small":
             return (
                 f"CenterNetSmall({i.channels}, {n_out}, {p['width']}, {p['depth']})",
@@ -137,6 +140,7 @@ _DEPENDENCIES = {
     "CenterNetSmall": ["_conv_bn"],
     "UNetSmall": ["_conv_bn"],
     "CRNN": ["_conv_bn"],
+    "AudioCRNN": ["_conv_bn"],
     "MLPBlock": ["_activation"],
 }
 

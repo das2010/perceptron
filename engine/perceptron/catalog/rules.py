@@ -191,9 +191,12 @@ def _audio(
         )
         spec = audio_template("efficientnet_b0", pretrained=True, rationale=why, **common)  # type: ignore[arg-type]
         return Recommendation("efficientnet_b0", spec, why)
-    why = f"{card.num_samples} clips en CPU: CNN compacta sobre el log-mel spectrogram."
-    spec = audio_template("small_cnn", rationale=why, **common)  # type: ignore[arg-type]
-    return Recommendation("small_cnn", spec, why)
+    why = (
+        f"{card.num_samples} clips en CPU: CRNN sobre el log-mel (convoluciones en frecuencia "
+        "y GRU en el tiempo); capta patrones temporales que el pooling global de una CNN pierde."
+    )
+    spec = audio_template("crnn", rationale=why, **common)  # type: ignore[arg-type]
+    return Recommendation("crnn", spec, why)
 
 
 LARGE_SERIES_WINDOWS = 20_000

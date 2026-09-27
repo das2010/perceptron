@@ -397,7 +397,34 @@ def audio_template(
     epochs: int = 30,
     rationale: str | None = None,
 ) -> ArchSpec:
-    """Clasificación sobre espectrogramas: `small_cnn` o un backbone timm (como en §9.2)."""
+    """Clasificación sobre espectrogramas: `crnn`, `small_cnn` o un backbone timm (§9.2)."""
+    if backbone == "crnn":
+        nodes = [
+            Node(
+                id="encoder",
+                block="audio.crnn",
+                params={"width": HP(hp="width", default=16), "hidden": HP(hp="hidden", default=64)},
+            ),
+            Node(id="head", block="head.linear"),
+        ]
+        return ArchSpec(
+            name="audio-crnn",
+            modality=Modality.AUDIO,
+            task=_task(task, num_classes),
+            input=InputSpec(kind="spectrogram", shape=[1, bins, frames], from_pipeline="audio"),
+            nodes=nodes,
+            edges=_chain([n.id for n in nodes]),
+            loss=_loss(task),
+            optimizer=OptimizerSpec(
+                type="adamw",
+                lr=HP(hp="lr", default=2e-3),
+                weight_decay=HP(hp="weight_decay", default=1e-3),
+            ),
+            scheduler=SchedulerSpec(type="one_cycle"),
+            training=_training(epochs, patience=8),
+            metrics=_metrics(task),
+            provenance=Provenance(origin=Origin.RULES, template="crnn", rationale=rationale),
+        )
     base = image_template(
         backbone,
         task=task,

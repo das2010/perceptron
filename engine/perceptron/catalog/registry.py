@@ -384,6 +384,13 @@ def _build_series_ae(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContex
     return m.SeriesAutoencoder(t.shape[0], t.shape[1], p["hidden"], p["latent"], p["kind"])
 
 
+def _build_audio_crnn(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    if t.shape[1] % 8:
+        raise ValueError("la cantidad de bandas debe ser múltiplo de 8")
+    return m.AudioCRNN(t.channels, t.shape[1], p["width"], p["hidden"], p["dropout"])
+
+
 def _build_centernet(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) -> nn.Module:
     return m.CenterNetSmall(_single(inputs).channels, ctx.num_outputs, p["width"], p["depth"])
 
@@ -580,6 +587,19 @@ BLOCKS: dict[str, BlockSpec] = {
             },
             tasks=(TaskType.ANOMALY_DETECTION,),
             modalities=_TS,
+        ),
+        BlockSpec(
+            "audio.crnn",
+            "CRNN de audio: convoluciones en frecuencia + GRU temporal (patrones en el tiempo)",
+            (TensorKind.IMAGE,),
+            _FEAT,
+            _build_audio_crnn,
+            {
+                "width": _p("int", 16, low=8, high=64, log=True, tunable=True),
+                "hidden": _p("int", 64, low=16, high=256, log=True, tunable=True),
+                "dropout": _p("float", 0.2, low=0.0, high=0.5, tunable=True),
+            },
+            modalities=(Modality.AUDIO,),
         ),
         BlockSpec(
             "detection.centernet_small",
