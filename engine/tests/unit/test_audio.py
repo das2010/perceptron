@@ -78,6 +78,17 @@ def test_spec_augment_masks() -> None:
     assert out.shape == s.shape
 
 
+def test_spec_augment_does_not_create_energy_dips() -> None:
+    """Regresión UC-09: en un clip estacionario la máscara temporal no debe crear un pozo."""
+    band_levels = torch.linspace(-5, 5, 16).view(1, 16, 1)
+    steady = band_levels.expand(1, 16, 60).clone()  # cada banda constante en el tiempo
+    for seed in range(20):
+        out = spec_augment(
+            steady, freq_mask=0, time_mask=15, rng=torch.Generator().manual_seed(seed)
+        )
+        assert torch.allclose(out, steady)  # la zona tapada conserva el espectro del clip
+
+
 @pytest.fixture
 def paths(workspace_dir: Path) -> ProjectPaths:
     return ProjectPaths(workspace_dir / "projects" / "prj_au").ensure()

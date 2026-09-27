@@ -156,16 +156,23 @@ def frames_for(duration_s: float, sample_rate: int) -> int:
 def spec_augment(
     s: torch.Tensor, freq_mask: int, time_mask: int, rng: torch.Generator | None = None
 ) -> torch.Tensor:
-    """SpecAugment (Park et al., 2019): una máscara de frecuencia y una de tiempo."""
+    """SpecAugment (Park et al., 2019): una máscara de frecuencia y una de tiempo.
+
+    La zona tapada se rellena con el espectro promedio del propio clip (media por banda
+    en la máscara temporal; media por instante en la de frecuencia). Rellenar con una
+    constante global fabrica un "pozo" de energía que imita patrones reales (p. ej. una
+    modulación de amplitud) y confunde clases que solo se distinguen en el tiempo.
+    """
     s = s.clone()
     _, m, t = s.shape
-    fill = s.mean()
     if freq_mask and m > 1:
         w = int(torch.randint(0, freq_mask + 1, (1,), generator=rng))
         f0 = int(torch.randint(0, max(m - w, 1), (1,), generator=rng))
-        s[:, f0 : f0 + w, :] = fill
+        per_frame = s.mean(dim=1, keepdim=True)  # [C, 1, T]
+        s[:, f0 : f0 + w, :] = per_frame.expand(-1, w, -1)[:, : s[:, f0 : f0 + w, :].shape[1], :]
     if time_mask and t > 1:
         w = int(torch.randint(0, time_mask + 1, (1,), generator=rng))
         t0 = int(torch.randint(0, max(t - w, 1), (1,), generator=rng))
-        s[:, :, t0 : t0 + w] = fill
+        per_band = s.mean(dim=2, keepdim=True)  # [C, M, 1]
+        s[:, :, t0 : t0 + w] = per_band.expand(-1, -1, w)[:, :, : s[:, :, t0 : t0 + w].shape[2]]
     return s
