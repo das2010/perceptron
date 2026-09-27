@@ -37,7 +37,7 @@ class TaskSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: TaskType
-    num_classes: int | None = Field(default=None, ge=2)
+    num_classes: int | None = Field(default=None, ge=1)
     multilabel: bool = False
     num_targets: int = Field(default=1, ge=1, description="Regresión multi-salida")
     horizon: int | None = Field(default=None, ge=1, description="Forecasting: pasos a futuro")

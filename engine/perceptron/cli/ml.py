@@ -357,6 +357,7 @@ def quickstart(
             target=target,
             modality=modality,
             series_overrides=_series_overrides(task, time_column, series_id, horizon),
+            task=task,
             trials=trials,
             max_epochs=max_epochs,
             max_time_s=max_time,

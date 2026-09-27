@@ -33,6 +33,8 @@ class SourceKind(StrEnum):
     IMAGE_FOLDER = "image_folder"
     TEXT_FOLDER = "text_folder"
     AUDIO_FOLDER = "audio_folder"
+    SEGMENTATION_FOLDER = "segmentation_folder"
+    OCR_FOLDER = "ocr_folder"
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,6 +120,14 @@ def open_source(path: Path) -> Iterator[DetectedSource]:
                 f"formato no soportado: {path.suffix}", details={"path": str(path)}
             )
         yield DetectedSource(SourceKind.TABLE, path)
+        return
+    from perceptron.data.vision_tasks import is_segmentation_folder, ocr_labels_file
+
+    if is_segmentation_folder(path):
+        yield DetectedSource(SourceKind.SEGMENTATION_FOLDER, path)
+        return
+    if ocr_labels_file(path):
+        yield DetectedSource(SourceKind.OCR_FOLDER, path)
         return
     if any(_iter_images(path)):
         yield DetectedSource(SourceKind.IMAGE_FOLDER, path)

@@ -25,12 +25,16 @@ def get_adapter(task: TaskType) -> TaskAdapter:
 def _load_builtin() -> None:
     from perceptron.tasks.series import AnomalyAdapter, ForecastingAdapter
     from perceptron.tasks.supervised import ClassificationAdapter, RegressionAdapter
+    from perceptron.tasks.vision import DetectionAdapter, OCRAdapter, SegmentationAdapter
 
     for adapter in (
         ClassificationAdapter(),
         RegressionAdapter(),
         ForecastingAdapter(),
         AnomalyAdapter(),
+        DetectionAdapter(),
+        SegmentationAdapter(),
+        OCRAdapter(),
     ):
         register(adapter)
 

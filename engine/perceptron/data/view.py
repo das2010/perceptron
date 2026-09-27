@@ -17,7 +17,7 @@ from perceptron.core.errors import NotFoundError, PerceptronError
 from perceptron.data.schema import TableSchema
 from perceptron.data.series import SeriesConfig
 from perceptron.data.splits import SPLIT_COLUMN, TEST
-from perceptron.domain.enums import Modality
+from perceptron.domain.enums import Modality, TaskType
 
 TABLE_FILE = "table.parquet"
 INDEX_FILE = "index.parquet"
@@ -59,6 +59,16 @@ class DatasetView:
     @property
     def data_file(self) -> Path:
         return self.root / (TABLE_FILE if self.modality in TABLE_MODALITIES else INDEX_FILE)
+
+    @property
+    def task(self) -> TaskType | None:
+        raw = self.meta.get("task")
+        return TaskType(str(raw)) if raw else None
+
+    @property
+    def classes(self) -> list[str]:
+        raw = self.meta.get("classes")
+        return [str(c) for c in raw] if isinstance(raw, list) else []
 
     @property
     def series(self) -> SeriesConfig | None:

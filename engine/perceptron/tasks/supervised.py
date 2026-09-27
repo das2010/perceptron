@@ -65,6 +65,8 @@ class ClassificationAdapter(TaskAdapter):
         t = spec.task
         if t.num_classes is None:
             raise ValueError("task.num_classes es requerido para clasificación")
+        if t.num_classes < 2:
+            raise ValueError("la clasificación necesita al menos 2 clases")
         if t.num_classes == 2 and spec.loss.type == "bce" and not t.multilabel:
             return 1
         return t.num_classes

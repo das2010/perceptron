@@ -33,7 +33,7 @@ from perceptron.data.view import (
     SCHEMA_FILE,
     TABLE_FILE,
 )
-from perceptron.domain.enums import Modality, SplitStrategy
+from perceptron.domain.enums import Modality, SplitStrategy, TaskType
 from perceptron.domain.models import DatasetVersion, Split
 from perceptron.storage.filesystem import write_json
 from perceptron.storage.manifest import build_manifest
@@ -54,6 +54,8 @@ class IngestRequest:
     modality: Modality | None = None
     series: SeriesConfig | None = None
     series_overrides: dict[str, object] | None = None
+    task: TaskType | None = None
+    annotations: Path | None = None
 
 
 def _materialize_table(
@@ -103,6 +105,63 @@ def text_column(schema: TableSchema) -> str | None:
     if len(texts) == 1 and len(others) <= MAX_TEXT_SIDE_COLUMNS:
         return texts[0]
     return None
+
+
+_VISION_KINDS = (SourceKind.SEGMENTATION_FOLDER, SourceKind.OCR_FOLDER)
+_VISION_TARGET = {
+    TaskType.OBJECT_DETECTION: "boxes",
+    TaskType.SEGMENTATION: "mask_path",
+    TaskType.OCR: "text",
+}
+
+
+def _materialize_vision_task(
+    kind: SourceKind, src: Path, staging: Path, req: IngestRequest
+) -> tuple[TableSchema, pl.DataFrame, TaskType, list[str]]:
+    from perceptron.data.schema import ColumnSchema
+    from perceptron.data.vision_tasks import (
+        detection_index,
+        find_annotations,
+        ocr_index,
+        ocr_labels_file,
+        segmentation_index,
+    )
+
+    files = staging / FILES_DIR
+    if kind is SourceKind.SEGMENTATION_FOLDER:
+        task = TaskType.SEGMENTATION
+        df, classes = segmentation_index(src, files)
+    elif kind is SourceKind.OCR_FOLDER:
+        task = TaskType.OCR
+        labels = ocr_labels_file(src)
+        if labels is None:
+            raise ValidationError("no se encontró el CSV de textos para OCR")
+        df, classes = ocr_index(src, files, labels)
+    else:
+        task = TaskType.OBJECT_DETECTION
+        annotations = req.annotations or find_annotations(src)
+        df, classes = detection_index(src, files, annotations)
+    target = _VISION_TARGET[task]
+    schema = TableSchema(
+        columns=[
+            ColumnSchema(
+                name="path",
+                dtype="String",
+                semantic=SemanticType.FILEPATH,
+                nullable=False,
+                n_unique=df.height,
+            ),
+            ColumnSchema(
+                name=target,
+                dtype=str(df[target].dtype),
+                semantic=SemanticType.TEXT,
+                nullable=False,
+                n_unique=df.height,
+            ),
+        ],
+        target=target,
+    )
+    return schema, df, task, classes
 
 
 def _materialize_audio(src: Path, staging: Path) -> tuple[TableSchema, pl.DataFrame]:
@@ -185,6 +244,15 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
                 schema, df = _materialize_text_folder(detected.path, req)
                 extra_meta["text_column"] = "text"
                 data_file = TABLE_FILE
+            elif detected.kind in _VISION_KINDS or (
+                detected.kind is SourceKind.IMAGE_FOLDER and req.task is TaskType.OBJECT_DETECTION
+            ):
+                modality = Modality.IMAGE
+                schema, df, task, classes = _materialize_vision_task(
+                    detected.kind, detected.path, staging, req
+                )
+                extra_meta.update(task=task.value, classes=classes)
+                data_file = INDEX_FILE
             elif detected.kind is SourceKind.AUDIO_FOLDER:
                 modality = Modality.AUDIO
                 schema, df = _materialize_audio(detected.path, staging)
@@ -199,6 +267,9 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
             cfg = SeriesConfig.model_validate(extra_meta["series"])
             split_req = SplitRequest(strategy=SplitStrategy.TEMPORAL, time_column=cfg.time_column)
             df = temporal_split_per_series(df, cfg)
+        elif "task" in extra_meta:
+            split_req = req.split or SplitRequest(strategy=SplitStrategy.RANDOM)
+            df = assign_splits(df, split_req, None)
         else:
             df = assign_splits(df, split_req, schema.target)
         df.write_parquet(staging / data_file, compression="zstd", statistics=True)

@@ -16,6 +16,7 @@ from perceptron.data.profiling.card import ProfileCard
 from perceptron.domain.enums import Modality, TaskType
 from perceptron.training.hardware import HardwareReport
 
+_VISION_TASKS = (TaskType.OBJECT_DETECTION, TaskType.SEGMENTATION, TaskType.OCR)
 SMALL_TABULAR = 2_000
 LARGE_TABULAR = 50_000
 SMALL_IMAGES = 5_000
@@ -135,6 +136,34 @@ def _text(card: ProfileCard, fitted: FittedPipeline, task: TaskType) -> Recommen
     return Recommendation("textcnn", spec, why)
 
 
+def _vision_task(card: ProfileCard, fitted: FittedPipeline, task: TaskType) -> Recommendation:
+    from perceptron.catalog.templates import vision_task_template
+
+    img = fitted.spec.image
+    if img is None:
+        raise ValueError("pipeline de visión sin configuración de imagen")
+    channels = img.channels
+    shape = [channels, img.size, img.width or img.size]
+    classes = fitted.classes or []
+    if task is TaskType.OCR:
+        n, why = (
+            len(classes) + 1,
+            "CRNN + CTC: lee la línea de izquierda a derecha sin segmentar caracteres.",
+        )
+    elif task is TaskType.SEGMENTATION:
+        n, why = (
+            len(classes),
+            "U-Net compacta: codificador-decodificador con conexiones de salto por píxel.",
+        )
+    else:
+        n, why = (
+            len(classes),
+            "CenterNet compacto: predice centros y tamaños; se entrena desde cero en CPU.",
+        )
+    spec = vision_task_template(task, num_classes=n, image_shape=shape, rationale=why)
+    return Recommendation(spec.provenance.template or task.value, spec, why)
+
+
 def _audio(
     card: ProfileCard, fitted: FittedPipeline, task: TaskType, gpu: float, can_download: bool
 ) -> Recommendation:
@@ -215,6 +244,8 @@ def recommend(
     can_download = (not offline_mode()) if allow_download is None else allow_download
     if card.modality is Modality.TABULAR:
         return _tabular(card, fitted, task, gpu)
+    if card.modality is Modality.IMAGE and task in _VISION_TASKS:
+        return _vision_task(card, fitted, task)
     if card.modality is Modality.IMAGE:
         return _image(card, fitted, task, gpu, can_download)
     if card.modality is Modality.TEXT:

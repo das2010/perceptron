@@ -226,7 +226,7 @@ def uc04_defects(rng: random.Random) -> Files:
     """Imagen: clasificación (carpetas clase/archivo) + detección (anotaciones COCO)."""
     files: Files = {}
     images, annotations = [], []
-    for i in range(40):
+    for i in range(80):
         defect = i % 2 == 1
         pixels, box = _part_image(rng, defect)
         name = f"{'defect' if defect else 'ok'}/pieza_{i:03d}.png"
@@ -257,7 +257,7 @@ def uc04_defects(rng: random.Random) -> Files:
 def uc05_masks(rng: random.Random) -> Files:
     """Imagen: segmentación (imagen + máscara PNG, 0 = fondo, 255 = daño)."""
     files: Files = {}
-    for i in range(20):
+    for i in range(60):
         size = 32
         cx, cy, r = rng.randint(8, 24), rng.randint(8, 24), rng.randint(3, 7)
         mask = [
@@ -297,7 +297,7 @@ def uc06_ocr(rng: random.Random) -> Files:
     files: Files = {}
     labels = []
     scale = 2
-    for i in range(20):
+    for i in range(200):
         text = f"{rng.randint(1, 9999):04d}-{rng.randint(0, 99999999):08d}"
         width, height = (len(text) * 4 + 2) * scale, 9 * scale
         img = [[(245, 245, 240) for _ in range(width)] for _ in range(height)]

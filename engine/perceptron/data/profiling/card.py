@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from perceptron.data.schema import SemanticType
 from perceptron.data.series import SeriesProfile
+from perceptron.data.vision_tasks import VisionTaskProfile
 from perceptron.domain.enums import Modality, TaskType
 
 SIG_DIGITS = 4
@@ -170,6 +171,7 @@ class ProfileCard(BaseModel):
     images: ImageProfile | None = None
     text: TextProfile | None = None
     audio: AudioProfile | None = None
+    vision_task: VisionTaskProfile | None = None
     series: SeriesProfile | None = None
     duplicate_row_fraction: float | None = None
     alerts: list[Alert] = Field(default_factory=list)

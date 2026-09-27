@@ -384,6 +384,24 @@ def _build_series_ae(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContex
     return m.SeriesAutoencoder(t.shape[0], t.shape[1], p["hidden"], p["latent"], p["kind"])
 
 
+def _build_centernet(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) -> nn.Module:
+    return m.CenterNetSmall(_single(inputs).channels, ctx.num_outputs, p["width"], p["depth"])
+
+
+def _build_unet(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    if t.shape[1] % 2 ** p["depth"] or t.shape[2] % 2 ** p["depth"]:
+        raise ValueError(f"alto y ancho deben ser múltiplos de {2 ** p['depth']}")
+    return m.UNetSmall(t.channels, ctx.num_outputs, p["width"], p["depth"])
+
+
+def _build_crnn(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) -> nn.Module:
+    t = _single(inputs)
+    if t.shape[1] != 32:
+        raise ValueError("el CRNN espera líneas de 32 px de alto")
+    return m.CRNN(t.channels, ctx.num_outputs, p["width"], p["hidden"])
+
+
 def _p(t: str, default: Any, **kw: Any) -> ParamSpec:
     return ParamSpec(type=t, default=default, **kw)  # type: ignore[arg-type]
 
@@ -562,6 +580,45 @@ BLOCKS: dict[str, BlockSpec] = {
             },
             tasks=(TaskType.ANOMALY_DETECTION,),
             modalities=_TS,
+        ),
+        BlockSpec(
+            "detection.centernet_small",
+            "Detector CenterNet compacto desde cero (heatmap + tamaño + offset)",
+            (TensorKind.IMAGE,),
+            _FMAP,
+            _build_centernet,
+            {
+                "width": _p("int", 32, low=8, high=128, log=True, tunable=True),
+                "depth": _p("int", 4, low=2, high=8, tunable=True),
+            },
+            tasks=(TaskType.OBJECT_DETECTION,),
+            modalities=_I,
+        ),
+        BlockSpec(
+            "seg.unet_small",
+            "U-Net compacta desde cero (logits por píxel)",
+            (TensorKind.IMAGE,),
+            _FMAP,
+            _build_unet,
+            {
+                "width": _p("int", 16, low=8, high=128, log=True, tunable=True),
+                "depth": _p("int", 3, low=1, high=5, tunable=True),
+            },
+            tasks=(TaskType.SEGMENTATION,),
+            modalities=_I,
+        ),
+        BlockSpec(
+            "ocr.crnn",
+            "CRNN (CNN + BiLSTM) para OCR de una línea con CTC",
+            (TensorKind.IMAGE,),
+            _SEQ,
+            _build_crnn,
+            {
+                "width": _p("int", 32, low=8, high=128, log=True, tunable=True),
+                "hidden": _p("int", 128, low=32, high=512, log=True, tunable=True),
+            },
+            tasks=(TaskType.OCR,),
+            modalities=_I,
         ),
         BlockSpec("pool.global_avg", "Promedio global espacial", (_FMAP,), _FEAT, _build_pool),
         BlockSpec(

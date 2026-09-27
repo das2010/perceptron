@@ -47,6 +47,8 @@ def propose_pipeline(
         if card.target
         else None
     )
+    if card.modality is Modality.IMAGE and card.vision_task is not None:
+        return _propose_vision_task(card)
     if card.modality is Modality.IMAGE:
         return _propose_image(card, target, image_size, pretrained)
     if card.modality is Modality.AUDIO:
@@ -240,3 +242,35 @@ def _propose_audio(card: ProfileCard, target: TargetSpec | None) -> PipelineSpec
         "Augmentation en train: ruido leve, desplazamiento temporal y SpecAugment.",
     ]
     return PipelineSpec(modality=Modality.AUDIO, target=target, audio=spec, rationale=why)
+
+
+_VISION_TARGET = {
+    TaskType.OBJECT_DETECTION: "boxes",
+    TaskType.SEGMENTATION: "mask_path",
+    TaskType.OCR: "text",
+}
+
+
+def _propose_vision_task(card: ProfileCard) -> PipelineSpec:
+    vt = card.vision_task
+    img = card.images
+    if vt is None or img is None:
+        raise ValueError("el ProfileCard no tiene perfil de la tarea de visión")
+    w50 = img.width_quantiles.get("p50") or 64
+    h50 = img.height_quantiles.get("p50") or 64
+    if vt.task is TaskType.OCR:
+        height = 32
+        width = int(max(32, min(1024, round(w50 * height / max(h50, 1) / 4) * 4)))
+        image = ImageSpec(size=height, width=width, channels=1, normalize="dataset")
+        why = [f"Líneas de texto a {height}×{width} px en escala de grises."]
+        classes = None
+    else:
+        size = int(min(512, max(32, round(max(w50, h50) / 32) * 32)))
+        augment = [AugmentSpec(kind="hflip")]
+        image = ImageSpec(size=size, channels=3, normalize="dataset", augment=augment)
+        why = [
+            f"Imágenes a {size}×{size} px; espejado horizontal en train (cajas/máscaras incluidas)."
+        ]
+        classes = vt.classes
+    target = TargetSpec(name=_VISION_TARGET[vt.task], task=vt.task, classes=classes)
+    return PipelineSpec(modality=Modality.IMAGE, target=target, image=image, rationale=why)

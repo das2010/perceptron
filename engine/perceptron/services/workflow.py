@@ -36,6 +36,7 @@ from perceptron.domain.enums import (
     Origin,
     ProjectStatus,
     RunStatus,
+    TaskType,
 )
 from perceptron.domain.models import (
     ArchSpecRecord,
@@ -118,6 +119,7 @@ class Workflow:
         source_record: DataSource | None = None,
         modality: Modality | None = None,
         series_overrides: dict[str, Any] | None = None,
+        task: TaskType | None = None,
     ) -> DatasetVersion:
         project = self.project(project_id)
         src = source_record
@@ -141,6 +143,7 @@ class Workflow:
                     source_id=src.id,
                     modality=modality,
                     series_overrides=series_overrides,
+                    task=task,
                 ),
             )
         existing = self.ctx.repo(DatasetVersion).list(
@@ -497,6 +500,7 @@ def quickstart(
     target: str | None = None,
     modality: Modality | None = None,
     series_overrides: dict[str, Any] | None = None,
+    task: TaskType | None = None,
     trials: int = 10,
     max_epochs: int | None = None,
     max_time_s: float | None = None,
@@ -509,7 +513,12 @@ def quickstart(
     project = ctx.projects.add(Project(name=name or source.stem, goal="quickstart"))
     ctx.files.init_project(project)
     dv = wf.ingest(
-        project.id, source, target=target, modality=modality, series_overrides=series_overrides
+        project.id,
+        source,
+        target=target,
+        modality=modality,
+        series_overrides=series_overrides,
+        task=task,
     )
     card = wf.profile(dv.id)
     pipeline = wf.propose_pipeline(dv.id)

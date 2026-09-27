@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from perceptron.data.pipeline.pipeline import (
     FittedPipeline,
+    ImageSpec,
     encode_target,
     image_transforms,
     transform_tabular,
@@ -159,6 +160,115 @@ class AudioDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         return feats.float(), self.y[i]
 
 
+def _to_tensor(img: Any, fitted: FittedPipeline, size: tuple[int, int], mode: str) -> torch.Tensor:
+    im = img.convert(mode).resize((size[1], size[0]))
+    x = torch.from_numpy(np.asarray(im, dtype=np.float32) / 255.0)
+    x = x.unsqueeze(0) if x.ndim == 2 else x.permute(2, 0, 1)
+    c = x.shape[0]
+    mean = torch.tensor((fitted.image_mean or [0.5] * c)[:c]).view(c, 1, 1)
+    std = torch.tensor((fitted.image_std or [0.25] * c)[:c]).view(c, 1, 1)
+    return (x - mean) / std
+
+
+class DetectionDataset(Dataset[tuple[torch.Tensor, dict[str, torch.Tensor]]]):
+    """Imagen redimensionada a S×S + cajas xyxy escaladas; espejado horizontal en train."""
+
+    def __init__(
+        self, fitted: FittedPipeline, df: pl.DataFrame, files_dir: Path, *, train: bool
+    ) -> None:
+        from perceptron.tasks.vision import detection_collate
+
+        df = df.filter(~pl.col("corrupt")) if "corrupt" in df.columns else df
+        self.rows = df.select("path", "width", "height", "boxes", "box_labels").to_dicts()
+        self.files_dir = files_dir
+        self.size = (fitted.spec.image or ImageSpec()).size
+        self.index = {c: i for i, c in enumerate(fitted.classes or [])}
+        self.fitted = fitted
+        self.train = train
+        self.collate_fn = detection_collate
+
+    def __len__(self) -> int:
+        return len(self.rows)
+
+    def __getitem__(self, i: int) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        r = self.rows[i]
+        with Image.open(self.files_dir / r["path"]) as im:
+            x = _to_tensor(im, self.fitted, (self.size, self.size), "RGB")
+        sx, sy = self.size / max(r["width"] or 1, 1), self.size / max(r["height"] or 1, 1)
+        boxes = torch.tensor(
+            [[b[0] * sx, b[1] * sy, b[2] * sx, b[3] * sy] for b in r["boxes"] or []],
+            dtype=torch.float32,
+        ).reshape(-1, 4)
+        labels = torch.tensor(
+            [self.index.get(n, 0) for n in r["box_labels"] or []], dtype=torch.long
+        )
+        if self.train and torch.rand(1).item() < 0.5:
+            x = x.flip(-1)
+            boxes = (
+                torch.stack(
+                    [self.size - boxes[:, 2], boxes[:, 1], self.size - boxes[:, 0], boxes[:, 3]], 1
+                )
+                if len(boxes)
+                else boxes
+            )
+        return x, {"boxes": boxes, "labels": labels}
+
+
+class SegmentationDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
+    def __init__(
+        self, fitted: FittedPipeline, df: pl.DataFrame, files_dir: Path, *, train: bool
+    ) -> None:
+        df = df.filter(~pl.col("corrupt")) if "corrupt" in df.columns else df
+        self.rows = df.select("path", "mask_path").rows()
+        self.files_dir = files_dir
+        self.size = (fitted.spec.image or ImageSpec()).size
+        self.fitted = fitted
+        self.train = train
+
+    def __len__(self) -> int:
+        return len(self.rows)
+
+    def __getitem__(self, i: int) -> tuple[torch.Tensor, torch.Tensor]:
+        img_path, mask_path = self.rows[i]
+        with Image.open(self.files_dir / img_path) as im:
+            x = _to_tensor(im, self.fitted, (self.size, self.size), "RGB")
+        with Image.open(self.files_dir / mask_path) as m:
+            arr = np.asarray(
+                m.convert("L").resize((self.size, self.size), Image.Resampling.NEAREST)
+            ).astype(np.int64)
+        mask = torch.from_numpy(np.where(arr == 255, 1, arr))
+        if self.train and torch.rand(1).item() < 0.5:
+            x, mask = x.flip(-1), mask.flip(-1)
+        return x, mask
+
+
+class OCRDataset(Dataset[tuple[torch.Tensor, torch.Tensor, torch.Tensor]]):
+    MAX_LEN = 64
+
+    def __init__(
+        self, fitted: FittedPipeline, df: pl.DataFrame, files_dir: Path, *, train: bool
+    ) -> None:
+        df = df.filter(~pl.col("corrupt")) if "corrupt" in df.columns else df
+        self.rows = df.select("path", "text").rows()
+        self.files_dir = files_dir
+        img = fitted.spec.image or ImageSpec(size=32)
+        self.shape = (img.size, img.width or img.size * 4)
+        self.index = {c: i + 1 for i, c in enumerate(fitted.classes or [])}  # 0 = blank
+        self.fitted = fitted
+
+    def __len__(self) -> int:
+        return len(self.rows)
+
+    def __getitem__(self, i: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        path, text = self.rows[i]
+        with Image.open(self.files_dir / path) as im:
+            x = _to_tensor(im, self.fitted, self.shape, "L")
+        ids = [self.index[c] for c in (text or "") if c in self.index][: self.MAX_LEN]
+        padded = torch.zeros(self.MAX_LEN, dtype=torch.long)
+        padded[: len(ids)] = torch.tensor(ids, dtype=torch.long)
+        return x, padded, torch.tensor(len(ids), dtype=torch.long)
+
+
 class ImageDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
     """Lee las imágenes desde disco en cada acceso (no carga el dataset en memoria)."""
 
@@ -185,6 +295,13 @@ class ImageDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
         return x, self.y[i]
 
 
+_VISION_DATASETS: dict[TaskType, Any] = {
+    TaskType.OBJECT_DETECTION: DetectionDataset,
+    TaskType.SEGMENTATION: SegmentationDataset,
+    TaskType.OCR: OCRDataset,
+}
+
+
 def make_dataset(
     view: DatasetView,
     fitted: FittedPipeline,
@@ -205,6 +322,9 @@ def make_dataset(
     df = view.read(split, purpose=purpose)
     if view.modality is Modality.TABULAR:
         return TabularDataset(fitted, df)
+    task = fitted.spec.target.task if fitted.spec.target else None
+    if view.modality is Modality.IMAGE and task in _VISION_DATASETS:
+        return _VISION_DATASETS[task](fitted, df, view.files_dir, train=train)
     if view.modality is Modality.IMAGE:
         return ImageDataset(fitted, df, view.files_dir, train=train)
     if view.modality is Modality.TEXT:

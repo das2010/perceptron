@@ -116,6 +116,15 @@ def _ctor(
         case "seq.autoencoder":
             args = f"{i.shape[0]}, {i.shape[1]}, {p['hidden']}, {p['latent']}, {p['kind']!r}"
             return f"SeriesAutoencoder({args})", "SeriesAutoencoder"
+        case "detection.centernet_small":
+            return (
+                f"CenterNetSmall({i.channels}, {n_out}, {p['width']}, {p['depth']})",
+                "CenterNetSmall",
+            )
+        case "seg.unet_small":
+            return f"UNetSmall({i.channels}, {n_out}, {p['width']}, {p['depth']})", "UNetSmall"
+        case "ocr.crnn":
+            return f"CRNN({i.channels}, {n_out}, {p['width']}, {p['hidden']})", "CRNN"
         case "merge.concat":
             return "Concat()", "Concat"
         case "merge.add":
@@ -125,6 +134,9 @@ def _ctor(
 
 _DEPENDENCIES = {
     "TabularInput": ["embedding_dim"],
+    "CenterNetSmall": ["_conv_bn"],
+    "UNetSmall": ["_conv_bn"],
+    "CRNN": ["_conv_bn"],
     "MLPBlock": ["_activation"],
 }
 

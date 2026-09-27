@@ -491,3 +491,98 @@ class SeriesAutoencoder(nn.Module):
             return rec
         flat: torch.Tensor = self.net(x)
         return flat.view(-1, self.lookback, self.channels)
+
+
+def _conv_bn(c_in: int, c_out: int, stride: int = 1) -> nn.Sequential:
+    return nn.Sequential(
+        nn.Conv2d(c_in, c_out, 3, stride=stride, padding=1, bias=False),
+        nn.BatchNorm2d(c_out),
+        nn.ReLU(),
+    )
+
+
+class CenterNetSmall(nn.Module):
+    """Detector CenterNet compacto (Zhou et al., 2019) entrenable desde cero.
+
+    Salida [B, K + 4, H/4, W/4]: K heatmaps de centros (logits), tamaño (w, h) y
+    offset (dx, dy) en celdas del mapa de salida.
+    """
+
+    def __init__(self, in_chans: int, num_classes: int, width: int, depth: int) -> None:
+        super().__init__()
+        layers: list[nn.Module] = [_conv_bn(in_chans, width, 2), _conv_bn(width, width * 2, 2)]
+        c = width * 2
+        for _ in range(max(depth - 2, 0)):
+            layers.append(_conv_bn(c, c))
+        self.body = nn.Sequential(*layers)
+        self.heatmap = nn.Sequential(_conv_bn(c, c), nn.Conv2d(c, num_classes, 1))
+        self.regression = nn.Sequential(_conv_bn(c, c), nn.Conv2d(c, 4, 1))
+        nn.init.constant_(self.heatmap[-1].bias, -2.19)  # prior 0,1 (paper)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        f = self.body(x)
+        return torch.cat([self.heatmap(f), self.regression(f)], dim=1)
+
+
+class UNetSmall(nn.Module):
+    """U-Net compacta (Ronneberger et al., 2015): [B, C, H, W] → logits [B, K, H, W]."""
+
+    def __init__(self, in_chans: int, num_classes: int, width: int, depth: int) -> None:
+        super().__init__()
+        self.down = nn.ModuleList()
+        c, chans = in_chans, []
+        for i in range(depth):
+            out = width * 2**i
+            self.down.append(nn.Sequential(_conv_bn(c, out), _conv_bn(out, out)))
+            chans.append(out)
+            c = out
+        self.bottleneck = nn.Sequential(_conv_bn(c, c * 2), _conv_bn(c * 2, c * 2))
+        c *= 2
+        self.up = nn.ModuleList()
+        self.dec = nn.ModuleList()
+        for skip in reversed(chans):
+            self.up.append(nn.ConvTranspose2d(c, skip, 2, stride=2))
+            self.dec.append(nn.Sequential(_conv_bn(skip * 2, skip), _conv_bn(skip, skip)))
+            c = skip
+        self.head = nn.Conv2d(c, num_classes, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        skips = []
+        for block in self.down:
+            x = block(x)
+            skips.append(x)
+            x = torch.nn.functional.max_pool2d(x, 2)
+        x = self.bottleneck(x)
+        for up, dec, skip in zip(self.up, self.dec, reversed(skips), strict=True):
+            x = dec(torch.cat([up(x), skip], dim=1))
+        out: torch.Tensor = self.head(x)
+        return out
+
+
+class CRNN(nn.Module):
+    """CRNN (Shi et al., 2015) para OCR de una línea: CNN → BiLSTM → logits por columna.
+
+    Entrada [B, C, 32, W]; salida [B, W/4, vocab] (para CTC, el índice 0 es el blank).
+    """
+
+    def __init__(self, in_chans: int, vocab: int, width: int, hidden: int) -> None:
+        super().__init__()
+        self.cnn = nn.Sequential(
+            _conv_bn(in_chans, width),
+            nn.MaxPool2d(2),
+            _conv_bn(width, width * 2),
+            nn.MaxPool2d(2),
+            _conv_bn(width * 2, width * 4),
+            nn.MaxPool2d((2, 1)),
+            _conv_bn(width * 4, width * 4),
+            nn.MaxPool2d((2, 1)),
+        )
+        self.rnn = nn.LSTM(width * 4 * 2, hidden, batch_first=True, bidirectional=True)
+        self.out = nn.Linear(hidden * 2, vocab)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        f = self.cnn(x)  # [B, C, H/16, W/4]
+        f = f.permute(0, 3, 1, 2).flatten(2)  # [B, W/4, C·H/16]
+        seq, _ = self.rnn(f)
+        logits: torch.Tensor = self.out(seq)
+        return logits

@@ -414,3 +414,55 @@ def audio_template(
             "input": InputSpec(kind="spectrogram", shape=[1, bins, frames], from_pipeline="audio"),
         }
     )
+
+
+def vision_task_template(
+    task: TaskType,
+    *,
+    num_classes: int,
+    image_shape: list[int],
+    epochs: int = 40,
+    rationale: str | None = None,
+) -> ArchSpec:
+    """Detección (CenterNet), segmentación (U-Net) u OCR (CRNN), entrenables desde cero."""
+    block, name, params = {
+        TaskType.OBJECT_DETECTION: (
+            "detection.centernet_small",
+            "centernet_small",
+            {"width": HP(hp="width", default=32)},
+        ),
+        TaskType.SEGMENTATION: (
+            "seg.unet_small",
+            "unet_small",
+            {"width": HP(hp="width", default=16)},
+        ),
+        TaskType.OCR: (
+            "ocr.crnn",
+            "crnn",
+            {"width": HP(hp="width", default=32), "hidden": HP(hp="hidden", default=128)},
+        ),
+    }[task]
+    nodes = [Node(id="model", block=block, params=params)]
+    loss = {
+        TaskType.OBJECT_DETECTION: "mse",
+        TaskType.SEGMENTATION: "cross_entropy",
+        TaskType.OCR: "mae",
+    }[task]
+    return ArchSpec(
+        name=f"vision-{name}",
+        modality=Modality.IMAGE,
+        task=TaskSpec(type=task, num_classes=num_classes),
+        input=InputSpec(kind="image", shape=image_shape, from_pipeline="image"),
+        nodes=nodes,
+        edges=_chain([n.id for n in nodes]),
+        loss=LossSpec(type=loss),  # type: ignore[arg-type]  # la tarea define su loss real
+        optimizer=OptimizerSpec(
+            type="adamw",
+            lr=HP(hp="lr", default=2e-3),
+            weight_decay=HP(hp="weight_decay", default=1e-4),
+        ),
+        scheduler=SchedulerSpec(type="one_cycle"),
+        training=_training(epochs, patience=8),
+        metrics=[],
+        provenance=Provenance(origin=Origin.RULES, template=name, rationale=rationale),
+    )

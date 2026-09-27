@@ -42,6 +42,7 @@ ml = [
   "transformers>=4.45",
   "tokenizers>=0.20",
   "soundfile>=0.12",
+  "pycocotools>=2.0.8",
 ]
 # Capa 2
 llm = []

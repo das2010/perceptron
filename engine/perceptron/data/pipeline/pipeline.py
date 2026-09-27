@@ -31,6 +31,9 @@ class TargetSpec(BaseModel):
     name: str
     task: TaskType
     standardize: bool = Field(default=False, description="Solo regresión")
+    classes: list[str] | None = Field(
+        default=None, description="Clases fijas (detección/segmentación)"
+    )
 
 
 class AugmentSpec(BaseModel):
@@ -42,6 +45,7 @@ class AugmentSpec(BaseModel):
 
 class ImageSpec(BaseModel):
     size: int = Field(default=224, ge=16, le=1024)
+    width: int | None = Field(default=None, ge=16, le=4096, description="Si difiere de size (OCR)")
     channels: Literal[1, 3] = 3
     normalize: Literal["imagenet", "dataset"] = "imagenet"
     augment: list[AugmentSpec] = Field(default_factory=list)
@@ -133,6 +137,10 @@ def _fit_target(spec: TargetSpec, s: pl.Series) -> dict[str, Any]:
         x = s.cast(pl.Float64).drop_nulls()
         mean, std = float(x.mean() or 0.0), float(x.std() or 1.0)  # type: ignore[arg-type]
         return {"target_mean": mean, "target_std": std or 1.0} if spec.standardize else {}
+    if spec.classes is not None:
+        return {"classes": list(spec.classes)}
+    if spec.task is TaskType.OCR:
+        return {"classes": sorted(set("".join(s.drop_nulls().cast(pl.String).to_list())))}
     if spec.task is not TaskType.CLASSIFICATION:
         return {}
     return {"classes": sorted(s.drop_nulls().cast(pl.String).unique().to_list())}

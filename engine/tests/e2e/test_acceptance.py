@@ -86,3 +86,31 @@ def test_uc09_audio(workspace_dir: Path, fixtures_dir: Path) -> None:
     assert s["architecture"] == "audio-small_cnn"
     assert s["model_version_id"]
     assert s["test_metrics"]["accuracy"] > 0.8
+
+
+def test_uc04_detection(workspace_dir: Path, fixtures_dir: Path) -> None:
+    s = _quickstart(
+        workspace_dir,
+        fixtures_dir / "uc04_defects",
+        "--task",
+        "object_detection",
+        "--max-epochs",
+        "60",
+    )
+    assert s["architecture"] == "vision-centernet_small"
+    assert s["model_version_id"]
+    assert s["test_metrics"]["map_50"] > 0.5
+
+
+def test_uc05_segmentation(workspace_dir: Path, fixtures_dir: Path) -> None:
+    s = _quickstart(workspace_dir, fixtures_dir / "uc05_masks", "--max-epochs", "40")
+    assert s["architecture"] == "vision-unet_small"
+    assert s["model_version_id"]
+    assert s["test_metrics"]["iou_foreground"] > 0.5
+
+
+def test_uc06_ocr(workspace_dir: Path, fixtures_dir: Path) -> None:
+    s = _quickstart(workspace_dir, fixtures_dir / "uc06_ocr", "--max-epochs", "60")
+    assert s["architecture"] == "vision-crnn"
+    assert s["model_version_id"]
+    assert s["test_metrics"]["cer"] < 0.1
