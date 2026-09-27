@@ -28,10 +28,12 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-      - name: Mypy
-        run: uv run mypy
       - name: Pytest
         run: uv run pytest --cov --cov-report=term --cov-report=xml
+      # Mypy corre aunque fallen los tests: así un solo run informa ambos.
+      - name: Mypy
+        if: success() || failure()
+        run: uv run mypy
       - name: Coverage >= 80% en core/domain (SPEC §13.6)
         run: uv run coverage report --include="*/perceptron/core/*,*/perceptron/domain/*" --fail-under=80
       - name: CLI smoke

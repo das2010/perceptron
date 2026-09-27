@@ -7,7 +7,7 @@ overrides del trial de HPO.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import lightning as L
 import torch
@@ -15,7 +15,7 @@ import torch.nn.functional as F
 import torchmetrics
 from torch import nn
 
-from perceptron.archspec.builder import build_model, num_outputs
+from perceptron.archspec.builder import ArchModel, build_model, num_outputs
 from perceptron.archspec.schema import ArchSpec, Scalar, resolve
 from perceptron.domain.enums import TaskType
 
@@ -30,6 +30,7 @@ class FocalLoss(nn.Module):
     def __init__(self, gamma: float = 2.0, weight: torch.Tensor | None = None) -> None:
         super().__init__()
         self.gamma = gamma
+        self.weight: torch.Tensor | None
         self.register_buffer("weight", weight)
 
     def forward(self, logits: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
@@ -41,7 +42,7 @@ class FocalLoss(nn.Module):
 def _metrics(
     task: TaskType, num_classes: int | None, names: list[str]
 ) -> torchmetrics.MetricCollection:
-    ms: dict[str, torchmetrics.Metric] = {}
+    ms: dict[str, torchmetrics.Metric | torchmetrics.MetricCollection] = {}
     if task is TaskType.REGRESSION:
         available: dict[str, Any] = {
             "mae": torchmetrics.MeanAbsoluteError,
@@ -76,7 +77,7 @@ class PerceptronModule(L.LightningModule):
         self.spec = spec
         self.overrides = dict(overrides or {})
         built = build_model(spec, self.overrides, pretrained_allowed=pretrained_allowed)
-        self.model = built.model
+        self.model = cast(ArchModel, built.model)
         self.backbones = built.backbones
         self.task = spec.task.type
         self.num_outputs = num_outputs(spec)
@@ -117,9 +118,11 @@ class PerceptronModule(L.LightningModule):
     # ---------------------------------------------------------------- forward
 
     def forward(self, *inputs: torch.Tensor) -> torch.Tensor:
-        return self.model(*inputs)
+        out: torch.Tensor = self.model(*inputs)
+        return out
 
     def _step(self, batch: tuple[torch.Tensor, ...], stage: str) -> torch.Tensor:
+        loss: torch.Tensor
         *inputs, y = batch
         out = self(*inputs)
         if self.task is TaskType.REGRESSION:
@@ -208,6 +211,6 @@ class PerceptronModule(L.LightningModule):
 
     def set_backbone_trainable(self, trainable: bool) -> None:
         for node_id in self.backbones:
-            block = self.model.blocks[node_id]  # type: ignore[index]
+            block = self.model.blocks[node_id]
             for param in block.parameters():
                 param.requires_grad = trainable
