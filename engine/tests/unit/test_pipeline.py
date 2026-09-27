@@ -163,3 +163,13 @@ def test_propose_image_and_transforms(paths: ProjectPaths, fixtures_dir: Path) -
     for train in (True, False):
         t = image_transforms(fitted, train=train)(img)
         assert tuple(t.shape) == (3, 32, 32)
+
+
+def test_auto_batch_size_gives_several_steps_on_tiny_data() -> None:
+    from perceptron.training.data import auto_batch_size
+
+    assert auto_batch_size(Modality.IMAGE, 28) == 8  # ≥ 3 pasos por época
+    assert auto_batch_size(Modality.IMAGE, 10_000) == 32
+    assert auto_batch_size(Modality.TABULAR, 280) == 32
+    assert auto_batch_size(Modality.TABULAR, 50_000) == 256
+    assert auto_batch_size(Modality.TABULAR, 3) == 2

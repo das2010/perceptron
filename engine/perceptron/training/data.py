@@ -95,11 +95,17 @@ def auto_num_workers(modality: Modality, n_train: int) -> int:
 
 
 def auto_batch_size(modality: Modality, n_train: int) -> int:
+    """Batch por defecto en CPU (en GPU se ajusta contra OOM en la Capa 3).
+
+    Con pocos datos conviene un batch chico: más pasos de optimización por época y
+    estadísticas de BatchNorm que llegan a converger (con 1 paso por época la
+    inferencia queda sesgada aunque el ranking sea perfecto).
+    """
     if modality is Modality.TABULAR:
         size = 256 if n_train >= 20_000 else 128 if n_train >= 2_000 else 32
     else:
-        size = 32
-    return max(2, min(size, n_train))
+        size = 32 if n_train >= 2_000 else 16 if n_train >= 500 else 8
+    return max(2, min(size, n_train // 2 or 2))
 
 
 def make_loader(
