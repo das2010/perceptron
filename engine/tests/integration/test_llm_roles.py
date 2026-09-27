@@ -21,6 +21,7 @@ from perceptron.llm.errors import LLMUnavailableError
 from perceptron.llm.providers.fake import FakeLLMProvider
 from perceptron.llm.schemas import ClassGuide, LabelingGuide
 from perceptron.llm.types import LLMRequest
+from perceptron.services.llm_roles import REPORT_SECTIONS
 from perceptron.services.workflow import Workflow
 from perceptron.tracking.tracker import MemoryTracker
 
@@ -187,7 +188,8 @@ def test_hpo_strategist_diagnostician_and_reporter(
         {
             "title": "Informe churn",
             "summary": "El modelo anticipa bajas.",
-            "markdown": "# Informe\n\n## Resumen\n\nFunciona.",
+            "markdown": "# Informe\n\n"
+            + "\n\n".join(f"## {s}\n\nx" for s in REPORT_SECTIONS["español"]),
             "model_card": {
                 "intended_use": "priorizar retención",
                 "data": "clientes (agregados)",

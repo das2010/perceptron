@@ -9,6 +9,7 @@ import pytest
 from typer.testing import CliRunner
 
 from perceptron.cli.main import app
+from perceptron.services.llm_roles import REPORT_SECTIONS
 
 runner = CliRunner()
 
@@ -43,7 +44,8 @@ def test_quickstart_llm_falls_back_and_reports(
                     {
                         "title": "Informe",
                         "summary": "ok",
-                        "markdown": "# Informe LLM",
+                        "markdown": "# Informe\n\n"
+                        + "\n\n".join(f"## {s}\n\nx" for s in REPORT_SECTIONS["español"]),
                         "model_card": {"intended_use": "x", "data": "y", "training": "z"},
                     }
                 ],
