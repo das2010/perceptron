@@ -1,6 +1,124 @@
 {
   "components": {
     "schemas": {
+      "CPUInfo": {
+        "properties": {
+          "arch": {
+            "title": "Arch",
+            "type": "string"
+          },
+          "flags": {
+            "description": "Instrucciones relevantes (avx2, avx512…)",
+            "items": {
+              "type": "string"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "logical_cores": {
+            "title": "Logical Cores",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "physical_cores": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Physical Cores"
+          }
+        },
+        "required": [
+          "model",
+          "physical_cores",
+          "logical_cores",
+          "arch"
+        ],
+        "title": "CPUInfo",
+        "type": "object"
+      },
+      "Device": {
+        "enum": [
+          "cuda",
+          "rocm",
+          "xpu",
+          "cpu"
+        ],
+        "title": "Device",
+        "type": "string"
+      },
+      "GPUInfo": {
+        "properties": {
+          "backend": {
+            "$ref": "#/components/schemas/Device"
+          },
+          "compute_capability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compute Capability"
+          },
+          "driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Driver"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "supports_bf16": {
+            "default": false,
+            "title": "Supports Bf16",
+            "type": "boolean"
+          },
+          "vram_free_gb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vram Free Gb"
+          },
+          "vram_total_gb": {
+            "title": "Vram Total Gb",
+            "type": "number"
+          }
+        },
+        "required": [
+          "index",
+          "backend",
+          "name",
+          "vram_total_gb"
+        ],
+        "title": "GPUInfo",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -12,6 +130,70 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HardwareReport": {
+        "properties": {
+          "cpu": {
+            "$ref": "#/components/schemas/CPUInfo"
+          },
+          "disk_free_gb": {
+            "title": "Disk Free Gb",
+            "type": "number"
+          },
+          "gpus": {
+            "items": {
+              "$ref": "#/components/schemas/GPUInfo"
+            },
+            "title": "Gpus",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "os": {
+            "title": "Os",
+            "type": "string"
+          },
+          "python": {
+            "title": "Python",
+            "type": "string"
+          },
+          "ram_available_gb": {
+            "title": "Ram Available Gb",
+            "type": "number"
+          },
+          "ram_total_gb": {
+            "title": "Ram Total Gb",
+            "type": "number"
+          },
+          "recommended_device": {
+            "$ref": "#/components/schemas/Device"
+          },
+          "recommended_torch_variant": {
+            "title": "Recommended Torch Variant",
+            "type": "string"
+          },
+          "torch": {
+            "$ref": "#/components/schemas/TorchInfo"
+          }
+        },
+        "required": [
+          "os",
+          "python",
+          "cpu",
+          "ram_total_gb",
+          "ram_available_gb",
+          "disk_free_gb",
+          "torch",
+          "recommended_device",
+          "recommended_torch_variant"
+        ],
+        "title": "HardwareReport",
         "type": "object"
       },
       "Health": {
@@ -392,6 +574,42 @@
         "title": "TaskType",
         "type": "string"
       },
+      "TorchInfo": {
+        "properties": {
+          "installed": {
+            "title": "Installed",
+            "type": "boolean"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "cpu | cuXYZ | rocmX.Y | xpu",
+            "title": "Variant"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "installed"
+        ],
+        "title": "TorchInfo",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -688,6 +906,28 @@
         "summary": "Update Project",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/system/hardware": {
+      "get": {
+        "description": "Hardware disponible y dispositivo recomendado (RF-TRN-01).",
+        "operationId": "getHardware",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HardwareReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Hardware",
+        "tags": [
+          "system"
         ]
       }
     },

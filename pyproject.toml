@@ -17,6 +17,7 @@ dev = [
   "mypy>=1.11",
   "types-pyyaml",
   "types-psutil",
+  "xlsxwriter>=3.2",
 ]
 
 [tool.uv]

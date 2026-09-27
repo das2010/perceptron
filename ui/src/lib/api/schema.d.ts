@@ -41,6 +41,26 @@ export interface paths {
         patch: operations["updateProject"];
         trace?: never;
     };
+    "/api/v1/system/hardware": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Hardware
+         * @description Hardware disponible y dispositivo recomendado (RF-TRN-01).
+         */
+        get: operations["getHardware"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/health": {
         parameters: {
             query?: never;
@@ -79,10 +99,74 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** CPUInfo */
+        CPUInfo: {
+            /** Arch */
+            arch: string;
+            /**
+             * Flags
+             * @description Instrucciones relevantes (avx2, avx512…)
+             */
+            flags?: string[];
+            /** Logical Cores */
+            logical_cores: number;
+            /** Model */
+            model: string;
+            /** Physical Cores */
+            physical_cores: number | null;
+        };
+        /**
+         * Device
+         * @enum {string}
+         */
+        Device: "cuda" | "rocm" | "xpu" | "cpu";
+        /** GPUInfo */
+        GPUInfo: {
+            backend: components["schemas"]["Device"];
+            /** Compute Capability */
+            compute_capability?: string | null;
+            /** Driver */
+            driver?: string | null;
+            /** Index */
+            index: number;
+            /** Name */
+            name: string;
+            /**
+             * Supports Bf16
+             * @default false
+             */
+            supports_bf16: boolean;
+            /** Vram Free Gb */
+            vram_free_gb?: number | null;
+            /** Vram Total Gb */
+            vram_total_gb: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HardwareReport */
+        HardwareReport: {
+            cpu: components["schemas"]["CPUInfo"];
+            /** Disk Free Gb */
+            disk_free_gb: number;
+            /** Gpus */
+            gpus?: components["schemas"]["GPUInfo"][];
+            /** Notes */
+            notes?: string[];
+            /** Os */
+            os: string;
+            /** Python */
+            python: string;
+            /** Ram Available Gb */
+            ram_available_gb: number;
+            /** Ram Total Gb */
+            ram_total_gb: number;
+            recommended_device: components["schemas"]["Device"];
+            /** Recommended Torch Variant */
+            recommended_torch_variant: string;
+            torch: components["schemas"]["TorchInfo"];
         };
         /** Health */
         Health: {
@@ -225,6 +309,18 @@ export interface components {
          * @enum {string}
          */
         TaskType: "classification" | "regression" | "forecasting" | "anomaly_detection" | "object_detection" | "segmentation" | "ocr" | "sound_event_detection";
+        /** TorchInfo */
+        TorchInfo: {
+            /** Installed */
+            installed: boolean;
+            /**
+             * Variant
+             * @description cpu | cuXYZ | rocmX.Y | xpu
+             */
+            variant?: string | null;
+            /** Version */
+            version?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -413,6 +509,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getHardware: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HardwareReport"];
                 };
             };
         };
