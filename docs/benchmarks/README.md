@@ -7,7 +7,7 @@ configuración manual conocida.
 uv run perceptron bench run --datasets adult,fashion,fsdd --out bench-report --max-cost 2
 ```
 
-o, en CI, `gh workflow run llm.yml -f benchmark=true` (necesita `ANTHROPIC_API_KEY`).
+o, en CI, `gh workflow run llm.yml -f benchmark=true -f benchmark_provider=openai` (necesita `OPENAI_API_KEY`, o `ANTHROPIC_API_KEY` con `benchmark_provider=claude`).
 
 | Dataset | Modalidad | Licencia | Métrica | Referencia manual |
 |---|---|---|---|---|

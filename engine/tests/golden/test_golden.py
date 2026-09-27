@@ -26,7 +26,7 @@ from perceptron.services.workflow import Workflow
 from perceptron.tracking.tracker import MemoryTracker
 from perceptron.training.config import RESULT_FILE, RunResult
 
-pytestmark = [pytest.mark.golden, pytest.mark.timeout(1800)]
+pytestmark = [pytest.mark.golden, pytest.mark.timeout(5400)]  # Ollama en CPU es lento
 
 
 @pytest.fixture

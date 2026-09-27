@@ -145,6 +145,24 @@ def test_openai_family_json_schema(cls: type[OpenAIProvider], tokens_field: str)
     assert seen[0].url.path.endswith("/chat/completions")
 
 
+def test_openai_request_extra_and_empty_length() -> None:
+    seen: list[Any] = []
+    empty = _chat_response("")
+    empty["choices"][0]["finish_reason"] = "length"
+    p = OpenAIProvider(
+        api_key="k",
+        base_url="http://openai.test/v1",
+        sdk_http_client=_sdk_client(lambda _: (200, empty), seen),
+    )
+    reasoning = ModelInfo(
+        structured_output=True, temperature=False, request_extra={"reasoning_effort": "low"}
+    )
+    with pytest.raises(LLMProviderError, match="max_tokens"):
+        p.complete(_req(), reasoning)
+    body = _body(seen[0])
+    assert body["reasoning_effort"] == "low" and "temperature" not in body
+
+
 def test_openai_without_structured_output_uses_json_mode() -> None:
     seen: list[Any] = []
     p = OpenAIProvider(
@@ -183,6 +201,7 @@ def test_ollama_format_schema_and_stream() -> None:
     assert out.data == {"value": 9} and out.usage.input_tokens == 12
     body = _body(seen[0])
     assert body["format"] == SCHEMA and body["options"]["num_predict"] == 256
+    assert body["options"]["num_ctx"] == STRUCT.context_window
     assert body["messages"][1]["images"] == ["aGVsbG8="]
     assert "".join(p.stream(_req(None), STRUCT)) == "Hola"
 
