@@ -11,7 +11,7 @@ import numpy as np
 import polars as pl
 import torch
 from PIL import Image
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
 from perceptron.data.pipeline.pipeline import (
     FittedPipeline,
@@ -324,7 +324,8 @@ def make_dataset(
         return TabularDataset(fitted, df)
     task = fitted.spec.target.task if fitted.spec.target else None
     if view.modality is Modality.IMAGE and task in _VISION_DATASETS:
-        return _VISION_DATASETS[task](fitted, df, view.files_dir, train=train)
+        vision_ds: Dataset[Any] = _VISION_DATASETS[task](fitted, df, view.files_dir, train=train)
+        return vision_ds
     if view.modality is Modality.IMAGE:
         return ImageDataset(fitted, df, view.files_dir, train=train)
     if view.modality is Modality.TEXT:
@@ -366,13 +367,21 @@ def auto_batch_size(modality: Modality, n_train: int) -> int:
 
 
 def make_loader(
-    ds: Dataset[Any], batch_size: int, *, shuffle: bool, num_workers: int, seed: int
+    ds: Dataset[Any],
+    batch_size: int,
+    *,
+    shuffle: bool,
+    num_workers: int,
+    seed: int,
+    oversample: bool = False,
 ) -> DataLoader[Any]:
     generator = torch.Generator().manual_seed(seed)
+    sampler = balanced_sampler(ds, generator) if oversample and shuffle else None
     return DataLoader(
         ds,
         batch_size=batch_size,
-        shuffle=shuffle,
+        shuffle=shuffle and sampler is None,
+        sampler=sampler,
         num_workers=num_workers,
         pin_memory=torch.cuda.is_available(),
         persistent_workers=num_workers > 0,
@@ -383,6 +392,16 @@ def make_loader(
         generator=generator,
         collate_fn=getattr(ds, "collate_fn", None),
     )
+
+
+def balanced_sampler(ds: Dataset[Any], generator: torch.Generator) -> WeightedRandomSampler | None:
+    """Sobremuestreo: cada clase se ve con la misma frecuencia esperada (RF-TRN-10)."""
+    y = getattr(ds, "y", None)
+    if y is None or y.dtype not in (torch.long, torch.int64) or len(y) == 0:
+        return None
+    counts = torch.bincount(y[y >= 0])
+    weights = 1.0 / counts.clamp(min=1).float()[y.clamp(min=0)]
+    return WeightedRandomSampler(weights, num_samples=len(y), replacement=True, generator=generator)
 
 
 def class_weights(fitted: FittedPipeline, ds: Dataset[Any]) -> torch.Tensor | None:

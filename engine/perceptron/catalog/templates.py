@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from perceptron.archspec.schema import (
     HP,
     ArchSpec,
@@ -425,7 +427,7 @@ def vision_task_template(
     rationale: str | None = None,
 ) -> ArchSpec:
     """Detección (CenterNet), segmentación (U-Net) u OCR (CRNN), entrenables desde cero."""
-    block, name, params = {
+    options: dict[TaskType, tuple[str, str, dict[str, Any]]] = {
         TaskType.OBJECT_DETECTION: (
             "detection.centernet_small",
             "centernet_small",
@@ -441,8 +443,9 @@ def vision_task_template(
             "crnn",
             {"width": HP(hp="width", default=32), "hidden": HP(hp="hidden", default=128)},
         ),
-    }[task]
-    nodes = [Node(id="model", block=block, params=params)]
+    }
+    block, name, params = options[task]
+    nodes = [Node(id="model", block=block, params=dict(params))]
     loss = {
         TaskType.OBJECT_DETECTION: "mse",
         TaskType.SEGMENTATION: "cross_entropy",

@@ -162,7 +162,7 @@ def detection_index(
         )
     if not rows:
         raise ValidationError("no se encontraron imágenes para detección")
-    schema = {
+    schema: dict[str, Any] = {
         "path": pl.String,
         "width": pl.Int32,
         "height": pl.Int32,
@@ -195,7 +195,7 @@ def segmentation_index(root: Path, files_dir: Path) -> tuple[pl.DataFrame, list[
     ids = sorted(1 if v == 255 else int(v) for v in values)
     k = max(ids) + 1 if ids else 2
     classes = ["fondo"] + [f"clase_{i}" for i in range(1, k)] if k > 2 else ["fondo", "objeto"]
-    schema = {
+    schema: dict[str, Any] = {
         "path": pl.String,
         "mask_path": pl.String,
         "width": pl.Int32,
@@ -214,7 +214,8 @@ def ocr_index(root: Path, files_dir: Path, labels: Path) -> tuple[pl.DataFrame, 
         fcol = next(fields[c] for c in _FILE_COLUMNS if c in fields)
         tcol = next(fields[c] for c in _TEXT_COLUMNS if c in fields)
         pairs = [(r[fcol], r[tcol]) for r in reader]
-    rows, alphabet = [], set()
+    rows: list[dict[str, Any]] = []
+    alphabet: set[str] = set()
     for name, text in pairs:
         img = root / "images" / name
         if not img.is_file():
@@ -227,7 +228,7 @@ def ocr_index(root: Path, files_dir: Path, labels: Path) -> tuple[pl.DataFrame, 
         rows.append({"path": rel, "text": text, **_meta(img)})
     if not rows:
         raise ValidationError("el CSV de OCR no referencia imágenes existentes")
-    schema = {
+    schema: dict[str, Any] = {
         "path": pl.String,
         "text": pl.String,
         "width": pl.Int32,

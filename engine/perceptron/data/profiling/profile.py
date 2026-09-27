@@ -46,7 +46,8 @@ def profile_dataset(
         feature_df = df.drop([c for c in _INTERNAL if c in df.columns])
 
     target = profile_target(schema, feature_df) if view.task is None else None
-    columns = profile_columns(schema, feature_df)
+    # Detección, segmentación y OCR: el target es una estructura (cajas, máscaras, texto).
+    columns = profile_columns(schema, feature_df) if view.task is None else []
     alerts = target_alerts(target, df.height) if view.task is None else []
 
     images = None

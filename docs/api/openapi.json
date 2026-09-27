@@ -1642,6 +1642,20 @@
             "minimum": 16.0,
             "title": "Size",
             "type": "integer"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "maximum": 4096.0,
+                "minimum": 16.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Si difiere de size (OCR)",
+            "title": "Width"
           }
         },
         "title": "ImageSpec",
@@ -2662,6 +2676,16 @@
                 "type": "null"
               }
             ]
+          },
+          "vision_task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisionTaskProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -3664,7 +3688,9 @@
           "table",
           "image_folder",
           "text_folder",
-          "audio_folder"
+          "audio_folder",
+          "segmentation_folder",
+          "ocr_folder"
         ],
         "title": "SourceKind",
         "type": "string"
@@ -4137,6 +4163,21 @@
       },
       "TargetSpec": {
         "properties": {
+          "classes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Clases fijas (detección/segmentación)",
+            "title": "Classes"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -4182,7 +4223,7 @@
           "num_classes": {
             "anyOf": [
               {
-                "minimum": 2.0,
+                "minimum": 1.0,
                 "type": "integer"
               },
               {
@@ -4693,6 +4734,113 @@
           "mode"
         ],
         "title": "VersionInfo",
+        "type": "object"
+      },
+      "VisionTaskProfile": {
+        "properties": {
+          "alphabet_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alphabet Size"
+          },
+          "box_area_fraction_p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Box Area Fraction P50"
+          },
+          "classes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "foreground_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foreground Fraction"
+          },
+          "images_without_objects": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images Without Objects"
+          },
+          "objects_per_image_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objects Per Image Max"
+          },
+          "objects_per_image_p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objects Per Image P50"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "text_length_p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Length P50"
+          },
+          "text_length_p95": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Length P95"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "VisionTaskProfile",
         "type": "object"
       }
     }

@@ -515,9 +515,11 @@ class CenterNetSmall(nn.Module):
         for _ in range(max(depth - 2, 0)):
             layers.append(_conv_bn(c, c))
         self.body = nn.Sequential(*layers)
-        self.heatmap = nn.Sequential(_conv_bn(c, c), nn.Conv2d(c, num_classes, 1))
+        heat_out = nn.Conv2d(c, num_classes, 1)
+        if heat_out.bias is not None:
+            nn.init.constant_(heat_out.bias, -2.19)  # prior 0,1 (paper)
+        self.heatmap = nn.Sequential(_conv_bn(c, c), heat_out)
         self.regression = nn.Sequential(_conv_bn(c, c), nn.Conv2d(c, 4, 1))
-        nn.init.constant_(self.heatmap[-1].bias, -2.19)  # prior 0,1 (paper)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         f = self.body(x)

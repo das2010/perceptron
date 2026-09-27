@@ -1278,6 +1278,11 @@ export interface components {
              * @default 224
              */
             size: number;
+            /**
+             * Width
+             * @description Si difiere de size (OCR)
+             */
+            width?: number | null;
         };
         /** IngestBody */
         IngestBody: {
@@ -1655,6 +1660,7 @@ export interface components {
             };
             target: components["schemas"]["TargetProfile"] | null;
             text?: components["schemas"]["TextProfile"] | null;
+            vision_task?: components["schemas"]["VisionTaskProfile"] | null;
         };
         /** Project */
         Project: {
@@ -2017,7 +2023,7 @@ export interface components {
          * SourceKind
          * @enum {string}
          */
-        SourceKind: "table" | "image_folder" | "text_folder" | "audio_folder";
+        SourceKind: "table" | "image_folder" | "text_folder" | "audio_folder" | "segmentation_folder" | "ocr_folder";
         /** SourcePreview */
         SourcePreview: {
             /** Columns */
@@ -2194,6 +2200,11 @@ export interface components {
         };
         /** TargetSpec */
         TargetSpec: {
+            /**
+             * Classes
+             * @description Clases fijas (detección/segmentación)
+             */
+            classes?: string[] | null;
             /** Name */
             name: string;
             /**
@@ -2406,6 +2417,28 @@ export interface components {
             python: string;
             /** Version */
             version: string;
+        };
+        /** VisionTaskProfile */
+        VisionTaskProfile: {
+            /** Alphabet Size */
+            alphabet_size?: number | null;
+            /** Box Area Fraction P50 */
+            box_area_fraction_p50?: number | null;
+            /** Classes */
+            classes?: string[];
+            /** Foreground Fraction */
+            foreground_fraction?: number | null;
+            /** Images Without Objects */
+            images_without_objects?: number | null;
+            /** Objects Per Image Max */
+            objects_per_image_max?: number | null;
+            /** Objects Per Image P50 */
+            objects_per_image_p50?: number | null;
+            task: components["schemas"]["TaskType"];
+            /** Text Length P50 */
+            text_length_p50?: number | null;
+            /** Text Length P95 */
+            text_length_p95?: number | null;
         };
     };
     responses: never;
