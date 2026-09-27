@@ -245,7 +245,7 @@ def recommend(
     *,
     allow_download: bool | None = None,
 ) -> Recommendation:
-    if card.target is None or fitted.spec.target is None:
+    if fitted.spec.target is None:
         raise ValueError("se necesita un target para recomendar una arquitectura")
     task = fitted.spec.target.task
     gpu = _gpu_gb(hardware)

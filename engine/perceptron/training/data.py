@@ -401,7 +401,9 @@ def balanced_sampler(ds: Dataset[Any], generator: torch.Generator) -> WeightedRa
         return None
     counts = torch.bincount(y[y >= 0])
     weights = 1.0 / counts.clamp(min=1).float()[y.clamp(min=0)]
-    return WeightedRandomSampler(weights, num_samples=len(y), replacement=True, generator=generator)
+    return WeightedRandomSampler(
+        weights.tolist(), num_samples=len(y), replacement=True, generator=generator
+    )
 
 
 def class_weights(fitted: FittedPipeline, ds: Dataset[Any]) -> torch.Tensor | None:

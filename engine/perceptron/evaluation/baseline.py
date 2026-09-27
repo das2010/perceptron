@@ -29,7 +29,9 @@ def _matrix(
 
 
 def lightgbm_baseline(view: DatasetView, fitted: FittedPipeline, seed: int = 42) -> dict[str, Any]:
-    import lightgbm as lgb
+    import lightgbm
+
+    lgb: Any = lightgbm  # la API de sklearn de LightGBM tiene tipos muy estrictos
 
     target = fitted.spec.target
     if target is None:
@@ -52,13 +54,13 @@ def lightgbm_baseline(view: DatasetView, fitted: FittedPipeline, seed: int = 42)
         if y_va is not None and len(y_va)
         else []
     )
-    eval_set = [(x_va, y_va)] if callbacks else None
+    evals: dict[str, Any] = {"eval_X": (x_va,), "eval_y": (y_va,)} if callbacks else {}
     if target.task is TaskType.REGRESSION:
         model = lgb.LGBMRegressor(**common)
         model.fit(
             x_tr,
             y_tr,
-            eval_set=eval_set,
+            **evals,
             categorical_feature=cat_idx or "auto",
             callbacks=callbacks,
         )
@@ -72,7 +74,7 @@ def lightgbm_baseline(view: DatasetView, fitted: FittedPipeline, seed: int = 42)
         model.fit(
             x_tr,
             y_tr,
-            eval_set=eval_set,
+            **evals,
             categorical_feature=cat_idx or "auto",
             callbacks=callbacks,
         )

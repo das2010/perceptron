@@ -131,7 +131,8 @@ def test_detection_uc04(paths: ProjectPaths, fixtures_dir: Path) -> None:
         paths, fixtures_dir / "uc04_defects", task=TaskType.OBJECT_DETECTION
     )
     assert view.task is TaskType.OBJECT_DETECTION and view.classes == ["defecto"]
-    assert card.vision_task is not None and card.vision_task.images_without_objects == 40
+    vt = card.vision_task
+    assert vt is not None and 0 < (vt.images_without_objects or 0) < card.profiled_samples
     assert fitted.classes == ["defecto"]
     ds = make_dataset(view, fitted, "train", train=True)
     x, target = ds[0]

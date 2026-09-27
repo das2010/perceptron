@@ -2373,6 +2373,12 @@ export interface components {
              */
             gradient_clip: number | null;
             /**
+             * Oversample
+             * @description Muestreo balanceado por clase (RF-TRN-10)
+             * @default false
+             */
+            oversample: boolean;
+            /**
              * Precision
              * @default auto
              * @enum {string}

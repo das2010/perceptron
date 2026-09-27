@@ -4577,6 +4577,12 @@
             "default": 1.0,
             "title": "Gradient Clip"
           },
+          "oversample": {
+            "default": false,
+            "description": "Muestreo balanceado por clase (RF-TRN-10)",
+            "title": "Oversample",
+            "type": "boolean"
+          },
           "precision": {
             "default": "auto",
             "enum": [
