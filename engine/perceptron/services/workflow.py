@@ -1,0 +1,531 @@
+"""Orquestación del flujo de un proyecto (Capa 1, sin LLM).
+
+ingesta → profiling → pipeline → arquitectura (reglas) → HPO → evaluación → registro.
+La API y la CLI llaman a estas funciones; ninguna contiene lógica de ML propia.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from perceptron.api.context import EngineContext
+from perceptron.archspec.schema import ArchSpec
+from perceptron.archspec.validate import ValidationReport, offline_mode, validate_archspec
+from perceptron.catalog.rules import recommend
+from perceptron.core.errors import NotFoundError, ValidationError
+from perceptron.core.ids import IdPrefix, new_id
+from perceptron.core.logging import log_context
+from perceptron.data.pipeline.pipeline import FittedPipeline, PipelineSpec, fit_pipeline
+from perceptron.data.pipeline.propose import propose_pipeline
+from perceptron.data.profiling.card import ProfileCard
+from perceptron.data.profiling.profile import profile_dataset
+from perceptron.data.schema import SemanticType
+from perceptron.data.splits import SplitRequest
+from perceptron.data.versioning.ingest import IngestRequest, ingest
+from perceptron.data.view import DatasetView
+from perceptron.domain.enums import (
+    DataSourceType,
+    Device,
+    Origin,
+    ProjectStatus,
+    RunStatus,
+)
+from perceptron.domain.models import (
+    ArchSpecRecord,
+    DatasetVersion,
+    DataSource,
+    Evaluation,
+    ModelVersion,
+    Pipeline,
+    Profile,
+    Project,
+    Run,
+    Study,
+    utcnow,
+)
+from perceptron.evaluation.evaluate import (
+    EVALUATION_DIR,
+    EVALUATION_FILE,
+    EvaluationReport,
+    build_model_version,
+    evaluate_run,
+)
+from perceptron.hpo.recommend import recommend_strategy
+from perceptron.hpo.strategy import Budget, HPOStrategy
+from perceptron.hpo.study import StudyControl, StudyResult, TrialRecord, run_study
+from perceptron.tracking.tracker import MlflowTracker, RunRecorder, Tracker
+from perceptron.training.config import RunConfig, RunEvent, RunResult
+from perceptron.training.hardware import detect_hardware
+
+logger = logging.getLogger(__name__)
+
+_RUN_STATUS = {
+    "succeeded": RunStatus.SUCCEEDED,
+    "failed": RunStatus.FAILED,
+    "cancelled": RunStatus.CANCELLED,
+    "pruned": RunStatus.CANCELLED,
+    "paused": RunStatus.PAUSED,
+}
+
+
+class Workflow:
+    def __init__(self, ctx: EngineContext, tracker: Tracker | None = None) -> None:
+        self.ctx = ctx
+        self._tracker = tracker
+
+    @property
+    def tracker(self) -> Tracker:
+        if self._tracker is None:
+            self._tracker = MlflowTracker(self.ctx.settings.paths.mlflow_dir)
+        return self._tracker
+
+    # ------------------------------------------------------------------ helpers
+
+    def project(self, project_id: str) -> Project:
+        return self.ctx.projects.get(project_id)
+
+    def dataset(self, dataset_version_id: str) -> DatasetVersion:
+        return self.ctx.repo(DatasetVersion).get(dataset_version_id)
+
+    def view(self, dv: DatasetVersion) -> DatasetView:
+        if not dv.path:
+            raise NotFoundError(f"la versión {dv.id} no tiene datos materializados")
+        return DatasetView(self.ctx.settings.paths.project(dv.project_id).root / dv.path)
+
+    def _fitted_path(self, pipeline: Pipeline, dv: DatasetVersion) -> Path:
+        return (
+            self.ctx.settings.paths.project(pipeline.project_id).pipelines_dir
+            / f"{pipeline.id}.fitted.{dv.content_hash[:16]}.json"
+        )
+
+    # ------------------------------------------------------------------ datos
+
+    def ingest(
+        self,
+        project_id: str,
+        source: Path,
+        *,
+        target: str | None = None,
+        split: SplitRequest | None = None,
+        overrides: dict[str, SemanticType] | None = None,
+        source_record: DataSource | None = None,
+    ) -> DatasetVersion:
+        project = self.project(project_id)
+        src = source_record
+        if src is None:
+            src = DataSource(
+                project_id=project.id,
+                name=source.name,
+                type=DataSourceType.FOLDER if source.is_dir() else DataSourceType.FILE,
+                config={"path": str(source)},
+            )
+            self.ctx.repo(DataSource).add(src)
+        with log_context(project_id=project.id):
+            dv = ingest(
+                self.ctx.settings.paths.project(project.id),
+                IngestRequest(
+                    project_id=project.id,
+                    source=source,
+                    target=target,
+                    split=split,
+                    overrides=overrides,
+                    source_id=src.id,
+                ),
+            )
+        existing = self.ctx.repo(DatasetVersion).list(
+            filters={"project_id": project.id, "content_hash": dv.content_hash}, limit=1
+        )
+        if existing:
+            return existing[0]
+        self.ctx.repo(DatasetVersion).add(dv)
+        updates: dict[str, Any] = {}
+        if dv.modality and dv.modality not in project.modalities:
+            updates["modalities"] = [*project.modalities, dv.modality]
+        if project.status is ProjectStatus.DRAFT:
+            updates["status"] = ProjectStatus.ACTIVE
+        if updates:
+            self.ctx.projects.update(project.model_copy(update=updates))
+        self.ctx.events.publish("dataset.ingested", project_id=project.id, dataset_version_id=dv.id)
+        return dv
+
+    def profile(self, dataset_version_id: str) -> ProfileCard:
+        dv = self.dataset(dataset_version_id)
+        card = profile_dataset(
+            self.view(dv), dataset_version_id=dv.id, content_hash=dv.content_hash
+        )
+        repo = self.ctx.repo(Profile)
+        for old in repo.list(filters={"dataset_version_id": dv.id}):
+            repo.delete(old.id)
+        repo.add(
+            Profile(
+                dataset_version_id=dv.id,
+                modality=card.modality,
+                stats=card.model_dump(mode="json"),
+                alerts=[a.model_dump(mode="json") for a in card.alerts],
+            )
+        )
+        return card
+
+    def profile_card(self, dataset_version_id: str) -> ProfileCard:
+        found = self.ctx.repo(Profile).list(
+            filters={"dataset_version_id": dataset_version_id}, limit=1
+        )
+        if not found:
+            return self.profile(dataset_version_id)
+        return ProfileCard.model_validate(found[0].stats)
+
+    # ------------------------------------------------------------------ pipeline
+
+    def propose_pipeline(
+        self, dataset_version_id: str, *, pretrained: bool | None = None
+    ) -> Pipeline:
+        dv = self.dataset(dataset_version_id)
+        card = self.profile_card(dv.id)
+        use_pretrained = (not offline_mode()) if pretrained is None else pretrained
+        spec = propose_pipeline(card, pretrained=use_pretrained and self._has_gpu())
+        pipeline = Pipeline(
+            project_id=dv.project_id,
+            name=f"auto-{dv.content_hash[:8]}",
+            graph=spec.model_dump(mode="json"),
+            origin=Origin.RULES,
+        )
+        self.ctx.repo(Pipeline).add(pipeline)
+        return pipeline
+
+    def update_pipeline(self, pipeline_id: str, spec: PipelineSpec, version: int) -> Pipeline:
+        current = self.ctx.repo(Pipeline).get(pipeline_id)
+        return self.ctx.repo(Pipeline).update(
+            current.model_copy(
+                update={
+                    "graph": spec.model_dump(mode="json"),
+                    "origin": Origin.MANUAL,
+                    "version": version,
+                }
+            )
+        )
+
+    def fitted_pipeline(self, pipeline_id: str, dataset_version_id: str) -> FittedPipeline:
+        pipeline = self.ctx.repo(Pipeline).get(pipeline_id)
+        dv = self.dataset(dataset_version_id)
+        path = self._fitted_path(pipeline, dv)
+        if path.is_file():
+            fitted = FittedPipeline.model_validate_json(path.read_text(encoding="utf-8"))
+            if fitted.spec.model_dump(mode="json") == pipeline.graph:
+                return fitted
+        spec = PipelineSpec.model_validate(pipeline.graph)
+        fitted = fit_pipeline(spec, self.view(dv).read("train"))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(fitted.model_dump_json(indent=2), encoding="utf-8")
+        return fitted
+
+    # ------------------------------------------------------------------ arquitectura
+
+    def _has_gpu(self) -> bool:
+        return bool(detect_hardware(self.ctx.settings.workspace_dir).gpus)
+
+    def propose_architecture(
+        self, dataset_version_id: str, pipeline_id: str
+    ) -> tuple[ArchSpecRecord, str]:
+        dv = self.dataset(dataset_version_id)
+        card = self.profile_card(dv.id)
+        fitted = self.fitted_pipeline(pipeline_id, dv.id)
+        rec = recommend(card, fitted, detect_hardware(self.ctx.settings.workspace_dir))
+        record = self.save_archspec(dv.project_id, rec.spec, origin=Origin.RULES)
+        return record, rec.rationale
+
+    def save_archspec(
+        self, project_id: str, spec: ArchSpec, *, origin: Origin = Origin.MANUAL
+    ) -> ArchSpecRecord:
+        report = validate_archspec(spec)
+        if not report.valid:
+            raise ValidationError(
+                "ArchSpec inválida",
+                details={"issues": [i.model_dump(mode="json") for i in report.errors]},
+            )
+        record = ArchSpecRecord(
+            project_id=project_id,
+            name=spec.name,
+            spec=spec.model_dump(mode="json"),
+            content_hash=spec.content_hash(),
+            origin=origin,
+        )
+        self.ctx.repo(ArchSpecRecord).add(record)
+        path = self.ctx.settings.paths.project(project_id).archspecs_dir / f"{record.id}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(spec.model_dump_json(indent=2), encoding="utf-8")
+        return record
+
+    @staticmethod
+    def validate(data: dict[str, Any]) -> ValidationReport:
+        return validate_archspec(data)
+
+    # ------------------------------------------------------------------ HPO / entrenamiento
+
+    def hpo_strategy(self, archspec_id: str, budget: Budget) -> HPOStrategy:
+        record = self.ctx.repo(ArchSpecRecord).get(archspec_id)
+        return recommend_strategy(ArchSpec.model_validate(record.spec), budget)
+
+    def run_study(
+        self,
+        project_id: str,
+        dataset_version_id: str,
+        pipeline_id: str,
+        archspec_id: str,
+        strategy: HPOStrategy,
+        *,
+        device: Device | None = None,
+        control: StudyControl | None = None,
+        on_event: Callable[[RunEvent], None] | None = None,
+        study: Study | None = None,
+    ) -> tuple[Study, StudyResult]:
+        project = self.project(project_id)
+        dv = self.dataset(dataset_version_id)
+        record = self.ctx.repo(ArchSpecRecord).get(archspec_id)
+        fitted = self.fitted_pipeline(pipeline_id, dv.id)
+        hw = detect_hardware(self.ctx.settings.workspace_dir)
+        study = study or Study(
+            project_id=project.id,
+            name=f"hpo-{record.name}",
+            strategy=strategy.model_dump(mode="json"),
+            budget=strategy.budget.model_dump(mode="json"),
+            objectives=[o.metric for o in strategy.objectives],
+            origin=Origin.RULES,
+        )
+        if self.ctx.repo(Study).find(study.id) is None:
+            self.ctx.repo(Study).add(study)
+        ppaths = self.ctx.settings.paths.project(project.id)
+        base = RunConfig(
+            run_id=study.id,
+            run_dir=ppaths.run(study.id),
+            dataset_dir=self.view(dv).root,
+            archspec=record.spec or {},
+            pipeline=fitted.model_dump(mode="json"),
+            device=device or hw.recommended_device,
+            seed=strategy.seed,
+            pretrained_allowed=not offline_mode(),
+        )
+        recorders: dict[str, RunRecorder] = {}
+        tags = {
+            "perceptron.project": project.id,
+            "perceptron.study": study.id,
+            "perceptron.dataset": dv.content_hash,
+            "perceptron.origin": record.origin.value,
+        }
+
+        def on_run_event(cfg: RunConfig) -> Callable[[RunEvent], None]:
+            recorders[cfg.run_id] = RunRecorder(self.tracker, cfg, experiment=project.id, tags=tags)
+            self.ctx.repo(Run).add(
+                Run(
+                    id=cfg.run_id,
+                    project_id=project.id,
+                    study_id=study.id,
+                    archspec_id=record.id,
+                    pipeline_id=pipeline_id,
+                    dataset_version_id=dv.id,
+                    status=RunStatus.RUNNING,
+                    device=cfg.device,
+                    hyperparams=dict(cfg.overrides),
+                    seed=cfg.seed,
+                    started_at=utcnow(),
+                )
+            )
+
+            def forward(ev: RunEvent) -> None:
+                recorders[cfg.run_id](ev)
+                self.ctx.events.publish(
+                    "run.event", run_id=cfg.run_id, event=ev.model_dump(mode="json")
+                )
+                if on_event is not None:
+                    on_event(ev)
+
+            return forward
+
+        def on_trial_end(rec: TrialRecord, cfg: RunConfig, result: RunResult) -> None:
+            mlflow_id = recorders[cfg.run_id].finish(result)
+            run = self.ctx.repo(Run).get(cfg.run_id)
+            self.ctx.repo(Run).update(
+                run.model_copy(
+                    update={
+                        "status": _RUN_STATUS.get(result.status, RunStatus.FAILED),
+                        "metrics": result.best_metrics,
+                        "environment": result.environment,
+                        "mlflow_run_id": mlflow_id,
+                        "finished_at": utcnow(),
+                        "diagnosis": {"error": result.error} if result.error else None,
+                    }
+                )
+            )
+
+        with log_context(project_id=project.id, job_id=study.id):
+            result = run_study(
+                strategy,
+                base,
+                storage=ppaths.root / "hpo" / "optuna.db",
+                study_name=study.id,
+                control=control,
+                bus=self.ctx.events,
+                on_run_event=on_run_event,
+                on_trial_end=on_trial_end,
+            )
+        summary = result.model_dump(mode="json")
+        current = self.ctx.repo(Study).get(study.id)
+        self.ctx.repo(Study).update(
+            current.model_copy(
+                update={
+                    "budget": {
+                        **current.budget,
+                        "result": {
+                            "stop_reason": summary["stop_reason"],
+                            "best_trial": summary["best_trial"],
+                            "duration_s": summary["duration_s"],
+                        },
+                    }
+                }
+            )
+        )
+        return current, result
+
+    # ------------------------------------------------------------------ evaluación y registro
+
+    def _run_dir(self, run: Run) -> Path:
+        return self.ctx.settings.paths.project(run.project_id).run(run.id)
+
+    def evaluate(self, run_id: str) -> tuple[Evaluation, EvaluationReport]:
+        run = self.ctx.repo(Run).get(run_id)
+        dv = self.dataset(run.dataset_version_id)
+        report = evaluate_run(self._run_dir(run), self.view(dv).root)
+        evaluation = Evaluation(
+            run_id=run.id,
+            split=report.split,
+            metrics=report.metrics,
+            artifacts={"report": f"runs/{run.id}/{EVALUATION_DIR}/{EVALUATION_FILE}"},
+        )
+        self.ctx.repo(Evaluation).add(evaluation)
+        if run.mlflow_run_id:
+            self.tracker.log_metrics(
+                run.mlflow_run_id, {f"test.{k}": v for k, v in report.metrics.items()}
+            )
+            self.tracker.log_artifact(
+                run.mlflow_run_id,
+                self._run_dir(run) / EVALUATION_DIR / EVALUATION_FILE,
+                "evaluation",
+            )
+        return evaluation, report
+
+    def evaluation_report(self, run_id: str) -> EvaluationReport:
+        run = self.ctx.repo(Run).get(run_id)
+        path = self._run_dir(run) / EVALUATION_DIR / EVALUATION_FILE
+        if not path.is_file():
+            raise NotFoundError(f"el run {run_id} no fue evaluado")
+        return EvaluationReport.model_validate(json.loads(path.read_text(encoding="utf-8")))
+
+    def register(self, run_id: str) -> ModelVersion:
+        run = self.ctx.repo(Run).get(run_id)
+        dv = self.dataset(run.dataset_version_id)
+        report = self.evaluation_report(run_id)
+        mv = build_model_version(
+            run.project_id, run.id, self._run_dir(run), report, dataset_hash=dv.content_hash
+        )
+        self.ctx.repo(ModelVersion).add(mv)
+        if run.mlflow_run_id:
+            self.tracker.set_tags(run.mlflow_run_id, {"perceptron.model_version": mv.id})
+        return mv
+
+
+# ---------------------------------------------------------------------- quickstart
+
+
+@dataclass
+class QuickstartResult:
+    project: Project
+    dataset: DatasetVersion
+    card: ProfileCard
+    pipeline: Pipeline
+    archspec: ArchSpecRecord
+    arch_rationale: str
+    strategy: HPOStrategy
+    study: Study
+    study_result: StudyResult
+    evaluation: EvaluationReport | None
+    model_version: ModelVersion | None
+
+    def summary(self) -> dict[str, Any]:
+        best = self.study_result.best_trial
+        return {
+            "project_id": self.project.id,
+            "dataset_version_id": self.dataset.id,
+            "modality": self.dataset.modality.value if self.dataset.modality else None,
+            "target": self.dataset.target,
+            "samples": self.dataset.num_samples,
+            "alerts": [a.code.value for a in self.card.alerts],
+            "architecture": self.archspec.name,
+            "architecture_rationale": self.arch_rationale,
+            "hpo_strategy": self.strategy.strategy,
+            "hpo_pruner": self.strategy.pruner,
+            "trials": len(self.study_result.trials),
+            "trial_states": {
+                s: sum(t.state == s for t in self.study_result.trials)
+                for s in ("complete", "pruned", "fail")
+            },
+            "stop_reason": self.study_result.stop_reason,
+            "best_run_id": best.run_id if best else None,
+            "best_params": best.params if best else None,
+            "test_metrics": self.evaluation.metrics if self.evaluation else None,
+            "model_version_id": self.model_version.id if self.model_version else None,
+        }
+
+
+def quickstart(
+    ctx: EngineContext,
+    source: Path,
+    *,
+    name: str | None = None,
+    target: str | None = None,
+    trials: int = 10,
+    max_epochs: int | None = None,
+    max_time_s: float | None = None,
+    device: Device | None = None,
+    on_event: Callable[[RunEvent], None] | None = None,
+    tracker: Tracker | None = None,
+) -> QuickstartResult:
+    """Todo el flujo con reglas, sin escribir código (camino de aceptación de la Capa 1)."""
+    wf = Workflow(ctx, tracker)
+    project = ctx.projects.add(Project(name=name or source.stem, goal="quickstart"))
+    ctx.files.init_project(project)
+    dv = wf.ingest(project.id, source, target=target)
+    card = wf.profile(dv.id)
+    pipeline = wf.propose_pipeline(dv.id)
+    archspec, why = wf.propose_architecture(dv.id, pipeline.id)
+    strategy = wf.hpo_strategy(
+        archspec.id,
+        Budget(max_trials=trials, max_epochs_per_trial=max_epochs, max_time_s=max_time_s),
+    )
+    study, result = wf.run_study(
+        project.id, dv.id, pipeline.id, archspec.id, strategy, device=device, on_event=on_event
+    )
+    evaluation = mv = None
+    if result.best_trial is not None:
+        _, evaluation = wf.evaluate(result.best_trial.run_id)
+        mv = wf.register(result.best_trial.run_id)
+    return QuickstartResult(
+        project=ctx.projects.get(project.id),
+        dataset=dv,
+        card=card,
+        pipeline=pipeline,
+        archspec=archspec,
+        arch_rationale=why,
+        strategy=strategy,
+        study=study,
+        study_result=result,
+        evaluation=evaluation,
+        model_version=mv,
+    )
+
+
+def new_study_id() -> str:
+    return new_id(IdPrefix.STUDY)

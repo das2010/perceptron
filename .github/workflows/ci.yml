@@ -60,6 +60,20 @@ jobs:
       - run: pnpm -C ui test
       - run: pnpm -C ui build
 
+  e2e:
+    name: aceptación e2e (UC-01, UC-04)
+    # Solo Linux: Windows cuenta doble en minutos de Actions de repos privados.
+    runs-on: ubuntu-latest
+    needs: engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --locked
+      - name: Quickstart UC-01 y UC-04 (10 trials, CPU, sin descargar pesos)
+        run: uv run pytest -m e2e -s -v engine/tests/e2e
+
   contract:
     name: OpenAPI ↔ TypeScript
     runs-on: ubuntu-latest

@@ -17,6 +17,7 @@ import typer
 from pydantic import SecretStr
 
 from perceptron import __version__
+from perceptron.cli import ml
 from perceptron.core.config import Settings
 from perceptron.domain.enums import Modality, PrivacyLevel, TaskType
 
@@ -25,6 +26,7 @@ project_app = typer.Typer(help="Gestión de proyectos", no_args_is_help=True)
 app.add_typer(project_app, name="project")
 system_app = typer.Typer(help="Información del sistema", no_args_is_help=True)
 app.add_typer(system_app, name="system")
+ml.register(app)
 
 WorkspaceOpt = Annotated[
     Path | None, typer.Option("--workspace", "-w", help="Directorio del workspace")
