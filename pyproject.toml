@@ -53,6 +53,7 @@ ignore = [
   "PLC0415",  # imports diferidos: arranque rápido de la CLI
   "PLR0917",  # comandos Typer: cada opción es un parámetro
   "PLR0911", "PLR0912", "PLR0915",  # funciones de despacho / tablas de decisión
+  "N812",  # convenciones `import lightning as L`, `functional as F`
   "RUF001", "RUF002", "RUF003",  # caracteres ambiguos: textos en español
 ]
 
