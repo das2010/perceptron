@@ -375,7 +375,7 @@ def uc09_motor_audio(rng: random.Random) -> Files:
     files: Files = {}
     events = []
     classes = ["normal", "rodamiento", "desbalance", "cavitacion"]
-    for i in range(40):
+    for i in range(120):
         cls = classes[i % len(classes)]
         f0 = rng.uniform(95, 105)
         samples = []

@@ -89,7 +89,7 @@ def test_uc09_end_to_end_prep(
     monkeypatch.setenv("PERCEPTRON_OFFLINE", "1")
     v = ingest(paths, IngestRequest(project_id="prj_au", source=fixtures_dir / "uc09_motor_audio"))
     assert v.modality is Modality.AUDIO
-    assert v.target == "label" and v.num_samples == 40
+    assert v.target == "label" and v.num_samples == 120
     view = DatasetView(paths.dataset(v.content_hash))
     card = profile_dataset(view)
     assert card.audio is not None

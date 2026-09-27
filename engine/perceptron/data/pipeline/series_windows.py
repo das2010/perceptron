@@ -88,6 +88,7 @@ class ForecastWindows:
     naive: np.ndarray  # [N, H] seasonal-naive en unidades originales
     mase_scale: np.ndarray  # [N]
     series: list[str]
+    level: np.ndarray | None = None  # [N] último valor escalado del target en la ventana
 
 
 @dataclass
@@ -123,7 +124,7 @@ def forecast_windows(
     """
     L, H = cfg.lookback, cfg.horizon  # noqa: N806 - notación usual (lookback, horizonte)
     m = cfg.season or 1
-    xs, ys, means, stds, naives, scales, keys = [], [], [], [], [], [], []
+    xs, ys, means, stds, naives, scales, keys, levels = [], [], [], [], [], [], [], []
     for key, part, values, feats, mean, std in _prepared(cfg, state, df, calendar):
         splits = part[SPLIT_COLUMN].to_numpy()
         y_raw = values[:, 0]
@@ -131,6 +132,7 @@ def forecast_windows(
             if not (splits[start : start + H] == split).all():
                 continue
             xs.append(feats[start - L : start])
+            levels.append(feats[start - 1, 0])
             ys.append(((y_raw[start : start + H] - mean[0]) / std[0]).astype(np.float32))
             hist = y_raw[start - L : start]
             naive = np.array([hist[-m + (h % m)] if m <= L else hist[-1] for h in range(H)])
@@ -148,6 +150,7 @@ def forecast_windows(
         naive=np.asarray(naives, dtype=np.float64).reshape(-1, H),
         mase_scale=np.asarray(scales, dtype=np.float64),
         series=keys,
+        level=np.asarray(levels, dtype=np.float32),
     )
 
 

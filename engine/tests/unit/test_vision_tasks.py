@@ -136,7 +136,7 @@ def test_detection_uc04(paths: ProjectPaths, fixtures_dir: Path) -> None:
     assert fitted.classes == ["defecto"]
     ds = make_dataset(view, fitted, "train", train=True)
     x, target = ds[0]
-    assert x.shape == (3, 32, 32) and target["boxes"].shape[1] == 4
+    assert x.shape == (3, 128, 128) and target["boxes"].shape[1] == 4  # agrandada: defectos chicos
     rec = recommend(card, fitted)
     assert rec.template == "centernet_small" and validate_archspec(rec.spec).valid
 

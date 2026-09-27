@@ -107,9 +107,13 @@ def _pruner(s: HPOStrategy) -> optuna.pruners.BasePruner:
     max_epochs = s.budget.max_epochs_per_trial or 30
     match s.pruner:
         case "median":
-            return optuna.pruners.MedianPruner(n_startup_trials=2, n_warmup_steps=1)
+            return optuna.pruners.MedianPruner(
+                n_startup_trials=3, n_warmup_steps=s.pruner_warmup_epochs
+            )
         case "asha":
-            return optuna.pruners.SuccessiveHalvingPruner(min_resource=1, reduction_factor=3)
+            return optuna.pruners.SuccessiveHalvingPruner(
+                min_resource=max(1, s.pruner_warmup_epochs), reduction_factor=3
+            )
         case "hyperband":
             return optuna.pruners.HyperbandPruner(min_resource=1, max_resource=max_epochs)
     return optuna.pruners.NopPruner()

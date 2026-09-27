@@ -70,7 +70,7 @@ def forecast_report(
 
 
 class ForecastingAdapter(TaskAdapter):
-    """Batch: (x [B, L, C], y [B, H], mean, std, naive, scale)."""
+    """Batch: (x [B, L, C], y [B, H], mean, std, naive, scale, level) — x e y relativos a level."""
 
     task: ClassVar[TaskType] = TaskType.FORECASTING
 
@@ -110,10 +110,10 @@ class ForecastingAdapter(TaskAdapter):
         pipeline: FittedPipeline,
     ) -> Predictions:
         preds, ys, naive, scale = [], [], [], []
-        for x, y, mean, std, nv, sc in loader:
-            out = model(x)
+        for x, y, mean, std, nv, sc, level in loader:
+            out = model(x) + level[:, None]
             preds.append((out * std[:, None] + mean[:, None]).numpy())
-            ys.append((y * std[:, None] + mean[:, None]).numpy())
+            ys.append(((y + level[:, None]) * std[:, None] + mean[:, None]).numpy())
             naive.append(nv.numpy())
             scale.append(sc.numpy())
         dataset = loader.dataset

@@ -76,15 +76,23 @@ class SeriesForecastDataset(Dataset[tuple[torch.Tensor, ...]]):
         self.scale = torch.tensor(w.mase_scale)
         self.series = w.series
         self.jitter = sspec.jitter if train else 0.0
+        # Normalización por ventana (RevIN): se predice la desviación respecto del último
+        # valor observado; el modelo parte del pronóstico naive y aprende la corrección.
+        self.level = torch.tensor(
+            w.level if w.level is not None else np.zeros(len(w.y), dtype=np.float32)
+        )
 
     def __len__(self) -> int:
         return len(self.y)
 
     def __getitem__(self, i: int) -> tuple[torch.Tensor, ...]:
-        x = self.x[i]
+        level = self.level[i]
+        x = self.x[i].clone()
+        x[:, 0] -= level
         if self.jitter:
             x = x + self.jitter * torch.randn_like(x)
-        return x, self.y[i], self.mean[i], self.std[i], self.naive[i], self.scale[i]
+        y = self.y[i] - level
+        return x, y, self.mean[i], self.std[i], self.naive[i], self.scale[i], level
 
 
 class SeriesAnomalyDataset(Dataset[tuple[torch.Tensor, ...]]):

@@ -77,6 +77,7 @@ class HPOStrategy(BaseModel):
     search_space: list[SearchParam] = Field(default_factory=list)
     objectives: list[Objective] = Field(default_factory=lambda: [Objective()], min_length=1)
     budget: Budget = Field(default_factory=Budget)
+    pruner_warmup_epochs: int = Field(default=1, ge=0, description="Épocas sin poda al inicio")
     parallelism: int = Field(default=1, ge=1)
     seed: int = 42
     rationale: str | None = None

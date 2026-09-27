@@ -5,6 +5,8 @@ Cada decisión queda explicada en `rationale` (la UI la muestra en "¿Por qué?"
 
 from __future__ import annotations
 
+import math
+
 from perceptron.data.pipeline.pipeline import (
     AudioSpec,
     AugmentSpec,
@@ -22,6 +24,7 @@ from perceptron.domain.enums import Modality, TaskType
 SKEW_LOG = 2.0
 OUTLIERS_ROBUST = 0.05
 ONE_HOT_MAX = 10
+MIN_OBJECT_PX = 16
 
 
 def _needs_log(c: ColumnProfile) -> bool:
@@ -266,11 +269,21 @@ def _propose_vision_task(card: ProfileCard) -> PipelineSpec:
         classes = None
     else:
         size = int(min(512, max(32, round(max(w50, h50) / 32) * 32)))
+        why: list[str] = []
+        area = vt.box_area_fraction_p50
+        if vt.task is TaskType.OBJECT_DETECTION and area:
+            # El detector reduce ×4: el objeto mediano debe medir ≥ MIN_OBJECT_PX (≥ 4 celdas).
+            needed = math.ceil(MIN_OBJECT_PX / math.sqrt(area) / 32) * 32
+            if needed > size:
+                size = int(min(512, needed))
+                why.append(
+                    f"Se agranda a {size} px: el objeto mediano queda de ≥ {MIN_OBJECT_PX} px."
+                )
         augment = [AugmentSpec(kind="hflip")]
         image = ImageSpec(size=size, channels=3, normalize="dataset", augment=augment)
-        why = [
-            f"Imágenes a {size}×{size} px; espejado horizontal en train (cajas/máscaras incluidas)."
-        ]
+        why.append(
+            f"Imágenes a {size}×{size} px; espejado horizontal en train (con cajas/máscaras)."
+        )
         classes = vt.classes
     target = TargetSpec(name=_VISION_TARGET[vt.task], task=vt.task, classes=classes)
     return PipelineSpec(modality=Modality.IMAGE, target=target, image=image, rationale=why)
