@@ -1,5 +1,4 @@
 import { useParams } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -16,9 +15,8 @@ import {
   Td,
   Th,
 } from "@/components/ui";
-import { getApiClient } from "@/lib/api/client";
 import {
-  unwrap,
+  useRunHistory,
   useDiagnosis,
   useEvaluate,
   useEvaluation,
@@ -45,23 +43,9 @@ function formatRunError(diagnosis: unknown): string {
   return parts.length ? parts.join("\n") : JSON.stringify(error, null, 2);
 }
 
-function useHistory(runId: string) {
-  return useQuery({
-    queryKey: ["runs", runId, "history"],
-    queryFn: async () =>
-      unwrap(
-        await (
-          await getApiClient()
-        ).GET("/api/v1/runs/{run_id}/history", {
-          params: { path: { run_id: runId } },
-        }),
-      ),
-  });
-}
-
 function Curves({ runId }: { runId: string }) {
   const { t } = useTranslation();
-  const { data } = useHistory(runId);
+  const { data } = useRunHistory(runId);
   const history = useMemo(() => data ?? [], [data]);
   const option = useMemo(() => {
     const keys = ["train_loss", "val_loss"].filter((k) => history.some((h) => k in h));

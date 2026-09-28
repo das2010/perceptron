@@ -239,7 +239,14 @@
     "empty": "Todavía no se entrenó ningún modelo.",
     "run": "Run",
     "status": "Estado",
-    "started": "Inicio"
+    "started": "Inicio",
+    "compare": "Comparar",
+    "compareRun": "Comparar {{run}}",
+    "compareTitle": "Comparación de {{count}} runs",
+    "clearCompare": "Quitar selección",
+    "compareMetric": "Métrica de las curvas",
+    "compareHint": "Las filas resaltadas son hiperparámetros que difieren entre los runs.",
+    "compareSelect": "Marcá dos o más runs para compararlos."
   },
   "status": {
     "queued": "En cola",

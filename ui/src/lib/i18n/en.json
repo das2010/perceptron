@@ -239,7 +239,14 @@
     "empty": "No model has been trained yet.",
     "run": "Run",
     "status": "Status",
-    "started": "Started"
+    "started": "Started",
+    "compare": "Compare",
+    "compareRun": "Compare {{run}}",
+    "compareTitle": "Comparing {{count}} runs",
+    "clearCompare": "Clear selection",
+    "compareMetric": "Curve metric",
+    "compareHint": "Highlighted rows are hyperparameters that differ between runs.",
+    "compareSelect": "Select two or more runs to compare them."
   },
   "status": {
     "queued": "Queued",

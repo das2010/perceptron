@@ -2,7 +2,7 @@
  * Hooks de datos por recurso (TanStack Query) sobre el cliente tipado de OpenAPI.
  * Ninguna lógica de ML vive en la UI (CLAUDE.md): solo llamadas al Engine.
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getApiClient } from "./client";
 import type { components } from "./schema";
@@ -725,5 +725,29 @@ export function useBuildDefinition(projectId: string) {
         }),
       ) as ArchSpecRecord,
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["projects", projectId, "archspecs"] }),
+  });
+}
+
+// ---------------------------------------------------------------- historia y comparación de runs
+
+async function fetchRunHistory(runId: string) {
+  return unwrap(
+    await (
+      await getApiClient()
+    ).GET("/api/v1/runs/{run_id}/history", { params: { path: { run_id: runId } } }),
+  );
+}
+
+export function useRunHistory(runId: string) {
+  return useQuery({ queryKey: ["runs", runId, "history"], queryFn: () => fetchRunHistory(runId) });
+}
+
+/** Historias por época de varios runs (comparación, SPEC §11.2). */
+export function useRunHistories(runIds: string[]) {
+  return useQueries({
+    queries: runIds.map((id) => ({
+      queryKey: ["runs", id, "history"],
+      queryFn: () => fetchRunHistory(id),
+    })),
   });
 }
