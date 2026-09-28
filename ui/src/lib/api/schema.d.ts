@@ -1565,6 +1565,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/retrain-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Policy */
+        get: operations["getRetrainPolicy"];
+        /** Put Policy */
+        put: operations["putRetrainPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/retrain-policy/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Policy */
+        post: operations["runRetrainPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/retrain-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Retrain Runs */
+        get: operations["listRetrainRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/runs": {
         parameters: {
             query?: never;
@@ -1633,6 +1685,23 @@ export interface paths {
          * @description Dataset público de Hugging Face o Kaggle, descargado a la caché del proyecto.
          */
         post: operations["createHubSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/sources/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Stream Source */
+        post: operations["createStreamSource"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1710,6 +1779,57 @@ export interface paths {
         post?: never;
         /** Remove */
         delete: operations["removeRemoteServer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrain-runs/{retrain_run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Retrain Run */
+        get: operations["getRetrainRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrain-runs/{retrain_run_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approveRetrain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrain-runs/{retrain_run_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject */
+        post: operations["rejectRetrain"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2183,6 +2303,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sources/{source_id}/buffer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Buffer */
+        get: operations["getStreamBuffer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sources/{source_id}/ingest": {
         parameters: {
             query?: never;
@@ -2211,6 +2348,23 @@ export interface paths {
         put?: never;
         /** Preview Source */
         post: operations["previewSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sources/{source_id}/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pull */
+        post: operations["pullStreamSource"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5568,6 +5722,21 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** PullResult */
+        PullResult: {
+            /** Added */
+            added: number;
+            /** Batches */
+            batches: number;
+            /** Last Batch */
+            last_batch?: string | null;
+            /** Rows */
+            rows: number;
+            /** State */
+            state?: {
+                [key: string]: unknown;
+            };
+        };
         /** PurposeRef */
         PurposeRef: {
             /**
@@ -5702,6 +5871,208 @@ export interface components {
              */
             mode: "auto" | "llm" | "rules";
         };
+        /**
+         * RetrainPolicy
+         * @description Cuándo y cómo reentrenar el modelo en uso (RF-MON-05).
+         */
+        RetrainPolicy: {
+            /**
+             * Budget
+             * @description max_trials, max_epochs_per_trial
+             */
+            budget?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Consumed
+             * @description Último lote de cada fuente ya usado para reentrenar
+             */
+            consumed?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Cooldown S
+             * @default 3600
+             */
+            cooldown_s: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /**
+             * Deployment Id
+             * @description Deployment que vigila
+             */
+            deployment_id?: string | null;
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * Holdout Fraction
+             * @description Filas nuevas reservadas para comparar (no entrenan)
+             * @default 0.3
+             */
+            holdout_fraction: number;
+            /** Id */
+            id?: string;
+            /** Last Cron At */
+            last_cron_at?: string | null;
+            /** Last Run At */
+            last_run_at?: string | null;
+            /**
+             * Min Improvement
+             * @default 0
+             */
+            min_improvement: number;
+            /** Project Id */
+            project_id: string;
+            /**
+             * Require Approval
+             * @default true
+             */
+            require_approval: boolean;
+            /**
+             * Source Ids
+             * @description Fuentes streaming/API con datos nuevos
+             */
+            source_ids?: string[];
+            /**
+             * Triggers
+             * @description drift {min_severity}, cron {expr}, volume {min_rows}, degradation {max_drop}
+             */
+            triggers?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Use Feedback
+             * @description Suma el feedback etiquetado del deployment a los datos nuevos
+             * @default true
+             */
+            use_feedback: boolean;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+        };
+        /** RetrainPolicyBody */
+        RetrainPolicyBody: {
+            /** Budget */
+            budget?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Cooldown S
+             * @default 3600
+             */
+            cooldown_s: number;
+            /** Deployment Id */
+            deployment_id?: string | null;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Holdout Fraction
+             * @default 0.3
+             */
+            holdout_fraction: number;
+            /**
+             * Min Improvement
+             * @default 0
+             */
+            min_improvement: number;
+            /**
+             * Require Approval
+             * @default true
+             */
+            require_approval: boolean;
+            /** Source Ids */
+            source_ids?: string[];
+            /** Triggers */
+            triggers?: components["schemas"]["Trigger"][];
+            /**
+             * Use Feedback
+             * @default true
+             */
+            use_feedback: boolean;
+        };
+        /**
+         * RetrainRun
+         * @description Una ejecución de la política: datos nuevos → challenger → comparación → promoción.
+         */
+        RetrainRun: {
+            /** Challenge */
+            challenge?: {
+                [key: string]: unknown;
+            } | null;
+            /** Champion Id */
+            champion_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Dataset Version Id */
+            dataset_version_id?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Finished At */
+            finished_at?: string | null;
+            /** Id */
+            id?: string;
+            /** Log */
+            log?: {
+                [key: string]: unknown;
+            }[];
+            /** Model Version Id */
+            model_version_id?: string | null;
+            /**
+             * New Rows
+             * @default 0
+             */
+            new_rows: number;
+            /** Policy Id */
+            policy_id: string;
+            /** Project Id */
+            project_id: string;
+            /** Run Id */
+            run_id?: string | null;
+            /** @default running */
+            status: components["schemas"]["RetrainStatus"];
+            /** Study Id */
+            study_id?: string | null;
+            /** Trigger */
+            trigger?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+        };
+        /**
+         * RetrainStatus
+         * @enum {string}
+         */
+        RetrainStatus: "running" | "awaiting_approval" | "promoted" | "not_improved" | "rejected" | "skipped" | "failed";
         /** RobustnessReport */
         RobustnessReport: {
             /** Baseline */
@@ -6080,6 +6451,11 @@ export interface components {
              * @default 42
              */
             seed: number;
+            /**
+             * Split Column
+             * @description predefined: columna con train/val/test (se quita después)
+             */
+            split_column?: string | null;
             /** @default stratified */
             strategy: components["schemas"]["SplitStrategy"];
             /**
@@ -6099,7 +6475,7 @@ export interface components {
          * SplitStrategy
          * @enum {string}
          */
-        SplitStrategy: "random" | "stratified" | "group" | "temporal" | "kfold";
+        SplitStrategy: "random" | "stratified" | "group" | "temporal" | "kfold" | "predefined";
         /** SsoProvider */
         SsoProvider: {
             /** Display Name */
@@ -6177,6 +6553,30 @@ export interface components {
              * @enum {string}
              */
             mode: "auto" | "llm" | "rules";
+        };
+        /** StreamSourceCreate */
+        StreamSourceCreate: {
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "rest" | "websocket" | "file";
+            /** Name */
+            name: string;
+            /**
+             * Poll Interval S
+             * @description Sondeo automático
+             */
+            poll_interval_s?: number | null;
+            /**
+             * Token
+             * @description Solo de escritura: va al keychain
+             */
+            token?: string | null;
         };
         /** Study */
         Study: {
@@ -6534,6 +6934,21 @@ export interface components {
              * @enum {string}
              */
             precision: "auto" | "32" | "16-mixed" | "bf16-mixed";
+        };
+        /** Trigger */
+        Trigger: {
+            /** Expr */
+            expr?: string | null;
+            /** Max Drop */
+            max_drop?: number | null;
+            /** Min Rows */
+            min_rows?: number | null;
+            min_severity?: components["schemas"]["Severity-Input"] | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "drift" | "cron" | "volume" | "degradation";
         };
         /** UploadStart */
         UploadStart: {
@@ -10105,6 +10520,134 @@ export interface operations {
             };
         };
     };
+    getRetrainPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrainPolicy"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    putRetrainPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetrainPolicyBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrainPolicy"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    runRetrainPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrainRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listRetrainRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrainRun"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listRuns: {
         parameters: {
             query?: {
@@ -10220,6 +10763,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["HubSourceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createStreamSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StreamSourceCreate"];
             };
         };
         responses: {
@@ -10383,6 +10961,99 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getRetrainRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                retrain_run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrainRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approveRetrain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                retrain_run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrainRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rejectRetrain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                retrain_run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrainRun"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -11221,6 +11892,37 @@ export interface operations {
             };
         };
     };
+    getStreamBuffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     ingestSource: {
         parameters: {
             query?: never;
@@ -11276,6 +11978,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourcePreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pullStreamSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullResult"];
                 };
             };
             /** @description Validation Error */
