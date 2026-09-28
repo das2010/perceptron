@@ -1,4 +1,4 @@
-🟡 REST paginado con auth, WebSocket y archivo que crece con buffer y sondeo; Kafka/MQTT pendientes
+# Progreso de implementación
 
 Estado de cada requisito funcional de [SPEC.md](../SPEC.md). Leyenda: ✅ hecho · 🟡 parcial · ⬜ pendiente.
 La columna **Capa** es la capa de §14 donde se implementa.
@@ -146,7 +146,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Export verificado ONNX/fp16/INT8, torch.export y TorchScript con firma (RF-EXP-01/05, ADR-0027) | ✅ |
 | Servidor de inferencia FastAPI + ONNX Runtime con Dockerfiles CPU/CUDA (RF-EXP-03) | ✅ |
 | Proyecto de código exportable autónomo con uv (RF-EXP-04) | ✅ |
-| Playground en la página del run (RF-EXP-02) | 🟡 tabular e imagen |
+| Playground en la página del run (RF-EXP-02) | ✅ tabular, imagen, texto y audio |
 | Aceptación O5: proyecto y servidor en contenedores limpios (job `export-o5`) | ✅ uv sync → train → infer → pytest en `python:3.12-slim`; servidor Docker con API key |
 
 
@@ -155,8 +155,8 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Entregable | Estado |
 |---|---|
 | Análisis de errores (RF-EVL-03) y fairness (RF-EVL-04) sobre el test sellado | ✅ |
-| Explicabilidad con Captum (RF-EVL-02) | 🟡 tabular e imagen |
-| Robustez ante perturbaciones (RF-EVL-05) | 🟡 tabular e imagen |
+| Explicabilidad con Captum (RF-EVL-02) | 🟡 tabular, imagen, texto y audio; series pendientes |
+| Robustez ante perturbaciones (RF-EVL-05) | ✅ tabular, imagen, texto y audio |
 | Informe HTML/PDF/Markdown con marca y model card (RF-EVL-06, ADR-0028) | ✅ |
 | Explicación local en el playground | ✅ |
 
@@ -221,7 +221,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RetrainPolicy: drift, cron, volumen y degradación; aprobación opcional; bitácora | ✅ |
 | Versión de datos con split predefinido (test del champion fijo) y linaje append | ✅ |
 | Aceptación UC-10: drift → alerta → reentrenamiento → challenger → promoción si mejora → rollback | ✅ (test de API) |
-| Kafka/MQTT (extras opcionales), embeddings internos para no estructurado | ⬜ |
+| Kafka/MQTT (extras opcionales), embeddings internos para no estructurado | ✅ extra `streaming`; drift de embeddings en tabla, texto, imagen y audio |
 
 ## Capa 7a — licencia, auditoría, telemetría y actualización
 
