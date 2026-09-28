@@ -508,6 +508,25 @@ def get_run(run_id: str, ctx: Ctx) -> Run:
     return ctx.repo(Run).get(run_id)
 
 
+class MlflowLink(BaseModel):
+    url: str
+
+
+@router.post("/runs/{run_id}/mlflow", tags=["runs"], operation_id="openRunInMlflow")
+def open_in_mlflow(run_id: str, ctx: Ctx) -> MlflowLink:
+    """Enlace al run en la UI de MLflow (opcional, RF-TRK-02). En el desktop la levanta."""
+    run = ctx.repo(Run).get(run_id)
+    if not run.mlflow_run_id:
+        raise NotFoundError("el run no quedó registrado en MLflow")
+    from perceptron.tracking.tracker import MlflowTracker
+
+    tracker = Workflow(ctx).tracker
+    if not isinstance(tracker, MlflowTracker):
+        raise NotFoundError("el tracking de este Engine no es MLflow")
+    experiment = tracker.experiment_id(run.project_id)
+    return MlflowLink(url=ctx.mlflow_ui.run_url(experiment, run.mlflow_run_id))
+
+
 @router.get("/runs/{run_id}/history", tags=["runs"], operation_id="getRunHistory")
 def get_run_history(run_id: str, ctx: Ctx) -> list[dict[str, float]]:
     """Métricas por época de un run terminado (para las curvas de la UI, RF-TRK-02)."""

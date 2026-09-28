@@ -54,12 +54,16 @@ VIEW_WRITES = frozenset(
         "compareRuns",
         "predictRows",
         "predictFile",
+        "predictTexts",
         "explainRow",
         "explainImage",
+        "explainText",
+        "explainAudio",
         "validateArchitecture",
         "lintArchCode",
         "archToCode",
         "predictDeployment",  # usar el modelo en uso (como el playground)
+        "openRunInMlflow",  # solo arma el enlace (en el servidor, la URL configurada)
     }
 )
 # Lecturas reservadas a Editor: descargas de exportaciones y la auditoría LLM del proyecto.

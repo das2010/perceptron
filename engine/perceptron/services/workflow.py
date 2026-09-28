@@ -69,7 +69,7 @@ from perceptron.export.formats import (
     ExportRequest,
     export_run,
 )
-from perceptron.hpo.recommend import recommend_strategy
+from perceptron.hpo.recommend import objective_metric, recommend_strategy
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.hpo.study import StudyControl, StudyResult, TrialRecord, run_study
 from perceptron.llm.schemas import Report
@@ -411,7 +411,12 @@ class Workflow:
                 archspec_id, budget, mode=mode, dataset_version_id=dataset_version_id
             )
         record = self.ctx.repo(ArchSpecRecord).get(archspec_id)
-        return recommend_strategy(ArchSpec.model_validate(record.spec), budget)
+        spec = ArchSpec.model_validate(record.spec)
+        project = self.ctx.projects.get(record.project_id)
+        # La métrica del proyecto (p. ej. de su plantilla, RF-PRJ-02) es el objetivo del HPO.
+        return recommend_strategy(
+            spec, budget, metric=objective_metric(spec, project.target_metric)
+        )
 
     def run_study(
         self,
@@ -701,6 +706,16 @@ class Workflow:
         from perceptron.evaluation.explain import local_image
 
         return local_image(self._run_dir(self.ctx.repo(Run).get(run_id)), image)
+
+    def explain_text(self, run_id: str, text: str) -> Any:
+        from perceptron.evaluation.explain import local_text
+
+        return local_text(self._run_dir(self.ctx.repo(Run).get(run_id)), text)
+
+    def explain_audio(self, run_id: str, path: Path) -> Any:
+        from perceptron.evaluation.explain import local_audio
+
+        return local_audio(self._run_dir(self.ctx.repo(Run).get(run_id)), path)
 
     def robustness(self, run_id: str) -> Any:
         """Degradación ante perturbaciones (RF-EVL-05), cacheada junto a la evaluación."""

@@ -3,7 +3,8 @@
 Carga `model.onnx` + `pipeline.json` + `signature.json` de un directorio de export y predice
 con ONNX Runtime. El preprocesamiento es el del pipeline ajustado del Engine (el mismo
 código que en el entrenamiento), así que no hay desvío entre entrenar y servir. En tabular
-no necesita torch; en imagen usa las transformaciones de evaluación (torchvision, CPU).
+y texto no necesita torch; en imagen usa las transformaciones de evaluación (torchvision,
+CPU) y en audio las mismas features (log-mel/MFCC) normalizadas con las estadísticas de train.
 """
 
 from __future__ import annotations
@@ -18,9 +19,11 @@ import polars as pl
 
 from perceptron.data.pipeline.pipeline import (
     FittedPipeline,
+    audio_features,
     decode_regression,
     image_transforms,
     transform_tabular,
+    transform_text,
 )
 
 MODEL_FILE = "model.onnx"
@@ -141,3 +144,36 @@ class InferenceModel:
         mode = "L" if spec is not None and spec.channels == 1 else "RGB"
         batch = torch.stack([tf(im.convert(mode)) for im in images]).numpy()
         return self._postprocess(self._run({self.input_names[0]: batch.astype(np.float32)}))
+
+    def predict_texts(self, texts: list[str]) -> list[Prediction]:
+        """Texto: se normaliza y tokeniza igual que en el entrenamiento."""
+        if self.kind != "tokens":
+            raise InputError(f"el modelo espera {self.kind}, no texto")
+        spec = self.pipeline.spec.text
+        if spec is None:
+            raise InputError("el modelo no tiene pipeline de texto")
+        if not texts:
+            return []
+        ids = transform_text(self.pipeline, pl.DataFrame({spec.column: texts}))
+        return self._postprocess(self._run({self.input_names[0]: ids}))
+
+    def predict_audio(self, files: list[Path]) -> list[Prediction]:
+        """Audio (WAV, FLAC, OGG, MP3): se remuestrea y se calculan las features de train."""
+        if self.kind != "spectrogram":
+            raise InputError(f"el modelo espera {self.kind}, no audio")
+        from perceptron.data.audio import load
+
+        spec = self.pipeline.spec.audio
+        if spec is None:
+            raise InputError("el modelo no tiene pipeline de audio")
+        mean = self.pipeline.audio_mean or 0.0
+        std = self.pipeline.audio_std or 1.0
+        feats = []
+        for path in files:
+            try:
+                wav, _ = load(path, sample_rate=spec.sample_rate)
+            except Exception as exc:  # formato no soportado o archivo roto
+                raise InputError(f"no se pudo leer el audio: {exc}") from exc
+            feats.append(((audio_features(spec, wav) - mean) / std).numpy())
+        batch = np.stack(feats).astype(np.float32)
+        return self._postprocess(self._run({self.input_names[0]: batch}))

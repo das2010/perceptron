@@ -261,6 +261,22 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
     app.restart()
 }
 
+/// Abre una URL http(s) en el navegador del sistema (p. ej. la UI de MLflow, RF-TRK-02).
+#[tauri::command]
+fn open_external(app: AppHandle, url: String) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+
+    if !is_web_url(&url) {
+        return Err("solo se abren direcciones http(s)".into());
+    }
+    app.opener().open_url(url, None::<&str>).map_err(|e| e.to_string())
+}
+
+fn is_web_url(url: &str) -> bool {
+    (url.starts_with("https://") || url.starts_with("http://"))
+        && !url.chars().any(|c| c.is_control() || c.is_whitespace())
+}
+
 pub fn run() {
     let provision = std::env::args().any(|a| a == "--provision-only");
     let update = std::env::args().any(|a| a == "--update-only");
@@ -268,6 +284,7 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_opener::init())
         .manage(AppState::default())
         .manage(updater::Pending::default())
         .invoke_handler(tauri::generate_handler![
@@ -277,6 +294,7 @@ pub fn run() {
             restart_engine,
             check_update,
             install_update,
+            open_external,
             secrets::get_secret,
             secrets::set_secret,
             secrets::delete_secret,
@@ -307,4 +325,18 @@ pub fn run() {
             handle.state::<AppState>().stop_engine();
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_web_url;
+
+    #[test]
+    fn only_web_urls_open_in_the_browser() {
+        assert!(is_web_url("http://127.0.0.1:5000/#/experiments/1/runs/abc"));
+        assert!(is_web_url("https://mlflow.empresa.com/"));
+        for bad in ["file:///C:/Windows/system32/calc.exe", "javascript:alert(1)", "ms-settings:", "http://x y"] {
+            assert!(!is_web_url(bad), "{bad}");
+        }
+    }
 }

@@ -123,7 +123,9 @@
     "gpus": "GPU",
     "noGpu": "Sin GPU (se entrena en CPU)",
     "recent": "Proyectos recientes",
-    "empty": "Todavía no hay proyectos. Creá uno para empezar."
+    "empty": "Todavía no hay proyectos. Creá uno para empezar.",
+    "showArchived_one": "Mostrar el archivado ({{count}})",
+    "showArchived_other": "Mostrar archivados ({{count}})"
   },
   "project": {
     "name": "Nombre",
@@ -143,6 +145,23 @@
       "design": "Diseño",
       "labeling": "Etiquetado",
       "monitoring": "Monitoreo"
+    },
+    "template": "Plantilla",
+    "noTemplate": "Sin plantilla",
+    "noTemplateHint": "Elegí un caso de uso para preconfigurar modalidad, tarea y métrica.",
+    "templateHint": "{{modalities}} · {{task}} · optimiza {{metric}}",
+    "archived": "Archivado",
+    "actions": {
+      "title": "Proyecto",
+      "duplicate": "Duplicar",
+      "archive": "Archivar",
+      "restore": "Restaurar",
+      "delete": "Eliminar",
+      "hint": "Duplicar copia la configuración (objetivo, tarea, métrica, privacidad), sin datos ni runs. Archivar conserva todo y lo saca de la lista.",
+      "deleteTitle": "Eliminar «{{name}}»",
+      "deleteWarning": "Se borran para siempre los datos, versiones, runs, modelos y la carpeta del proyecto. No se puede deshacer; si solo querés sacarlo de la vista, archivalo.",
+      "typeName": "Escribí «{{name}}» para confirmar",
+      "deleteConfirm": "Eliminar definitivamente"
     }
   },
   "privacy": {
@@ -307,7 +326,9 @@
     "predicted": "Predicho",
     "actual": "Real",
     "class": "Clase",
-    "support": "Casos"
+    "support": "Casos",
+    "openMlflow": "Abrir en MLflow",
+    "mlflowHint": "Ver el run en la UI de MLflow (opcional)"
   },
   "models": {
     "title": "Modelos registrados",
@@ -603,7 +624,14 @@
     "image": "Imagen a clasificar",
     "explain": "Explicar esta predicción",
     "contributions": "Contribución de cada variable",
-    "heatmap": "Mapa de calor de la explicación"
+    "heatmap": "Mapa de calor de la explicación",
+    "text": "Texto a clasificar",
+    "textHint": "Se normaliza y tokeniza igual que en el entrenamiento.",
+    "textFile": "o un .txt (una muestra por línea):",
+    "audio": "Audio a clasificar",
+    "audioHint": "WAV, FLAC, OGG o MP3; se remuestrea como en el entrenamiento.",
+    "tokens": "Aporte de cada palabra a la predicción",
+    "spectrogram": "Espectrograma: momentos y frecuencias que más pesaron"
   },
   "analysis": {
     "title": "Evaluación avanzada",
@@ -948,5 +976,43 @@
     "preview": "Ver exactamente qué se enviaría",
     "enable": "Activar telemetría",
     "disable": "Desactivar telemetría"
+  },
+  "templates": {
+    "churn": {
+      "title": "Churn de clientes",
+      "goal": "¿Qué clientes se van a dar de baja el mes que viene?"
+    },
+    "ticket-resolution-time": {
+      "title": "Tiempo de resolución de tickets",
+      "goal": "Estimar cuántas horas va a llevar resolver cada ticket de soporte."
+    },
+    "ticket-category": {
+      "title": "Categoría de tickets",
+      "goal": "Clasificar cada ticket de soporte en su categoría a partir del texto."
+    },
+    "visual-inspection": {
+      "title": "Inspección visual de defectos",
+      "goal": "Detectar piezas con defectos a partir de fotos de la línea."
+    },
+    "damage-segmentation": {
+      "title": "Segmentación de daños",
+      "goal": "Marcar en cada foto las zonas con daño."
+    },
+    "document-ocr": {
+      "title": "Texto de remitos",
+      "goal": "Extraer el texto de remitos escaneados."
+    },
+    "demand-forecast": {
+      "title": "Demanda semanal por SKU",
+      "goal": "Pronosticar la demanda de las próximas semanas para cada producto."
+    },
+    "sensor-anomalies": {
+      "title": "Anomalías en sensores",
+      "goal": "Detectar comportamientos anómalos en la telemetría de los equipos."
+    },
+    "machine-sound": {
+      "title": "Fallas de motor por sonido",
+      "goal": "Detectar fallas de motor a partir de grabaciones de audio."
+    }
   }
 }

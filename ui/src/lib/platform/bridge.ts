@@ -64,6 +64,8 @@ export interface PlatformBridge {
   pickDirectory(): Promise<string | null>;
   getSecret(key: string): Promise<string | null>;
   setSecret(key: string, value: string): Promise<void>;
+  /** Abre una URL http(s) fuera de la app (navegador del sistema o pestaña nueva). */
+  openExternal(url: string): Promise<void>;
 }
 
 export class WebPlatformBridge implements PlatformBridge {
@@ -85,6 +87,11 @@ export class WebPlatformBridge implements PlatformBridge {
 
   setSecret(): Promise<void> {
     return Promise.reject(new Error("Secrets are managed by the Team Server in web mode"));
+  }
+
+  openExternal(url: string): Promise<void> {
+    window.open(url, "_blank", "noopener,noreferrer");
+    return Promise.resolve();
   }
 }
 

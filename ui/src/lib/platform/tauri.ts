@@ -55,4 +55,8 @@ export class TauriPlatformBridge implements PlatformBridge {
   setSecret(key: string, value: string): Promise<void> {
     return invoke("set_secret", { key, value });
   }
+
+  openExternal(url: string): Promise<void> {
+    return invoke("open_external", { url });
+  }
 }

@@ -1,20 +1,23 @@
 /**
- * Playground (RF-EXP-02): probar el modelo exportado con una fila (tabular) o una imagen y ver
- * la predicción, la confianza y las probabilidades por clase.
+ * Playground (RF-EXP-02): probar el modelo exportado con una fila (tabular), una imagen, un
+ * texto o un audio y ver la predicción, la confianza y las probabilidades por clase.
  */
 import { FlaskConical } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button, Card, CardTitle, ErrorNote, Field, Input } from "@/components/ui";
+import { Button, Card, CardTitle, ErrorNote, Field, Input, Textarea } from "@/components/ui";
 import {
   type ExportReport,
   type PlaygroundResult,
   useDatasetSample,
+  useExplainAudio,
   useExplainImage,
   useExplainRow,
+  useExplainText,
   usePredictFile,
   usePredictRows,
+  usePredictTexts,
 } from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
 
@@ -75,8 +78,21 @@ export function PlaygroundPanel({
   const file = usePredictFile(runId);
   const explainRow = useExplainRow(runId);
   const explainImage = useExplainImage(runId);
+  const texts = usePredictTexts(runId);
+  const explainText = useExplainText(runId);
+  const explainAudio = useExplainAudio(runId);
+  const [text, setText] = useState("");
   const [lastFile, setLastFile] = useState<File | null>(null);
-  const result = rows.data ?? file.data;
+  const result = rows.data ?? file.data ?? texts.data;
+  const upload = (f: File | undefined) => {
+    if (!f) return;
+    rows.reset();
+    texts.reset();
+    explainImage.reset();
+    explainAudio.reset();
+    setLastFile(f);
+    file.mutate(f);
+  };
   const currentRow = () => Object.fromEntries(columns.map((c) => [c, values[c] ?? ""]));
 
   const fillExample = () => {
@@ -118,36 +134,82 @@ export function PlaygroundPanel({
             </Button>
           </div>
         </form>
+      ) : inputs.kind === "tokens" ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            file.reset();
+            explainText.reset();
+            texts.mutate([text]);
+          }}
+        >
+          <Field label={t("playground.text")} hint={t("playground.textHint")}>
+            <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} />
+          </Field>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button type="submit" loading={texts.isPending} disabled={!text.trim()}>
+              {t("playground.predict")}
+            </Button>
+            <label className="text-sm text-muted">
+              {t("playground.textFile")}{" "}
+              <input
+                type="file"
+                accept=".txt,text/plain"
+                aria-label={t("playground.textFile")}
+                onChange={(e) => upload(e.target.files?.[0])}
+              />
+            </label>
+          </div>
+        </form>
+      ) : inputs.kind === "spectrogram" ? (
+        <Field label={t("playground.audio")} hint={t("playground.audioHint")}>
+          <input
+            type="file"
+            accept=".wav,.flac,.ogg,.mp3,audio/*"
+            aria-label={t("playground.audio")}
+            onChange={(e) => upload(e.target.files?.[0])}
+          />
+        </Field>
       ) : (
         <Field label={t("playground.image")}>
           <input
             type="file"
             accept="image/*"
             aria-label={t("playground.image")}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              rows.reset();
-              explainImage.reset();
-              setLastFile(f);
-              file.mutate(f);
-            }}
+            onChange={(e) => upload(e.target.files?.[0])}
           />
         </Field>
       )}
-      <ErrorNote error={rows.error ?? file.error ?? explainRow.error ?? explainImage.error} />
+      <ErrorNote
+        error={
+          rows.error ??
+          file.error ??
+          texts.error ??
+          explainRow.error ??
+          explainImage.error ??
+          explainText.error ??
+          explainAudio.error
+        }
+      />
       {result && <Result result={result} />}
-      {result && (
+      {result && (inputs.kind !== "tokens" || texts.data) && (
         <Button
           className="mt-3"
           variant="ai"
           size="sm"
-          loading={explainRow.isPending || explainImage.isPending}
-          onClick={() =>
-            inputs.kind === "tabular"
-              ? explainRow.mutate(currentRow())
-              : lastFile && explainImage.mutate(lastFile)
+          loading={
+            explainRow.isPending ||
+            explainImage.isPending ||
+            explainText.isPending ||
+            explainAudio.isPending
           }
+          onClick={() => {
+            if (inputs.kind === "tabular") explainRow.mutate(currentRow());
+            else if (inputs.kind === "tokens") explainText.mutate(text);
+            else if (inputs.kind === "spectrogram") {
+              if (lastFile) explainAudio.mutate(lastFile);
+            } else if (lastFile) explainImage.mutate(lastFile);
+          }}
         >
           {t("playground.explain")}
         </Button>
@@ -174,11 +236,29 @@ export function PlaygroundPanel({
           })}
         </ul>
       )}
-      {explainImage.data?.heatmap_png && (
+      {explainText.data && (
+        <p className="mt-3 text-sm leading-7" aria-label={t("playground.tokens")}>
+          {(() => {
+            const items = explainText.data.contributions;
+            const max = Math.max(...items.map((c) => Math.abs(c.attribution)), 1e-9);
+            return items.map((c) => (
+              <span
+                key={c.feature}
+                title={c.attribution.toFixed(3)}
+                className={`mr-1 rounded px-1 ${c.attribution >= 0 ? "bg-primary" : "bg-bad text-canvas"}`}
+                style={{ opacity: 0.25 + 0.75 * (Math.abs(c.attribution) / max) }}
+              >
+                {String(c.value)}
+              </span>
+            ));
+          })()}
+        </p>
+      )}
+      {(explainImage.data ?? explainAudio.data)?.heatmap_png && (
         <img
           className="mt-3 max-h-80 rounded-pt border border-line"
-          src={`data:image/png;base64,${explainImage.data.heatmap_png}`}
-          alt={t("playground.heatmap")}
+          src={`data:image/png;base64,${(explainImage.data ?? explainAudio.data)?.heatmap_png}`}
+          alt={t(explainAudio.data ? "playground.spectrogram" : "playground.heatmap")}
         />
       )}
     </Card>

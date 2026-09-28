@@ -175,6 +175,11 @@ class Settings(BaseSettings):
         default=None,
         description="MLflow server (Team Server: http://mlflow:5000); None = SQLite del workspace",
     )
+    mlflow_ui_url: str | None = Field(
+        default=None,
+        pattern=r"^https?://",
+        description="URL pública de la UI de MLflow (Team Server); el desktop levanta la suya",
+    )
     source_roots: list[Path] | None = Field(
         default=None,
         description=(

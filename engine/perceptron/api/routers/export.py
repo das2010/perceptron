@@ -69,6 +69,10 @@ class PlaygroundRows(BaseModel):
     rows: list[dict[str, Any]] = Field(min_length=1, max_length=1000)
 
 
+class PlaygroundTexts(BaseModel):
+    texts: list[str] = Field(min_length=1, max_length=1000)
+
+
 class PlaygroundResult(BaseModel):
     predictions: list[dict[str, Any]]
     task: str
@@ -94,20 +98,45 @@ def predict_rows(run_id: str, body: PlaygroundRows, ctx: Ctx) -> PlaygroundResul
     return _predict(run_id, ctx, lambda m: m.predict_rows(body.rows))
 
 
+@router.post("/runs/{run_id}/predict/text", operation_id="predictTexts")
+def predict_texts(run_id: str, body: PlaygroundTexts, ctx: Ctx) -> PlaygroundResult:
+    """Playground (RF-EXP-02): textos para modelos de texto."""
+    return _predict(run_id, ctx, lambda m: m.predict_texts(body.texts))
+
+
+AUDIO_SUFFIXES = (".wav", ".flac", ".ogg", ".mp3")
+
+
 @router.post("/runs/{run_id}/predict/file", operation_id="predictFile")
 async def predict_file(
     run_id: str, ctx: Ctx, file: Annotated[UploadFile, File()]
 ) -> PlaygroundResult:
-    """Playground: una imagen (modelos de imagen) o un CSV (tabular)."""
+    """Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV."""
     import csv
     import io
+    import tempfile
+    from pathlib import Path
 
     data = await read_limited(file, 256 * MB)
+    suffix = Path(file.filename or "").suffix.lower()
 
     def call(model: Any) -> Any:
         if model.kind == "tabular":
             rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))
             return model.predict_rows(rows[:1000])
+        if model.kind == "tokens":
+            text = data.decode("utf-8-sig", errors="replace")
+            lines = [line.strip() for line in text.splitlines() if line.strip()]
+            return model.predict_texts(lines[:1000])
+        if model.kind == "spectrogram":
+            if suffix not in AUDIO_SUFFIXES:
+                raise ValidationError(
+                    f"formato de audio no soportado: {suffix or '(sin extensión)'}"
+                )
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / f"audio{suffix}"
+                path.write_bytes(data)
+                return model.predict_audio([path])
         from PIL import Image, UnidentifiedImageError
 
         try:

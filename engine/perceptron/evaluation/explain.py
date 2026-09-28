@@ -5,6 +5,10 @@
   (mediana/moda de validación). Global: |atribución| media sobre validación. Local: por fila.
 - Imagen: Integrated Gradients respecto de la clase predicha, con base en cero (la media
   normalizada), como mapa de calor superpuesto a la imagen.
+- Texto: oclusión por token (cada token se reemplaza por el de padding): cuánto baja la
+  probabilidad de la clase predicha sin él. Sirve igual con vocabulario propio o de HF.
+- Audio: Integrated Gradients sobre el espectrograma (la entrada real del modelo), como mapa
+  de calor tiempo × frecuencia.
 
 Los modelos de código experto no se explican en el proceso del Engine (ADR-0025).
 """
@@ -23,7 +27,13 @@ from pydantic import BaseModel
 
 from perceptron.catalog.registry import CODE_BLOCK
 from perceptron.core.errors import ValidationError
-from perceptron.data.pipeline.pipeline import image_transforms, transform_tabular
+from perceptron.data.pipeline.pipeline import (
+    audio_features,
+    hf_tokenizer,
+    image_transforms,
+    transform_tabular,
+    transform_text,
+)
 from perceptron.data.view import DatasetView
 from perceptron.training.data import make_dataset
 from perceptron.training.inference import TrainedModel, load_trained
@@ -206,3 +216,92 @@ def _overlay(img: Any, heat: np.ndarray, image_mod: Any) -> Any:
     base = np.asarray(img, dtype=np.float32)
     mixed = base * (1 - alpha) + lime * alpha
     return image_mod.fromarray(mixed.clip(0, 255).astype(np.uint8))
+
+
+def _score(trained: TrainedModel, out: torch.Tensor, target: Any, sign: float) -> torch.Tensor:
+    """Qué tan fuerte es la predicción explicada: probabilidad de la clase predicha; en
+    regresión el valor y en binaria el logit orientado hacia la clase predicha (`sign`)."""
+    if trained.task.value == "regression" or out.shape[1] == 1:
+        return sign * out[:, 0]
+    k = int(target[0]) if torch.is_tensor(target) else int(target)
+    return torch.softmax(out.float(), dim=1)[:, k]
+
+
+def _token_texts(trained: TrainedModel, ids: list[int]) -> list[str]:
+    spec = trained.pipeline.spec.text
+    if spec is not None and spec.tokenizer == "hf" and spec.hf_model:
+        return [str(t) for t in hf_tokenizer(spec.hf_model).convert_ids_to_tokens(ids)]
+    vocab = trained.pipeline.vocab or []
+    return [vocab[i] if 0 <= i < len(vocab) else "<unk>" for i in ids]
+
+
+def local_text(run_dir: Path, text: str) -> LocalExplanation:
+    """Oclusión por token sobre la clase predicha (una sola pasada con un batch)."""
+    trained = load_analyzable(run_dir)
+    if trained.spec.input.kind != "tokens":
+        raise ValidationError("este modelo no es de texto")
+    spec = trained.pipeline.spec.text
+    if spec is None:
+        raise ValidationError("el modelo no tiene pipeline de texto")
+    ids = torch.tensor(transform_text(trained.pipeline, pl.DataFrame({spec.column: [text]})))
+    pad = int(trained.pipeline.pad_id or 0)
+    positions = [i for i, v in enumerate(ids[0].tolist()) if v != pad]
+    if not positions:
+        raise ValidationError("el texto no tiene tokens conocidos por el modelo")
+    with torch.no_grad():
+        out = trained.model(ids)
+        target, labels = _target_and_label(trained, out)
+        binary = trained.task.value != "regression" and out.shape[1] == 1
+        sign = -1.0 if binary and float(out[0, 0]) < 0 else 1.0
+        base = float(_score(trained, out, target, sign)[0])
+        occluded = ids.repeat(len(positions), 1)
+        for row, pos in enumerate(positions):
+            occluded[row, pos] = pad
+        scores = _score(trained, trained.model(occluded), target, sign)
+    tokens = _token_texts(trained, [int(ids[0, p]) for p in positions])
+    contributions = [
+        Contribution(feature=f"{i}:{tok}", value=tok, attribution=base - float(sc))
+        for i, (tok, sc) in enumerate(zip(tokens, scores.tolist(), strict=True))
+    ]
+    return LocalExplanation(method="occlusion", prediction=labels[0], contributions=contributions)
+
+
+def local_audio(run_dir: Path, path: Path) -> LocalExplanation:
+    """Integrated Gradients sobre el espectrograma de la clase predicha, como PNG."""
+    from captum.attr import IntegratedGradients
+    from PIL import Image
+
+    from perceptron.data.audio import load
+
+    trained = load_analyzable(run_dir)
+    if trained.spec.input.kind != "spectrogram":
+        raise ValidationError("este modelo no es de audio")
+    spec = trained.pipeline.spec.audio
+    if spec is None:
+        raise ValidationError("el modelo no tiene pipeline de audio")
+    try:
+        wav, _ = load(path, sample_rate=spec.sample_rate)
+    except Exception as exc:
+        raise ValidationError(f"no se pudo leer el audio: {exc}") from exc
+    mean = trained.pipeline.audio_mean or 0.0
+    std = trained.pipeline.audio_std or 1.0
+    x = ((audio_features(spec, wav) - mean) / std).float().unsqueeze(0)
+    with torch.no_grad():
+        out = trained.model(x)
+    target, labels = _target_and_label(trained, out)
+    attr = IntegratedGradients(trained.model).attribute(
+        x, baselines=torch.zeros_like(x), target=target, n_steps=IG_STEPS
+    )
+    heat = attr.detach().abs().reshape(attr.shape[-2], attr.shape[-1]).numpy()[::-1]
+    heat = heat / (heat.max() or 1.0)
+    feats = x.reshape(x.shape[-2], x.shape[-1]).numpy()[::-1]  # graves abajo
+    gray = (feats - feats.min()) / ((feats.max() - feats.min()) or 1.0) * 255
+    base = Image.fromarray(gray.astype(np.uint8)).convert("RGB")
+    base = base.resize((max(base.width * 4, 256), max(base.height * 3, 128)))
+    buf = io.BytesIO()
+    _overlay(base, np.ascontiguousarray(heat), Image).save(buf, format="PNG")
+    return LocalExplanation(
+        method="integrated_gradients",
+        prediction=labels[0],
+        heatmap_png=base64.b64encode(buf.getvalue()).decode("ascii"),
+    )

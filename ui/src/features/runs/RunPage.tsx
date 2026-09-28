@@ -23,6 +23,7 @@ import {
   useExportReport,
   useRegister,
   useReport,
+  useOpenInMlflow,
   useRun,
   type EvaluationReport,
 } from "@/lib/api/hooks";
@@ -140,6 +141,7 @@ export function RunPage() {
   const diagnosis = useDiagnosis(runId, done);
   const report = useReport(runId);
   const exported = useExportReport(runId, done);
+  const mlflow = useOpenInMlflow(runId);
 
   if (run.isPending) return <Spinner />;
   if (run.error || !run.data) return <ErrorNote error={run.error} />;
@@ -153,7 +155,20 @@ export function RunPage() {
         <CardTitle className="flex items-center gap-2">
           {t("run.title")} <span className="font-mono text-xs">{r.id}</span>
           <Badge>{t(`status.${r.status}`)}</Badge>
+          {r.mlflow_run_id && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto"
+              loading={mlflow.isPending}
+              onClick={() => mlflow.mutate()}
+              title={t("run.mlflowHint")}
+            >
+              {t("run.openMlflow")}
+            </Button>
+          )}
         </CardTitle>
+        <ErrorNote error={mlflow.error} />
         <dl className="grid gap-2 text-sm sm:grid-cols-3">
           {Object.entries(r.metrics ?? {})
             .filter(([k]) => k.startsWith("val_"))

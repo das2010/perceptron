@@ -123,7 +123,9 @@
     "gpus": "GPU",
     "noGpu": "No GPU (training on CPU)",
     "recent": "Recent projects",
-    "empty": "No projects yet. Create one to get started."
+    "empty": "No projects yet. Create one to get started.",
+    "showArchived_one": "Show archived ({{count}})",
+    "showArchived_other": "Show archived ({{count}})"
   },
   "project": {
     "name": "Name",
@@ -143,6 +145,23 @@
       "design": "Design",
       "labeling": "Labeling",
       "monitoring": "Monitoring"
+    },
+    "template": "Template",
+    "noTemplate": "No template",
+    "noTemplateHint": "Pick a use case to preconfigure modality, task and metric.",
+    "templateHint": "{{modalities}} · {{task}} · optimizes {{metric}}",
+    "archived": "Archived",
+    "actions": {
+      "title": "Project",
+      "duplicate": "Duplicate",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete",
+      "hint": "Duplicate copies the configuration (goal, task, metric, privacy), without data or runs. Archive keeps everything and hides it from the list.",
+      "deleteTitle": "Delete “{{name}}”",
+      "deleteWarning": "Data, versions, runs, models and the project folder are deleted permanently. This cannot be undone; to just hide it, archive it.",
+      "typeName": "Type “{{name}}” to confirm",
+      "deleteConfirm": "Delete permanently"
     }
   },
   "privacy": {
@@ -307,7 +326,9 @@
     "predicted": "Predicted",
     "actual": "Actual",
     "class": "Class",
-    "support": "Cases"
+    "support": "Cases",
+    "openMlflow": "Open in MLflow",
+    "mlflowHint": "See the run in the MLflow UI (optional)"
   },
   "models": {
     "title": "Registered models",
@@ -603,7 +624,14 @@
     "image": "Image to classify",
     "explain": "Explain this prediction",
     "contributions": "Contribution of each variable",
-    "heatmap": "Explanation heat map"
+    "heatmap": "Explanation heat map",
+    "text": "Text to classify",
+    "textHint": "Normalized and tokenized exactly as in training.",
+    "textFile": "or a .txt (one sample per line):",
+    "audio": "Audio to classify",
+    "audioHint": "WAV, FLAC, OGG or MP3; resampled as in training.",
+    "tokens": "Contribution of each word to the prediction",
+    "spectrogram": "Spectrogram: the moments and frequencies that weighed most"
   },
   "analysis": {
     "title": "Advanced evaluation",
@@ -948,5 +976,43 @@
     "preview": "See exactly what would be sent",
     "enable": "Enable telemetry",
     "disable": "Disable telemetry"
+  },
+  "templates": {
+    "churn": {
+      "title": "Customer churn",
+      "goal": "Which customers will cancel next month?"
+    },
+    "ticket-resolution-time": {
+      "title": "Ticket resolution time",
+      "goal": "Estimate how many hours each support ticket will take to resolve."
+    },
+    "ticket-category": {
+      "title": "Ticket category",
+      "goal": "Classify each support ticket into its category from its text."
+    },
+    "visual-inspection": {
+      "title": "Visual defect inspection",
+      "goal": "Detect defective parts from photos of the production line."
+    },
+    "damage-segmentation": {
+      "title": "Damage segmentation",
+      "goal": "Mark the damaged areas in each photo."
+    },
+    "document-ocr": {
+      "title": "Delivery note text",
+      "goal": "Extract the text from scanned delivery notes."
+    },
+    "demand-forecast": {
+      "title": "Weekly demand per SKU",
+      "goal": "Forecast the demand for each product over the coming weeks."
+    },
+    "sensor-anomalies": {
+      "title": "Sensor anomalies",
+      "goal": "Detect anomalous behavior in equipment telemetry."
+    },
+    "machine-sound": {
+      "title": "Engine faults by sound",
+      "goal": "Detect engine faults from audio recordings."
+    }
   }
 }

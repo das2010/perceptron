@@ -114,6 +114,9 @@ class TrainingSpec(BaseModel):
     )
     freeze_backbone_epochs: int = Field(default=0, ge=0)
     oversample: bool = Field(default=False, description="Muestreo balanceado por clase (RF-TRN-10)")
+    lr_finder: bool = Field(
+        default=False, description="Barrido de LR antes de entrenar; usa el sugerido (RF-TRN-04)"
+    )
 
 
 class Provenance(BaseModel):

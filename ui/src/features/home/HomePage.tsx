@@ -19,7 +19,13 @@ import {
   Textarea,
 } from "@/components/ui";
 import { EngineStatus } from "@/features/system/EngineStatus";
-import { useCreateProject, useHardware, useProjects } from "@/lib/api/hooks";
+import {
+  useCreateProject,
+  useHardware,
+  useProjects,
+  useProjectTemplates,
+  type ProjectTemplate,
+} from "@/lib/api/hooks";
 import { formatDate } from "@/lib/format";
 
 const PRIVACY = ["L0", "L1", "L2", "L3"] as const;
@@ -34,14 +40,24 @@ function NewProjectDialog({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const create = useCreateProject();
+  const templates = useProjectTemplates();
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
   const [privacy, setPrivacy] = useState<(typeof PRIVACY)[number]>("L1");
+  const [template, setTemplate] = useState<ProjectTemplate | null>(null);
+
+  const choose = (id: string) => {
+    const next = templates.data?.find((tp) => tp.id === id) ?? null;
+    // El ejemplo de objetivo solo reemplaza lo que no escribió el usuario.
+    const example = (tp: ProjectTemplate | null) => (tp ? t(`templates.${tp.id}.goal`) : "");
+    if (!goal || goal === example(template)) setGoal(example(next));
+    setTemplate(next);
+  };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     create.mutate(
-      { name, goal, description: "", privacy_level: privacy },
+      { name, goal, description: "", privacy_level: privacy, template: template?.id ?? null },
       {
         onSuccess: (p) => {
           onOpenChange(false);
@@ -54,6 +70,27 @@ function NewProjectDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} title={t("home.newProject")}>
       <form onSubmit={submit} className="flex flex-col gap-4">
+        <Field
+          label={t("project.template")}
+          hint={
+            template
+              ? t("project.templateHint", {
+                  task: t(`task.${template.task}`),
+                  modalities: template.modalities.map((m) => t(`modality.${m}`)).join(" + "),
+                  metric: template.target_metric,
+                })
+              : t("project.noTemplateHint")
+          }
+        >
+          <Select value={template?.id ?? ""} onChange={(e) => choose(e.target.value)}>
+            <option value="">{t("project.noTemplate")}</option>
+            {templates.data?.map((tp) => (
+              <option key={tp.id} value={tp.id}>
+                {`${tp.use_case} · ${t(`templates.${tp.id}.title`)}`}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <Field label={t("project.name")}>
           <Input required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
@@ -110,8 +147,11 @@ function HardwareCard() {
 export function HomePage() {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const { data, isPending, error } = useProjects();
-  const projects = Array.isArray(data) ? data : [];
+  const all = Array.isArray(data) ? data : [];
+  const archivedCount = all.filter((p) => p.status === "archived").length;
+  const projects = showArchived ? all : all.filter((p) => p.status !== "archived");
 
   return (
     <>
@@ -128,7 +168,19 @@ export function HomePage() {
         <EngineStatus />
         <HardwareCard />
       </div>
-      <h2 className="mb-3 mt-8 text-lg font-semibold">{t("home.recent")}</h2>
+      <div className="mb-3 mt-8 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">{t("home.recent")}</h2>
+        {archivedCount > 0 && (
+          <label className="flex items-center gap-2 text-sm text-muted">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+            />
+            {t("home.showArchived", { count: archivedCount })}
+          </label>
+        )}
+      </div>
       {isPending && <Spinner />}
       <ErrorNote error={error} />
       {!isPending && !error && projects.length === 0 && <EmptyState>{t("home.empty")}</EmptyState>}
@@ -143,6 +195,7 @@ export function HomePage() {
               <p className="font-semibold">{p.name}</p>
               {p.goal && <p className="mt-1 line-clamp-2 text-sm text-muted">{p.goal}</p>}
               <div className="mt-3 flex flex-wrap gap-2">
+                {p.status === "archived" && <Badge>{t("project.archived")}</Badge>}
                 <Badge>{p.privacy_level}</Badge>
                 {p.modalities?.map((m) => (
                   <Badge key={m}>{t(`modality.${m}`)}</Badge>

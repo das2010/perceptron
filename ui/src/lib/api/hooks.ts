@@ -6,12 +6,14 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 
 import { getApiClient } from "./client";
 import type { components } from "./schema";
+import { getPlatform } from "@/lib/platform/bridge";
 
 export type Schemas = components["schemas"];
 /** Las entidades siempre traen `id` en las respuestas (en el schema figura con default). */
 type WithId<T> = T & { id: string };
 
 export type Project = WithId<Schemas["Project"]>;
+export type ProjectTemplate = Schemas["ProjectTemplate"];
 export type DatasetVersion = WithId<Schemas["DatasetVersion"]>;
 export type ProfileCard = Schemas["ProfileCard"];
 export type Run = WithId<Schemas["Run"]>;
@@ -106,12 +108,72 @@ export function useProject(projectId: string) {
   });
 }
 
+export function useProjectTemplates() {
+  return useQuery({
+    queryKey: ["projects", "templates"] as const,
+    staleTime: Infinity,
+    queryFn: async () =>
+      unwrap(await (await getApiClient()).GET("/api/v1/projects/templates")) as ProjectTemplate[],
+  });
+}
+
 export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body: Schemas["ProjectCreate"]) =>
       unwrap(await (await getApiClient()).POST("/api/v1/projects", { body })) as Project,
     onSuccess: () => void qc.invalidateQueries({ queryKey: keys.projects }),
+  });
+}
+
+/** Archivar/restaurar (y otros cambios) con bloqueo optimista por `version`. */
+export function useUpdateProject(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: Schemas["ProjectPatch"]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).PATCH("/api/v1/projects/{project_id}", {
+          params: { path: { project_id: projectId } },
+          body,
+        }),
+      ) as Project,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.projects }),
+  });
+}
+
+export function useDuplicateProject(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (name?: string) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/duplicate", {
+          params: { path: { project_id: projectId } },
+          body: { name: name || null },
+        }),
+      ) as Project,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.projects }),
+  });
+}
+
+export function useDeleteProject(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await (
+        await getApiClient()
+      ).DELETE("/api/v1/projects/{project_id}", {
+        params: { path: { project_id: projectId } },
+      });
+      if (res.error) unwrap(res);
+    },
+    onSuccess: () => {
+      qc.removeQueries({ queryKey: keys.project(projectId) });
+      void qc.invalidateQueries({ queryKey: keys.projects });
+    },
   });
 }
 
@@ -284,6 +346,21 @@ export function useRuns(projectId: string, refetchMs?: number) {
           params: { path: { project_id: projectId } },
         }),
       ) as Run[],
+  });
+}
+
+/** Enlace al run en la UI de MLflow (opcional, RF-TRK-02); el desktop la levanta. */
+export function useOpenInMlflow(runId: string) {
+  return useMutation({
+    mutationFn: async () => {
+      const link = unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/mlflow", { params: { path: { run_id: runId } } }),
+      ) as { url: string };
+      await getPlatform().openExternal(link.url);
+      return link.url;
+    },
   });
 }
 
@@ -854,6 +931,20 @@ export function usePredictRows(runId: string) {
   });
 }
 
+export function usePredictTexts(runId: string) {
+  return useMutation({
+    mutationFn: async (texts: string[]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/predict/text", {
+          params: { path: { run_id: runId } },
+          body: { texts },
+        }),
+      ),
+  });
+}
+
 export function usePredictFile(runId: string) {
   return useMutation({
     mutationFn: async (file: File) => {
@@ -973,6 +1064,38 @@ export function useExplainImage(runId: string) {
         ).POST("/api/v1/runs/{run_id}/explain/image", {
           params: { path: { run_id: runId } },
           body: form as unknown as Schemas["Body_explainImage"],
+          bodySerializer: (b) => b as unknown as FormData,
+        }),
+      );
+    },
+  });
+}
+
+export function useExplainText(runId: string) {
+  return useMutation({
+    mutationFn: async (text: string) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/explain/text", {
+          params: { path: { run_id: runId } },
+          body: { text },
+        }),
+      ),
+  });
+}
+
+export function useExplainAudio(runId: string) {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      return unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/explain/audio", {
+          params: { path: { run_id: runId } },
+          body: form as unknown as Schemas["Body_explainAudio"],
           bodySerializer: (b) => b as unknown as FormData,
         }),
       );
