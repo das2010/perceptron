@@ -139,6 +139,17 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Updater firmado y firma de código de los instaladores | ⬜ pendiente de claves y certificado |
 
 
+## Capa 4a — export, serving y playground
+
+| Entregable | Estado |
+|---|---|
+| Export verificado ONNX/fp16/INT8, torch.export y TorchScript con firma (RF-EXP-01/05, ADR-0027) | ✅ |
+| Servidor de inferencia FastAPI + ONNX Runtime con Dockerfiles CPU/CUDA (RF-EXP-03) | ✅ |
+| Proyecto de código exportable autónomo con uv (RF-EXP-04) | ✅ |
+| Playground en la página del run (RF-EXP-02) | 🟡 tabular e imagen |
+| Aceptación O5: proyecto y servidor en contenedores limpios (job `export-o5`) | 🟡 en CI |
+
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
@@ -231,11 +242,11 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-EVL-04 |  | 1/4 | Fairness: el usuario marca atributos sensibles; métricas por subgrupo (Fairlearn:… | ⬜ pendiente |
 | RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | ⬜ pendiente |
 | RF-EVL-06 | sí | 2/4 | Informe final generado por el LLM (o plantilla sin LLM): resumen ejecutivo, qué se… | ✅ informante LLM (Markdown + model card, métricas de la evaluación) o plantilla sin LLM; `POST /runs/{rid}/report` |
-| RF-EXP-01 | sí | 4 | Exportar a ONNX (con verificación numérica vs. PyTorch), torch.export… | ⬜ pendiente |
-| RF-EXP-02 | sí | 4 | Playground en la app: cargar un archivo/fila/imagen/audio/texto, ver predicción,… | ⬜ pendiente |
-| RF-EXP-03 |  | 4 | API REST de inferencia: generar y levantar un servidor FastAPI (ONNX Runtime o… | ⬜ pendiente |
-| RF-EXP-04 |  | 4 | Proyecto de código exportable: repositorio Python standalone generado desde plantillas… | ⬜ pendiente |
-| RF-EXP-05 |  | 4 | Firma del modelo: schema de entrada/salida, versión, hash; incluido en todos los formatos. | ⬜ pendiente |
+| RF-EXP-01 | sí | 4 | Exportar a ONNX (con verificación numérica vs. PyTorch), torch.export… | ✅ ONNX (opset 18, batch dinámico) verificado en ONNX Runtime (1e-4; fp16 1e-2; INT8 informado), torch.export y TorchScript legacy (ADR-0027) |
+| RF-EXP-02 | sí | 4 | Playground en la app: cargar un archivo/fila/imagen/audio/texto, ver predicción,… | 🟡 playground tabular (formulario por columna) e imagen con predicción, confianza y probabilidades; audio/texto y explicación local en la 4b |
+| RF-EXP-03 |  | 4 | API REST de inferencia: generar y levantar un servidor FastAPI (ONNX Runtime o… | ✅ servidor FastAPI + ONNX Runtime con pipeline embebido, /predict, /predict/batch, /metrics, API key, Dockerfile CPU/CUDA (tabular e imagen) |
+| RF-EXP-04 |  | 4 | Proyecto de código exportable: repositorio Python standalone generado desde plantillas… | ✅ repo autónomo (uv): modelo generado, pipeline vendorizado, train/infer/serve, config, datos train/val, pesos y prueba de humo; O5 en CI (tabular e imagen) |
+| RF-EXP-05 |  | 4 | Firma del modelo: schema de entrada/salida, versión, hash; incluido en todos los formatos. | ✅ firma (entradas, salidas, hash de ArchSpec, run, versión) en el reporte, `signature.json` y en el servidor |
 | RF-MON-01 |  | 6 | Registro de predicciones del serving (muestreado, configurable, respetando privacidad)… | ⬜ pendiente |
 | RF-MON-02 |  | 6 | Drift de datos: tabular con Evidently (PSI, KS, Jensen-Shannon, chi²) por feature; no… | ⬜ pendiente |
 | RF-MON-03 |  | 6 | Drift de concepto / performance: métricas sobre datos etiquetados recientes vs. baseline. | ⬜ pendiente |
