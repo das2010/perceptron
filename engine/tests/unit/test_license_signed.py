@@ -152,3 +152,23 @@ def test_bundled_preteco_key_loads() -> None:
     keys = bundled_keys()
     assert "preteco-2026" in keys
     _load_public(keys["preteco-2026"])  # PEM Ed25519 válida
+
+
+def test_standalone_issue_script_matches_engine_format(tmp_path: Path) -> None:
+    import importlib.util
+
+    script = Path(__file__).resolve().parents[3] / "scripts" / "issue_license.py"
+    spec = importlib.util.spec_from_file_location("issue_license", script)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    private, public = keygen()
+    doc = module.issue(private, "k1", licensee="Acme SA", seats=3, days=30)
+    check = verify(doc, {"k1": public})
+    assert check.valid and check.terms is not None and check.terms.seats == 3
+    key = tmp_path / "k.key"
+    key.write_bytes(private)
+    out = tmp_path / "lic.json"
+    args = ["--key", str(key), "--key-id", "k1", "--licensee", "Acme", "--out", str(out)]
+    assert module.main(args) == 0 and verify(out.read_text(), {"k1": public}).valid
+    assert module.main(args) == 1  # no sobrescribe
