@@ -1209,3 +1209,17 @@ export function useCreatePathSource(projectId: string) {
       ),
   });
 }
+
+// ---------------------------------------------------------------- cola del Team Server (Capa 5b)
+
+export type QueueView = Schemas["QueueView"];
+
+/** Estudios en cola/en curso y workers con su hardware (RF-SRV-04). */
+export function useQueue(enabled: boolean) {
+  return useQuery({
+    queryKey: ["server", "queue"],
+    enabled,
+    refetchInterval: 5000,
+    queryFn: async () => unwrap(await (await getApiClient()).GET("/api/v1/server/queue")),
+  });
+}

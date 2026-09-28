@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -17,7 +18,15 @@ from perceptron.core.config import RuntimeMode, Settings, get_settings
 from perceptron.storage.db import sqlite_url
 from perceptron_server import __version__
 from perceptron_server.migrate import upgrade
-from perceptron_server.routers import admin, auth, sources
+from perceptron_server.queue.dispatch import CeleryDispatcher, Dispatcher
+from perceptron_server.queue.launcher import (
+    LocalLauncher,
+    QueueLauncher,
+    QuotaGuard,
+    start_event_bridge,
+)
+from perceptron_server.queue.relay import RedisRelay, Relay
+from perceptron_server.routers import admin, auth, queue, sources
 from perceptron_server.session import SessionMiddleware
 from perceptron_server.settings import ServerSettings
 from perceptron_server.state import ServerState
@@ -28,6 +37,16 @@ CSP = (
     "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; "
     "worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 )
+
+
+QueueFactory = Callable[[Settings], tuple[Relay, Dispatcher]]
+
+
+def redis_queue(url: str) -> QueueFactory:
+    def factory(_: Settings) -> tuple[Relay, Dispatcher]:
+        return RedisRelay(url), CeleryDispatcher(url)
+
+    return factory
 
 
 def database_url(settings: Settings) -> str:
@@ -84,7 +103,10 @@ def create_server_app(
     server: ServerSettings | None = None,
     *,
     migrate: bool = True,
+    queue_factory: QueueFactory | None = None,
 ) -> FastAPI:
+    """`queue_factory` (relay + dispatcher) activa la cola de workers; por defecto, la de
+    `PERCEPTRON_SERVER__REDIS_URL` si está configurada."""
     base = settings or get_settings()
     api = base.api
     if "cors_origins" not in api.model_fields_set:
@@ -100,13 +122,25 @@ def create_server_app(
         ctx = EngineContext.create(s)
         state.bind(ctx)
         state.accounts.bootstrap()
+        quota = QuotaGuard(server)
+        make_queue = queue_factory or (
+            redis_queue(server.redis_url.get_secret_value()) if server.redis_url else None
+        )
+        if make_queue is None:
+            ctx.study_launcher = LocalLauncher(quota)
+        else:
+            relay, dispatcher = make_queue(s)
+            ctx.study_launcher = QueueLauncher(quota, relay, dispatcher)
+            ctx.on_close(relay.close)
+            ctx.on_close(start_event_bridge(ctx, relay, state.workers))
+            state.queue_mode = "queue"
         return ctx
 
     app = create_app(settings, access=state.access, ctx_factory=ctx_factory)
     app.title = "Perceptron Team Server API"
     app.version = __version__
     app.state.server = state
-    for module in (auth, admin, sources):
+    for module in (auth, admin, sources, queue):
         app.include_router(module.router, prefix=API_PREFIX)
     app.add_middleware(SessionMiddleware)
     app.add_middleware(SecurityHeaders, hsts=server.cookie_secure)

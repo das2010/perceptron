@@ -42,10 +42,17 @@ jobs:
 
   server-postgres:
     name: server (PostgreSQL 16)
-    # Team Server (Capa 5): los mismos tests del servidor sobre PostgreSQL real + migraciones.
+    # Team Server (Capa 5): los tests del servidor sobre PostgreSQL real + migraciones, y la
+    # cola con un worker Celery real sobre Valkey (Capa 5b).
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:
+      valkey:
+        image: valkey/valkey:8
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
       postgres:
         image: postgres:16
         env:
@@ -62,10 +69,11 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --all-packages --locked
-      - name: Pytest (server/tests contra PostgreSQL)
-        run: uv run pytest server/tests -v
+      - name: Pytest (server/tests contra PostgreSQL y Valkey)
+        run: uv run pytest server/tests -v -s
         env:
           PERCEPTRON_TEST_DATABASE_URL: postgresql+pg8000://perceptron:perceptron@localhost:5432/perceptron
+          PERCEPTRON_TEST_REDIS_URL: redis://localhost:6379/0
       - name: CLI (migrate + create-user)
         run: |
           uv run perceptron-server migrate
@@ -150,8 +158,9 @@ jobs:
 
   compose:
     name: compose (Team Server en Docker)
-    # Imagen del servidor (Engine + UI web) con PostgreSQL por Docker Compose: arranca,
-    # migra, crea el Admin y responde login, RBAC, CSRF y fuentes del servidor.
+    # Imagen del servidor (Engine + UI web) con PostgreSQL, Valkey, MLflow server y un worker
+    # por Docker Compose: arranca, migra, crea el Admin, responde login, RBAC, CSRF y fuentes
+    # del servidor, y entrena un estudio en el worker (Capa 5b).
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -172,6 +181,11 @@ jobs:
         run: docker compose -f server/deploy/compose.yaml up -d --build --wait --wait-timeout 300
       - name: Smoke (health, UI, login, CSRF, RBAC, fuentes)
         run: sh server/deploy/smoke.sh http://localhost:8080
+        env:
+          PERCEPTRON_ADMIN_EMAIL: admin@preteco.test
+          PERCEPTRON_ADMIN_PASSWORD: clave-admin-de-compose
+      - name: Smoke de la cola (estudio en el worker, tracking en MLflow server)
+        run: python3 server/deploy/smoke_study.py http://localhost:8080
         env:
           PERCEPTRON_ADMIN_EMAIL: admin@preteco.test
           PERCEPTRON_ADMIN_PASSWORD: clave-admin-de-compose

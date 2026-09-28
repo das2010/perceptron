@@ -49,6 +49,59 @@ def serve(
 
 
 @app.command()
+def worker(
+    queues: Annotated[str, typer.Option(help="Colas que atiende (gpu, cpu)")] = "cpu",
+    name: Annotated[
+        str | None, typer.Option(envvar="PERCEPTRON_WORKER_NAME", help="Nombre del worker")
+    ] = None,
+) -> None:
+    """Worker de la cola (Capa 5b): ejecuta estudios en esta máquina (CPU o GPU)."""
+    from perceptron.core.config import get_settings
+    from perceptron.core.logging import configure_logging
+    from perceptron_server.queue.dispatch import QUEUES, TASK_NAME, make_celery
+    from perceptron_server.queue.relay import RedisRelay
+    from perceptron_server.queue.worker import WorkerRuntime
+    from perceptron_server.settings import ServerSettings
+
+    wanted = [q.strip() for q in queues.split(",") if q.strip()]
+    if not wanted or set(wanted) - set(QUEUES):
+        raise typer.BadParameter("colas válidas: " + ", ".join(QUEUES))
+    server = ServerSettings()
+    if server.redis_url is None:
+        raise typer.BadParameter("definí PERCEPTRON_SERVER__REDIS_URL")
+    url = server.redis_url.get_secret_value()
+    if name:
+        os.environ["PERCEPTRON_WORKER_NAME"] = name
+    settings = get_settings()
+    configure_logging(settings.logging, settings.paths.logs_dir)
+    runtime = WorkerRuntime.create(
+        settings, RedisRelay(url), wanted, heartbeat_s=server.worker_heartbeat_s
+    )
+    runtime.start_heartbeat()
+    celery = make_celery(url)
+    celery.task(name=TASK_NAME)(runtime.run_study)
+    try:
+        # Pool "solo": el entrenamiento lanza sus propios subprocesos (no daemonic).
+        celery.worker_main(
+            [
+                "worker",
+                "--queues",
+                ",".join(wanted),
+                "--pool",
+                "solo",
+                "--hostname",
+                f"{runtime.name}@%h",
+                "--without-gossip",
+                "--without-mingle",
+                "--loglevel",
+                settings.logging.level,
+            ]
+        )
+    finally:
+        runtime.stop()
+
+
+@app.command()
 def migrate() -> None:
     """Aplica las migraciones pendientes (Alembic)."""
     from perceptron.core.config import get_settings

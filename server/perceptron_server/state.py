@@ -15,6 +15,7 @@ from perceptron.core.config import Settings
 from perceptron_server.accounts import Accounts
 from perceptron_server.audit import AuditLog
 from perceptron_server.policy import ServerAccess
+from perceptron_server.queue.launcher import WorkerRegistry
 from perceptron_server.settings import ServerSettings
 
 
@@ -50,9 +51,12 @@ class ServerState:
     _accounts: Accounts | None = None
     _audit: AuditLog | None = None
     limiter: RateLimiter = field(init=False)
+    workers: WorkerRegistry = field(init=False)
+    queue_mode: str = "local"
 
     def __post_init__(self) -> None:
         self.limiter = RateLimiter(self.server.auth_rate_per_minute)
+        self.workers = WorkerRegistry(stale_after_s=3 * self.server.worker_heartbeat_s)
 
     def bind(self, ctx: EngineContext) -> None:
         self._ctx = ctx

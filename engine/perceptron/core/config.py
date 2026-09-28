@@ -105,6 +105,10 @@ class Settings(BaseSettings):
         default=None,
         description="URL SQLAlchemy de la metadata (Team Server: PostgreSQL); None = SQLite local",
     )
+    tracking_uri: str | None = Field(
+        default=None,
+        description="MLflow server (Team Server: http://mlflow:5000); None = SQLite del workspace",
+    )
     source_roots: list[Path] | None = Field(
         default=None,
         description=(

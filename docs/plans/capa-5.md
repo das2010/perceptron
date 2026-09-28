@@ -26,17 +26,19 @@ Son tres sub-capas con un PR cada una. En CI se levanta el stack con Docker Comp
 - **Modo estación de trabajo** (RF-SRV-05): el servidor sirve la SPA; `WebPlatformBridge` con login; "fuentes del servidor", es decir rutas montadas que habilita el Admin.
 - **Aceptación parcial:** dos usuarios (Editor y Viewer) en el mismo proyecto, con permisos verificados por la API y E2E web; UC-07 desde el navegador.
 
-## 5b — Cola de jobs, workers y envío de runs
-- **Object storage** (D2): interfaz `ObjectStore` (local | S3 estándar). Datasets y artefactos se suben y bajan por hash entre el servidor, los workers y el desktop. En Compose, SeaweedFS (Apache-2.0); MinIO server es AGPL-3.0.
-- **Cola:** Redis + Celery (BSD; Dramatiq es LGPL, ADR-0031), con colas `gpu`, `cpu` y `llm`, prioridades y cuotas por usuario y workspace (RF-SRV-04). Los workers corren el worker de entrenamiento actual sobre artefactos en S3.
-- **Envío desde el desktop:** "entrenar en el servidor" sube la versión de datos (resumible por chunks), crea el estudio remoto y sigue el progreso por el WS del servidor.
-- **MLflow server:** backend PostgreSQL y artefactos en S3.
-- **Imágenes:** Docker CPU y CUDA para server y worker. Helm chart v1.
+## 5b — Cola de jobs, workers y MLflow server (ADR-0031)
+- **Cola:** Celery (BSD) sobre Valkey (BSD; Redis ≥ 7.4 no es permisivo), con colas `gpu` y `cpu` y cuotas por usuario y workspace (RF-SRV-04). Los workers comparten PostgreSQL y el volumen del workspace.
+- **Progreso:** relay pub/sub; los mismos WS del Engine.
+- **MLflow server:** backend PostgreSQL y artefactos proxied en volumen. El S3 queda para la 5c.
+- **Imágenes:** CPU y GPU (`TORCH_VARIANT`) para server y worker; Compose con perfil `gpu`.
 
 ## 5c — Sync, administración y SSO
 - **Sync desktop ↔ servidor** (RF-SRV-03): el servidor es la fuente de verdad; bloqueo optimista por versión; proyectos de equipo.
+- **Envío desde el desktop:** "entrenar en el servidor" sube la versión de datos (resumible por chunks), crea el estudio remoto en la cola de la 5b y sigue el progreso por el WS del servidor (aceptación: desktop sin GPU → worker GPU).
+- **Object storage** (D2, ADR-0030): datasets y artefactos por hash en S3 estándar (SeaweedFS en Compose) para workers sin volumen compartido.
 - **Consola de administración** (RF-SRV-06): usuarios, grupos, SSO, proveedores LLM, políticas de privacidad, cuotas, almacenamiento, workers y auditoría.
 - **OIDC con Authlib** (Entra ID, Google Workspace, genérico), con mapeo de grupos a roles.
+- **Helm chart v1** (servidor, workers CPU/GPU, Valkey, MLflow; PostgreSQL y S3 externos).
 - **Backups** (RF-SRV-08): scripts y guía para PostgreSQL y el object storage.
 
 ## Lo que necesito del usuario

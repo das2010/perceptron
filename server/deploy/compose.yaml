@@ -1,8 +1,18 @@
 # Team Server con Docker Compose (SPEC §5.4). Uso:
 #   cp server/deploy/.env.example server/deploy/.env   # y completar las claves
 #   docker compose -f server/deploy/compose.yaml up -d --build
-# Redis, workers, MLflow server y S3 se suman en la Capa 5b.
+#   docker compose -f server/deploy/compose.yaml --profile gpu up -d   # + worker GPU (NVIDIA)
+# Servicios: PostgreSQL (metadata y MLflow), Valkey (cola), MLflow server, el servidor (API + UI
+# web) y workers. Servidor y workers comparten el volumen del workspace (ADR-0031).
 name: perceptron
+
+x-perceptron-env: &perceptron-env
+  PERCEPTRON_DATABASE_URL: postgresql+pg8000://${POSTGRES_USER:-perceptron}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-perceptron}
+  PERCEPTRON_SERVER__SECRET_KEY: ${PERCEPTRON_SECRET_KEY:?definí PERCEPTRON_SECRET_KEY en .env}
+  PERCEPTRON_MASTER_KEY: ${PERCEPTRON_MASTER_KEY:?definí PERCEPTRON_MASTER_KEY en .env}
+  PERCEPTRON_SERVER__REDIS_URL: redis://valkey:6379/0
+  PERCEPTRON_TRACKING_URI: http://mlflow:5000
+  PERCEPTRON_SOURCE_ROOTS: '["/sources"]'
 
 services:
   postgres:
@@ -14,10 +24,49 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-perceptron}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
+      retries: 20
+
+  # Valkey (BSD-3): fork de Redis con licencia permisiva; Redis ≥ 7.4 dejó de serlo.
+  valkey:
+    image: valkey/valkey:8
+    restart: unless-stopped
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkeydata:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mlflow:
+    image: ${PERCEPTRON_IMAGE:-perceptron-server:dev}
+    pull_policy: never  # la construye el servicio server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - mlflow
+      - server
+      - --host=0.0.0.0
+      - --port=5000
+      - --backend-store-uri=postgresql+pg8000://${POSTGRES_USER:-perceptron}:${POSTGRES_PASSWORD}@postgres:5432/mlflow
+      - --artifacts-destination=/mlartifacts
+      - --serve-artifacts
+      - --allowed-hosts=mlflow,mlflow:5000,localhost,localhost:5000,127.0.0.1:5000
+    volumes:
+      - mlartifacts:/mlartifacts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
       retries: 20
 
   server:
@@ -29,14 +78,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      valkey:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
     environment:
-      PERCEPTRON_DATABASE_URL: postgresql+pg8000://${POSTGRES_USER:-perceptron}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-perceptron}
-      PERCEPTRON_SERVER__SECRET_KEY: ${PERCEPTRON_SECRET_KEY:?definí PERCEPTRON_SECRET_KEY en .env}
-      PERCEPTRON_MASTER_KEY: ${PERCEPTRON_MASTER_KEY:?definí PERCEPTRON_MASTER_KEY en .env}
+      <<: *perceptron-env
       PERCEPTRON_SERVER__BOOTSTRAP_ADMIN_EMAIL: ${PERCEPTRON_ADMIN_EMAIL:-}
       PERCEPTRON_SERVER__BOOTSTRAP_ADMIN_PASSWORD: ${PERCEPTRON_ADMIN_PASSWORD:-}
       PERCEPTRON_SERVER__COOKIE_SECURE: ${PERCEPTRON_COOKIE_SECURE:-true}
-      PERCEPTRON_SOURCE_ROOTS: '["/sources"]'
       FORWARDED_ALLOW_IPS: ${PERCEPTRON_TRUSTED_PROXIES:-127.0.0.1}
     volumes:
       - workspace:/data
@@ -44,6 +94,54 @@ services:
     ports:
       - "${PERCEPTRON_PORT:-8080}:8080"
 
+  worker:
+    image: ${PERCEPTRON_IMAGE:-perceptron-server:dev}
+    pull_policy: never
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    command: ["perceptron-server", "worker", "--queues", "cpu"]
+    environment:
+      <<: *perceptron-env
+      PERCEPTRON_WORKER_NAME: cpu-1
+    volumes:
+      - workspace:/data
+      - ${PERCEPTRON_SOURCES_DIR:-./sources}:/sources:ro
+    healthcheck:
+      disable: true
+
+  worker-gpu:
+    profiles: ["gpu"]
+    build:
+      context: ../..
+      dockerfile: server/deploy/Dockerfile
+      args:
+        TORCH_VARIANT: ${PERCEPTRON_TORCH_VARIANT:-cu128}
+    image: ${PERCEPTRON_GPU_IMAGE:-perceptron-server:gpu}
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    command: ["perceptron-server", "worker", "--queues", "gpu"]
+    environment:
+      <<: *perceptron-env
+      PERCEPTRON_WORKER_NAME: gpu-1
+    volumes:
+      - workspace:/data
+      - ${PERCEPTRON_SOURCES_DIR:-./sources}:/sources:ro
+    healthcheck:
+      disable: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
 volumes:
   pgdata:
+  valkeydata:
+  mlartifacts:
   workspace:

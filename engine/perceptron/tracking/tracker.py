@@ -94,7 +94,7 @@ class MemoryTracker:
 
 
 class MlflowTracker:
-    """Cliente MLflow con backend SQLite y artefactos en disco (sin servidor)."""
+    """Cliente MLflow: SQLite y artefactos en disco (desktop) o un MLflow server (Team Server)."""
 
     def __init__(self, root: Path, tracking_uri: str | None = None) -> None:
         from mlflow.tracking import MlflowClient
@@ -105,11 +105,14 @@ class MlflowTracker:
         self.artifacts_root.mkdir(exist_ok=True)
         self.tracking_uri = tracking_uri or f"sqlite:///{(root / 'mlflow.db').resolve().as_posix()}"
         self.client = MlflowClient(tracking_uri=self.tracking_uri)
+        self.remote = self.tracking_uri.startswith(("http://", "https://"))
 
     def experiment_id(self, name: str) -> str:
         exp = self.client.get_experiment_by_name(name)
         if exp is not None:
             return str(exp.experiment_id)
+        if self.remote:  # MLflow server (Team Server): artefactos donde lo configure el server
+            return str(self.client.create_experiment(name))
         location = (self.artifacts_root / name).resolve().as_uri()
         return str(self.client.create_experiment(name, artifact_location=location))
 

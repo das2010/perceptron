@@ -32,3 +32,50 @@ def login(app: FastAPI, email: str, password: str) -> TestClient:
 
 
 UserFactory = Callable[..., tuple[str, TestClient]]
+
+
+def wait_job(client: TestClient, job_id: str, timeout: float = 600) -> dict[str, Any]:
+    import time
+
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        job: dict[str, Any] = ok(client.get(f"{API}/jobs/{job_id}"))
+        if job["status"] in ("succeeded", "failed", "cancelled"):
+            return job
+        time.sleep(0.3)
+    raise AssertionError(f"el job {job_id} no terminó a tiempo")
+
+
+def prepare_study(
+    editor: TestClient, fixtures_dir: Path, *, trials: int = 1, epochs: int = 2
+) -> tuple[str, dict[str, Any]]:
+    """Proyecto UC-01 con datos, pipeline y arquitectura; devuelve (project_id, cuerpo)."""
+    pid: str = ok(editor.post(f"{API}/projects", json={"name": "Cola"}), 201)["id"]
+    src = ok(
+        editor.post(
+            f"{API}/projects/{pid}/sources",
+            json={"path": str(fixtures_dir / "uc01_churn" / "churn.csv")},
+        ),
+        201,
+    )
+    dv = ok(editor.post(f"{API}/sources/{src['id']}/ingest", json={"target": "churn"}), 201)
+    pipe = ok(
+        editor.post(
+            f"{API}/projects/{pid}/pipelines/propose", json={"dataset_version_id": dv["id"]}
+        ),
+        201,
+    )
+    prop = ok(
+        editor.post(
+            f"{API}/projects/{pid}/arch/propose",
+            json={"dataset_version_id": dv["id"], "pipeline_id": pipe["id"]},
+        ),
+        201,
+    )["proposals"][0]
+    body = {
+        "dataset_version_id": dv["id"],
+        "pipeline_id": pipe["id"],
+        "archspec_id": prop["archspec"]["id"],
+        "budget": {"max_trials": trials, "max_epochs_per_trial": epochs},
+    }
+    return pid, body

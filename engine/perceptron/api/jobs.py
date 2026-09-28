@@ -1,5 +1,6 @@
 """Jobs largos en segundo plano (SPEC §10): `202 Accepted` + `job_id`, progreso por
-`WS /jobs/{job_id}`. En el Team Server (Capa 5) se reemplaza por la cola de workers."""
+`WS /jobs/{job_id}`. Los jobs locales corren en un pool de hilos; los del Team Server corren
+en workers (Capa 5b) y acá solo se siguen (`track` + `apply`) con la misma API y el mismo WS."""
 
 from __future__ import annotations
 
@@ -36,6 +37,8 @@ class Job(BaseModel):
     result: Any = None
     error: dict[str, Any] | None = None
     refs: dict[str, str] = Field(default_factory=dict, description="Ids relacionados (study_id, …)")
+    runner: str = Field(default="local", description="Dónde corre: local o la cola del servidor")
+    worker: str | None = Field(default=None, description="Worker remoto que lo ejecuta")
 
 
 class JobContext:
@@ -99,6 +102,44 @@ class JobManager:
             job.finished_at = utcnow()
             ctx.emit("finished", status=job.status)
 
+    def track(
+        self,
+        kind: str,
+        *,
+        refs: dict[str, str] | None = None,
+        runner: str = "remote",
+        cancel: Callable[[], None] | None = None,
+    ) -> Job:
+        """Job que corre en otro proceso (worker del Team Server); su progreso llega por `apply`."""
+        job = Job(id=new_id(IdPrefix.JOB), kind=kind, refs=refs or {}, runner=runner)
+        ctx = JobContext(self, job)
+        ctx.cancel_callback = cancel
+        with self._lock:
+            self._jobs[job.id] = job
+            self._contexts[job.id] = ctx
+        return job
+
+    def apply(self, job_id: str, kind: str, data: dict[str, Any]) -> None:
+        """Evento de un job remoto: actualiza el estado y lo publica como si fuera local."""
+        ctx = self._contexts.get(job_id)
+        if ctx is None:
+            return
+        job = ctx.job
+        if kind == "started":
+            if job.status != "cancelled":
+                job.status = "running"
+            job.started_at = utcnow()
+            job.worker = data.get("worker")
+        elif kind == "finished":
+            if job.status != "cancelled":
+                job.status = data.get("status", "failed")
+            job.result = data.get("result")
+            job.error = data.get("error")
+            job.finished_at = utcnow()
+            ctx.emit("finished", status=job.status)
+            return
+        ctx.emit(kind, **data)
+
     def get(self, job_id: str) -> Job | None:
         return self._jobs.get(job_id)
 
@@ -116,6 +157,8 @@ class JobManager:
         return ctx.job
 
     def shutdown(self) -> None:
-        for job_id in list(self._jobs):
-            self.cancel(job_id)
+        # Los jobs remotos siguen en sus workers aunque este proceso se detenga.
+        for job_id, job in list(self._jobs.items()):
+            if job.runner == "local":
+                self.cancel(job_id)
         self._executor.shutdown(wait=False, cancel_futures=True)

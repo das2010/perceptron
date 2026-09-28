@@ -44,6 +44,16 @@ class ServerSettings(BaseSettings):
         default=30, ge=1, description="Intentos de login/refresh por IP y minuto"
     )
     min_password_length: int = Field(default=12, ge=8)
+    redis_url: SecretStr | None = Field(
+        default=None,
+        description=(
+            "Cola de jobs (Valkey/Redis, Capa 5b): los estudios van a los workers. "
+            "Sin cola, corren en el proceso del servidor"
+        ),
+    )
+    max_running_studies_per_user: int = Field(default=2, ge=1)
+    max_running_studies_per_workspace: int = Field(default=6, ge=1)
+    worker_heartbeat_s: float = Field(default=15.0, gt=0)
 
     @field_validator("secret_key")
     @classmethod

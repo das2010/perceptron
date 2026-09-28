@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
@@ -10,13 +11,15 @@ from fastapi import Request
 from perceptron.api.jobs import JobManager
 from perceptron.core.config import Settings
 from perceptron.core.events import EventBus
-from perceptron.domain.models import Entity, Project
+from perceptron.domain.models import Entity, Project, Study
 from perceptron.storage.db import Database
 from perceptron.storage.filesystem import ProjectFiles
 from perceptron.storage.repositories import SqlRepository
 
 if TYPE_CHECKING:
+    from perceptron.api.jobs import Job
     from perceptron.llm.gateway import Gateway
+    from perceptron.services.studies import StudyLauncher
 
 E = TypeVar("E", bound=Entity)
 
@@ -29,6 +32,8 @@ class EngineContext:
     _repos: dict[type[Any], SqlRepository[Any]] = field(default_factory=dict, repr=False)
     _jobs: JobManager | None = field(default=None, repr=False)
     _llm: Any = field(default=None, repr=False)
+    study_launcher: StudyLauncher | None = field(default=None, repr=False)
+    _closers: list[Callable[[], None]] = field(default_factory=list, repr=False)
 
     def __post_init__(self) -> None:
         self.projects = SqlRepository(self.db, Project)
@@ -66,10 +71,22 @@ class EngineContext:
             self._llm = Gateway.from_settings(self.settings, self.db)
         return cast("Gateway", self._llm)
 
+    def launch_study(self, study: Study) -> Job:
+        """Lanza un estudio: en un hilo (desktop) o en la cola del Team Server (Capa 5b)."""
+        from perceptron.services.studies import launch_local
+
+        return (self.study_launcher or launch_local)(self, study)
+
     def use_llm(self, gateway: Gateway) -> None:
         self._llm = gateway
 
+    def on_close(self, callback: Callable[[], None]) -> None:
+        """Libera recursos de extensiones (p. ej. el relay de eventos del Team Server)."""
+        self._closers.append(callback)
+
     def close(self) -> None:
+        for callback in reversed(self._closers):
+            callback()
         if self._jobs is not None:
             self._jobs.shutdown()
         self.db.dispose()
