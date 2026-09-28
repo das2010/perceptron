@@ -1,6 +1,6 @@
 /**
  * PlatformBridge (SPEC §4.2): aísla las diferencias entre el desktop (Tauri) y la
- * UI web del Team Server. La implementación Tauri se agrega en Capa 3.
+ * UI web del Team Server. La implementación de Tauri está en `./tauri.ts` (ADR-0026).
  */
 export interface EngineConnection {
   /** URL base del Engine, sin el prefijo /api/v1. */
@@ -9,8 +9,32 @@ export interface EngineConnection {
   token?: string;
 }
 
+/** Paso del aprovisionamiento del runtime embebido (evento `runtime://progress`). */
+export interface RuntimeProgress {
+  step: string;
+  message: string;
+}
+
+/** Estado del runtime Python embebido del desktop (RF-TRN-02). */
+export interface RuntimeState {
+  app_version: string;
+  torch_variant: string;
+  torch_index: string;
+  nvidia_driver: string | null;
+}
+
+/** Operaciones que solo existen en el desktop. */
+export interface DesktopRuntime {
+  state(): Promise<RuntimeState | null>;
+  onProgress(cb: (p: RuntimeProgress) => void): Promise<() => void>;
+  /** Reinstala la variante de PyTorch (sin reinstalar la app) y reinicia el Engine. */
+  setTorchVariant(variant: string): Promise<void>;
+  restart(): Promise<void>;
+}
+
 export interface PlatformBridge {
   readonly kind: "desktop" | "web";
+  readonly runtime?: DesktopRuntime;
   engine(): Promise<EngineConnection>;
   /** Selector nativo de carpeta; en web devuelve null (se usa subida de archivos). */
   pickDirectory(): Promise<string | null>;
@@ -48,4 +72,9 @@ export function getPlatform(): PlatformBridge {
 
 export function setPlatform(bridge: PlatformBridge): void {
   current = bridge;
+}
+
+/** La UI corre dentro de Tauri (webview del desktop). */
+export function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }

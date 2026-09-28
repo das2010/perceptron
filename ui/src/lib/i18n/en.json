@@ -37,6 +37,22 @@
       "missingKey": "No key",
       "keyPlaceholder": "Paste the key (it is never shown again)",
       "keyFor": "{{name}} key"
+    },
+    "desktop": {
+      "title": "Local engine (PyTorch)",
+      "variant": "Installed build",
+      "index": "PyTorch index",
+      "driver": "NVIDIA driver",
+      "change": "Change build",
+      "changeHint": "Only PyTorch is reinstalled; the app is not.",
+      "variants": {
+        "cpu": "CPU",
+        "cuda": "NVIDIA CUDA",
+        "rocm": "AMD ROCm (Linux)",
+        "xpu": "Intel XPU"
+      },
+      "apply": "Apply",
+      "applying": "Reinstalling PyTorch and restarting the engine… it can take several minutes."
     }
   },
   "nav": {
@@ -493,6 +509,21 @@
     "explain": "I'm defining the architecture, step “{{step}}”. The options are: {{options}}. Which one fits my data and why?",
     "useRecommended": "Fill in with the recommended",
     "build": "Create this architecture"
+  },
+  "desktop": {
+    "preparing": "Getting Perceptron ready",
+    "preparingHint": "The first time, the Python environment and the PyTorch build for your hardware are installed. It can take several minutes and needs a connection.",
+    "steps": "Setup steps",
+    "step": {
+      "python": "Python",
+      "venv": "Environment",
+      "deps": "Dependencies",
+      "engine": "Perceptron Engine",
+      "hardware": "Hardware detection",
+      "torch": "PyTorch"
+    },
+    "starting": "Starting the engine…",
+    "retry": "Retry"
   },
   "expert": {
     "open": "Expert mode (code)",

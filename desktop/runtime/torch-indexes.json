@@ -1,0 +1,10 @@
+{
+  "base_url": "https://download.pytorch.org/whl",
+  "cpu": "cpu",
+  "cuda": [
+    { "min_driver": 570, "path": "cu128" },
+    { "min_driver": 560, "path": "cu126" }
+  ],
+  "rocm": "rocm6.4",
+  "xpu": "xpu"
+}

@@ -128,6 +128,17 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Modo experto con Monaco (RF-ARC-06): lint en vivo, confirmación explícita y prueba en el sandbox | ✅ |
 | E2E Playwright UC-04 guiado por el wizard (incluye editor visual y código) | ✅ 40 s de punta a punta (O1: < 15 min) |
 
+## Capa 3c — desktop (Tauri 2) y runtime embebido
+
+| Entregable | Estado |
+|---|---|
+| App Tauri 2 con el Engine como sidecar (`serve --new-token`, puerto aleatorio, token efímero) y `TauriPlatformBridge` | ✅ |
+| Runtime Python embebido con uv y variante de PyTorch por hardware; cambio de variante sin reinstalar (RF-TRN-02, ADR-0026) | ✅ en CI se verifica la variante `cpu`; CUDA/ROCm/XPU salen del mapa de índices y no hay runners con GPU para probarlas |
+| Keychain del SO (Credential Manager / Secret Service) y selector de carpetas nativo | 🟡 implementado, sin prueba automatizada (necesita sesión de escritorio) |
+| Instaladores NSIS/MSI y .deb/AppImage con smoke test de instalación limpia (`desktop.yml`) | ✅ Windows (NSIS silencioso) y Ubuntu 24.04 (.deb): aprovisionan desde cero, detectan `cpu` y el Engine responde |
+| Updater firmado y firma de código de los instaladores | ⬜ pendiente de claves y certificado |
+
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
@@ -195,7 +206,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-HPO-05 |  | 1 | Reanudación de estudios interrumpidos (almacenamiento Optuna en SQLite/PostgreSQL). | ✅ reanudación desde SQLite |
 | RF-HPO-06 |  | 1 | Visualizaciones: historia de optimización, importancia de hiperparámetros, coordenadas… | ⬜ pendiente |
 | RF-TRN-01 | sí | 1 | Detección de hardware al inicio y bajo demanda: GPUs (modelo, VRAM, capacidad de… | ✅ `training.hardware` + `GET /system/hardware` |
-| RF-TRN-02 | sí | 1/3 | Instalación de PyTorch acorde al hardware: en el primer arranque (y desde… | 🟡 detección y recomendación de variante; instalación en Capa 3 |
+| RF-TRN-02 | sí | 1/3 | Instalación de PyTorch acorde al hardware: en el primer arranque (y desde… | 🟡 detección y recomendación en el Engine; instalación de la variante en el runtime embebido del desktop y cambio desde Configuración (ADR-0026, validación en CI) |
 | RF-TRN-03 | sí | 1 | Construcción del LightningModule desde ArchSpec + configuración de optimizador,… | ✅ `training.module` |
 | RF-TRN-04 | sí | 1 | Buenas prácticas por defecto: mixed precision (bf16/fp16 según hardware), gradient… | 🟡 AMP, clipping, early stopping, checkpoints, semillas, workers y batch size automáticos; LR finder pendiente |
 | RF-TRN-05 | sí | 1 | Cada run corre en un proceso separado; el Engine supervisa, captura OOM/crashes y los… | ✅ subproceso por run con diagnóstico de OOM/crash (ADR-0015) |
