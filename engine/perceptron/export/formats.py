@@ -243,13 +243,12 @@ def _onnx(
 
             # El exportador dynamo deja anotaciones de formas (value_info) que la inferencia
             # de ONNX contradice al cuantizar: se borran y el cuantizador las vuelve a inferir.
-            pre = out_dir / "model.int8-pre.onnx"
             graph = onnx.load(str(path))
             del graph.graph.value_info[:]
-            onnx.save(graph, str(pre))
             q = out_dir / "model.int8.onnx"
-            quantize_dynamic(str(pre), str(q), weight_type=QuantType.QInt8)
-            pre.unlink(missing_ok=True)
+            # En memoria: con una ruta, ONNX Runtime escribe un modelo intermedio junto al
+            # original con E/S de C++, que en Windows falla con rutas con acentos.
+            quantize_dynamic(graph, str(q), weight_type=QuantType.QInt8)
             artifacts.append(_artifact(q, "onnx_int8", _verify(ref, run(q), None)))
         except Exception as e:
             artifacts.append(_failed("onnx_int8", e))
@@ -277,7 +276,7 @@ def _torchscript(
     traced = torch.jit.trace(model, inputs, check_trace=False)  # type: ignore[no-untyped-call]
     path = out_dir / "model.torchscript.pt"
     with path.open("wb") as f:
-        torch.jit.save(traced, f)  # type: ignore[no-untyped-call]
+        torch.jit.save(traced, f)
     with path.open("rb") as f:
         got = _as_numpy(torch.jit.load(f)(*inputs))  # type: ignore[no-untyped-call]
     return _artifact(path, "torchscript", _verify(ref, got, TOL_FP32), legacy=True)
