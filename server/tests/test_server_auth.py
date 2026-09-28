@@ -105,7 +105,7 @@ def test_expired_access_cookie_is_renewed_transparently(admin: TestClient) -> No
 def test_logout_and_password_change_close_sessions(app: FastAPI, make_user: UserFactory) -> None:
     _, ana = make_user("ana@preteco.test", "editor")
     cookies = dict(ana.cookies)
-    assert ok(ana.post(f"{API}/auth/logout")) is None
+    assert ok(ana.post(f"{API}/auth/logout"), 204) is None
     stale = TestClient(app, cookies=cookies)
     assert stale.get(f"{API}/auth/me").status_code == 401
 

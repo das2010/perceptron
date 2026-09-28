@@ -39,3 +39,9 @@ Thumbs.db
 .e2e-workspace/
 ui/test-results/
 ui/playwright-report/
+
+# Secretos locales del Team Server
+.env
+server/deploy/.env
+server/deploy/sources/
+.e2e-server-workspace

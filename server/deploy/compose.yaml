@@ -1,0 +1,49 @@
+# Team Server con Docker Compose (SPEC §5.4). Uso:
+#   cp server/deploy/.env.example server/deploy/.env   # y completar las claves
+#   docker compose -f server/deploy/compose.yaml up -d --build
+# Redis, workers, MLflow server y S3 se suman en la Capa 5b.
+name: perceptron
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-perceptron}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?definí POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:-perceptron}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  server:
+    build:
+      context: ../..
+      dockerfile: server/deploy/Dockerfile
+    image: ${PERCEPTRON_IMAGE:-perceptron-server:dev}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PERCEPTRON_DATABASE_URL: postgresql+pg8000://${POSTGRES_USER:-perceptron}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-perceptron}
+      PERCEPTRON_SERVER__SECRET_KEY: ${PERCEPTRON_SECRET_KEY:?definí PERCEPTRON_SECRET_KEY en .env}
+      PERCEPTRON_MASTER_KEY: ${PERCEPTRON_MASTER_KEY:?definí PERCEPTRON_MASTER_KEY en .env}
+      PERCEPTRON_SERVER__BOOTSTRAP_ADMIN_EMAIL: ${PERCEPTRON_ADMIN_EMAIL:-}
+      PERCEPTRON_SERVER__BOOTSTRAP_ADMIN_PASSWORD: ${PERCEPTRON_ADMIN_PASSWORD:-}
+      PERCEPTRON_SERVER__COOKIE_SECURE: ${PERCEPTRON_COOKIE_SECURE:-true}
+      PERCEPTRON_SOURCE_ROOTS: '["/sources"]'
+      FORWARDED_ALLOW_IPS: ${PERCEPTRON_TRUSTED_PROXIES:-127.0.0.1}
+    volumes:
+      - workspace:/data
+      - ${PERCEPTRON_SOURCES_DIR:-./sources}:/sources:ro
+    ports:
+      - "${PERCEPTRON_PORT:-8080}:8080"
+
+volumes:
+  pgdata:
+  workspace:

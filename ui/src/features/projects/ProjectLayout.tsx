@@ -2,6 +2,7 @@ import { Link, Outlet, useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import { Badge, ErrorNote, Spinner } from "@/components/ui";
+import { atLeast, projectRole, useSession } from "@/features/auth/session";
 import { useProject } from "@/lib/api/hooks";
 
 const TABS = [
@@ -25,6 +26,8 @@ export function ProjectLayout() {
   const { t } = useTranslation();
   const projectId = useProjectId();
   const { data: project, isPending, error } = useProject(projectId);
+  const me = useSession();
+  const role = project ? projectRole(me, project) : null;
 
   return (
     <div>
@@ -36,6 +39,11 @@ export function ProjectLayout() {
             <h1 className="text-2xl font-semibold">{project.name}</h1>
             <Badge tone="brand">{project.privacy_level}</Badge>
             {project.task && <Badge>{t(`task.${project.task}`)}</Badge>}
+            {me && role && (
+              <Badge tone={atLeast(role, "editor") ? "neutral" : "warn"}>
+                {atLeast(role, "editor") ? t(`roles.${role}`) : t("roles.readOnly")}
+              </Badge>
+            )}
           </div>
         )}
       </div>

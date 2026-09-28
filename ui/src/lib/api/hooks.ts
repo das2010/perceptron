@@ -1163,3 +1163,49 @@ export function useCreateHubSource(projectId: string) {
       ),
   });
 }
+
+// ---------------------------------------------------------------- fuentes del servidor (Capa 5a)
+
+export type ServerSourceRoot = Schemas["ServerSourceRoot"];
+export type ServerListing = Schemas["ServerListing"];
+
+/** Carpetas montadas en el Team Server que el Admin habilitó (RF-SRV-05). */
+export function useServerSources(enabled: boolean) {
+  return useQuery({
+    queryKey: ["server", "sources"],
+    enabled,
+    retry: false,
+    queryFn: async () => unwrap(await (await getApiClient()).GET("/api/v1/server/sources")),
+  });
+}
+
+export function useBrowseServerSource(index: number | null, path: string) {
+  return useQuery({
+    queryKey: ["server", "sources", index, path],
+    enabled: index !== null,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/server/sources/{index}/browse", {
+          params: { path: { index: index ?? 0 }, query: { path } },
+        }),
+      ),
+  });
+}
+
+export function useCreatePathSource(projectId: string) {
+  return useMutation({
+    mutationFn: async (path: string) =>
+      previewOf(
+        unwrap(
+          await (
+            await getApiClient()
+          ).POST("/api/v1/projects/{project_id}/sources", {
+            params: { path: { project_id: projectId } },
+            body: { path },
+          }),
+        ) as DataSource,
+      ),
+  });
+}

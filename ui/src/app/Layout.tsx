@@ -1,8 +1,17 @@
 import { Link, Outlet } from "@tanstack/react-router";
-import { FolderKanban, Home, PanelRightClose, PanelRightOpen, Settings } from "lucide-react";
+import {
+  FolderKanban,
+  Home,
+  LogOut,
+  PanelRightClose,
+  PanelRightOpen,
+  Settings,
+  ShieldCheck,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui";
+import { canAdminister, useLogout, useSession } from "@/features/auth/session";
 import { CopilotPanel } from "@/features/copilot/CopilotPanel";
 import { useProjects } from "@/lib/api/hooks";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
@@ -37,10 +46,34 @@ function ProjectNav() {
   );
 }
 
+/** Usuario del Team Server y logout (en el desktop no hay sesión). */
+function UserMenu() {
+  const { t } = useTranslation();
+  const me = useSession();
+  const logout = useLogout();
+  if (!me) return null;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-muted" title={me.user.email}>
+        {me.user.display_name || me.user.email}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={t("auth.logout")}
+        onClick={() => logout.mutate()}
+      >
+        <LogOut className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 export function Layout() {
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { copilotOpen, toggleCopilot } = useUiStore();
+  const me = useSession();
 
   return (
     <div className="flex h-full flex-col">
@@ -93,6 +126,7 @@ export function Layout() {
               <PanelRightOpen className="h-4 w-4" />
             )}
           </Button>
+          <UserMenu />
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
@@ -113,6 +147,14 @@ export function Layout() {
                 {t("nav.settings")}
               </Link>
             </li>
+            {canAdminister(me) && (
+              <li>
+                <Link to="/admin" className={navLink}>
+                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                  {t("nav.admin")}
+                </Link>
+              </li>
+            )}
           </ul>
           <ProjectNav />
         </nav>

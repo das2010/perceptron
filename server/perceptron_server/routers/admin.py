@@ -1,7 +1,7 @@
 """`/admin` — usuarios, workspaces, membresías y auditoría (RF-SRV-06, parcial en la 5a).
 
-Usuarios, workspaces y auditoría: administrador del servidor. Membresías: también el Admin
-del workspace (gestiona su equipo sin ser admin global).
+Usuarios, workspaces y auditoría: administrador del servidor. Membresías y el directorio de
+usuarios: también el Admin del workspace (gestiona su equipo sin ser admin global).
 """
 
 from __future__ import annotations
@@ -91,8 +91,15 @@ class MembershipCreate(BaseModel):
 # ------------------------------------------------------------------ usuarios
 
 
+def any_admin(who: Who) -> Principal:
+    """Admin del servidor o de algún workspace (necesita el directorio para asignar roles)."""
+    if not (who.is_server_admin or who.workspaces(Role.ADMIN)):
+        raise ForbiddenError("requiere ser Admin del servidor o de un workspace")
+    return who
+
+
 @router.get("/users", operation_id="listUsers")
-def list_users(_: Admin, state: State) -> list[UserAccount]:
+def list_users(_: Annotated[Principal, Depends(any_admin)], state: State) -> list[UserAccount]:
     return [_account(u, a) for u, a in state.accounts.list_users()]
 
 

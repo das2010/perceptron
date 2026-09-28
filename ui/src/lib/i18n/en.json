@@ -59,7 +59,8 @@
     "main": "Main navigation",
     "home": "Home",
     "settings": "Settings",
-    "projects": "Projects"
+    "projects": "Projects",
+    "admin": "Administration"
   },
   "copilot": {
     "title": "Copilot",
@@ -702,5 +703,69 @@
     "hfToken": "Hugging Face token (optional)",
     "kaggleKey": "Kaggle credentials (user:key)",
     "download": "Download and preview"
+  },
+  "auth": {
+    "checking": "Checking your session…",
+    "subtitle": "Team Server · sign in to continue",
+    "email": "Email",
+    "password": "Password",
+    "login": "Sign in",
+    "logout": "Sign out",
+    "invalid": "Wrong email or password.",
+    "locked": "The account is locked for a few minutes after failed attempts."
+  },
+  "roles": {
+    "viewer": "Viewer",
+    "editor": "Editor",
+    "admin": "Admin",
+    "readOnly": "Read only"
+  },
+  "admin": {
+    "title": "Administration",
+    "description": "Team Server users, roles and audit log.",
+    "forbidden": "You need to be a server or workspace Admin.",
+    "users": "Users",
+    "newUser": "New user",
+    "email": "Email",
+    "name": "Name",
+    "initialPassword": "Initial password",
+    "passwordHint": "At least 12 characters. The user can change it later.",
+    "workspaceRole": "Workspace role",
+    "serverAdmin": "Server admin",
+    "createUser": "Create user",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "locked": "Locked",
+    "lastLogin": "Last sign-in",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "makeAdmin": "Make admin",
+    "removeAdmin": "Remove admin",
+    "resetPassword": "New password",
+    "newPasswordFor": "New password for {{email}} (at least 12 characters):",
+    "roles": "Roles",
+    "rolesHint": "A project role overrides the workspace role: someone can be Editor in one project and Viewer everywhere else.",
+    "workspace": "Workspace",
+    "user": "User",
+    "scope": "Scope",
+    "wholeWorkspace": "Whole workspace",
+    "role": "Role",
+    "grant": "Grant",
+    "revoke": "Remove role",
+    "noMembers": "This workspace has no members yet.",
+    "audit": "Audit log",
+    "action": "Action",
+    "actionHint": "Prefix, e.g. auth. or api.createStudy",
+    "anyone": "Anyone",
+    "noEvents": "No events match these filters.",
+    "when": "When",
+    "resource": "Resource",
+    "result": "Result"
+  },
+  "serverSources": {
+    "title": "Server sources",
+    "path": "Path",
+    "use": "Use"
   }
 }

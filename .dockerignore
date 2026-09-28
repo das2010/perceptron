@@ -1,0 +1,15 @@
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+.git
+.e2e-workspace
+ui/dist
+ui/playwright-report
+ui/test-results
+desktop/src-tauri/target
+desktop/runtime/dist
+fixtures
+server/deploy/.env

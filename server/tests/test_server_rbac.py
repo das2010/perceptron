@@ -138,7 +138,7 @@ def test_project_role_overrides_workspace_role(
     # En el resto del workspace sigue siendo Viewer.
     assert viewer.patch(f"{API}/projects/{other}", json={"goal": "x"}).status_code == 403
 
-    ok(admin.delete(f"{API}/admin/memberships/{m['id']}"))
+    ok(admin.delete(f"{API}/admin/memberships/{m['id']}"), 204)
     assert viewer.patch(f"{API}/projects/{pid}", json={"goal": "x"}).status_code == 403
     events = ok(admin.get(f"{API}/admin/audit", params={"action": "admin.role_"}))
     assert {e["action"] for e in events} >= {"admin.role_granted", "admin.role_revoked"}
@@ -168,7 +168,10 @@ def test_workspace_admin_manages_only_their_workspace(
     assert {m["user_id"] for m in listed} >= {lead_id, member_id}
     elsewhere = {**grant, "workspace_id": other_ws}
     assert lead.post(f"{API}/admin/memberships", json=elsewhere).status_code == 403
-    assert lead.get(f"{API}/admin/users").status_code == 403  # no es admin del servidor
+    assert lead.get(f"{API}/admin/users").status_code == 200  # directorio para asignar roles
+    new_user = {"email": "x@preteco.test", "password": "clave-de-prueba-123"}
+    assert lead.post(f"{API}/admin/users", json=new_user).status_code == 403
+    assert lead.get(f"{API}/admin/audit").status_code == 403
 
 
 @pytest.mark.parametrize("who", ["anon", "outsider", "viewer"])

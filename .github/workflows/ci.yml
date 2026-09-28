@@ -148,6 +148,83 @@ jobs:
             ui/test-results
           if-no-files-found: ignore
 
+  compose:
+    name: compose (Team Server en Docker)
+    # Imagen del servidor (Engine + UI web) con PostgreSQL por Docker Compose: arranca,
+    # migra, crea el Admin y responde login, RBAC, CSRF y fuentes del servidor.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: .env de prueba y fuente del servidor
+        run: |
+          cat > server/deploy/.env <<EOF
+          POSTGRES_PASSWORD=$(openssl rand -hex 16)
+          PERCEPTRON_SECRET_KEY=$(openssl rand -hex 32)
+          PERCEPTRON_MASTER_KEY=$(openssl rand -base64 32)
+          PERCEPTRON_ADMIN_EMAIL=admin@preteco.test
+          PERCEPTRON_ADMIN_PASSWORD=clave-admin-de-compose
+          PERCEPTRON_COOKIE_SECURE=false
+          EOF
+          mkdir -p server/deploy/sources
+          cp fixtures/uc07_demand/demanda.csv server/deploy/sources/
+      - name: docker compose up
+        run: docker compose -f server/deploy/compose.yaml up -d --build --wait --wait-timeout 300
+      - name: Smoke (health, UI, login, CSRF, RBAC, fuentes)
+        run: sh server/deploy/smoke.sh http://localhost:8080
+        env:
+          PERCEPTRON_ADMIN_EMAIL: admin@preteco.test
+          PERCEPTRON_ADMIN_PASSWORD: clave-admin-de-compose
+      - name: Logs
+        if: failure()
+        run: docker compose -f server/deploy/compose.yaml logs --no-color | tail -200
+
+  e2e-web:
+    name: e2e web (Team Server, UC-07 desde el navegador)
+    # Aceptación de la Capa 5: login, roles Editor/Viewer y UC-07 completo en la UI web
+    # servida por perceptron-server sobre PostgreSQL.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: perceptron
+          POSTGRES_PASSWORD: perceptron
+          POSTGRES_DB: perceptron
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U perceptron"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --locked
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -C ui build
+      - name: Playwright browsers
+        run: pnpm -C ui exec playwright install --with-deps chromium
+      - name: E2E web
+        run: pnpm -C ui e2e:server
+        env:
+          CI: "true"
+          PERCEPTRON_DATABASE_URL: postgresql+pg8000://perceptron:perceptron@localhost:5432/perceptron
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-server
+          path: |
+            ui/playwright-report
+            ui/test-results
+          if-no-files-found: ignore
+
   contract:
     name: OpenAPI ↔ TypeScript
     runs-on: ubuntu-latest

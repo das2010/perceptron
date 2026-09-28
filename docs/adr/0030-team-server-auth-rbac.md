@@ -1,0 +1,73 @@
+# ADR-0030: Team Server — autenticación, RBAC, auditoría y esquema (Capa 5a)
+- Estado: propuesto (a confirmar con el responsable de producto: D2 object storage)
+- Fecha: 2026-09-28
+- Contexto: la Capa 5 (SPEC §14) pide un Team Server con:
+  - PostgreSQL, S3, MLflow server, Redis y workers;
+  - auth local + OIDC y RBAC;
+  - sync, modo estación de trabajo, consola de administración, cuotas y auditoría.
+
+  §4.2 exige un solo Engine y una sola UI. §5.4 fija FastAPI + Authlib + JWT, PostgreSQL con Alembic y un S3 compatible de licencia a evaluar (D2). La Capa 5 se divide en tres entregas:
+  - 5a: núcleo, auth local, RBAC, auditoría, UI web y Compose;
+  - 5b: cola, workers, envío de runs, MLflow server y S3;
+  - 5c: sync, OIDC, consola completa y Helm.
+- Decisión:
+  - **Un solo Engine con una política de acceso enchufable.**
+    - El Engine expone `AccessPolicy` (`perceptron.api.access`), que se consulta en tres lugares:
+      - como dependencia de todos sus routers, en HTTP y WebSocket, después del ruteo;
+      - en los listados que cruzan proyectos;
+      - al crear proyectos.
+    - El desktop usa `OpenAccess`, sin cambios de comportamiento.
+    - `perceptron-server` monta el mismo `create_app` con `ServerAccess` y le agrega auth, admin, auditoría y la SPA. Ningún router del Engine sabe de usuarios.
+  - **RBAC por operación** (RF-SRV-02, §3.2):
+    - Cada `operation_id` requiere view, edit, admin o server_admin sobre los proyectos que toca. Por defecto GET es view y el resto edit, con listas explícitas de excepciones:
+      - el playground, las vistas previas y comparar son view;
+      - las descargas de exportaciones y la auditoría LLM son edit;
+      - borrar un proyecto es admin del proyecto;
+      - los proveedores y perfiles LLM son server_admin.
+    - El proyecto se deduce de los parámetros `*_id` (cualquier entidad de `entities` tiene `project_id`), del query `project` o del cuerpo, en dos operaciones.
+    - La membresía del proyecto manda sobre la del workspace. Sin ninguna de las dos no hay acceso.
+    - Las operaciones nuevas del Engine quedan cubiertas por defecto. Si una escritura debe ser de Viewer, se agrega a la lista.
+  - **Sesiones** (RF-SRV-01):
+    - Contraseñas con Argon2id (argon2-cffi, MIT). El login mide un tiempo similar exista o no la cuenta.
+    - Bloqueo temporal tras N fallos y límite por IP en `/auth`.
+    - JWT HS256 de 15 min (PyJWT, MIT) más un token de refresco opaco. Se guarda solo el hash; el token rota en cada uso y reusarlo después de 30 s revoca toda la sesión.
+    - **Navegador:** cookies `HttpOnly` + `SameSite=Strict` (`Secure` por defecto) y CSRF double-submit (`pt_csrf` + `X-CSRF-Token`).
+      - El middleware rota el refresco de forma transparente cuando vence el JWT.
+      - Cada request verifica que la sesión siga activa, así que logout, desactivación y cambio de contraseña cortan el acceso al instante.
+    - **CLI y desktop:** `Authorization: Bearer`, emitido por `/auth/token` y renovado con `/auth/refresh`.
+    - Authlib entra con OIDC en la 5c.
+  - **Datos:**
+    - Usuarios, workspaces y membresías son entidades del dominio que ya existían (`User`, `Workspace`, `Membership`).
+    - Los hashes, los tokens de refresco y la auditoría van en tablas propias (`server_accounts`, `server_refresh_tokens`, `server_audit`) que no viajan con los documentos.
+    - El esquema completo (Engine + servidor) se versiona con Alembic desde `0001`, dentro del paquete (`perceptron_server/migrations`), y se migra al arrancar.
+    - Un test compara las migraciones con los modelos.
+    - El driver de PostgreSQL es pg8000 (BSD); psycopg es LGPL.
+  - **Auditoría** (RF-SRV-07), append-only:
+    - login, logins fallidos y logout;
+    - toda escritura y toda denegación (403);
+    - lecturas de datos crudos y descargas (muestras, archivos de etiquetado, exportaciones, informes);
+    - cambios de usuarios y roles.
+    - Las llamadas LLM quedan además en `LLMCall`, con el payload exacto (RF-PRV-03).
+  - **Modo estación de trabajo** (RF-SRV-05):
+    - El servidor sirve la UI compilada en el mismo origen, con CSP estricta y sin CORS.
+    - La UI web detecta el servidor con `/auth/config`, pide login y agrega el CSRF.
+    - En lugar del selector de carpetas locales ofrece la subida de archivos y las «fuentes del servidor»: carpetas montadas que habilita el Admin (`PERCEPTRON_SOURCE_ROOTS`). El Engine rechaza cualquier ruta fuera de ellas, también para SQLite y con `..`/symlinks.
+  - **Despliegue 5a:**
+    - una imagen (UI + Engine CPU + servidor) con PostgreSQL 16 por Docker Compose;
+    - el primer Admin sale de variables de entorno o de `perceptron-server create-user`;
+    - un solo proceso, porque jobs y eventos viven en memoria hasta la cola de la 5b.
+  - **D2 (object storage), propuesta para la 5b:**
+    - la interfaz `ObjectStore` debe hablar S3 estándar, de modo que el cliente pueda usar el S3 que ya tenga;
+    - en Compose, SeaweedFS (Apache-2.0);
+    - se descarta MinIO server (AGPL-3.0) para distribuirlo empaquetado.
+  - **D3 (cola), propuesta para la 5b:** Celery (BSD) sobre Redis, con colas `gpu`, `cpu` y `llm`. Dramatiq es LGPL y Ray se reserva para Ray Tune.
+- Consecuencias:
+  - Los tests del servidor corren en SQLite en cada job y sobre PostgreSQL 16 en uno propio.
+  - Aceptación parcial de la Capa 5 verificada en CI:
+    - dos usuarios con roles distintos colaboran en el mismo proyecto (API y E2E web);
+    - UC-07 se completa solo desde el navegador;
+    - el Compose arranca y pasa un smoke de login, CSRF, RBAC y fuentes.
+  - Pendiente en la 5b y la 5c:
+    - envío de runs a workers GPU, sync con el desktop y OIDC con Entra ID (requiere un tenant de prueba);
+    - cuotas, backups y Helm;
+    - límites de login compartidos entre réplicas (Redis).
