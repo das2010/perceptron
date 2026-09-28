@@ -399,22 +399,39 @@ def uc09_motor_audio(rng: random.Random) -> Files:
     return files
 
 
+def churn_label(tenure: int, tickets: int, plan: str, noise: float) -> int:
+    """La misma regla de UC-01: el stream de UC-10 se etiqueta igual (feedback)."""
+    logit = -1.2 - 0.05 * tenure + 0.35 * tickets + (0.8 if plan == "básico" else 0) + noise
+    return int(1 / (1 + math.exp(-logit)) > 0.5)
+
+
 def uc10_stream(rng: random.Random) -> Files:
-    """Stream de nuevos clientes para UC-10: los últimos lotes tienen drift sintético."""
+    """Stream de clientes nuevos para UC-10 con el esquema de UC-01 y la etiqueta real (que
+    llega después como feedback). Los lotes 7-9 tienen drift sintético: clientes más nuevos y
+    con más reclamos (más bajas), una zona nueva y cargos más altos."""
+    plans = ["básico", "estándar", "premium"]
+    regions = ["AMBA", "Córdoba", "Santa Fe", "Mendoza"]
     records = []
     for batch in range(10):
         drift = batch >= 7
-        for j in range(50):
-            tenure = rng.randint(1, 24 if drift else 72)
+        for j in range(60):
+            tenure = rng.randint(1, 24) if drift else rng.randint(1, 72)
             tickets = rng.randint(3, 10) if drift else rng.randint(0, 8)
+            plan = rng.choice(plans)
+            base = {"básico": 20, "estándar": 45, "premium": 80}[plan]
+            monthly = round(base * rng.uniform(1.1, 1.5 if drift else 1.2), 2)
+            region = rng.choice([*regions, "Patagonia"] if drift else regions)
             records.append(
                 {
                     "batch": batch,
                     "customer_id": f"N{batch:02d}{j:03d}",
-                    "plan": rng.choice(["básico", "estándar", "premium"]),
+                    "edad": rng.randint(18, 80),
+                    "region": region,
+                    "plan": plan,
                     "antiguedad_meses": tenure,
+                    "cargo_mensual": monthly,
                     "tickets_90d": tickets,
-                    "cargo_mensual": round(rng.uniform(15, 100), 2),
+                    "churn": churn_label(tenure, tickets, plan, rng.gauss(0, 0.6)),
                 }
             )
     return {"uc10_stream/stream.jsonl": jsonl_bytes(records)}
