@@ -91,7 +91,7 @@ class MlflowUi:
             "--port",
             str(port),
         ]
-        flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)  # sin consola en Windows
         self._proc = subprocess.Popen(  # noqa: S603 - argumentos fijos, sin shell
             cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=flags
         )

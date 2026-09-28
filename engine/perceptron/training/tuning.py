@@ -65,7 +65,7 @@ def tune_batch_size(
 ) -> int:
     """Duplica el batch mientras entra en memoria y, al primer OOM, busca binario entre el
     último que entró y el que falló. Devuelve el mayor batch que entra, con el techo por datos."""
-    from lightning.pytorch.tuner import Tuner
+    from lightning.pytorch.tuner.tuning import Tuner
 
     cap = batch_size_cap(start, n_train)
     if cap <= start:
@@ -92,7 +92,7 @@ def find_lr(
 ) -> float | None:
     """LR sugerido por el barrido exponencial de Lightning (mayor pendiente de caída de la
     pérdida). None si no se pudo estimar."""
-    from lightning.pytorch.tuner import Tuner
+    from lightning.pytorch.tuner.tuning import Tuner
 
     data = _TunableData(make, batch_size)
     try:
