@@ -254,11 +254,11 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 
 | RF | MVP | Capa | Descripción | Estado |
 |---|---|---|---|---|
-| RF-PRJ-01 | sí | 1/3 | Crear, abrir, duplicar, archivar y eliminar proyectos. | 🟡 CRUD por API/CLI; duplicar/archivar desde la UI en Capa 3 |
-| RF-PRJ-02 | sí | 1/3 | Plantillas de proyecto por caso de uso (UC-01…UC-09) que preconfiguran modalidad,… | ⬜ pendiente |
+| RF-PRJ-01 | sí | 1/3 | Crear, abrir, duplicar, archivar y eliminar proyectos. | ✅ crear, abrir, duplicar (configuración), archivar/restaurar y eliminar con datos y carpeta (API, CLI y UI) |
+| RF-PRJ-02 | sí | 1/3 | Plantillas de proyecto por caso de uso (UC-01…UC-09) que preconfiguran modalidad,… | ✅ plantillas UC-01…UC-09 (modalidad, tarea y métrica `val_*`), selector en Nuevo proyecto y `--template`; el HPO optimiza la métrica del proyecto |
 | RF-PRJ-03 |  | 3 | Exportar/importar proyecto como paquete .perceptron (zip con manifiesto; datos… | ⬜ pendiente |
-| RF-PRJ-04 |  | 5 | Promover un proyecto local a proyecto de equipo (sube metadata, datasets y runs… | ⬜ pendiente |
-| RF-PRJ-05 |  | 3 | Historial de actividad del proyecto (quién hizo qué, cuándo). | ⬜ pendiente |
+| RF-PRJ-04 |  | 5 | Promover un proyecto local a proyecto de equipo (sube metadata, datasets y runs… | 🟡 sincronización de proyecto, datos y arquitectura al lanzar en el servidor; falta la promoción explícita con selección de runs |
+| RF-PRJ-05 |  | 3 | Historial de actividad del proyecto (quién hizo qué, cuándo). | 🟡 auditoría del Team Server filtrable por proyecto (solo admins); falta el historial local y la vista por proyecto |
 | RF-ING-01 | sí | 1 | Archivos locales: CSV, TSV, XLSX, Parquet, JSON/JSONL; carpetas de imágenes… | ✅ tabular, imágenes, texto (tabla o clase/*.txt), audio (wav/flac/mp3/ogg), ZIP |
 | RF-ING-02 |  | 1/4 | Formatos de anotación: COCO, Pascal VOC, YOLO (txt), máscaras PNG, CSV de eventos de… | ✅ COCO, Pascal VOC, YOLO, máscaras PNG, CSV de OCR; eventos de audio pendiente |
 | RF-ING-03 |  | 4 | Bases de datos: SQL Server, PostgreSQL, MySQL/MariaDB, SQLite, vía query SQL con vista… | ✅ SQL Server, PostgreSQL, MySQL/MariaDB y SQLite con consulta, vista previa, límite de filas, lectura por lotes y refresco |
@@ -275,7 +275,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-PRF-05 |  | 1 | Audio: duración, sample rate, canales, silencio, clipping, SNR estimado. | ✅ `profiling.audio` (duración, sample rate, canales, silencio, clipping, SNR) |
 | RF-PRF-06 | sí | 1 | Alertas: desbalance, target con fuga (feature casi idéntica al target, ids, fechas… | ✅ `profiling.alerts` |
 | RF-PRF-07 | sí | 1 | Genera un Dataset Profile Card (JSON + vista) que es la entrada principal del LLM en… | ✅ `ProfileCard` sin valores individuales (test de propiedad) |
-| RF-PRF-08 |  | 1 | Estimación de complejidad y costo: tamaño efectivo, memoria estimada por batch, tiempo… | ⬜ pendiente |
+| RF-PRF-08 |  | 1 | Estimación de complejidad y costo: tamaño efectivo, memoria estimada por batch, tiempo… | 🟡 parámetros, memoria por batch y tiempo por época medido para la arquitectura propuesta; falta tamaño efectivo y comparación por dispositivo |
 | RF-PIP-01 | sí | 1/3 | El sistema propone automáticamente un pipeline según profiling (imputación, encoding,… | ✅ `pipeline.propose` con justificación por paso |
 | RF-PIP-02 |  | 1/3 | Editor visual (React Flow) de un DAG de pasos: agregar, quitar, reordenar,… | ✅ editor React Flow (agregar, quitar, reordenar, parametrizar, guardar con versión) con vista previa por paso del grafo sin guardar (`POST /projects/{id}/pipelines/preview-steps`) |
 | RF-PIP-03 |  | 1/3 | Catálogo de pasos por modalidad (extensible por plugins): | ✅ tabular, imagen, texto, series, audio (augmentations incluidas) |
@@ -319,7 +319,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-TRN-01 | sí | 1 | Detección de hardware al inicio y bajo demanda: GPUs (modelo, VRAM, capacidad de… | ✅ `training.hardware` + `GET /system/hardware` |
 | RF-TRN-02 | sí | 1/3 | Instalación de PyTorch acorde al hardware: en el primer arranque (y desde… | 🟡 detección y recomendación en el Engine; instalación de la variante en el runtime embebido del desktop y cambio desde Configuración (ADR-0026, validación en CI) |
 | RF-TRN-03 | sí | 1 | Construcción del LightningModule desde ArchSpec + configuración de optimizador,… | ✅ `training.module` |
-| RF-TRN-04 | sí | 1 | Buenas prácticas por defecto: mixed precision (bf16/fp16 según hardware), gradient… | 🟡 AMP, clipping, early stopping, checkpoints, semillas, workers y batch size automáticos; LR finder pendiente |
+| RF-TRN-04 | sí | 1 | Buenas prácticas por defecto: mixed precision (bf16/fp16 según hardware), gradient… | ✅ AMP, clipping, early stopping, checkpoints, semillas, workers automáticos, batch automático con búsqueda binaria contra OOM en GPU y LR finder opcional |
 | RF-TRN-05 | sí | 1 | Cada run corre en un proceso separado; el Engine supervisa, captura OOM/crashes y los… | ✅ subproceso por run con diagnóstico de OOM/crash (ADR-0015) |
 | RF-TRN-06 | sí | 1 | Progreso en vivo por WebSocket: época, batch, loss, métricas, LR, throughput, uso de… | ✅ eventos JSONL → EventBus → `WS /runs/{rid}/live` |
 | RF-TRN-07 |  | 1 | Pausar, reanudar (desde checkpoint), cancelar. | ✅ cancelar, pausar y reanudar desde checkpoint |
@@ -333,9 +333,9 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-AGT-04 |  | 2 | Bitácora legible del agente ("Iteración 3: el modelo sobreajusta desde la época 12 →… | ✅ bitácora en el AgentRun + `WS /agent/runs/{id}/log` |
 | RF-AGT-05 |  | 2 | Si el LLM falla o no responde, el loop cae a una política por reglas o se detiene de… | ✅ fallo del LLM → una iteración por reglas o cierre con el mejor modelo |
 | RF-TRK-01 | sí | 1 | Todo run se registra en MLflow: parámetros, métricas por paso, artefactos… | ✅ MLflow embebido (SQLite + artefactos) |
-| RF-TRK-02 | sí | 1 | La UI de Perceptron muestra runs y comparaciones de forma nativa (no depende de la UI… | 🟡 runs y comparación por API; vistas de UI en Capa 3 |
-| RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | ⬜ pendiente |
-| RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | ⬜ pendiente |
+| RF-TRK-02 | sí | 1 | La UI de Perceptron muestra runs y comparaciones de forma nativa (no depende de la UI… | ✅ runs, curvas y comparación en la UI; enlace opcional a la UI de MLflow (el desktop la levanta a pedido) |
+| RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | 🟡 registro nativo (ModelVersion con stages, promover, rollback, challenger); falta reflejarlo en el Model Registry de MLflow |
+| RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | 🟡 tabla de métricas, curvas superpuestas y diff de hiperparámetros; falta el diff de ArchSpec y de pipeline |
 | RF-EVL-01 | sí | 1 | Métricas por tarea: | ✅ clasificación, regresión, forecasting (MASE, backtesting, naive), anomalías, detección (mAP), segmentación (IoU/Dice), OCR (CER/WER); SED pendiente |
 | RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | 🟡 Captum: Shapley por muestreo global/local (tabular) e Integrated Gradients con mapa de calor (imagen); texto, audio y series pendientes (ADR-0028) |
 | RF-EVL-03 |  | 1/4 | Análisis de errores: explorador de muestras mal predichas con filtros, slices… | ✅ slices de bajo rendimiento, confusiones, posibles errores de etiqueta (confident learning) y explorador de mal predichos |
@@ -343,7 +343,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | 🟡 ruido, categorías cambiadas y faltantes (tabular); ruido, desenfoque y JPEG (imagen); texto y audio pendientes |
 | RF-EVL-06 | sí | 2/4 | Informe final generado por el LLM (o plantilla sin LLM): resumen ejecutivo, qué se… | ✅ informe LLM o plantilla exportable a HTML (Titillium Web embebida), PDF (reportlab) y Markdown con model card |
 | RF-EXP-01 | sí | 4 | Exportar a ONNX (con verificación numérica vs. PyTorch), torch.export… | ✅ ONNX (opset 18, batch dinámico) verificado en ONNX Runtime (1e-4; fp16 1e-2; INT8 informado), torch.export y TorchScript legacy (ADR-0027) |
-| RF-EXP-02 | sí | 4 | Playground en la app: cargar un archivo/fila/imagen/audio/texto, ver predicción,… | 🟡 playground tabular (formulario por columna) e imagen con predicción, confianza y probabilidades; audio/texto y explicación local en la 4b |
+| RF-EXP-02 | sí | 4 | Playground en la app: cargar un archivo/fila/imagen/audio/texto, ver predicción,… | 🟡 playground tabular, imagen, texto y audio con predicción, confianza y probabilidades; explicación local en tabular e imagen (texto y audio pendientes) |
 | RF-EXP-03 |  | 4 | API REST de inferencia: generar y levantar un servidor FastAPI (ONNX Runtime o… | ✅ servidor FastAPI + ONNX Runtime con pipeline embebido, /predict, /predict/batch, /metrics, API key, Dockerfile CPU/CUDA (tabular e imagen) |
 | RF-EXP-04 |  | 4 | Proyecto de código exportable: repositorio Python standalone generado desde plantillas… | ✅ repo autónomo (uv): modelo generado, pipeline vendorizado, train/infer/serve, config, datos train/val, pesos y prueba de humo; O5 en CI (tabular e imagen) |
 | RF-EXP-05 |  | 4 | Firma del modelo: schema de entrada/salida, versión, hash; incluido en todos los formatos. | ✅ firma (entradas, salidas, hash de ArchSpec, run, versión) en el reporte, `signature.json` y en el servidor |
