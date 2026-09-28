@@ -172,3 +172,16 @@ def test_mini_tournament(wf: Workflow, fixtures_dir: Path) -> None:
     expected = max(1, round(spec_epochs(spec) * 0.05))
     assert all(e.epochs == expected for e in res.entries)
     assert res.winner_entry is not None and res.winner_entry.metric is not None
+
+
+def test_agent_repeated_actions_are_not_reexecuted(
+    wf: Workflow, fake_llm: FakeLLMProvider, fixtures_dir: Path
+) -> None:
+    pid, dv, pipe = _setup(wf, fixtures_dir)
+    fake_llm.script("agent", launch_base, curves)  # luego repite `curves` para siempre
+    runner = AgentRunner(wf)
+    ar = runner.run(runner.start(pid, dv, pipe, limits=LIMITS).id)
+    assert ar.state is AgentState.FINISHED and ar.stop_reason == "limit:acciones repetidas"
+    assert ar.iterations == 1 and ar.steps == 5  # launch + curves + 3 repeticiones
+    errors = [e for e in ar.log if e["kind"] == "observation" and "error" in (e["data"] or {})]
+    assert len(errors) == 2 and "repetida" in errors[0]["data"]["error"]

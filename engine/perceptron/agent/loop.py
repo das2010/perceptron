@@ -12,6 +12,7 @@ modelo (RF-AGT-05).
 
 from __future__ import annotations
 
+import json
 import logging
 import threading
 import time
@@ -71,6 +72,7 @@ FALLBACK = (LLMUnavailableError, LLMBudgetExceededError, LLMProviderError, LLMOu
 OBSERVATIONS_IN_CONTEXT = 6
 RUNS_IN_CONTEXT = 8
 HISTORY_POINTS = 20
+MAX_REPEATS = 3
 
 
 @dataclass
@@ -93,6 +95,10 @@ _LOCK = threading.Lock()
 def control_for(agent_id: str) -> AgentControl:
     with _LOCK:
         return _CONTROLS.setdefault(agent_id, AgentControl())
+
+
+def _signature(action: AgentAction) -> str:
+    return json.dumps(action.model_dump(mode="json"), sort_keys=True, ensure_ascii=False)
 
 
 def family(spec: ArchSpec) -> str:
@@ -165,7 +171,31 @@ class AgentRunner:
                 continue
             ar.steps += 1
             ar.cost_usd = self.ctx.llm.ledger.spent(ar.project_id, self._scope(ar))
-            self._log(ar, "decision", step.log_entry, tool=step.action.tool, llm_call_id=call_id)
+            sig = _signature(step.action)
+            repeats = self._repeats(ar, sig)
+            self._log(
+                ar,
+                "decision",
+                step.log_entry,
+                tool=step.action.tool,
+                llm_call_id=call_id,
+                data={"signature": sig},
+            )
+            if repeats >= MAX_REPEATS:
+                ar = self._conclude(ar, "acciones repetidas")
+                break
+            if repeats:
+                # Modelos chicos tienden a repetir la misma acción: no se re-ejecuta.
+                self._observe(
+                    ar,
+                    step.action.tool,
+                    {
+                        "error": "acción repetida con los mismos argumentos: su resultado ya "
+                        "está en evidence. Elegí otra acción o usá finish."
+                    },
+                )
+                ar = self.repo.update(ar)
+                continue
             try:
                 ar = self._execute(ar, step.action)
             except Exception as e:  # una herramienta falló: se informa al LLM y sigue
@@ -173,6 +203,18 @@ class AgentRunner:
                 self._observe(ar, step.action.tool, {"error": f"{type(e).__name__}: {e}"})
             ar = self.repo.update(ar)
         return ar
+
+    @staticmethod
+    def _repeats(ar: AgentRun, sig: str) -> int:
+        """Cuántas decisiones seguidas, al final de la bitácora, tienen esta misma acción."""
+        count = 0
+        for entry in reversed(ar.log):
+            if entry.get("kind") != "decision":
+                continue
+            if (entry.get("data") or {}).get("signature") != sig:
+                break
+            count += 1
+        return count
 
     def approve(self, agent_id: str, *, approved: bool, comment: str | None = None) -> AgentRun:
         """Respuesta humana a un punto de aprobación (RF-AGT-03). Luego se llama a `run`."""
