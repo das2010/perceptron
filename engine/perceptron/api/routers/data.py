@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
+from starlette.background import BackgroundTask
 
 from perceptron.api.context import EngineContext, get_context
 from perceptron.core.errors import ForbiddenError, ValidationError
@@ -20,6 +23,7 @@ from perceptron.data.sources.files import SourceKind, open_source, scan_table
 from perceptron.data.sources.remote import DbConfig, download_hf, download_kaggle, materialize_db
 from perceptron.data.splits import SPLIT_COLUMN, SplitRequest
 from perceptron.data.versioning.diff import DatasetDiff, LineageNode, dataset_diff, lineage
+from perceptron.data.versioning.retention import RetentionReport, apply_retention, export_dvc
 from perceptron.domain.enums import DataSourceType, Modality
 from perceptron.domain.models import DatasetVersion, DataSource
 from perceptron.services.workflow import Workflow
@@ -351,3 +355,31 @@ def dataset_lineage(dataset_version_id: str, ctx: Ctx) -> list[LineageNode]:
         for v in ctx.repo(DatasetVersion).list(filters={"project_id": dv.project_id}, limit=10_000)
     }
     return lineage(versions, dv.id)
+
+
+# ------------------------------------------------------------------ retención y DVC (RF-MON-07)
+
+
+class RetentionBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    keep_last: int = Field(ge=1, le=10_000)
+    dry_run: bool = True
+
+
+@router.post("/projects/{project_id}/datasets/retention", operation_id="applyDatasetRetention")
+def dataset_retention(project_id: str, body: RetentionBody, ctx: Ctx) -> RetentionReport:
+    """Conserva las últimas N versiones (y las que están en uso); con `dry_run` solo informa."""
+    return apply_retention(ctx, project_id, keep_last=body.keep_last, dry_run=body.dry_run)
+
+
+@router.get("/datasets/{dataset_version_id}/dvc.zip", operation_id="downloadDatasetDvc")
+def download_dvc(dataset_version_id: str, ctx: Ctx) -> FileResponse:
+    """Versión de datos con su `.dvc` (DVC 3, md5) para agregarla a un repositorio DVC."""
+    tmp = Path(tempfile.mkdtemp(prefix="perceptron-dvc-"))
+    out = export_dvc(ctx, dataset_version_id, tmp / f"{dataset_version_id}-dvc.zip")
+    return FileResponse(
+        out,
+        filename=out.name,
+        media_type="application/zip",
+        background=BackgroundTask(shutil.rmtree, tmp, ignore_errors=True),
+    )

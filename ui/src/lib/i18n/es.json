@@ -216,7 +216,8 @@
     "samples": "Muestras",
     "created": "Creada",
     "showProfile": "Ver perfil",
-    "goTrain": "Seguir: entrenar"
+    "goTrain": "Seguir: entrenar",
+    "dvcHint": "Descargar esta versión con su archivo .dvc (DVC 3)"
   },
   "sourceKind": {
     "table": "Tabla",
@@ -1155,5 +1156,19 @@
     "busy": "ocupado",
     "idle": "libre",
     "secondsAgo": "hace {{s}} s"
+  },
+  "retention": {
+    "title": "Retención de versiones",
+    "keep": "Conservar las últimas",
+    "hint": "Las versiones en uso (runs, etiquetado, agente) y sus padres se conservan siempre.",
+    "preview": "Ver qué se borraría",
+    "wouldDelete_one": "Se borraría {{count}} versión ({{mb}} MB).",
+    "wouldDelete_other": "Se borrarían {{count}} versiones ({{mb}} MB).",
+    "deleted_one": "Se borró {{count}} versión ({{mb}} MB).",
+    "deleted_other": "Se borraron {{count}} versiones ({{mb}} MB).",
+    "inUse_one": "{{count}} más se conserva por estar en uso.",
+    "inUse_other": "{{count}} más se conservan por estar en uso.",
+    "apply_one": "Borrar {{count}} versión",
+    "apply_other": "Borrar {{count}} versiones"
   }
 }

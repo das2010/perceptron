@@ -54,7 +54,7 @@ SERVER_ADMIN_OPS = frozenset(
         "verifyModelsCache",
     }
 )
-PROJECT_ADMIN_OPS = frozenset({"deleteProject"})
+PROJECT_ADMIN_OPS = frozenset({"deleteProject", "applyDatasetRetention"})
 # Escrituras que un Viewer puede hacer: no modifican nada (previsualizar, comparar, playground).
 VIEW_WRITES = frozenset(
     {
@@ -85,6 +85,7 @@ EDIT_READS = frozenset(
         "downloadServingBundle",
         "exportLabels",
         "downloadProjectPackage",
+        "downloadDatasetDvc",
         "listLlmAudit",
     }
 )

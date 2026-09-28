@@ -216,7 +216,8 @@
     "samples": "Samples",
     "created": "Created",
     "showProfile": "Show profile",
-    "goTrain": "Next: train"
+    "goTrain": "Next: train",
+    "dvcHint": "Download this version with its .dvc file (DVC 3)"
   },
   "sourceKind": {
     "table": "Table",
@@ -1155,5 +1156,19 @@
     "busy": "busy",
     "idle": "idle",
     "secondsAgo": "{{s}} s ago"
+  },
+  "retention": {
+    "title": "Version retention",
+    "keep": "Keep the latest",
+    "hint": "Versions in use (runs, labeling, agent) and their parents are always kept.",
+    "preview": "Preview what would be deleted",
+    "wouldDelete_one": "{{count}} version would be deleted ({{mb}} MB).",
+    "wouldDelete_other": "{{count}} versions would be deleted ({{mb}} MB).",
+    "deleted_one": "{{count}} version deleted ({{mb}} MB).",
+    "deleted_other": "{{count}} versions deleted ({{mb}} MB).",
+    "inUse_one": "{{count}} more is kept because it is in use.",
+    "inUse_other": "{{count}} more are kept because they are in use.",
+    "apply_one": "Delete {{count}} version",
+    "apply_other": "Delete {{count}} versions"
   }
 }
