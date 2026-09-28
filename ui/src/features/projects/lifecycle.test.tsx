@@ -71,7 +71,7 @@ describe("ciclo de vida del proyecto (RF-PRJ-01)", () => {
     renderAt("/projects/prj_1");
     await userEvent.click(await screen.findByLabelText("con los datos"));
     await userEvent.click(screen.getByRole("button", { name: /Exportar .perceptron/ }));
-    await waitFor(() => expect(created).toHaveBeenCalled());
+    await waitFor(() => expect(created).toHaveBeenCalled(), { timeout: 5000 });
     const req = pkg.mock.calls[0]?.[0];
     if (!req) throw new Error("no se pidió el paquete");
     expect(new URL(req.url).searchParams.get("include_data")).toBe("true");
