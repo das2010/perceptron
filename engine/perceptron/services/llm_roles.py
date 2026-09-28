@@ -320,7 +320,7 @@ class LLMRoles:
         card = self.wf.profile_card(dataset_version_id) if dataset_version_id else None
 
         def validator(p: HPOProposal) -> str | None:
-            return "\n".join(space.errors(p, budget)) or None
+            return "\n".join(space.errors(space.repair(p, budget)[0], budget)) or None
 
         llm_ctx = LLMContext(
             goal=project.goal or None,
@@ -346,7 +346,8 @@ class LLMRoles:
         except FALLBACK as e:
             logger.info("estrategia de HPO por reglas", extra={"reason": _reason(e)})
             return base
-        strategy = space.build(result.value, budget, origin=Origin.LLM)
+        repaired, _ = space.repair(result.value, budget)
+        strategy = space.build(repaired, budget, origin=Origin.LLM)
         return strategy.model_copy(update={"llm_call_id": result.call_id})
 
     # ------------------------------------------------------------------ diagnosticador
@@ -643,6 +644,48 @@ class HPOSpace:
             origin=origin,
         )
 
+    def repair(self, p: HPOProposal, budget: Budget) -> tuple[HPOProposal, list[str]]:
+        """Arregla lo que el sistema puede acotar sin decidir por el LLM (límites del catálogo).
+
+        Rangos fuera de los límites se recortan, opciones inválidas se filtran, parámetros
+        inexistentes se descartan, los trials se acotan al presupuesto y un objetivo
+        desconocido pasa a `val_loss`. Lo que no se puede reparar lo informa `errors`.
+        """
+        notes: list[str] = []
+        space: list[SearchParam] = []
+        for sp in p.search_space:
+            ref = self.tunable.get(sp.name)
+            if ref is None:
+                notes.append(f"se descartó '{sp.name}' (no es ajustable)")
+                continue
+            fixed = _clamp_param(sp, ref)
+            if fixed != sp:
+                notes.append(f"'{sp.name}' se acotó a los límites del catálogo")
+            space.append(fixed)
+        if not space:
+            space = list(p.search_space)
+        objectives = [
+            o
+            if o.metric in self.metrics or o.metric == "num_params"
+            else o.model_copy(update={"metric": "val_loss", "direction": "minimize"})
+            for o in p.objectives
+        ]
+        if objectives != p.objectives:
+            notes.append("objetivo desconocido reemplazado por val_loss")
+        trials = min(p.max_trials, budget.max_trials)
+        if trials != p.max_trials:
+            notes.append(f"max_trials acotado a {trials}")
+        rationale = p.rationale + (f" [Sistema: {'; '.join(notes)}]" if notes else "")
+        repaired = p.model_copy(
+            update={
+                "search_space": space,
+                "objectives": objectives,
+                "max_trials": trials,
+                "rationale": rationale,
+            }
+        )
+        return repaired, notes
+
     def errors(self, p: HPOProposal, budget: Budget) -> list[str]:
         errors: list[str] = []
         for sp in p.search_space:
@@ -664,6 +707,22 @@ class HPOSpace:
             except ValueError as e:
                 errors.append(str(e))
         return errors
+
+
+def _clamp_param(sp: SearchParam, ref: SearchParam) -> SearchParam:
+    """Lleva un parámetro propuesto dentro del espacio del catálogo."""
+    if ref.type == "categorical":
+        choices = [c for c in (sp.choices or []) if c in (ref.choices or [])]
+        return ref.model_copy(update={"choices": choices or ref.choices})
+    if sp.type == "categorical":
+        choices = [c for c in (sp.choices or []) if isinstance(c, int | float) and ref.accepts(c)]
+        return sp.model_copy(update={"choices": choices}) if choices else ref
+    lo, hi = float(ref.low or 0), float(ref.high or 0)
+    low = min(max(float(sp.low if sp.low is not None else lo), lo), hi)
+    high = min(max(float(sp.high if sp.high is not None else hi), lo), hi)
+    if low > high or (ref.log and low <= 0):
+        low, high = lo, hi
+    return sp.model_copy(update={"type": ref.type, "low": low, "high": high, "log": ref.log})
 
 
 def _range_errors(sp: SearchParam, ref: SearchParam) -> list[str]:
