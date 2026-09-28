@@ -79,3 +79,36 @@ def prepare_study(
         "budget": {"max_trials": trials, "max_epochs_per_trial": epochs},
     }
     return pid, body
+
+
+class LiveServer:
+    """Uvicorn real en un hilo (para clientes HTTP/WS de verdad, como el desktop)."""
+
+    def __init__(self, app: FastAPI) -> None:
+        import socket
+        import threading
+
+        import uvicorn
+
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            self.port = s.getsockname()[1]
+        self.url = f"http://127.0.0.1:{self.port}"
+        config = uvicorn.Config(app, host="127.0.0.1", port=self.port, log_level="warning")
+        self.server = uvicorn.Server(config)
+        self.thread = threading.Thread(target=self.server.run, daemon=True)
+
+    def __enter__(self) -> LiveServer:
+        import time
+
+        self.thread.start()
+        deadline = time.time() + 60
+        while not self.server.started:
+            if time.time() > deadline or not self.thread.is_alive():
+                raise RuntimeError("el servidor de prueba no arrancó")
+            time.sleep(0.05)
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.server.should_exit = True
+        self.thread.join(timeout=30)

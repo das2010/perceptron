@@ -200,7 +200,8 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | SSO OIDC (Entra ID, Google Workspace, genérico) con PKCE, mapeo de grupos a roles y botones en el login (ADR-0032) | ✅ (CI con IdP simulado; falta Entra ID real) |
 | Helm chart v1 (servidor, workers CPU/GPU, Valkey, MLflow) validado con kubeconform | ✅ |
 | Backups y restauración (PostgreSQL + volúmenes) probados de punta a punta en CI | ✅ |
-| Sync desktop ↔ servidor y envío de runs desde el desktop | ⬜ |
+| Sync desktop ↔ servidor: proyectos de equipo con mismos IDs, bloqueo optimista, subida resumible por chunks con SHA-256 | ✅ |
+| Aceptación: un desktop lanza un run en un worker del servidor y ve el progreso en vivo (HTTP + WS reales en CI) | ✅ (worker CPU en CI; GPU real pendiente de recurso) |
 
 ## Requisitos funcionales
 
@@ -308,8 +309,8 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-MON-07 |  | 6 | Versionado de datasets: snapshots inmutables por manifiesto de hashes… | ⬜ pendiente |
 | RF-SRV-01 |  | 5 | Autenticación: usuarios locales (hash Argon2) y SSO OIDC (Entra ID, Google Workspace,… | ✅ locales (Argon2id, JWT con refresco rotativo, CSRF, bloqueo) y SSO OIDC con grupos → roles; validación con Entra ID real pendiente de tenant |
 | RF-SRV-02 |  | 5 | RBAC por workspace y proyecto (§3.2). | ✅ Admin/Editor/Viewer por workspace y proyecto sobre todas las operaciones (HTTP y WS) |
-| RF-SRV-03 |  | 5 | Sincronización desktop ↔ servidor para proyectos de equipo: metadata (PostgreSQL),… | ⬜ pendiente |
-| RF-SRV-04 |  | 5 | Cola de jobs con prioridades y cuotas por usuario/workspace; los desktops pueden… | 🟡 cola Celery/Valkey con colas gpu/cpu, cuotas y vista de la cola; envío desde el desktop en la 5c |
+| RF-SRV-03 |  | 5 | Sincronización desktop ↔ servidor para proyectos de equipo: metadata (PostgreSQL),… | 🟡 push de proyecto, datos, pipeline y arquitectura (bloqueo optimista, chunks reanudables) y pull de estudios y runs; S3 y edición concurrente de proyectos pendientes |
+| RF-SRV-04 |  | 5 | Cola de jobs con prioridades y cuotas por usuario/workspace; los desktops pueden… | ✅ cola Celery/Valkey con colas gpu/cpu, cuotas, vista de la cola y envío desde el desktop con progreso en vivo; prioridades entre usuarios pendientes |
 | RF-SRV-05 |  | 5 | Modo estación de trabajo: la UI web del servidor ofrece la misma funcionalidad que el… | ✅ UI web en el mismo origen con login; subida de archivos y fuentes del servidor confinadas |
 | RF-SRV-06 |  | 5 | Consola de administración: usuarios, grupos, SSO, proveedores LLM y claves, políticas… | 🟡 usuarios, roles y auditoría; SSO, cuotas, almacenamiento y workers en 5b/5c |
 | RF-SRV-07 |  | 5 | Auditoría: login, acceso a datasets, exportaciones, llamadas LLM, cambios de permisos. | ✅ login, escrituras, denegaciones, lecturas de datos, descargas y cambios de roles; LLM en LLMCall |

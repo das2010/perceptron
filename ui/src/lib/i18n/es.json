@@ -793,5 +793,20 @@
     "queue": "Cola",
     "since": "Desde",
     "runningOn": "en {{worker}}"
+  },
+  "remote": {
+    "title": "Servidores de equipo",
+    "hint": "Conectá este desktop a un Team Server para entrenar en sus workers (GPU) y compartir proyectos con el equipo.",
+    "empty": "Todavía no hay servidores conectados.",
+    "name": "Nombre",
+    "user": "Usuario",
+    "remove": "Quitar {{name}}",
+    "passwordHint": "Solo para el login: se guarda un token en el llavero, no la contraseña.",
+    "connect": "Conectar",
+    "where": "Dónde entrenar",
+    "local": "En este equipo",
+    "onServer": "En {{name}}",
+    "useGpu": "Usar la GPU del servidor",
+    "syncing": "Subiendo al servidor…"
   }
 }

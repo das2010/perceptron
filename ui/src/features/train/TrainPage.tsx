@@ -14,9 +14,12 @@ import {
   Input,
   Select,
 } from "@/components/ui";
+import { useSession } from "@/features/auth/session";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import {
+  useCreateRemoteStudy,
   useCreateStudy,
+  useRemoteServers,
   useDatasets,
   useHpoStrategy,
   useProposeArchitecture,
@@ -140,6 +143,17 @@ export function TrainPage() {
   const proposeArch = useProposeArchitecture(projectId);
   const recommend = useHpoStrategy(projectId);
   const createStudy = useCreateStudy(projectId);
+  const createRemote = useCreateRemoteStudy(projectId);
+  const session = useSession();
+  const servers = useRemoteServers(!session);
+  const [where, setWhere] = useState("");
+  const [serverGpu, setServerGpu] = useState(false);
+  const goLive = (jobId: string) =>
+    void navigate({
+      to: "/projects/$projectId/experiments",
+      params: { projectId },
+      search: { job: jobId },
+    });
 
   if (datasets.length === 0) return <EmptyState>{t("train.noData")}</EmptyState>;
 
@@ -294,31 +308,53 @@ export function TrainPage() {
 
       {strategy && (
         <Step n={4} title={t("train.step.launch")}>
+          {(servers.data?.length ?? 0) > 0 && (
+            <div className="mb-3 flex flex-wrap items-end gap-3">
+              <Field label={t("remote.where")}>
+                <Select value={where} onChange={(e) => setWhere(e.target.value)}>
+                  <option value="">{t("remote.local")}</option>
+                  {servers.data?.map((s) => (
+                    <option key={s.name} value={s.name}>
+                      {t("remote.onServer", { name: s.name })}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              {where && (
+                <label className="flex items-center gap-2 pb-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={serverGpu}
+                    onChange={(e) => setServerGpu(e.target.checked)}
+                  />
+                  {t("remote.useGpu")}
+                </label>
+              )}
+            </div>
+          )}
           <Button
-            loading={createStudy.isPending}
-            onClick={() =>
-              createStudy.mutate(
-                {
-                  dataset_version_id: dvId,
-                  pipeline_id: pipeline?.id ?? "",
-                  archspec_id: archspecId,
-                  strategy: strategy as NonNullable<Schemas["StudyCreate"]["strategy"]>,
-                  budget,
-                },
-                {
-                  onSuccess: (launch) =>
-                    void navigate({
-                      to: "/projects/$projectId/experiments",
-                      params: { projectId },
-                      search: { job: launch.job.id },
-                    }),
-                },
-              )
-            }
+            loading={createStudy.isPending || createRemote.isPending}
+            onClick={() => {
+              const common = {
+                dataset_version_id: dvId,
+                pipeline_id: pipeline?.id ?? "",
+                archspec_id: archspecId,
+                strategy: strategy as NonNullable<Schemas["StudyCreate"]["strategy"]>,
+                budget,
+              };
+              if (where) {
+                createRemote.mutate(
+                  { ...common, server: where, device: serverGpu ? "cuda" : null },
+                  { onSuccess: (job) => goLive(job.id) },
+                );
+              } else {
+                createStudy.mutate(common, { onSuccess: (launch) => goLive(launch.job.id) });
+              }
+            }}
           >
             {t("train.launch")}
           </Button>
-          <ErrorNote error={createStudy.error} />
+          <ErrorNote error={createStudy.error ?? createRemote.error} />
         </Step>
       )}
     </div>

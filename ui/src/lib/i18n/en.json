@@ -793,5 +793,20 @@
     "queue": "Queue",
     "since": "Since",
     "runningOn": "on {{worker}}"
+  },
+  "remote": {
+    "title": "Team servers",
+    "hint": "Connect this desktop to a Team Server to train on its (GPU) workers and share projects with your team.",
+    "empty": "No servers connected yet.",
+    "name": "Name",
+    "user": "User",
+    "remove": "Remove {{name}}",
+    "passwordHint": "Only used to sign in: a token is kept in the keychain, never the password.",
+    "connect": "Connect",
+    "where": "Where to train",
+    "local": "On this machine",
+    "onServer": "On {{name}}",
+    "useGpu": "Use the server GPU",
+    "syncing": "Uploading to the server…"
   }
 }
