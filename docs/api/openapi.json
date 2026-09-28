@@ -4109,6 +4109,12 @@
           "result": {
             "title": "Result"
           },
+          "runner": {
+            "default": "local",
+            "description": "Dónde corre: local o la cola del servidor",
+            "title": "Runner",
+            "type": "string"
+          },
           "started_at": {
             "anyOf": [
               {
@@ -4132,6 +4138,18 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "worker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Worker remoto que lo ejecuta",
+            "title": "Worker"
           }
         },
         "required": [
@@ -6800,6 +6818,50 @@
         "title": "PurposeRef",
         "type": "object"
       },
+      "QueueView": {
+        "properties": {
+          "jobs": {
+            "description": "Estudios en cola o en curso que podés ver",
+            "items": {
+              "$ref": "#/components/schemas/Job"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
+          "mode": {
+            "enum": [
+              "local",
+              "queue"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "quota_per_user": {
+            "title": "Quota Per User",
+            "type": "integer"
+          },
+          "quota_per_workspace": {
+            "title": "Quota Per Workspace",
+            "type": "integer"
+          },
+          "workers": {
+            "items": {
+              "$ref": "#/components/schemas/WorkerInfo"
+            },
+            "title": "Workers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "mode",
+          "workers",
+          "jobs",
+          "quota_per_user",
+          "quota_per_workspace"
+        ],
+        "title": "QueueView",
+        "type": "object"
+      },
       "RefreshBody": {
         "additionalProperties": false,
         "properties": {
@@ -9387,6 +9449,72 @@
           "task"
         ],
         "title": "VisionTaskProfile",
+        "type": "object"
+      },
+      "WorkerInfo": {
+        "properties": {
+          "busy_job": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Busy Job"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
+          "gpus": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Gpus",
+            "type": "array"
+          },
+          "queues": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Queues",
+            "type": "array"
+          },
+          "ram_available_gb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ram Available Gb"
+          },
+          "seen_s_ago": {
+            "title": "Seen S Ago",
+            "type": "number"
+          },
+          "worker": {
+            "title": "Worker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "worker",
+          "seen_s_ago"
+        ],
+        "title": "WorkerInfo",
         "type": "object"
       },
       "Workspace": {
@@ -14653,6 +14781,27 @@
         "summary": "Robustness",
         "tags": [
           "analysis"
+        ]
+      }
+    },
+    "/api/v1/server/queue": {
+      "get": {
+        "operationId": "getQueue",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Queue",
+        "tags": [
+          "server"
         ]
       }
     },

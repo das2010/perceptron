@@ -1727,6 +1727,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/server/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Queue */
+        get: operations["getQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/server/sources": {
         parameters: {
             query?: never;
@@ -3562,6 +3579,12 @@ export interface components {
             };
             /** Result */
             result?: unknown;
+            /**
+             * Runner
+             * @description Dónde corre: local o la cola del servidor
+             * @default local
+             */
+            runner: string;
             /** Started At */
             started_at?: string | null;
             /**
@@ -3570,6 +3593,11 @@ export interface components {
              * @enum {string}
              */
             status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+            /**
+             * Worker
+             * @description Worker remoto que lo ejecuta
+             */
+            worker?: string | null;
         };
         /**
          * LLMCall
@@ -4624,6 +4652,25 @@ export interface components {
              */
             temperature: number | null;
         };
+        /** QueueView */
+        QueueView: {
+            /**
+             * Jobs
+             * @description Estudios en cola o en curso que podés ver
+             */
+            jobs: components["schemas"]["Job"][];
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "local" | "queue";
+            /** Quota Per User */
+            quota_per_user: number;
+            /** Quota Per Workspace */
+            quota_per_workspace: number;
+            /** Workers */
+            workers: components["schemas"]["WorkerInfo"][];
+        };
         /** RefreshBody */
         RefreshBody: {
             /** Refresh Token */
@@ -5611,6 +5658,25 @@ export interface components {
             text_length_p50?: number | null;
             /** Text Length P95 */
             text_length_p95?: number | null;
+        };
+        /** WorkerInfo */
+        WorkerInfo: {
+            /** Busy Job */
+            busy_job?: string | null;
+            /** Device */
+            device?: string | null;
+            /** Gpus */
+            gpus?: {
+                [key: string]: unknown;
+            }[];
+            /** Queues */
+            queues?: string[];
+            /** Ram Available Gb */
+            ram_available_gb?: number | null;
+            /** Seen S Ago */
+            seen_s_ago: number;
+            /** Worker */
+            worker: string;
         };
         /** Workspace */
         Workspace: {
@@ -9124,6 +9190,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueView"];
                 };
             };
         };

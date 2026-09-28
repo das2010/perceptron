@@ -63,15 +63,15 @@ export function QueuePage() {
                     <tr key={w.worker}>
                       <Td className="font-mono text-xs">{w.worker}</Td>
                       <Td className="space-x-1">
-                        {w.queues.map((q) => (
+                        {(w.queues ?? []).map((q) => (
                           <Badge key={q}>{q}</Badge>
                         ))}
                       </Td>
                       <Td className="text-xs">
-                        {w.gpus.length > 0 ? (
+                        {(w.gpus ?? []).length > 0 ? (
                           <span className="flex items-center gap-1">
                             <Gpu className="h-4 w-4" aria-hidden="true" />
-                            {w.gpus.map((g) => String(g.name ?? "GPU")).join(", ")}
+                            {(w.gpus ?? []).map((g) => String(g.name ?? "GPU")).join(", ")}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1">
@@ -109,34 +109,37 @@ export function QueuePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {view.jobs.map((j) => (
-                    <tr key={j.id}>
-                      <Td>
-                        {j.refs.project_id ? (
-                          <Link
-                            to="/projects/$projectId/experiments"
-                            params={{ projectId: j.refs.project_id }}
-                            search={{ job: j.id }}
-                            className="font-mono text-xs underline"
-                          >
-                            {j.refs.study_id ?? j.id}
-                          </Link>
-                        ) : (
-                          j.id
-                        )}
-                      </Td>
-                      <Td>
-                        <Badge>{j.refs.queue ?? "local"}</Badge>
-                      </Td>
-                      <Td>
-                        <Badge tone={j.status === "running" ? "warn" : "neutral"}>
-                          {t(`status.${j.status}`)}
-                        </Badge>
-                      </Td>
-                      <Td className="font-mono text-xs">{j.worker ?? "—"}</Td>
-                      <Td className="text-xs">{formatDate(j.created_at, i18n.language)}</Td>
-                    </tr>
-                  ))}
+                  {view.jobs.map((j) => {
+                    const refs = j.refs ?? {};
+                    return (
+                      <tr key={j.id}>
+                        <Td>
+                          {refs.project_id ? (
+                            <Link
+                              to="/projects/$projectId/experiments"
+                              params={{ projectId: refs.project_id }}
+                              search={{ job: j.id }}
+                              className="font-mono text-xs underline"
+                            >
+                              {refs.study_id ?? j.id}
+                            </Link>
+                          ) : (
+                            j.id
+                          )}
+                        </Td>
+                        <Td>
+                          <Badge>{refs.queue ?? "local"}</Badge>
+                        </Td>
+                        <Td>
+                          <Badge tone={j.status === "running" ? "warn" : "neutral"}>
+                            {t(`status.${j.status}`)}
+                          </Badge>
+                        </Td>
+                        <Td className="font-mono text-xs">{j.worker ?? "—"}</Td>
+                        <Td className="text-xs">{formatDate(j.created_at, i18n.language)}</Td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </Table>
             )}
