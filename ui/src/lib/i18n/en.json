@@ -1112,5 +1112,20 @@
       "succeeded": "Done: it is now a team project.",
       "failed": "Could not complete."
     }
+  },
+  "pipelineAdvice": {
+    "title": "Suggested improvements",
+    "ask": "Ask for suggestions",
+    "rules": "No LLM ({{reason}}): suggestions based on the data profile.",
+    "none": "The pipeline already fits this data.",
+    "before": "Before",
+    "after": "After",
+    "apply_one": "Apply {{count}} accepted suggestion",
+    "apply_other": "Apply {{count}} accepted suggestions",
+    "op": {
+      "add": "Add step {{step}}",
+      "remove": "Remove step {{step}}",
+      "update": "Change step {{step}}"
+    }
   }
 }

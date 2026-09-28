@@ -38,6 +38,12 @@ from perceptron.sandbox.process import CodeCheck
 from perceptron.sandbox.static import StaticReport, check_source
 from perceptron.services.compare import ConfigDiff, config_diff
 from perceptron.services.estimate import CostEstimate
+from perceptron.services.pipeline_advice import (
+    PipelineChange,
+    SuggestionsResult,
+    apply_accepted,
+    suggest,
+)
 from perceptron.services.workflow import Workflow
 
 router = APIRouter()
@@ -98,6 +104,38 @@ def get_pipeline(pipeline_id: str, ctx: Ctx) -> Pipeline:
 @router.put("/pipelines/{pipeline_id}", tags=["pipelines"], operation_id="updatePipeline")
 def update_pipeline(pipeline_id: str, body: PipelineUpdate, ctx: Ctx) -> Pipeline:
     return Workflow(ctx).update_pipeline(pipeline_id, body.graph, body.version)
+
+
+class SuggestBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dataset_version_id: str
+    mode: Literal["auto", "llm", "rules"] = "auto"
+
+
+class ApplySuggestionsBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    version: int = Field(ge=1, description="Versión del pipeline sobre la que se sugirió")
+    changes: list[PipelineChange] = Field(min_length=1, max_length=20)
+
+
+@router.post(
+    "/pipelines/{pipeline_id}/suggestions",
+    tags=["pipelines"],
+    operation_id="suggestPipelineChanges",
+)
+def suggest_pipeline_changes(pipeline_id: str, body: SuggestBody, ctx: Ctx) -> SuggestionsResult:
+    """Cambios sugeridos con justificación y diff; no se aplica nada (RF-PIP-05)."""
+    return suggest(Workflow(ctx).roles, pipeline_id, body.dataset_version_id, mode=body.mode)
+
+
+@router.post(
+    "/pipelines/{pipeline_id}/suggestions/apply",
+    tags=["pipelines"],
+    operation_id="applyPipelineSuggestions",
+)
+def apply_pipeline_suggestions(pipeline_id: str, body: ApplySuggestionsBody, ctx: Ctx) -> Pipeline:
+    """Aplica solo las sugerencias que el usuario aceptó."""
+    return apply_accepted(Workflow(ctx).roles, pipeline_id, body.changes, body.version)
 
 
 @router.post("/pipelines/{pipeline_id}/preview", tags=["pipelines"], operation_id="previewPipeline")

@@ -44,6 +44,7 @@ QUIET_OPS = frozenset(
         "openRunInMlflow",
         "testLlm",
         "profileDataset",
+        "suggestPipelineChanges",
         "recommendHpoStrategy",
         "previewPipelineSteps",
         "planArchDefinition",
