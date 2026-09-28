@@ -1096,5 +1096,21 @@
       "setLabels": "labeled samples",
       "createRemoteStudy": "trained on the Team Server"
     }
+  },
+  "promote": {
+    "button": "Make it a team project",
+    "title": "Move “{{name}}” to the Team Server",
+    "description": "The project configuration is uploaded with the data and runs you pick; the rest stays on this computer.",
+    "server": "Team Server",
+    "datasets": "Data versions",
+    "runs": "Runs (with their evaluations and artifacts)",
+    "hint": "The data of the selected runs is uploaded even if you don't check it.",
+    "confirm": "Upload to the server",
+    "status": {
+      "queued": "Queued…",
+      "running": "Uploading…",
+      "succeeded": "Done: it is now a team project.",
+      "failed": "Could not complete."
+    }
   }
 }

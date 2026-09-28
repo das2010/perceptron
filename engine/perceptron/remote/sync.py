@@ -18,10 +18,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from perceptron.core.errors import ConflictError
+from perceptron.domain.enums import ProjectScope
 from perceptron.domain.models import (
     ArchSpecRecord,
     DatasetVersion,
     Entity,
+    Evaluation,
     Pipeline,
     Profile,
     Run,
@@ -181,6 +183,59 @@ class ProjectSync:
                 skipped += 1
         progress("pushed", uploaded=uploaded, skipped=skipped)
         return {"uploaded": uploaded, "skipped": skipped}
+
+    def promote(
+        self,
+        *,
+        workspace_id: str | None,
+        dataset_version_ids: list[str],
+        run_ids: list[str],
+        progress: Progress = _noop,
+    ) -> dict[str, int]:
+        """Proyecto local → proyecto de equipo (RF-PRJ-04): metadata, los datasets elegidos (y
+        los de los runs), pipelines, arquitecturas y los runs elegidos con sus evaluaciones y
+        artefactos. Lo que no se elige queda solo en el desktop."""
+        ctx = self.ctx
+        paths = ctx.settings.paths.project(self.project_id)
+        runs = [ctx.repo(Run).get(r) for r in run_ids]
+        for run in runs:
+            if run.project_id != self.project_id:
+                raise ConflictError(f"el run {run.id} es de otro proyecto")
+        dv_ids = list(dict.fromkeys([*dataset_version_ids, *(r.dataset_version_id for r in runs)]))
+        dvs = [ctx.repo(DatasetVersion).get(d) for d in dv_ids]
+        self.push_project(workspace_id)
+        progress("entities")
+        entities: list[Entity] = []
+        for dv in dvs:
+            entities += [dv, *ctx.repo(Profile).list(filters={"dataset_version_id": dv.id})]
+        entities += list(ctx.repo(Pipeline).list(filters={"project_id": self.project_id}))
+        entities += list(ctx.repo(ArchSpecRecord).list(filters={"project_id": self.project_id}))
+        study_ids = {r.study_id for r in runs if r.study_id}
+        entities += [ctx.repo(Study).get(s) for s in sorted(study_ids)]
+        for run in runs:
+            entities += [run, *ctx.repo(Evaluation).list(filters={"run_id": run.id})]
+        for entity in entities:
+            self.push_entity(entity)
+        folders = [paths.pipelines_dir, paths.archspecs_dir, paths.code_dir]
+        folders += [self.root / dv.path if dv.path else paths.datasets_dir / dv.id for dv in dvs]
+        folders += [paths.run(r.id) for r in runs]
+        uploaded = skipped = 0
+        for file in self._files(folders):
+            if self.upload(file, progress):
+                uploaded += 1
+            else:
+                skipped += 1
+        project = ctx.projects.get(self.project_id)
+        if project.scope is not ProjectScope.TEAM:
+            ctx.projects.update(project.model_copy(update={"scope": ProjectScope.TEAM}))
+        progress("promoted", uploaded=uploaded, skipped=skipped)
+        return {
+            "entities": len(entities),
+            "datasets": len(dvs),
+            "runs": len(runs),
+            "uploaded": uploaded,
+            "skipped": skipped,
+        }
 
     # ------------------------------------------------------------------ pull
 

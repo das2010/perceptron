@@ -230,7 +230,7 @@ def test_sync_rejects_foreign_ids_and_stale_versions(
     # Rutas fuera de lo sincronizable.
     for path in (
         "../secreto",
-        "runs/x",
+        "exports/x",  # los exports los genera el servidor
         "/etc/passwd",
         "datasets/../../x",
         "datasets/C:evil",  # letra de unidad: en Windows escaparía de la carpeta del proyecto
@@ -292,3 +292,78 @@ def test_resumable_chunked_upload(team_server: LiveServer) -> None:
     intruder = login(app, other["email"], other["password"])
     r = intruder.put(f"{API}/sync/uploads/{uid2}", params={"offset": 0}, content=b"x")
     assert r.status_code == 403
+
+
+def test_promote_local_project_with_selected_runs(
+    team_server: LiveServer,
+    desktop: tuple[TestClient, EngineContext],
+    fixtures_dir: Path,
+) -> None:
+    """RF-PRJ-04: un proyecto armado y entrenado en el desktop pasa a ser de equipo."""
+    app = team_server.app  # type: ignore[attr-defined]
+    admin = login(app, ADMIN_EMAIL, ADMIN_PASSWORD)
+    ws = ok(admin.get(f"{API}/auth/me"))["workspaces"][0]["id"]
+    body = {"email": "promueve@preteco.test", "password": PASSWORD}
+    ok(admin.post(f"{API}/admin/users", json={**body, "workspace_id": ws, "role": "editor"}), 201)
+    dclient, _ = desktop
+    server = {"name": "equipo", "url": team_server.url, **body}
+    ok(dclient.post(f"{API}/remote/servers", json=server), 201)
+
+    pid = ok(dclient.post(f"{API}/projects", json={"name": "Local a equipo"}), 201)["id"]
+    src = ok(
+        dclient.post(
+            f"{API}/projects/{pid}/sources",
+            json={"path": str(fixtures_dir / "uc01_churn" / "churn.csv")},
+        ),
+        201,
+    )
+    dv = ok(dclient.post(f"{API}/sources/{src['id']}/ingest", json={"target": "churn"}), 201)
+    pipe = ok(
+        dclient.post(
+            f"{API}/projects/{pid}/pipelines/propose", json={"dataset_version_id": dv["id"]}
+        ),
+        201,
+    )
+    arch = ok(
+        dclient.post(
+            f"{API}/projects/{pid}/arch/propose",
+            json={"dataset_version_id": dv["id"], "pipeline_id": pipe["id"]},
+        ),
+        201,
+    )["proposals"][0]["archspec"]
+    launch = ok(
+        dclient.post(
+            f"{API}/projects/{pid}/studies",
+            json={
+                "dataset_version_id": dv["id"],
+                "pipeline_id": pipe["id"],
+                "archspec_id": arch["id"],
+                "budget": {"max_trials": 1, "max_epochs_per_trial": 1},
+            },
+        ),
+        202,
+    )
+    trained = _wait(dclient, launch["job"]["id"])
+    assert trained["status"] == "succeeded", trained["error"]
+    run_id = trained["result"]["best_trial"]["run_id"]
+
+    job = ok(
+        dclient.post(
+            f"{API}/projects/{pid}/remote/promote",
+            json={"server": "equipo", "workspace_id": ws, "run_ids": [run_id]},
+        ),
+        202,
+    )
+    done = _wait(dclient, job["id"])
+    assert done["status"] == "succeeded", done["error"]
+    assert done["result"]["runs"] == 1 and done["result"]["datasets"] == 1
+    assert ok(dclient.get(f"{API}/projects/{pid}"))["scope"] == "team"
+
+    # En el servidor: el proyecto, su versión de datos y el run con sus artefactos.
+    editor = login(app, body["email"], PASSWORD)
+    team = ok(editor.get(f"{API}/projects/{pid}"))
+    assert team["scope"] == "team" and team["workspace_id"] == ws
+    assert ok(editor.get(f"{API}/datasets/{dv['id']}"))["id"] == dv["id"]
+    assert ok(editor.get(f"{API}/runs/{run_id}"))["metrics"]
+    files = ok(editor.get(f"{API}/sync/projects/{pid}/files", params={"prefix": f"runs/{run_id}"}))
+    assert files

@@ -1096,5 +1096,21 @@
       "setLabels": "etiquetó muestras",
       "createRemoteStudy": "entrenó en el Team Server"
     }
+  },
+  "promote": {
+    "button": "Pasar a proyecto de equipo",
+    "title": "Pasar «{{name}}» al Team Server",
+    "description": "Se sube la configuración del proyecto con los datos y runs que elijas; el resto queda solo en este equipo.",
+    "server": "Team Server",
+    "datasets": "Versiones de datos",
+    "runs": "Runs (con sus evaluaciones y artefactos)",
+    "hint": "Los datos de los runs elegidos se suben aunque no los marques.",
+    "confirm": "Subir al servidor",
+    "status": {
+      "queued": "En cola…",
+      "running": "Subiendo…",
+      "succeeded": "Listo: el proyecto ya es de equipo.",
+      "failed": "No se pudo completar."
+    }
   }
 }

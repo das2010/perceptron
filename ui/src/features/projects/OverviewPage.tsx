@@ -27,6 +27,7 @@ import {
 import { downloadFromEngine } from "@/lib/api/download";
 
 import { ActivityCard } from "./ActivityCard";
+import { PromoteButton } from "./PromoteDialog";
 import { useProjectId } from "./ProjectLayout";
 
 function Stat({ label, value }: { label: string; value: number | string }) {
@@ -108,6 +109,7 @@ function ProjectActions({ project }: { project: Project }) {
           />
           {t("project.actions.withData")}
         </label>
+        {project.scope !== "team" && <PromoteButton project={project} />}
         <Button variant="danger" onClick={() => setConfirming(true)}>
           <Trash2 className="h-4 w-4" aria-hidden="true" />
           {t("project.actions.delete")}
