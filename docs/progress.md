@@ -326,7 +326,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-TRN-08 |  | 1 | Multi-GPU en un nodo (DDP vía Lightning) cuando hay >1 GPU. | ⬜ pendiente |
 | RF-TRN-09 |  | 1 | Técnicas de fine-tuning: congelar backbone, descongelado progresivo, LR… | 🟡 congelado del backbone (timm y encoders HF); LoRA/PEFT pendiente |
 | RF-TRN-10 |  | 1 | Manejo de desbalance: pesos de clase, focal loss, sobremuestreo, umbral óptimo… | ✅ pesos de clase, focal, oversampling, umbral óptimo en el reporte |
-| RF-TRN-11 |  | 1 | Caché de modelos preentrenados: descarga única, verificación de checksum, uso offline,… | ⬜ pendiente |
+| RF-TRN-11 |  | 1 | Caché de modelos preentrenados: descarga única, verificación de checksum, uso offline,… | ✅ caché única en el workspace (HF Hub y torch hub; `PERCEPTRON_MODELS_CACHE` para una compartida; en el Team Server, el volumen compartido con los workers), modo offline, verificación de checksums, borrado y predescarga del catálogo curado desde Configuración |
 | RF-AGT-01 |  | 2 | Herramientas del agente (tool use): get_profile, get_project_goal,… | ✅ las 14 herramientas como acciones con schema (unión discriminada), ejecutadas por `agent.loop` |
 | RF-AGT-02 |  | 2 | Límites duros aplicados por el sistema (no por el LLM): tiempo, n.º de iteraciones,… | ✅ tiempo, decisiones, estudios, trials, costo de LLM (ámbito `agent:<id>`) y disco; el test solo lo abre `finish` |
 | RF-AGT-03 |  | 2 | Puntos de aprobación configurables: nunca / antes de cada iteración / solo si cambia… | ✅ nunca / cada iteración / cambio de familia / % de presupuesto; `POST /agent/runs/{id}/approve|reject` |

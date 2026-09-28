@@ -66,6 +66,9 @@ class EngineContext:
         from perceptron.licensing.signed import license_provider
 
         features.provider = license_provider(settings)
+        from perceptron.catalog.weights_cache import configure
+
+        configure(settings.models_cache or settings.paths.models_cache_dir)
         return cls(settings=settings, db=db)
 
     @property

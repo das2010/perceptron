@@ -1031,5 +1031,23 @@
     "parallel": "Coordenadas paralelas",
     "pareto": "Frente de Pareto",
     "dominated": "Dominados"
+  },
+  "modelsCache": {
+    "title": "Modelos preentrenados",
+    "offline": "Sin conexión",
+    "summary": "{{size}} en {{count}} modelos, en",
+    "empty": "Todavía no se descargó ningún modelo preentrenado.",
+    "model": "Modelo",
+    "source": "Origen",
+    "size": "Tamaño",
+    "lastUsed": "Último uso",
+    "delete": "Borrar {{model}} de la caché",
+    "verify": "Verificar integridad",
+    "verified": "{{count}} archivos verificados: todo en orden.",
+    "corrupt": "Archivos dañados (conviene borrarlos y volver a descargar): {{files}}",
+    "prefetch": "Descargar para usar sin conexión",
+    "prefetchHint": "Solo modelos del catálogo curado, con licencia comercial revisada.",
+    "download": "Descargar",
+    "downloading": "Descargando en segundo plano; aparece en la lista al terminar."
   }
 }

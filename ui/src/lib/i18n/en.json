@@ -1031,5 +1031,23 @@
     "parallel": "Parallel coordinates",
     "pareto": "Pareto front",
     "dominated": "Dominated"
+  },
+  "modelsCache": {
+    "title": "Pretrained models",
+    "offline": "Offline",
+    "summary": "{{size}} in {{count}} models, at",
+    "empty": "No pretrained model has been downloaded yet.",
+    "model": "Model",
+    "source": "Source",
+    "size": "Size",
+    "lastUsed": "Last used",
+    "delete": "Remove {{model}} from the cache",
+    "verify": "Verify integrity",
+    "verified": "{{count}} files verified: all good.",
+    "corrupt": "Damaged files (delete and download again): {{files}}",
+    "prefetch": "Download for offline use",
+    "prefetchHint": "Only models from the curated catalog, with reviewed commercial licenses.",
+    "download": "Download",
+    "downloading": "Downloading in the background; it shows up in the list when done."
   }
 }
