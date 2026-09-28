@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Team Server: Engine + auth/RBAC + UI web + worker de la cola en una imagen.
-# TORCH_VARIANT=cpu (default) | cu128 | cu126 | rocm6.4 | xpu para los workers GPU (Capa 5b).
+# TORCH_VARIANT=cpu (default) | cu130 | cu126 | rocm7.2 | xpu para los workers GPU (Capa 5b).
 
 FROM node:22-bookworm-slim AS ui
 WORKDIR /src

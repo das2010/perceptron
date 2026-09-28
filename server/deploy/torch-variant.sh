@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Reinstala torch (y torchvision/torchaudio si están) con la variante pedida, en las mismas
-# versiones que fijó uv.lock (CPU). Uso: torch-variant.sh cu128 | rocm6.4 | xpu | cpu
+# versiones que fijó uv.lock (CPU). Uso: torch-variant.sh cu130 | cu126 | rocm7.2 | xpu | cpu
 set -eu
 variant=${1:-cpu}
 [ "$variant" = "cpu" ] && exit 0

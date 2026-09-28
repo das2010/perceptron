@@ -50,6 +50,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Recursos del instalador (uv, wheel, lock, torch)
         run: pnpm -C desktop prepare:runtime
+      - name: Índices de PyTorch con las wheels fijadas
+        run: node desktop/scripts/check-torch-indexes.mjs
       - name: Tests de Rust
         working-directory: desktop/src-tauri
         run: |

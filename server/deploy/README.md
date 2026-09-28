@@ -1,6 +1,6 @@
 # Despliegue del Team Server
 
-La imagen (`server/deploy/Dockerfile`) trae la API, la UI web y el worker de la cola. Con `TORCH_VARIANT` se elige la variante de PyTorch: `cpu` (por defecto), `cu128`, `cu126`, `rocm6.4` o `xpu`.
+La imagen (`server/deploy/Dockerfile`) trae la API, la UI web y el worker de la cola. Con `TORCH_VARIANT` se elige la variante de PyTorch: `cpu` (por defecto), `cu130` (driver NVIDIA ≥ 580), `cu126` (≥ 560), `rocm7.2` o `xpu`.
 
 ## Docker Compose (un servidor)
 

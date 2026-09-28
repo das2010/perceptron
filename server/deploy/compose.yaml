@@ -120,7 +120,7 @@ services:
       context: ../..
       dockerfile: server/deploy/Dockerfile
       args:
-        TORCH_VARIANT: ${PERCEPTRON_TORCH_VARIANT:-cu128}
+        TORCH_VARIANT: ${PERCEPTRON_TORCH_VARIANT:-cu130}
     image: ${PERCEPTRON_GPU_IMAGE:-perceptron-server:gpu}
     restart: unless-stopped
     depends_on:
