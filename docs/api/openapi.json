@@ -16033,7 +16033,8 @@
                 "jsonl",
                 "coco",
                 "yolo",
-                "voc"
+                "voc",
+                "events"
               ],
               "title": "Format",
               "type": "string"
@@ -16090,7 +16091,8 @@
                 "jsonl",
                 "coco",
                 "yolo",
-                "voc"
+                "voc",
+                "events"
               ],
               "title": "Format",
               "type": "string"

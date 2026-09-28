@@ -500,7 +500,12 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
             {t("labeling.apply")}
           </Button>
           {(
-            ["csv", "jsonl", ...(labelset.kind === "box" ? ["coco", "yolo", "voc"] : [])] as const
+            [
+              "csv",
+              "jsonl",
+              ...(labelset.kind === "box" ? ["coco", "yolo", "voc"] : []),
+              ...(labelset.kind === "temporal_event" ? ["events"] : []),
+            ] as const
           ).map((f) => (
             <Button
               key={f}
@@ -510,12 +515,14 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
                 setError(null);
                 downloadFromEngine(
                   `/api/v1/labelsets/${labelset.id}/export?format=${f}`,
-                  `${labelset.id}.${f === "coco" ? "json" : f === "yolo" || f === "voc" ? "zip" : f}`,
+                  f === "events"
+                    ? `${labelset.id}-eventos.csv`
+                    : `${labelset.id}.${f === "coco" ? "json" : f === "yolo" || f === "voc" ? "zip" : f}`,
                 ).catch(setError);
               }}
             >
               <Download className="h-4 w-4" aria-hidden="true" />
-              {f.toUpperCase()}
+              {f === "events" ? t("labeling.eventsCsv") : f.toUpperCase()}
             </Button>
           ))}
         </div>

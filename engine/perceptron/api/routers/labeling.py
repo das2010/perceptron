@@ -26,7 +26,7 @@ from perceptron.services.workflow import Workflow
 
 router = APIRouter(tags=["labeling"])
 Ctx = Annotated[EngineContext, Depends(get_context)]
-LabelFormat = Literal["csv", "jsonl", "coco", "yolo", "voc"]
+LabelFormat = Literal["csv", "jsonl", "coco", "yolo", "voc", "events"]
 
 
 def _labeling(ctx: EngineContext) -> Labeling:
@@ -152,7 +152,14 @@ def export_labels(
     labelset_id: str, ctx: Ctx, format: Annotated[LabelFormat, Query()] = "csv"
 ) -> Response:
     body, media = _labeling(ctx).export(labelset_id, format)
-    ext = {"csv": "csv", "jsonl": "jsonl", "coco": "json", "yolo": "zip", "voc": "zip"}[format]
+    ext = {
+        "csv": "csv",
+        "jsonl": "jsonl",
+        "coco": "json",
+        "yolo": "zip",
+        "voc": "zip",
+        "events": "csv",
+    }[format]
     headers = {"Content-Disposition": f'attachment; filename="{labelset_id}-{format}.{ext}"'}
     return Response(content=body, media_type=media, headers=headers)
 

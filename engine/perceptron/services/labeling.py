@@ -591,7 +591,7 @@ class Labeling:
     # ---------------------------------------------------------------- import/export (RF-LBL-06)
 
     def export(
-        self, labelset_id: str, fmt: Literal["csv", "jsonl", "coco", "yolo", "voc"]
+        self, labelset_id: str, fmt: Literal["csv", "jsonl", "coco", "yolo", "voc", "events"]
     ) -> tuple[bytes, str]:
         from perceptron.data.labeling.formats import export_labels
 
@@ -602,7 +602,10 @@ class Labeling:
         return export_labels(ls, df, accepted, fmt)
 
     def import_labels(
-        self, labelset_id: str, data: bytes, fmt: Literal["csv", "jsonl", "coco", "yolo", "voc"]
+        self,
+        labelset_id: str,
+        data: bytes,
+        fmt: Literal["csv", "jsonl", "coco", "yolo", "voc", "events"],
     ) -> int:
         from perceptron.data.labeling.formats import import_labels
 

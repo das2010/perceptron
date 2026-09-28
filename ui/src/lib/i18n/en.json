@@ -750,7 +750,8 @@
     "segmentHint": "Play and mark the start and end of the event.",
     "segmentFrom": "From {{s}} s…",
     "zeroShot": "Local zero-shot",
-    "zeroShotHint": "Suggests labels with a pretrained model from the class names, no training needed (first 200 pending)."
+    "zeroShotHint": "Suggests labels with a pretrained model from the class names, no training needed (first 200 pending).",
+    "eventsCsv": "Events CSV"
   },
   "sources": {
     "fromDb": "From a database",

@@ -331,6 +331,42 @@ def test_segments_become_audio_clips(client: TestClient, fixtures_dir: Path) -> 
     assert dv1["modality"] == "audio" and dv1["parent_id"] == dv0["id"]
     assert dv1["num_samples"] == 20
 
+    # RF-ING-02 / RF-LBL-06: CSV de eventos (como `eventos.csv` de UC-09) de ida y vuelta.
+    exported = client.get(f"{API}/labelsets/{ls['id']}/export?format=events")
+    assert exported.status_code == 200
+    lines = exported.content.decode("utf-8").splitlines()
+    assert lines[0] == "file_name,inicio_s,fin_s,etiqueta" and len(lines) == 1 + 30
+    classes = ["golpe", "silbido", "rodamiento", "desbalance", "cavitacion"]
+    other = _ok(
+        client.post(
+            f"{API}/datasets/{dv0['id']}/labelsets",
+            json={"kind": "temporal_event", "classes": classes},
+        ),
+        201,
+    )
+    count = _ok(
+        client.post(
+            f"{API}/labelsets/{other['id']}/import?format=events",
+            files={"file": ("eventos.csv", exported.content, "text/csv")},
+        )
+    )["count"]
+    assert count == 10
+    fixture = (fixtures_dir / "uc09_motor_audio" / "eventos.csv").read_bytes()
+    count = _ok(
+        client.post(
+            f"{API}/labelsets/{other['id']}/import?format=events",
+            files={"file": ("eventos.csv", fixture, "text/csv")},
+        )
+    )["count"]
+    assert count == 90
+    summary = _ok(client.get(f"{API}/labelsets/{other['id']}"))
+    assert {"rodamiento", "desbalance", "cavitacion"} <= set(summary["by_class"])
+    wrong = client.post(
+        f"{API}/labelsets/{other['id']}/import?format=events",
+        files={"file": ("x.csv", b"a,b" + bytes([10]) + b"1,2", "text/csv")},
+    )
+    assert wrong.status_code == 422
+
 
 def test_zero_shot_prelabel(client: TestClient, fixtures_dir: Path) -> None:
     """RF-LBL-02: zero-shot local con los nombres de clase (backend falso, sin descargar)."""

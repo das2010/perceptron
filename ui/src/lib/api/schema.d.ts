@@ -10348,7 +10348,7 @@ export interface operations {
     exportLabels: {
         parameters: {
             query?: {
-                format?: "csv" | "jsonl" | "coco" | "yolo" | "voc";
+                format?: "csv" | "jsonl" | "coco" | "yolo" | "voc" | "events";
             };
             header?: never;
             path: {
@@ -10381,7 +10381,7 @@ export interface operations {
     importLabels: {
         parameters: {
             query?: {
-                format?: "csv" | "jsonl" | "coco" | "yolo" | "voc";
+                format?: "csv" | "jsonl" | "coco" | "yolo" | "voc" | "events";
             };
             header?: never;
             path: {

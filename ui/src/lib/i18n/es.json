@@ -750,7 +750,8 @@
     "segmentHint": "Reproducí y marcá inicio y fin del evento.",
     "segmentFrom": "Desde {{s}} s…",
     "zeroShot": "Zero-shot local",
-    "zeroShotHint": "Sugiere etiquetas con un modelo preentrenado a partir de los nombres de clase, sin entrenar (primeras 200 pendientes)."
+    "zeroShotHint": "Sugiere etiquetas con un modelo preentrenado a partir de los nombres de clase, sin entrenar (primeras 200 pendientes).",
+    "eventsCsv": "CSV de eventos"
   },
   "sources": {
     "fromDb": "Desde una base de datos",
