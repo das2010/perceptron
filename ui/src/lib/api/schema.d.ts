@@ -2087,6 +2087,11 @@ export interface components {
             gpus?: components["schemas"]["GPUInfo"][];
             /** Notes */
             notes?: string[];
+            /**
+             * Nvidia Driver
+             * @description Versión del driver NVIDIA (elige el índice CUDA de PyTorch)
+             */
+            nvidia_driver?: string | null;
             /** Os */
             os: string;
             /** Python */
