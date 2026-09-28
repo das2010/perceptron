@@ -301,3 +301,89 @@ def test_balanced_sampler_equalizes_classes() -> None:
     drawn = torch.tensor(list(iter(sampler)))
     minority_share = (DS.y[drawn] == 1).float().mean().item()
     assert 0.35 < minority_share < 0.65  # ≈ 50 % en vez de 10 %
+
+
+def test_parallel_trials_one_per_gpu(tmp_path: Path) -> None:
+    """RF-HPO-04: con varias GPUs corre un trial por GPU a la vez, cada uno en la suya."""
+    import threading
+
+    lock = threading.Lock()
+    state = {"now": 0, "peak": 0}
+    seen_gpus: list[int | None] = []
+
+    class Counting(FakeHandle):
+        def wait(self, on_event=None, timeout=None):  # type: ignore[no-untyped-def]
+            with lock:
+                state["now"] += 1
+                state["peak"] = max(state["peak"], state["now"])
+                seen_gpus.append(self.cfg.gpu_index)
+            try:
+                return super().wait(on_event, timeout)
+            finally:
+                with lock:
+                    state["now"] -= 1
+
+    s = HPOStrategy(
+        strategy="random", pruner="none", search_space=SPACE, budget=Budget(max_trials=6)
+    )
+    res = _run(tmp_path, s, launcher=lambda cfg: Counting(cfg, sleep=0.05), gpus=[0, 1])
+    assert len(res.trials) == 6 and res.stop_reason == "max_trials"
+    assert state["peak"] == 2  # nunca más trials que GPUs
+    assert set(seen_gpus) == {0, 1} and seen_gpus.count(0) == seen_gpus.count(1)
+    assert res.best_trial is not None
+
+
+def test_parallel_cancel_stops_every_running_trial(tmp_path: Path) -> None:
+    import threading
+
+    control = StudyControl()
+    started: list[str] = []
+
+    def launcher(cfg: RunConfig) -> FakeHandle:
+        started.append(cfg.run_id)
+        if len(started) == 3:  # con los tres primeros en curso
+            threading.Timer(0.05, control.cancel).start()
+        return FakeHandle(cfg, sleep=0.5)
+
+    s = HPOStrategy(
+        strategy="random",
+        pruner="none",
+        search_space=SPACE,
+        budget=Budget(max_trials=10),
+        parallelism=3,
+    )
+    res = _run(tmp_path, s, launcher=launcher, control=control)
+    assert res.stop_reason == "cancelled"
+    assert len(started) == 3  # no se lanzaron más
+    assert all(t.state == "fail" and t.error == "cancelado" for t in res.trials)
+
+
+def test_gpu_plan_ddp_for_one_run_and_one_trial_per_gpu_otherwise(tmp_path: Path) -> None:
+    """RF-TRN-08 / RF-HPO-04: cómo se reparten varias GPUs."""
+    from perceptron.hpo.study import gpu_plan
+
+    base = _base(tmp_path)
+    single = HPOStrategy(strategy="single", pruner="none", budget=Budget(max_trials=1))
+    cfg, gpus = gpu_plan(base, single, [0, 1, 2])
+    assert cfg.devices == 3 and gpus is None  # un run con DDP en las tres
+    many = HPOStrategy(
+        strategy="tpe", pruner="none", search_space=SPACE, budget=Budget(max_trials=9)
+    )
+    cfg, gpus = gpu_plan(base, many, [0, 1, 2])
+    assert cfg.devices == 1 and gpus == [0, 1, 2]  # un trial por GPU
+    assert gpu_plan(base, many, [0]) == (base, None)  # una sola GPU: como siempre
+
+
+def test_only_rank_zero_emits_events(monkeypatch: pytest.MonkeyPatch) -> None:
+    import io
+
+    from perceptron.training.callbacks import EventEmitter
+
+    monkeypatch.setenv("LOCAL_RANK", "1")
+    silent = io.StringIO()
+    EventEmitter("run", silent).emit("started")
+    assert silent.getvalue() == ""
+    monkeypatch.setenv("LOCAL_RANK", "0")
+    loud = io.StringIO()
+    EventEmitter("run", loud).emit("started")
+    assert '"event":"started"' in loud.getvalue()

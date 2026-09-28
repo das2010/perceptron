@@ -30,8 +30,18 @@ Before deploying:
    registered model.
 2. It must have a verified **ONNX** export (run page → **Export the model**).
 
-For now monitored deployments are for **tabular** models; image, text, series and audio are **coming
-soon**.
+Monitored deployments serve **tabular**, **text**, **image** and **audio** models (series are
+**coming soon**):
+
+- Tables and text: JSON rows (`POST /api/v1/deployments/{id}/predict`); for text, each row carries
+  the text column the model was trained on.
+- Images and audio: files (`POST /api/v1/deployments/{id}/predict/file`, up to 64 per request). Only
+  the prediction and the model's internal *embedding* are stored, never the file.
+
+Besides per-variable drift, the check compares the model's **internal embeddings** (the
+representation fed to the last layer) against a training sample: if new inputs "look different"
+to the model (other lighting, other topics, another microphone), drift shows up even when there
+are no variables to compare.
 
 - Applications request predictions from the deployment (`POST /api/v1/deployments/{id}/predict`).
 - Predictions are **logged** with sampling. Only the variables the model uses are stored (plus a

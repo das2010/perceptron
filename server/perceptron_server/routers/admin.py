@@ -6,8 +6,11 @@ usuarios: también el Admin del workspace (gestiona su equipo sin ser admin glob
 
 from __future__ import annotations
 
+import os
+import shutil
 from datetime import datetime
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
@@ -93,6 +96,10 @@ class WorkspacePolicy(BaseModel):
     clear_allowed_providers: bool = Field(
         default=False, description="Quita la restricción de proveedores (todos permitidos)"
     )
+    llm_monthly_budget_usd: float | None = Field(
+        default=None, ge=0, description="Cuota mensual de gasto LLM (RF-LLM-06)"
+    )
+    clear_llm_budget: bool = Field(default=False, description="Quita la cuota mensual")
 
 
 class MembershipCreate(BaseModel):
@@ -191,9 +198,13 @@ def update_workspace(
     _require_workspace_admin(who, workspace_id)
     repo = state.accounts.workspaces
     ws = repo.get(workspace_id)
-    changes = body.model_dump(exclude_none=True, exclude={"clear_allowed_providers"})
+    changes = body.model_dump(
+        exclude_none=True, exclude={"clear_allowed_providers", "clear_llm_budget"}
+    )
     if body.clear_allowed_providers:
         changes["allowed_llm_providers"] = None
+    if body.clear_llm_budget:
+        changes["llm_monthly_budget_usd"] = None
     updated = repo.update(ws.model_copy(update=changes))
     state.audit.record(
         "admin.workspace_policy",
@@ -324,3 +335,66 @@ def license_usage(_: Admin, state: State) -> LicenseUsage:
         if cap is not None and used > cap:
             usage.over_limit.append(name)
     return usage
+
+
+# ------------------------------------------------------------------ sistema (RF-SRV-06)
+
+
+class ProjectStorage(BaseModel):
+    project_id: str
+    name: str
+    bytes: int
+
+
+class SystemStatus(BaseModel):
+    workspace_path: str
+    used_bytes: int
+    free_bytes: int
+    projects: list[ProjectStorage]
+    quotas: dict[str, int]
+    queue_mode: str
+    workers: list[dict[str, Any]]
+
+
+def _dir_size(path: Path) -> int:
+    total = 0
+    stack = [path]
+    while stack:
+        current = stack.pop()
+        try:
+            with os.scandir(current) as it:
+                for entry in it:
+                    if entry.is_symlink():
+                        continue
+                    if entry.is_dir():
+                        stack.append(Path(entry.path))
+                    elif entry.is_file():
+                        total += entry.stat().st_size
+        except OSError:
+            continue
+    return total
+
+
+@router.get("/system", operation_id="getSystemStatus")
+def system_status(_: Admin, state: State) -> SystemStatus:
+    """Almacenamiento, cuotas y estado de los workers para la consola (RF-SRV-06)."""
+    paths = state.settings.paths
+    names = {p.id: p.name for p in state.ctx.projects.list(limit=10_000)}
+    projects = [
+        ProjectStorage(project_id=pid, name=names[pid], bytes=_dir_size(paths.project(pid).root))
+        for pid in names
+    ]
+    projects.sort(key=lambda p: p.bytes, reverse=True)
+    usage = shutil.disk_usage(paths.root)
+    return SystemStatus(
+        workspace_path=str(paths.root),
+        used_bytes=_dir_size(paths.root),
+        free_bytes=usage.free,
+        projects=projects[:50],
+        quotas={
+            "max_running_studies_per_user": state.server.max_running_studies_per_user,
+            "max_running_studies_per_workspace": state.server.max_running_studies_per_workspace,
+        },
+        queue_mode=state.queue_mode,
+        workers=state.workers.list(),
+    )

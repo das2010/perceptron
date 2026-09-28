@@ -31,6 +31,8 @@ import { formatDate } from "@/lib/format";
 import { ProfileView } from "./ProfileView";
 import { RemoteSources } from "./RemoteSources";
 import { ServerSources } from "./ServerSources";
+import { downloadFromEngine } from "@/lib/api/download";
+import { RetentionCard } from "./Retention";
 
 export function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) => void }) {
   const { t } = useTranslation();
@@ -213,6 +215,19 @@ export function DataPage() {
                     <Button size="sm" variant="ghost" onClick={() => setSelected(dv.id)}>
                       {t("data.showProfile")}
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      title={t("data.dvcHint")}
+                      onClick={() =>
+                        void downloadFromEngine(
+                          `/api/v1/datasets/${dv.id}/dvc.zip`,
+                          `${dv.content_hash.slice(0, 12)}-dvc.zip`,
+                        )
+                      }
+                    >
+                      DVC
+                    </Button>
                   </Td>
                 </tr>
               ))}
@@ -220,6 +235,7 @@ export function DataPage() {
           </Table>
         )}
       </Card>
+      <RetentionCard projectId={projectId} versions={datasets.length} />
       {current && (
         <>
           <ProfileView datasetVersionId={current} />

@@ -41,6 +41,7 @@ describe("etiquetado asistido (Capa 4c)", () => {
   it("etiqueta con atajos, acepta la sugerencia con Enter y acepta en lote", async () => {
     const puts: unknown[] = [];
     const accepts: unknown[] = [];
+    const prelabels: unknown[] = [];
     const done = new Set<string>();
     mockEngine({
       "GET /api/v1/projects": () => [project()],
@@ -73,6 +74,10 @@ describe("etiquetado asistido (Capa 4c)", () => {
         body.updates.forEach((u) => done.add(u.sample_id));
         return { count: 1 };
       },
+      "POST /api/v1/labelsets/lbl_1/prelabel": async (req) => {
+        prelabels.push(await req.json());
+        return { count: 5 };
+      },
       "POST /api/v1/labelsets/lbl_1/accept": async (req) => {
         accepts.push(await req.json());
         return { count: 2 };
@@ -89,14 +94,21 @@ describe("etiquetado asistido (Capa 4c)", () => {
 
     await userEvent.keyboard("1"); // primera clase: «bueno» (corrige la sugerencia)
     await waitFor(() => expect(puts).toHaveLength(1));
-    expect(puts[0]).toEqual({ updates: [{ sample_id: "row:5", label: "bueno", boxes: [] }] });
+    expect(puts[0]).toEqual({
+      updates: [{ sample_id: "row:5", label: "bueno", boxes: [], polygons: [], segments: [] }],
+    });
     expect(await screen.findByText("texto 6")).toBeInTheDocument();
 
     await userEvent.keyboard("{Enter}"); // acepta la sugerencia «bueno»
     await waitFor(() => expect(puts).toHaveLength(2));
-    expect(puts[1]).toEqual({ updates: [{ sample_id: "row:6", label: "bueno", boxes: [] }] });
+    expect(puts[1]).toEqual({
+      updates: [{ sample_id: "row:6", label: "bueno", boxes: [], polygons: [], segments: [] }],
+    });
 
     await userEvent.click(screen.getByRole("button", { name: /Aceptar sugerencias confiables/ }));
     await waitFor(() => expect(accepts).toEqual([{ min_confidence: 0.9 }]));
+
+    await userEvent.click(screen.getByRole("button", { name: /Zero-shot local/ }));
+    await waitFor(() => expect(prelabels).toEqual([{ method: "zero_shot", limit: 200 }]));
   });
 });

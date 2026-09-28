@@ -34,6 +34,7 @@ import {
 } from "@/lib/api/hooks";
 
 import { move, STEP_KINDS } from "./spec";
+import { PipelineSuggestions } from "./PipelineSuggestions";
 
 type Step = NonNullable<PipelineSpec["steps"]>[number];
 
@@ -348,6 +349,7 @@ function PipelineEditor({ pipeline }: { pipeline: Pipeline }) {
       {graph.modality === "tabular" && (
         <Preview projectId={pipeline.project_id} graph={graph} step={step} />
       )}
+      <PipelineSuggestions projectId={pipeline.project_id} pipelineId={pipeline.id ?? ""} />
     </div>
   );
 }

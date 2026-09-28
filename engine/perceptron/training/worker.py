@@ -190,7 +190,13 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         return make_loader(ds, size, shuffle=train, num_workers=0, seed=cfg.seed)
 
     tuned: dict[str, Any] = {}
-    if bs_cfg in (None, "auto") and cfg.device.value != "cpu" and cfg.resume_from is None:
+    ddp = cfg.devices > 1 and cfg.device.value != "cpu"
+    if (
+        bs_cfg in (None, "auto")
+        and cfg.device.value != "cpu"
+        and cfg.resume_from is None
+        and not ddp
+    ):
         # En GPU el mayor batch que entra (búsqueda binaria contra OOM), con techo por datos.
         found = tune_batch_size(
             module,
@@ -214,7 +220,7 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
             val_dl = make_loader(
                 val_ds, batch_size, shuffle=False, num_workers=workers, seed=cfg.seed
             )
-    if spec.training.lr_finder and cfg.resume_from is None:
+    if spec.training.lr_finder and cfg.resume_from is None and not ddp:
         lr = find_lr(
             module,
             tuning_loader,
@@ -228,7 +234,9 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
 
     trainer = L.Trainer(
         accelerator=_accelerator(cfg.device.value),
-        devices=1,
+        # Varias GPUs para un mismo run: DDP en un nodo (RF-TRN-08); el batch es por GPU.
+        devices=cfg.devices if ddp else 1,
+        strategy="ddp" if ddp else "auto",
         max_epochs=epochs,
         min_epochs=min(min_epochs, epochs),
         max_time={"seconds": cfg.max_time_s} if cfg.max_time_s else None,
@@ -294,7 +302,8 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         environment=env,
         history=history,
     )
-    (run_dir / RESULT_FILE).write_text(result.model_dump_json(indent=2), encoding="utf-8")
+    if emitter.enabled:  # en DDP, solo el proceso principal deja el resultado
+        (run_dir / RESULT_FILE).write_text(result.model_dump_json(indent=2), encoding="utf-8")
     emitter.emit(
         "paused" if status == "paused" else "finished", data=json.loads(result.model_dump_json())
     )

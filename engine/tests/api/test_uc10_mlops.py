@@ -115,6 +115,9 @@ def test_uc10_drift_alert_retrain_challenger_and_rollback(
         ),
         201,
     )
+    listed = _ok(client.get(f"{API}/projects/{pid}/sources/stream"))
+    assert [x["source"]["id"] for x in listed] == [src["id"]]
+    assert listed[0]["buffer"]["rows"] == 0
     policy = _ok(
         client.put(
             f"{API}/projects/{pid}/retrain-policy",

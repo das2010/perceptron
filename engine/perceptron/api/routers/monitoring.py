@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.api.context import EngineContext, get_context
+from perceptron.api.security import MB, read_limited
 from perceptron.core.errors import NotFoundError, ValidationError
 from perceptron.domain.enums import AlertStatus, DataSourceType, DeploymentStatus, Severity
 from perceptron.domain.models import (
@@ -150,6 +151,17 @@ def predict(deployment_id: str, body: PredictBody, ctx: Ctx) -> Predictions:
     return Predictions(predictions=Monitoring(ctx).predict(deployment_id, body.rows))
 
 
+@router.post("/deployments/{deployment_id}/predict/file", operation_id="predictDeploymentFiles")
+async def predict_files(
+    deployment_id: str, ctx: Ctx, files: Annotated[list[UploadFile], File()]
+) -> Predictions:
+    """Imágenes o audios (hasta 64 por pedido): se registra el embedding, no el archivo."""
+    if len(files) > 64:
+        raise ValidationError("hasta 64 archivos por pedido")
+    data = [(f.filename or "archivo", await read_limited(f, 64 * MB)) for f in files]
+    return Predictions(predictions=Monitoring(ctx).predict_files(deployment_id, data))
+
+
 @router.post("/deployments/{deployment_id}/feedback", operation_id="sendFeedback")
 def feedback(deployment_id: str, body: FeedbackBody, ctx: Ctx) -> FeedbackResult:
     items = [i.model_dump() for i in body.items]
@@ -246,7 +258,7 @@ def resolve(alert_id: str, ctx: Ctx) -> Alert:
 class StreamSourceCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
-    kind: Literal["rest", "websocket", "file"]
+    kind: Literal["rest", "websocket", "file", "kafka", "mqtt"]
     config: dict[str, Any]
     token: str | None = Field(default=None, description="Solo de escritura: va al keychain")
     poll_interval_s: float | None = Field(default=None, ge=10, description="Sondeo automático")
@@ -283,6 +295,7 @@ def create_stream_source(project_id: str, body: StreamSourceCreate, ctx: Ctx) ->
 
         schemes = ("http", "https") if body.kind == "rest" else ("ws", "wss")
         check_url(str(body.config.get("url", "")), ctx.settings.net_policy(), schemes=schemes)
+    # kafka/mqtt: los hosts se verifican en cada lectura (build_source recibe la política).
     src = DataSource(
         project_id=project_id,
         name=body.name,
@@ -297,6 +310,28 @@ def create_stream_source(project_id: str, body: StreamSourceCreate, ctx: Ctx) ->
         ctx.llm.secrets.set(name, body.token)
         src.secret_refs = {"token": name}
     return ctx.repo(DataSource).add(src)
+
+
+class StreamSourceInfo(BaseModel):
+    source: DataSource
+    buffer: PullResult
+
+
+@router.get("/projects/{project_id}/sources/stream", operation_id="listStreamSources")
+def list_stream_sources(project_id: str, ctx: Ctx) -> list[StreamSourceInfo]:
+    """Fuentes streaming/API del proyecto con el estado de su buffer (RF-ING-05)."""
+    from perceptron.services.streams import buffer_for
+
+    ctx.projects.get(project_id)
+    sources = ctx.repo(DataSource).list(filters={"project_id": project_id}, limit=500)
+    return [
+        StreamSourceInfo(
+            source=s,
+            buffer=PullResult.model_validate({"added": 0, **buffer_for(ctx, s).stats()}),
+        )
+        for s in sources
+        if s.type in (DataSourceType.STREAM, DataSourceType.API) and "stream" in s.config
+    ]
 
 
 @router.post("/sources/{source_id}/pull", operation_id="pullStreamSource")

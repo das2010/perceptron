@@ -9,6 +9,7 @@ export type DriftReport = Schemas["DriftReport"] & { id: string };
 // "Alert" choca con la alerta del perfil de datos: el schema lo nombra por módulo.
 export type Alert = Schemas["perceptron__domain__models__Alert"] & { id: string };
 export type ChallengeResult = Schemas["ChallengeResult"];
+export type StreamInfo = Schemas["StreamSourceInfo"];
 
 const mk = {
   deployments: (pid: string) => ["projects", pid, "deployments"] as const,
@@ -175,4 +176,20 @@ export function useChallenge(projectId: string) {
       }),
     ),
   );
+}
+
+export const streamKey = (projectId: string) => ["projects", projectId, "streams"] as const;
+
+export function useStreamSources(projectId: string) {
+  return useQuery({
+    queryKey: streamKey(projectId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/sources/stream", {
+          params: { path: { project_id: projectId } },
+        }),
+      ) as StreamInfo[],
+  });
 }

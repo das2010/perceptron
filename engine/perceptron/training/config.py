@@ -31,6 +31,12 @@ class RunConfig(BaseModel):
     pipeline: dict[str, Any] = Field(description="FittedPipeline serializado")
     overrides: dict[str, Scalar] = Field(default_factory=dict)
     device: Device = Device.CPU
+    devices: int = Field(
+        default=1, ge=1, description="GPUs para un mismo run: >1 entrena con DDP (RF-TRN-08)"
+    )
+    gpu_index: int | None = Field(
+        default=None, ge=0, description="GPU del trial (trials en paralelo, RF-HPO-04)"
+    )
     seed: int = 42
     max_epochs: int | None = Field(default=None, ge=1, description="Override de training.epochs")
     batch_size: int | Literal["auto"] | None = None

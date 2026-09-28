@@ -267,3 +267,17 @@ def test_websocket_from_another_site_cannot_use_the_session_cookie(
     assert exc.value.code == 4403
     with editor.websocket_connect(path, headers={"origin": "http://testserver"}) as ws:
         assert ws is not None
+
+
+def test_admin_system_status_shows_storage_quotas_and_workers(
+    admin: TestClient, make_user: UserFactory
+) -> None:
+    """RF-SRV-06: almacenamiento por proyecto, cuotas y workers (solo Admin del servidor)."""
+    pid = ok(admin.post(f"{API}/projects", json={"name": "Con archivos"}), 201)["id"]
+    status = ok(admin.get(f"{API}/admin/system"))
+    assert status["free_bytes"] > 0 and status["used_bytes"] >= 0
+    assert pid in {p["project_id"] for p in status["projects"]}
+    assert status["quotas"]["max_running_studies_per_user"] >= 1
+    assert status["queue_mode"] in ("local", "queue") and isinstance(status["workers"], list)
+    _, editor = make_user("sys-ed@preteco.test", "editor")
+    assert editor.get(f"{API}/admin/system").status_code == 403

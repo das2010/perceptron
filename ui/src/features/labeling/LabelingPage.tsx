@@ -1,6 +1,7 @@
 /**
  * Herramienta de etiquetado (SPEC §7.5, RF-LBL-01..03): cola de active learning, sugerencias
- * del modelo (aceptar con Enter), clases con atajos 1–9, multi-etiqueta y cajas sobre la imagen.
+ * del modelo (aceptar con Enter), clases con atajos 1–9, multi-etiqueta, cajas y polígonos sobre la
+ * imagen y segmentos sobre el audio.
  * Al aplicar, se crea una versión nueva del dataset lista para reentrenar.
  */
 import { Link } from "@tanstack/react-router";
@@ -21,12 +22,15 @@ import {
   Select,
   Spinner,
 } from "@/components/ui";
+import { PolygonCanvas, SegmentMarker } from "@/features/labeling/ShapeTools";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import { downloadFromEngine, engineObjectUrl } from "@/lib/api/download";
 import {
   type Box,
   type LabelSample,
   type LabelSet,
+  type Polygon,
+  type Segment,
   useAcceptSuggestions,
   useApplyLabels,
   useCreateLabelSet,
@@ -35,10 +39,13 @@ import {
   useLabelSets,
   useLabelSummary,
   usePrelabelWithModel,
+  usePrelabelZeroShot,
   useRuns,
   useSetLabels,
 } from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
+
+const AUDIO = /\.(wav|flac|ogg|mp3)$/i;
 
 function useSampleImage(labelsetId: string, sample: LabelSample | undefined) {
   const [url, setUrl] = useState<string | null>(null);
@@ -148,21 +155,46 @@ function Annotator({ labelset }: { labelset: LabelSet }) {
   );
   const [multi, setMulti] = useState<string[]>([]);
   const [boxes, setBoxes] = useState<Box[]>([]);
+  const [polygons, setPolygons] = useState<Polygon[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([]);
   const [boxClass, setBoxClass] = useState(labelset.classes[0] ?? "");
+  const shapes = { box: boxes, mask: polygons, temporal_event: segments }[
+    labelset.kind as "box" | "mask" | "temporal_event"
+  ];
+  const undoShape = () => {
+    if (labelset.kind === "box") setBoxes((b) => b.slice(0, -1));
+    else if (labelset.kind === "mask") setPolygons((b) => b.slice(0, -1));
+    else setSegments((b) => b.slice(0, -1));
+  };
   const samples = useMemo(() => queue.data ?? [], [queue.data]);
   const sample = samples[index];
   const image = useSampleImage(labelset.id, sample);
   const suggestion = sample?.item?.status === "suggested" ? sample.item : null;
 
   const save = useCallback(
-    (update: { label?: string | string[] | null; boxes?: Box[] }) => {
+    (update: {
+      label?: string | string[] | null;
+      boxes?: Box[];
+      polygons?: Polygon[];
+      segments?: Segment[];
+    }) => {
       if (!sample) return;
       setLabels.mutate(
-        [{ sample_id: sample.sample_id, label: update.label ?? null, boxes: update.boxes ?? [] }],
+        [
+          {
+            sample_id: sample.sample_id,
+            label: update.label ?? null,
+            boxes: update.boxes ?? [],
+            polygons: update.polygons ?? [],
+            segments: update.segments ?? [],
+          },
+        ],
         {
           onSuccess: () => {
             setMulti([]);
             setBoxes([]);
+            setPolygons([]);
+            setSegments([]);
             next();
           },
         },
@@ -228,6 +260,27 @@ function Annotator({ labelset }: { labelset: LabelSet }) {
                   boxes={boxes}
                   current={boxClass}
                   onAdd={(b) => setBoxes((x) => [...x, b])}
+                />
+              ) : labelset.kind === "mask" ? (
+                <PolygonCanvas
+                  url={image}
+                  polygons={polygons}
+                  current={boxClass}
+                  onAdd={(p) => setPolygons((x) => [...x, p])}
+                />
+              ) : labelset.kind === "temporal_event" ? (
+                <SegmentMarker
+                  url={image}
+                  segments={segments}
+                  current={boxClass}
+                  onAdd={(seg) => setSegments((x) => [...x, seg])}
+                />
+              ) : AUDIO.test(sample.path) ? (
+                <audio
+                  src={image}
+                  controls
+                  className="w-full max-w-xl"
+                  aria-label={t("labeling.sampleAlt")}
                 />
               ) : (
                 <img src={image} alt={t("labeling.sampleAlt")} className="max-h-96 rounded-pt" />
@@ -300,9 +353,11 @@ function Annotator({ labelset }: { labelset: LabelSet }) {
               </Button>
             </div>
           )}
-          {labelset.kind === "box" && (
+          {shapes && (
             <div className="flex flex-wrap items-end gap-2">
-              <Field label={t("labeling.boxClass")}>
+              <Field
+                label={t(labelset.kind === "box" ? "labeling.boxClass" : "labeling.shapeClass")}
+              >
                 <Select
                   value={boxClass}
                   onChange={(e) => setBoxClass(e.target.value)}
@@ -316,16 +371,12 @@ function Annotator({ labelset }: { labelset: LabelSet }) {
                 </Select>
               </Field>
               <span className="text-xs text-muted">
-                {t("labeling.boxes", { count: boxes.length })}
+                {t(`labeling.shapes.${labelset.kind}`, { count: shapes.length })}
               </span>
-              <Button
-                variant="secondary"
-                disabled={!boxes.length}
-                onClick={() => setBoxes((b) => b.slice(0, -1))}
-              >
+              <Button variant="secondary" disabled={!shapes.length} onClick={undoShape}>
                 {t("labeling.undo")}
               </Button>
-              <Button disabled={!boxes.length} onClick={() => save({ boxes })}>
+              <Button disabled={!shapes.length} onClick={() => save({ boxes, polygons, segments })}>
                 {t("labeling.save")}
               </Button>
             </div>
@@ -347,6 +398,8 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
   const summary = useLabelSummary(labelset.id);
   const runs = useRuns(projectId);
   const prelabel = usePrelabelWithModel(labelset.id);
+  const zeroShot = usePrelabelZeroShot(labelset.id);
+  const classKind = labelset.kind === "class" || labelset.kind === "multilabel";
   const accept = useAcceptSuggestions(labelset.id);
   const apply = useApplyLabels(labelset.id, projectId);
   const [runId, setRunId] = useState("");
@@ -410,6 +463,17 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
             <Wand2 className="h-4 w-4" aria-hidden="true" />
             {t("labeling.prelabel")}
           </Button>
+          {classKind && (
+            <Button
+              variant="ai"
+              loading={zeroShot.isPending}
+              title={t("labeling.zeroShotHint")}
+              onClick={() => zeroShot.mutate(200)}
+            >
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              {t("labeling.zeroShot")}
+            </Button>
+          )}
           <Field label={t("labeling.threshold")}>
             <Input
               type="number"
@@ -436,7 +500,12 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
             {t("labeling.apply")}
           </Button>
           {(
-            ["csv", "jsonl", ...(labelset.kind === "box" ? ["coco", "yolo", "voc"] : [])] as const
+            [
+              "csv",
+              "jsonl",
+              ...(labelset.kind === "box" ? ["coco", "yolo", "voc"] : []),
+              ...(labelset.kind === "temporal_event" ? ["events"] : []),
+            ] as const
           ).map((f) => (
             <Button
               key={f}
@@ -446,12 +515,14 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
                 setError(null);
                 downloadFromEngine(
                   `/api/v1/labelsets/${labelset.id}/export?format=${f}`,
-                  `${labelset.id}.${f === "coco" ? "json" : f === "yolo" || f === "voc" ? "zip" : f}`,
+                  f === "events"
+                    ? `${labelset.id}-eventos.csv`
+                    : `${labelset.id}.${f === "coco" ? "json" : f === "yolo" || f === "voc" ? "zip" : f}`,
                 ).catch(setError);
               }}
             >
               <Download className="h-4 w-4" aria-hidden="true" />
-              {f.toUpperCase()}
+              {f === "events" ? t("labeling.eventsCsv") : f.toUpperCase()}
             </Button>
           ))}
         </div>
@@ -467,7 +538,9 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
             </Link>
           </p>
         )}
-        <ErrorNote error={prelabel.error ?? accept.error ?? apply.error ?? error} />
+        <ErrorNote
+          error={prelabel.error ?? zeroShot.error ?? accept.error ?? apply.error ?? error}
+        />
       </Card>
       <Annotator labelset={labelset} />
     </div>
@@ -483,7 +556,7 @@ export function LabelingPage() {
   const sets = useLabelSets(chosen || undefined);
   const create = useCreateLabelSet(chosen);
   const [selected, setSelected] = useState<string>("");
-  const [kind, setKind] = useState<"class" | "multilabel" | "box">("class");
+  const [kind, setKind] = useState<LabelSet["kind"]>("class");
   const [classes, setClasses] = useState("");
   const current = (sets.data ?? []).find((s) => s.id === selected) ?? sets.data?.at(-1);
 
@@ -543,7 +616,7 @@ export function LabelingPage() {
               onChange={(e) => setKind(e.target.value as typeof kind)}
               className="w-44"
             >
-              {(["class", "multilabel", "box"] as const).map((k) => (
+              {(["class", "multilabel", "box", "mask", "temporal_event"] as const).map((k) => (
                 <option key={k} value={k}>
                   {t(`labeling.kinds.${k}`)}
                 </option>

@@ -367,3 +367,144 @@ def test_promote_local_project_with_selected_runs(
     assert ok(editor.get(f"{API}/runs/{run_id}"))["metrics"]
     files = ok(editor.get(f"{API}/sync/projects/{pid}/files", params={"prefix": f"runs/{run_id}"}))
     assert files
+
+
+def test_concurrent_edits_pull_push_and_conflicts(
+    team_server: LiveServer,
+    desktop: tuple[TestClient, EngineContext],
+    fixtures_dir: Path,
+) -> None:
+    """RF-SRV-03: cambios en el servidor y en el desktop; los conflictos se resuelven a mano."""
+    from perceptron.domain.models import ArchSpecRecord, Pipeline
+
+    app = team_server.app  # type: ignore[attr-defined]
+    admin = login(app, ADMIN_EMAIL, ADMIN_PASSWORD)
+    ws = ok(admin.get(f"{API}/auth/me"))["workspaces"][0]["id"]
+    body = {"email": "concurrente@preteco.test", "password": PASSWORD}
+    ok(admin.post(f"{API}/admin/users", json={**body, "workspace_id": ws, "role": "editor"}), 201)
+    dclient, dctx = desktop
+    ok(
+        dclient.post(
+            f"{API}/remote/servers", json={"name": "equipo", "url": team_server.url, **body}
+        ),
+        201,
+    )
+
+    pid = ok(dclient.post(f"{API}/projects", json={"name": "Edición concurrente"}), 201)["id"]
+    src = ok(
+        dclient.post(
+            f"{API}/projects/{pid}/sources",
+            json={"path": str(fixtures_dir / "uc01_churn" / "churn.csv")},
+        ),
+        201,
+    )
+    dv = ok(dclient.post(f"{API}/sources/{src['id']}/ingest", json={"target": "churn"}), 201)
+    pipe = ok(
+        dclient.post(
+            f"{API}/projects/{pid}/pipelines/propose", json={"dataset_version_id": dv["id"]}
+        ),
+        201,
+    )
+    arch = ok(
+        dclient.post(
+            f"{API}/projects/{pid}/arch/propose",
+            json={"dataset_version_id": dv["id"], "pipeline_id": pipe["id"]},
+        ),
+        201,
+    )["proposals"][0]["archspec"]
+    job = ok(
+        dclient.post(
+            f"{API}/projects/{pid}/remote/promote",
+            json={"server": "equipo", "workspace_id": ws, "dataset_version_ids": [dv["id"]]},
+        ),
+        202,
+    )
+    assert _wait(dclient, job["id"])["status"] == "succeeded"
+
+    def status() -> dict[str, str]:
+        res = ok(dclient.get(f"{API}/projects/{pid}/remote/status", params={"server": "equipo"}))
+        return {i["id"]: i["state"] for i in res["items"]}
+
+    assert set(status().values()) == {"synced"}, status()
+
+    editor = login(app, body["email"], PASSWORD)
+
+    def server_edit(name: str) -> None:
+        current = ok(editor.get(f"{API}/sync/projects/{pid}/entities/Pipeline"))
+        data = next(p for p in current if p["id"] == pipe["id"])
+        ok(
+            editor.put(
+                f"{API}/sync/projects/{pid}/entities/Pipeline/{pipe['id']}",
+                json={"data": {**data, "name": name}, "base_version": data["version"]},
+            )
+        )
+
+    def local_edit(model: type[Any], eid: str, name: str) -> None:
+        repo = dctx.repo(model)
+        repo.update(repo.get(eid).model_copy(update={"name": name}))
+
+    # Otro miembro cambia el pipeline en el servidor; acá se cambia la arquitectura.
+    server_edit("del servidor")
+    local_edit(ArchSpecRecord, arch["id"], "mía")
+    states = status()
+    assert states[pipe["id"]] == "pull" and states[arch["id"]] == "push", states
+
+    pushed = _wait(
+        dclient,
+        ok(dclient.post(f"{API}/projects/{pid}/remote/push", json={"server": "equipo"}), 202)["id"],
+    )
+    assert pushed["status"] == "succeeded" and pushed["result"]["pushed"] == 1, pushed
+    pulled = _wait(
+        dclient,
+        ok(dclient.post(f"{API}/projects/{pid}/remote/pull", json={"server": "equipo"}), 202)["id"],
+    )
+    assert pulled["result"]["pulled"] == 1, pulled
+    assert dctx.repo(Pipeline).get(pipe["id"]).name == "del servidor"
+    remote_arch = ok(editor.get(f"{API}/sync/projects/{pid}/entities/ArchSpecRecord"))
+    assert next(a for a in remote_arch if a["id"] == arch["id"])["name"] == "mía"
+    assert set(status().values()) == {"synced"}, status()
+
+    # Cambios en los dos lados: conflicto; sin decisión no se pisa nada.
+    server_edit("servidor 2")
+    local_edit(Pipeline, pipe["id"], "desktop 2")
+    assert status()[pipe["id"]] == "conflict"
+    undecided = _wait(
+        dclient,
+        ok(dclient.post(f"{API}/projects/{pid}/remote/pull", json={"server": "equipo"}), 202)["id"],
+    )
+    assert undecided["result"]["conflicts_left"] == [pipe["id"]]
+    assert dctx.repo(Pipeline).get(pipe["id"]).name == "desktop 2"
+    blocked = ok(dclient.post(f"{API}/projects/{pid}/remote/push", json={"server": "equipo"}), 202)
+    assert _wait(dclient, blocked["id"])["result"]["pushed"] == 0
+
+    # «La mía»: se sube encima de la del servidor.
+    mine = _wait(
+        dclient,
+        ok(
+            dclient.post(
+                f"{API}/projects/{pid}/remote/pull",
+                json={"server": "equipo", "resolutions": {pipe["id"]: "mine"}},
+            ),
+            202,
+        )["id"],
+    )
+    assert mine["result"]["pushed"] == 1, mine
+    remote = ok(editor.get(f"{API}/sync/projects/{pid}/entities/Pipeline"))
+    assert next(p for p in remote if p["id"] == pipe["id"])["name"] == "desktop 2"
+
+    # «La del servidor»: se baja y reemplaza la local.
+    server_edit("servidor 3")
+    local_edit(Pipeline, pipe["id"], "desktop 3")
+    theirs = _wait(
+        dclient,
+        ok(
+            dclient.post(
+                f"{API}/projects/{pid}/remote/pull",
+                json={"server": "equipo", "resolutions": {pipe["id"]: "theirs"}},
+            ),
+            202,
+        )["id"],
+    )
+    assert theirs["result"]["pulled"] == 1
+    assert dctx.repo(Pipeline).get(pipe["id"]).name == "servidor 3"
+    assert set(status().values()) == {"synced"}, status()

@@ -74,6 +74,9 @@ class Workspace(Entity):
         default=None, description="Tope con LLM local; puede superar el general (RF-PRV-02)"
     )
     allowed_llm_providers: list[str] | None = None
+    llm_monthly_budget_usd: float | None = Field(
+        default=None, ge=0, description="Cuota de gasto LLM del workspace por mes (RF-LLM-06)"
+    )
 
 
 class User(Entity):

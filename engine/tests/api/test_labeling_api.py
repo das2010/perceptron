@@ -233,3 +233,195 @@ def test_boxes_export_import(client: TestClient, fixtures_dir: Path) -> None:
         files={"file": ("evil.zip", evil.getvalue(), "application/zip")},
     )
     assert r.status_code == 422
+
+
+def test_polygons_become_segmentation_masks(client: TestClient, fixtures_dir: Path) -> None:
+    """RF-LBL-01: polígonos → máscaras PNG → versión de segmentación con los nombres de clase."""
+    _, dv0 = _defects(client, fixtures_dir)
+    ls = _ok(
+        client.post(
+            f"{API}/datasets/{dv0['id']}/labelsets",
+            json={"kind": "mask", "classes": ["rayón", "mancha"]},
+        ),
+        201,
+    )
+    tri = {"points": [[0.1, 0.1], [0.9, 0.1], [0.5, 0.9]], "label": "rayón"}
+    sq = {"points": [[0.0, 0.0], [0.3, 0.0], [0.3, 0.3], [0.0, 0.3]], "label": "mancha"}
+    bad = client.put(
+        f"{API}/labelsets/{ls['id']}/labels",
+        json={"updates": [{"sample_id": "row:0", "polygons": [{**tri, "points": [[2, 0]] * 3}]}]},
+    )
+    assert bad.status_code == 422
+    unknown = client.put(
+        f"{API}/labelsets/{ls['id']}/labels",
+        json={"updates": [{"sample_id": "row:0", "polygons": [{**tri, "label": "otra"}]}]},
+    )
+    assert unknown.status_code == 422
+    updates = [{"sample_id": f"row:{i}", "polygons": [tri, sq]} for i in range(6)]
+    _ok(client.put(f"{API}/labelsets/{ls['id']}/labels", json={"updates": updates}))
+    summary = _ok(client.get(f"{API}/labelsets/{ls['id']}"))
+    assert summary["by_class"] == {"rayón": 6, "mancha": 6}
+
+    # JSONL conserva los polígonos en el ida y vuelta.
+    data = client.get(f"{API}/labelsets/{ls['id']}/export?format=jsonl").content
+    first = json.loads(data.decode("utf-8").splitlines()[0])
+    assert len(first["polygons"]) == 2 and "label" not in first
+    other = _ok(
+        client.post(
+            f"{API}/datasets/{dv0['id']}/labelsets",
+            json={"kind": "mask", "classes": ["rayón", "mancha"]},
+        ),
+        201,
+    )
+    count = _ok(
+        client.post(
+            f"{API}/labelsets/{other['id']}/import?format=jsonl",
+            files={"file": ("labels.jsonl", data, "application/x-ndjson")},
+        )
+    )["count"]
+    assert count == 6
+
+    dv1 = _ok(client.post(f"{API}/labelsets/{ls['id']}/apply"), 201)
+    assert dv1["parent_id"] == dv0["id"] and dv1["num_samples"] == 6
+    assert dv1["modality"] == "image" and dv1["target"] == "mask_path"
+    profile = _ok(client.post(f"{API}/datasets/{dv1['id']}/profile"))
+    assert "rayón" in json.dumps(profile, ensure_ascii=False)
+
+
+def test_segments_become_audio_clips(client: TestClient, fixtures_dir: Path) -> None:
+    """RF-LBL-01: segmentos temporales → un clip por evento en la carpeta de su clase."""
+    pid = _ok(client.post(f"{API}/projects", json={"name": "Eventos UC-09"}), 201)["id"]
+    src = _ok(
+        client.post(
+            f"{API}/projects/{pid}/sources", json={"path": str(fixtures_dir / "uc09_motor_audio")}
+        ),
+        201,
+    )
+    dv0 = _ok(client.post(f"{API}/sources/{src['id']}/ingest", json={}), 201)
+    assert dv0["modality"] == "audio"
+    ls = _ok(
+        client.post(
+            f"{API}/datasets/{dv0['id']}/labelsets",
+            json={"kind": "temporal_event", "classes": ["golpe", "silbido"]},
+        ),
+        201,
+    )
+    backwards = client.put(
+        f"{API}/labelsets/{ls['id']}/labels",
+        json={
+            "updates": [
+                {
+                    "sample_id": "row:0",
+                    "segments": [{"start_s": 0.5, "end_s": 0.2, "label": "golpe"}],
+                }
+            ]
+        },
+    )
+    assert backwards.status_code == 422
+    segments = [
+        {"start_s": 0.0, "end_s": 0.4, "label": "golpe"},
+        {"start_s": 0.5, "end_s": 0.9, "label": "silbido"},
+        {"start_s": 50.0, "end_s": 51.0, "label": "golpe"},  # fuera del audio: se ignora
+    ]
+    updates = [{"sample_id": f"row:{i}", "segments": segments} for i in range(10)]
+    _ok(client.put(f"{API}/labelsets/{ls['id']}/labels", json={"updates": updates}))
+    queue = _ok(client.get(f"{API}/labelsets/{ls['id']}/queue?limit=1"))
+    assert queue and queue[0]["sample_id"] not in {u["sample_id"] for u in updates}
+    dv1 = _ok(client.post(f"{API}/labelsets/{ls['id']}/apply"), 201)
+    assert dv1["modality"] == "audio" and dv1["parent_id"] == dv0["id"]
+    assert dv1["num_samples"] == 20
+
+    # RF-ING-02 / RF-LBL-06: CSV de eventos (como `eventos.csv` de UC-09) de ida y vuelta.
+    exported = client.get(f"{API}/labelsets/{ls['id']}/export?format=events")
+    assert exported.status_code == 200
+    lines = exported.content.decode("utf-8").splitlines()
+    assert lines[0] == "file_name,inicio_s,fin_s,etiqueta" and len(lines) == 1 + 30
+    classes = ["golpe", "silbido", "rodamiento", "desbalance", "cavitacion"]
+    other = _ok(
+        client.post(
+            f"{API}/datasets/{dv0['id']}/labelsets",
+            json={"kind": "temporal_event", "classes": classes},
+        ),
+        201,
+    )
+    count = _ok(
+        client.post(
+            f"{API}/labelsets/{other['id']}/import?format=events",
+            files={"file": ("eventos.csv", exported.content, "text/csv")},
+        )
+    )["count"]
+    assert count == 10
+    fixture = (fixtures_dir / "uc09_motor_audio" / "eventos.csv").read_bytes()
+    count = _ok(
+        client.post(
+            f"{API}/labelsets/{other['id']}/import?format=events",
+            files={"file": ("eventos.csv", fixture, "text/csv")},
+        )
+    )["count"]
+    assert count == 90
+    summary = _ok(client.get(f"{API}/labelsets/{other['id']}"))
+    assert {"rodamiento", "desbalance", "cavitacion"} <= set(summary["by_class"])
+    wrong = client.post(
+        f"{API}/labelsets/{other['id']}/import?format=events",
+        files={"file": ("x.csv", b"a,b" + bytes([10]) + b"1,2", "text/csv")},
+    )
+    assert wrong.status_code == 422
+
+
+def test_zero_shot_prelabel(client: TestClient, fixtures_dir: Path) -> None:
+    """RF-LBL-02: zero-shot local con los nombres de clase (backend falso, sin descargar)."""
+    from perceptron.data.labeling import zero_shot
+
+    calls: list[tuple[str, str, int]] = []
+
+    def fake(
+        model: str, modality: Any, inputs: Any, labels: list[str], multi: bool
+    ) -> list[dict[str, float]]:
+        calls.append((model, modality.value, len(inputs)))
+        return [{labels[0]: 0.7, labels[1]: 0.3} for _ in inputs]
+
+    zero_shot.set_backend(fake)
+    try:
+        _, dv0 = _defects(client, fixtures_dir)
+        ls = _ok(
+            client.post(
+                f"{API}/datasets/{dv0['id']}/labelsets",
+                json={"kind": "class", "classes": ["zz_a", "zz_b"], "target": "sin_columna"},
+            ),
+            201,
+        )
+        n = _ok(
+            client.post(
+                f"{API}/labelsets/{ls['id']}/prelabel", json={"method": "zero_shot", "limit": 7}
+            )
+        )["count"]
+        assert n == 7
+        assert calls and calls[0][:2] == ("google/siglip-base-patch16-224", "image")
+        queue = _ok(client.get(f"{API}/labelsets/{ls['id']}/queue?limit=7"))
+        assert all(s["item"]["label"] == "zz_a" for s in queue)
+        assert all(s["item"]["confidence"] == pytest.approx(0.7) for s in queue)
+        wrong = client.post(
+            f"{API}/labelsets/{ls['id']}/prelabel",
+            json={"method": "zero_shot", "model": "laion/clap-htsat-unfused"},
+        )
+        assert wrong.status_code == 422  # modelo de audio sobre imágenes
+    finally:
+        zero_shot.set_backend(None)
+
+
+def test_zero_shot_catalog() -> None:
+    from perceptron.core.errors import ValidationError
+    from perceptron.data.labeling.zero_shot import ZERO_SHOT_MODELS, classify, resolve_model
+    from perceptron.domain.enums import Modality
+
+    assert all(z.commercial_ok for z in ZERO_SHOT_MODELS.values())
+    assert {z.modality for z in ZERO_SHOT_MODELS.values()} == {
+        Modality.IMAGE,
+        Modality.TEXT,
+        Modality.AUDIO,
+    }
+    assert resolve_model(Modality.TEXT, None).model.startswith("MoritzLaurer/")
+    with pytest.raises(ValidationError):
+        resolve_model(Modality.TABULAR, None)
+    with pytest.raises(ValidationError):
+        classify(Modality.TEXT, ["hola"], ["una"])

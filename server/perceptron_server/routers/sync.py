@@ -208,6 +208,13 @@ def push_project(
     return SyncResult(id=updated.id, version=updated.version)
 
 
+@router.get("/projects/{project_id}", operation_id="pullProject")
+def pull_project(project_id: str, who: Who, state: State) -> dict[str, Any]:
+    """El proyecto de equipo como lo tiene el servidor (edición concurrente, RF-SRV-03)."""
+    project = _project(state, who, project_id, Role.VIEWER)
+    return {"project": project.model_dump(mode="json"), "version": project.version}
+
+
 @router.put("/projects/{project_id}/entities/{kind}/{entity_id}", operation_id="syncEntity")
 def push_entity(
     project_id: str,

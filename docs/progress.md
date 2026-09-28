@@ -1,4 +1,4 @@
-🟡 REST paginado con auth, WebSocket y archivo que crece con buffer y sondeo; Kafka/MQTT pendientes
+# Progreso de implementación
 
 Estado de cada requisito funcional de [SPEC.md](../SPEC.md). Leyenda: ✅ hecho · 🟡 parcial · ⬜ pendiente.
 La columna **Capa** es la capa de §14 donde se implementa.
@@ -146,7 +146,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Export verificado ONNX/fp16/INT8, torch.export y TorchScript con firma (RF-EXP-01/05, ADR-0027) | ✅ |
 | Servidor de inferencia FastAPI + ONNX Runtime con Dockerfiles CPU/CUDA (RF-EXP-03) | ✅ |
 | Proyecto de código exportable autónomo con uv (RF-EXP-04) | ✅ |
-| Playground en la página del run (RF-EXP-02) | 🟡 tabular e imagen |
+| Playground en la página del run (RF-EXP-02) | ✅ tabular, imagen, texto y audio |
 | Aceptación O5: proyecto y servidor en contenedores limpios (job `export-o5`) | ✅ uv sync → train → infer → pytest en `python:3.12-slim`; servidor Docker con API key |
 
 
@@ -155,8 +155,8 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Entregable | Estado |
 |---|---|
 | Análisis de errores (RF-EVL-03) y fairness (RF-EVL-04) sobre el test sellado | ✅ |
-| Explicabilidad con Captum (RF-EVL-02) | 🟡 tabular e imagen |
-| Robustez ante perturbaciones (RF-EVL-05) | 🟡 tabular e imagen |
+| Explicabilidad con Captum (RF-EVL-02) | ✅ tabular, imagen, texto, audio y series |
+| Robustez ante perturbaciones (RF-EVL-05) | ✅ tabular, imagen, texto y audio |
 | Informe HTML/PDF/Markdown con marca y model card (RF-EVL-06, ADR-0028) | ✅ |
 | Explicación local en el playground | ✅ |
 
@@ -221,7 +221,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RetrainPolicy: drift, cron, volumen y degradación; aprobación opcional; bitácora | ✅ |
 | Versión de datos con split predefinido (test del champion fijo) y linaje append | ✅ |
 | Aceptación UC-10: drift → alerta → reentrenamiento → challenger → promoción si mejora → rollback | ✅ (test de API) |
-| Kafka/MQTT (extras opcionales), embeddings internos para no estructurado | ⬜ |
+| Kafka/MQTT (extras opcionales), embeddings internos para no estructurado | ✅ extra `streaming`; drift de embeddings en tabla, texto, imagen y audio |
 
 ## Capa 7a — licencia, auditoría, telemetría y actualización
 
@@ -260,14 +260,14 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-PRJ-04 |  | 5 | Promover un proyecto local a proyecto de equipo (sube metadata, datasets y runs… | ✅ promoción explícita desde el desktop: metadata, datasets elegidos (y los de los runs), pipelines, arquitecturas y runs elegidos con evaluaciones y artefactos; el proyecto local queda como de equipo |
 | RF-PRJ-05 |  | 3 | Historial de actividad del proyecto (quién hizo qué, cuándo). | ✅ cada escritura exitosa queda como ActivityEntry (operación, usuario del Team Server o local, cuándo); `GET /projects/{id}/activity` para cualquier miembro y Actividad reciente en el resumen |
 | RF-ING-01 | sí | 1 | Archivos locales: CSV, TSV, XLSX, Parquet, JSON/JSONL; carpetas de imágenes… | ✅ tabular, imágenes, texto (tabla o clase/*.txt), audio (wav/flac/mp3/ogg), ZIP |
-| RF-ING-02 |  | 1/4 | Formatos de anotación: COCO, Pascal VOC, YOLO (txt), máscaras PNG, CSV de eventos de… | ✅ COCO, Pascal VOC, YOLO, máscaras PNG, CSV de OCR; eventos de audio pendiente |
+| RF-ING-02 |  | 1/4 | Formatos de anotación: COCO, Pascal VOC, YOLO (txt), máscaras PNG, CSV de eventos de… | ✅ COCO, Pascal VOC, YOLO, máscaras PNG, CSV de OCR y CSV de eventos de audio (import/export en conjuntos de segmentos) |
 | RF-ING-03 |  | 4 | Bases de datos: SQL Server, PostgreSQL, MySQL/MariaDB, SQLite, vía query SQL con vista… | ✅ SQL Server, PostgreSQL, MySQL/MariaDB y SQLite con consulta, vista previa, límite de filas, lectura por lotes y refresco |
 | RF-ING-04 |  | 4 | Datasets públicos: Hugging Face Datasets y Kaggle (con credenciales del usuario),… | ✅ Hugging Face Datasets (split, token) y Kaggle (API oficial), con credenciales en el llavero |
-| RF-ING-05 |  | 6 | APIs REST (paginación, auth por header/token, mapeo JSON → tabla) y streaming (Kafka,… | 🟡 REST paginado con auth, WebSocket y archivo que crece con buffer y sondeo; Kafka/MQTT pendientes |
+| RF-ING-05 |  | 6 | APIs REST (paginación, auth por header/token, mapeo JSON → tabla) y streaming (Kafka,… | ✅ REST paginado con auth, WebSocket, archivo que crece, Kafka (grupo con commit manual, SASL/SSL) y MQTT (sesión persistente, QoS 1) sobre `StreamSource`, con buffer, sondeo y política de red; UI en Monitoreo: alta por tipo, estado del buffer, lectura manual y selección en el reentrenamiento |
 | RF-ING-06 | sí | 1 | Inferencia de esquema y tipos (numérico, categórico, fecha, texto, id, ruta de… | ✅ `data.schema`: tipos semánticos + candidatos a target, override manual |
 | RF-ING-07 | sí | 1 | Cada ingesta crea un DatasetVersion inmutable con hash de contenido. | ✅ `DatasetVersion` inmutable content-addressed (ADR-0016) |
 | RF-ING-08 | sí | 1 | Particionado: aleatorio estratificado, por grupo (evitar leakage entre entidades),… | ✅ aleatorio, estratificado, grupo, temporal (por serie), k-fold; test sellado |
-| RF-ING-09 |  | 1 | Soporte hasta ~10 GB: los datos no tabulares se leen en streaming desde disco; los… | 🟡 streaming para tabulares (Polars `sink_parquet`) e imágenes desde disco; shards en 1b |
+| RF-ING-09 |  | 1 | Soporte hasta ~10 GB: los datos no tabulares se leen en streaming desde disco; los… | ✅ tabulares materializados en Parquet; si el split supera ~2 GB en memoria se entrena por lotes (pyarrow, shuffle con buffer, pesos de clase por conteo); imágenes y audio se leen desde disco por muestra |
 | RF-PRF-01 | sí | 1 | Estadísticas por columna (tabular): tipo, nulos, cardinalidad, distribución, outliers,… | ✅ `profiling.tabular` |
 | RF-PRF-02 | sí | 1 | Imágenes: resolución, canales, formatos, corruptas, duplicados/casi-duplicados (hash… | ✅ `profiling.images` (dHash + LSH para casi duplicados) |
 | RF-PRF-03 |  | 1 | Texto: idioma, longitud en tokens, vocabulario, duplicados, balance. | ✅ `profiling.text` (idioma, largo en tokens, vocabulario, duplicados) |
@@ -280,9 +280,9 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-PIP-02 |  | 1/3 | Editor visual (React Flow) de un DAG de pasos: agregar, quitar, reordenar,… | ✅ editor React Flow (agregar, quitar, reordenar, parametrizar, guardar con versión) con vista previa por paso del grafo sin guardar (`POST /projects/{id}/pipelines/preview-steps`) |
 | RF-PIP-03 |  | 1/3 | Catálogo de pasos por modalidad (extensible por plugins): | ✅ tabular, imagen, texto, series, audio (augmentations incluidas) |
 | RF-PIP-04 | sí | 1/3 | El pipeline se serializa (JSON) y se ajusta solo con train (fit/transform separado)… | ✅ fit solo con train, estado JSON empaquetable |
-| RF-PIP-05 |  | 1/3 | El LLM puede sugerir cambios al pipeline con justificación; el usuario acepta/rechaza… | ⬜ pendiente |
-| RF-LBL-01 |  | 4 | Herramientas de etiquetado: clase por muestra (imagen/texto/audio), multi-etiqueta,… | 🟡 herramienta en la UI: clase por muestra (imagen/texto/tabla), multi-etiqueta y cajas; máscaras por pincel y segmentos temporales pendientes |
-| RF-LBL-02 |  | 4 | Pre-etiquetado automático con: | 🟡 pre-etiquetado con el modelo del proyecto y con el LLM (texto, L2/L3); zero-shot local pendiente de licencias y caché de pesos |
+| RF-PIP-05 |  | 1/3 | El LLM puede sugerir cambios al pipeline con justificación; el usuario acepta/rechaza… | ✅ el LLM (propósito architect, prompt `pipeline`) sugiere cambios tipados con justificación, validados contra el catálogo de pasos y las columnas; fallback por reglas; diff antes/después y se aplican solo las aceptadas (bloqueo optimista) |
+| RF-LBL-01 |  | 4 | Herramientas de etiquetado: clase por muestra (imagen/texto/audio), multi-etiqueta,… | ✅ clase por muestra (imagen/texto/tabla/audio), multi-etiqueta, cajas, polígonos (→ máscaras PNG de segmentación con nombres de clase) y segmentos temporales de audio (→ un clip por evento + `eventos.csv`); JSONL con formas; tests API y UI |
+| RF-LBL-02 |  | 4 | Pre-etiquetado automático con: | ✅ modelo del proyecto, LLM (texto, L2/L3) y zero-shot local con nombres de clase: SigLIP (imagen, Apache-2.0), mDeBERTa-NLI (texto, MIT) y CLAP (audio, Apache-2.0), descargables desde la caché de modelos; backend reemplazable y tests API/UI |
 | RF-LBL-03 |  | 4 | Active learning: priorizar para revisión humana las muestras de mayor… | ✅ cola por incertidumbre/diversidad, aceptación en lote por confianza y ciclo etiquetar → aplicar (nueva versión) → reentrenar → pre-etiquetar |
 | RF-LBL-04 |  | 4 | Guía de etiquetado: el usuario describe las clases en lenguaje natural; el LLM genera… | ✅ guía de etiquetado por LLM (`POST /projects/{id}/labels/guide`); sin LLM, las definiciones del usuario |
 | RF-LBL-05 |  | 4 | Métricas de calidad del etiquetado: acuerdo humano-modelo, clases confusas, posibles… | ✅ acuerdo humano-modelo, pares confusos y posibles errores de etiqueta |
@@ -296,13 +296,13 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-LLM-03 | sí | 2 | Perfiles LLM configurables: qué modelo se usa para cada *propósito* (copilot,… | ✅ perfiles por propósito (catálogo + `PUT /llm/profiles`), `Project.llm_profile_id` |
 | RF-LLM-04 | sí | 2 | Salida estructurada: toda respuesta que alimenta al sistema se pide como JSON contra… | ✅ JSON Schema por proveedor + Pydantic + validador de dominio, 3 intentos con feedback |
 | RF-LLM-05 |  | 2 | Streaming de respuestas al panel de copiloto. | ✅ `Gateway.stream_chat` + `WS /projects/{id}/copilot` al panel del copiloto |
-| RF-LLM-06 |  | 2 | Control de costos: presupuesto por proyecto/run/usuario, conteo de tokens, estimación… | 🟡 costo por llamada (catálogo), presupuesto por proyecto y por ámbito (run/agente) con corte previo; cuotas por usuario/workspace en Capa 5 |
+| RF-LLM-06 |  | 2 | Control de costos: presupuesto por proyecto/run/usuario, conteo de tokens, estimación… | ✅ costo por llamada (catálogo), presupuesto por proyecto y por ámbito (run/agente) con corte previo, y cuota mensual por workspace en el Team Server (Admin → Políticas) |
 | RF-LLM-07 |  | 2 | Caché de respuestas por hash de (prompt, modelo, parámetros) para reproducibilidad y… | ✅ tabla `llm_cache` por hash de proveedor + request |
 | RF-LLM-08 |  | 2 | Claves API: en desktop, keychain del SO; en servidor, cifradas (AES-GCM, clave maestra… | ✅ keychain (`keyring`), archivo AES-GCM en servidor, entorno como último recurso; `allowed_llm_providers` |
 | RF-PRV-01 | sí | 2 | El PrivacyFilter se aplica en el Gateway (no en cada llamador). | ✅ `llm.privacy.PrivacyFilter` aplicado en el Gateway sobre un `LLMContext` tipado |
 | RF-PRV-02 |  | 2 | Con un LLM local el Admin puede permitir L3 aunque la política general sea L1. | ✅ `Workspace.local_llm_max_privacy` para LLM locales |
 | RF-PRV-03 | sí | 2 | Log de auditoría: el usuario puede ver exactamente qué payload se envió en cada… | ✅ `LLMCall` con payload post-filtro, redacciones, intento y costo; `GET /llm/audit`, `perceptron llm audit`; `find_leaks` |
-| RF-PRV-04 |  | 2 | Política de workspace: nivel máximo permitido y proveedores permitidos, definidos por… | 🟡 nivel máximo y proveedores permitidos aplicados en el Gateway; edición por el Admin en Capa 5 |
+| RF-PRV-04 |  | 2 | Política de workspace: nivel máximo permitido y proveedores permitidos, definidos por… | ✅ nivel máximo, tope con LLM local y proveedores permitidos por workspace, editables por el Admin; se aplica la política del workspace de cada proyecto |
 | RF-ARC-01 | sí | 2 | El LLM genera 2–4 propuestas usando exclusivamente bloques del catálogo (§8) en… | ✅ arquitecto LLM: 2–4 propuestas con justificación, pros/contras/riesgos y estimaciones del sistema (parámetros, memoria, tiempo por época medido) |
 | RF-ARC-02 | sí | 1/2 | Validación de cada propuesta: schema, compatibilidad de shapes (construcción en meta… | ✅ `archspec.validate` (6 etapas de §9.3) sobre cada propuesta del LLM, con feedback al reintento |
 | RF-ARC-03 |  | 2 | Mini-torneo opcional: entrenar cada propuesta con un presupuesto corto (p. ej. 10 %… | ✅ `services.tournament` (fracción de épocas + subconjunto de train por época); gana la mejor en validación |
@@ -313,7 +313,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-HPO-01 | sí | 1 | Estrategias soportadas: | ✅ single/random/grid/TPE/CMA-ES/NSGA-II + median/ASHA/Hyperband |
 | RF-HPO-02 | sí | 1 | El LLM estratega recibe el escenario (tamaño de datos, costo por trial, presupuesto,… | ✅ estratega LLM validado contra la ArchSpec, rangos del catálogo y presupuesto; fallback por reglas |
 | RF-HPO-03 | sí | 1 | Presupuesto configurable en el wizard: tiempo total, n.º de trials, preset, métrica… | ✅ corte por trials, tiempo y métrica objetivo |
-| RF-HPO-04 |  | 1 | Paralelismo de trials según recursos: varias GPUs → un trial por GPU; en servidor,… | ⬜ pendiente |
+| RF-HPO-04 |  | 1 | Paralelismo de trials según recursos: varias GPUs → un trial por GPU; en servidor,… | 🟡 trials en paralelo en un nodo: uno por GPU (CUDA_VISIBLE_DEVICES por trial) o `parallelism` a mano, con cancelación de todos; repartir trials entre workers del Team Server (storage de Optuna compartido) pendiente |
 | RF-HPO-05 |  | 1 | Reanudación de estudios interrumpidos (almacenamiento Optuna en SQLite/PostgreSQL). | ✅ reanudación desde SQLite |
 | RF-HPO-06 |  | 1 | Visualizaciones: historia de optimización, importancia de hiperparámetros, coordenadas… | ✅ historia con mejor acumulado, importancia de hiperparámetros (PED-ANOVA de Optuna), coordenadas paralelas y frente de Pareto en Experimentos |
 | RF-TRN-01 | sí | 1 | Detección de hardware al inicio y bajo demanda: GPUs (modelo, VRAM, capacidad de… | ✅ `training.hardware` + `GET /system/hardware` |
@@ -323,7 +323,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-TRN-05 | sí | 1 | Cada run corre en un proceso separado; el Engine supervisa, captura OOM/crashes y los… | ✅ subproceso por run con diagnóstico de OOM/crash (ADR-0015) |
 | RF-TRN-06 | sí | 1 | Progreso en vivo por WebSocket: época, batch, loss, métricas, LR, throughput, uso de… | ✅ eventos JSONL → EventBus → `WS /runs/{rid}/live` |
 | RF-TRN-07 |  | 1 | Pausar, reanudar (desde checkpoint), cancelar. | ✅ cancelar, pausar y reanudar desde checkpoint |
-| RF-TRN-08 |  | 1 | Multi-GPU en un nodo (DDP vía Lightning) cuando hay >1 GPU. | ⬜ pendiente |
+| RF-TRN-08 |  | 1 | Multi-GPU en un nodo (DDP vía Lightning) cuando hay >1 GPU. | 🟡 DDP de Lightning en un nodo cuando un estudio de un solo trial tiene varias GPUs (eventos y resultado solo desde rank 0); lógica probada en CI, falta validarlo en un worker con varias GPUs reales |
 | RF-TRN-09 |  | 1 | Técnicas de fine-tuning: congelar backbone, descongelado progresivo, LR… | ✅ congelado del backbone, descongelado progresivo (un grupo de capas por época desde la salida), LR discriminativo (`backbone_lr_mult`) y LoRA con peft para encoders de texto de HF |
 | RF-TRN-10 |  | 1 | Manejo de desbalance: pesos de clase, focal loss, sobremuestreo, umbral óptimo… | ✅ pesos de clase, focal, oversampling, umbral óptimo en el reporte |
 | RF-TRN-11 |  | 1 | Caché de modelos preentrenados: descarga única, verificación de checksum, uso offline,… | ✅ caché única en el workspace (HF Hub y torch hub; `PERCEPTRON_MODELS_CACHE` para una compartida; en el Team Server, el volumen compartido con los workers), modo offline, verificación de checksums, borrado y predescarga del catálogo curado desde Configuración |
@@ -337,7 +337,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | ✅ registro nativo (ModelVersion con stages, promover, rollback, challenger) reflejado en el Model Registry de MLflow: versión por ModelVersion, stage como tag y alias `champion` |
 | RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | ✅ tabla de métricas, curvas superpuestas, diff de hiperparámetros y diff de ArchSpec y pipeline (listas por id) |
 | RF-EVL-01 | sí | 1 | Métricas por tarea: | ✅ clasificación, regresión, forecasting (MASE, backtesting, naive), anomalías, detección (mAP), segmentación (IoU/Dice), OCR (CER/WER); SED pendiente |
-| RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | 🟡 Captum: Shapley global/local (tabular), Integrated Gradients (imagen y espectrograma de audio) y oclusión por token (texto) locales; global para texto/audio y series pendientes (ADR-0028) |
+| RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | ✅ Captum: Shapley global/local (tabular), Integrated Gradients local (imagen) y global/local sobre el espectrograma (audio), oclusión por token global/local (texto) e Integrated Gradients global sobre la ventana de series (importancia por variable y por rezago; forecasting y anomalías) (ADR-0028) |
 | RF-EVL-03 |  | 1/4 | Análisis de errores: explorador de muestras mal predichas con filtros, slices… | ✅ slices de bajo rendimiento, confusiones, posibles errores de etiqueta (confident learning) y explorador de mal predichos |
 | RF-EVL-04 |  | 1/4 | Fairness: el usuario marca atributos sensibles; métricas por subgrupo (Fairlearn:… | ✅ métricas por grupo, paridad demográfica e igualdad de oportunidades (definiciones de Fairlearn), alertas por umbral |
 | RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | ✅ tabular (ruido, categorías cambiadas, faltantes), imagen (ruido, desenfoque, JPEG), texto (typos, palabras eliminadas) y audio (ruido de fondo por SNR, volumen bajo), a tres severidades |
@@ -348,18 +348,18 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-EXP-04 |  | 4 | Proyecto de código exportable: repositorio Python standalone generado desde plantillas… | ✅ repo autónomo (uv): modelo generado, pipeline vendorizado, train/infer/serve, config, datos train/val, pesos y prueba de humo; O5 en CI (tabular e imagen) |
 | RF-EXP-05 |  | 4 | Firma del modelo: schema de entrada/salida, versión, hash; incluido en todos los formatos. | ✅ firma (entradas, salidas, hash de ArchSpec, run, versión) en el reporte, `signature.json` y en el servidor |
 | RF-MON-01 |  | 6 | Registro de predicciones del serving (muestreado, configurable, respetando privacidad)… | ✅ registro muestreado de predicciones (features de la firma + clave) y feedback por id o clave |
-| RF-MON-02 |  | 6 | Drift de datos: tabular con Evidently (PSI, KS, Jensen-Shannon, chi²) por feature; no… | 🟡 tabular (PSI, KS, χ², JS) y espacio de salida del modelo (MMD, centroides, dominio); embeddings internos para imagen/texto/audio pendientes |
+| RF-MON-02 |  | 6 | Drift de datos: tabular con Evidently (PSI, KS, Jensen-Shannon, chi²) por feature; no… | ✅ tabular (PSI, KS, χ², JS), espacio de salida y embeddings internos (entrada de la cabeza, expuesta del ONNX al cargar; PCA + MMD, centroides y dominio) para tabla, texto, imagen y audio; deployments de texto (filas) e imagen/audio (`/predict/file`, se guarda solo el embedding) |
 | RF-MON-03 |  | 6 | Drift de concepto / performance: métricas sobre datos etiquetados recientes vs. baseline. | ✅ métricas sobre feedback reciente contra el test del champion |
 | RF-MON-04 |  | 6 | Alertas: en la app, email (SMTP) y webhook (Teams/Slack genérico). | ✅ en la app, email SMTP y webhook (Teams/Slack) con cooldown |
 | RF-MON-05 |  | 6 | Políticas de reentrenamiento (RetrainPolicy): disparadores por drift, calendario… | ✅ disparadores drift, cron, volumen y degradación; HPO reducido; aprobación opcional |
 | RF-MON-06 |  | 6 | Champion/challenger: el nuevo modelo se evalúa contra el productivo en un holdout… | ✅ challenger contra champion en el mismo holdout, promoción solo si mejora, rollback |
-| RF-MON-07 |  | 6 | Versionado de datasets: snapshots inmutables por manifiesto de hashes… | 🟡 versiones inmutables, linaje y diff (filas, esquema, distribución, archivos); retención y export DVC pendientes |
+| RF-MON-07 |  | 6 | Versionado de datasets: snapshots inmutables por manifiesto de hashes… | ✅ versiones inmutables, linaje y diff; retención (últimas N, protegiendo las en uso y sus padres, con vista previa) y export compatible con DVC 3 (.dvc con hash .dir md5) |
 | RF-SRV-01 |  | 5 | Autenticación: usuarios locales (hash Argon2) y SSO OIDC (Entra ID, Google Workspace,… | ✅ locales (Argon2id, JWT con refresco rotativo, CSRF, bloqueo) y SSO OIDC con grupos → roles; validación con Entra ID real pendiente de tenant |
 | RF-SRV-02 |  | 5 | RBAC por workspace y proyecto (§3.2). | ✅ Admin/Editor/Viewer por workspace y proyecto sobre todas las operaciones (HTTP y WS) |
-| RF-SRV-03 |  | 5 | Sincronización desktop ↔ servidor para proyectos de equipo: metadata (PostgreSQL),… | 🟡 push de proyecto, datos, pipeline y arquitectura (bloqueo optimista, chunks reanudables) y pull de estudios y runs; S3 y edición concurrente de proyectos pendientes |
+| RF-SRV-03 |  | 5 | Sincronización desktop ↔ servidor para proyectos de equipo: metadata (PostgreSQL),… | 🟡 push de proyecto, datos, pipeline y arquitectura (bloqueo optimista, chunks reanudables), pull de estudios y runs y edición concurrente: estado por entidad (al día, para bajar, para subir, conflicto), pull con resolución explícita (la del servidor o la mía) y push de lo local, en la API y en el resumen del proyecto; S3 pendiente (D2) |
 | RF-SRV-04 |  | 5 | Cola de jobs con prioridades y cuotas por usuario/workspace; los desktops pueden… | ✅ cola Celery/Valkey con colas gpu/cpu, cuotas, vista de la cola y envío desde el desktop con progreso en vivo; prioridades entre usuarios pendientes |
 | RF-SRV-05 |  | 5 | Modo estación de trabajo: la UI web del servidor ofrece la misma funcionalidad que el… | ✅ UI web en el mismo origen con login; subida de archivos y fuentes del servidor confinadas |
-| RF-SRV-06 |  | 5 | Consola de administración: usuarios, grupos, SSO, proveedores LLM y claves, políticas… | 🟡 usuarios, roles y auditoría; SSO, cuotas, almacenamiento y workers en 5b/5c |
+| RF-SRV-06 |  | 5 | Consola de administración: usuarios, grupos, SSO, proveedores LLM y claves, políticas… | ✅ usuarios, roles, SSO, proveedores y perfiles LLM, políticas de privacidad y cuota LLM por workspace, auditoría global y pestaña Sistema (almacenamiento por proyecto, cuotas de estudios y estado de workers) |
 | RF-SRV-07 |  | 5 | Auditoría: login, acceso a datasets, exportaciones, llamadas LLM, cambios de permisos. | ✅ login, escrituras, denegaciones, lecturas de datos, descargas y cambios de roles; LLM en LLMCall |
 | RF-SRV-08 |  | 5 | Backups: guía y scripts para PostgreSQL y object storage. | ✅ backup.sh/restore.sh (PostgreSQL + volúmenes) verificados en CI; guía para Kubernetes |
 | RF-LIC-01 |  | 0 | Módulo licensing con interfaz LicenseProvider y una implementación DevLicenseProvider… | ✅ LicenseProvider con proveedor de desarrollo y proveedor firmado Ed25519 |

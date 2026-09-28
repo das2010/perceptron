@@ -461,6 +461,32 @@
         "title": "AlertStatus",
         "type": "string"
       },
+      "ApplySuggestionsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/PipelineChange"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Changes",
+            "type": "array"
+          },
+          "version": {
+            "description": "Versión del pipeline sobre la que se sugirió",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "changes"
+        ],
+        "title": "ApplySuggestionsBody",
+        "type": "object"
+      },
       "ApprovalBody": {
         "additionalProperties": false,
         "properties": {
@@ -1170,6 +1196,23 @@
           "file"
         ],
         "title": "Body_importProject",
+        "type": "object"
+      },
+      "Body_predictDeploymentFiles": {
+        "properties": {
+          "files": {
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_predictDeploymentFiles",
         "type": "object"
       },
       "Body_predictFile": {
@@ -3594,6 +3637,70 @@
         "title": "EntityPush",
         "type": "object"
       },
+      "EntitySync": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "local_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Version"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "server_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Version"
+          },
+          "state": {
+            "enum": [
+              "synced",
+              "pull",
+              "push",
+              "conflict",
+              "server_only",
+              "local_only"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "state"
+        ],
+        "title": "EntitySync",
+        "type": "object"
+      },
       "ErrorAnalysis": {
         "properties": {
           "confusions": {
@@ -5634,9 +5741,23 @@
             "$ref": "#/components/schemas/LabelOrigin",
             "default": "human"
           },
+          "polygons": {
+            "items": {
+              "$ref": "#/components/schemas/Polygon"
+            },
+            "title": "Polygons",
+            "type": "array"
+          },
           "sample_id": {
             "title": "Sample Id",
             "type": "string"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/Segment"
+            },
+            "title": "Segments",
+            "type": "array"
           },
           "status": {
             "default": "accepted",
@@ -5880,9 +6001,23 @@
             ],
             "title": "Label"
           },
+          "polygons": {
+            "items": {
+              "$ref": "#/components/schemas/Polygon"
+            },
+            "title": "Polygons",
+            "type": "array"
+          },
           "sample_id": {
             "title": "Sample Id",
             "type": "string"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/Segment"
+            },
+            "title": "Segments",
+            "type": "array"
           }
         },
         "required": [
@@ -7121,6 +7256,60 @@
         "title": "Pipeline",
         "type": "object"
       },
+      "PipelineChange": {
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`add`: id del paso después del cual va (None = al final)",
+            "title": "After"
+          },
+          "op": {
+            "enum": [
+              "add",
+              "remove",
+              "update"
+            ],
+            "title": "Op",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepSpec"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Paso completo en `add` y `update`"
+          },
+          "step_id": {
+            "description": "Paso afectado (el nuevo, en `add`)",
+            "title": "Step Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "op",
+          "step_id",
+          "rationale"
+        ],
+        "title": "PipelineChange",
+        "type": "object"
+      },
       "PipelinePreview": {
         "properties": {
           "categorical_features": {
@@ -7367,6 +7556,34 @@
           "texts"
         ],
         "title": "PlaygroundTexts",
+        "type": "object"
+      },
+      "Polygon": {
+        "description": "Polígono normalizado a [0, 1] (máscaras de segmentación, RF-LBL-01).",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "points": {
+            "description": "[[x, y], ...]",
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "maxItems": 2000,
+            "minItems": 3,
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "points",
+          "label"
+        ],
+        "title": "Polygon",
         "type": "object"
       },
       "PredictBody": {
@@ -8123,6 +8340,29 @@
         "title": "ProjectStatus",
         "type": "string"
       },
+      "ProjectStorage": {
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "name",
+          "bytes"
+        ],
+        "title": "ProjectStorage",
+        "type": "object"
+      },
       "ProjectTemplate": {
         "properties": {
           "id": {
@@ -8483,6 +8723,32 @@
         "title": "ProviderView",
         "type": "object"
       },
+      "PullBody": {
+        "additionalProperties": false,
+        "properties": {
+          "resolutions": {
+            "additionalProperties": {
+              "enum": [
+                "theirs",
+                "mine"
+              ],
+              "type": "string"
+            },
+            "description": "Conflictos: id → versión del servidor o la propia",
+            "title": "Resolutions",
+            "type": "object"
+          },
+          "server": {
+            "title": "Server",
+            "type": "string"
+          }
+        },
+        "required": [
+          "server"
+        ],
+        "title": "PullBody",
+        "type": "object"
+      },
       "PullResult": {
         "properties": {
           "added": {
@@ -8578,6 +8844,20 @@
           "model"
         ],
         "title": "PurposeRef",
+        "type": "object"
+      },
+      "PushBody": {
+        "additionalProperties": false,
+        "properties": {
+          "server": {
+            "title": "Server",
+            "type": "string"
+          }
+        },
+        "required": [
+          "server"
+        ],
+        "title": "PushBody",
         "type": "object"
       },
       "QueueView": {
@@ -8885,6 +9165,75 @@
           }
         },
         "title": "ReportBody",
+        "type": "object"
+      },
+      "RetentionBody": {
+        "additionalProperties": false,
+        "properties": {
+          "dry_run": {
+            "default": true,
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "keep_last": {
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Keep Last",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "keep_last"
+        ],
+        "title": "RetentionBody",
+        "type": "object"
+      },
+      "RetentionReport": {
+        "properties": {
+          "deleted": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Deleted",
+            "type": "array"
+          },
+          "dry_run": {
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "freed_bytes": {
+            "title": "Freed Bytes",
+            "type": "integer"
+          },
+          "in_use": {
+            "description": "Se conservan por estar en uso o ser padres",
+            "items": {
+              "type": "string"
+            },
+            "title": "In Use",
+            "type": "array"
+          },
+          "keep_last": {
+            "title": "Keep Last",
+            "type": "integer"
+          },
+          "kept": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Kept",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dry_run",
+          "keep_last",
+          "kept",
+          "in_use",
+          "deleted",
+          "freed_bytes"
+        ],
+        "title": "RetentionReport",
         "type": "object"
       },
       "RetrainPolicy": {
@@ -9685,6 +10034,32 @@
           "type"
         ],
         "title": "SearchParam",
+        "type": "object"
+      },
+      "Segment": {
+        "description": "Segmento temporal en segundos (eventos de audio, RF-LBL-01).",
+        "properties": {
+          "end_s": {
+            "exclusiveMinimum": 0.0,
+            "title": "End S",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "start_s": {
+            "minimum": 0.0,
+            "title": "Start S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "start_s",
+          "end_s",
+          "label"
+        ],
+        "title": "Segment",
         "type": "object"
       },
       "SemanticType": {
@@ -10541,7 +10916,9 @@
             "enum": [
               "rest",
               "websocket",
-              "file"
+              "file",
+              "kafka",
+              "mqtt"
             ],
             "title": "Kind",
             "type": "string"
@@ -10584,6 +10961,22 @@
           "config"
         ],
         "title": "StreamSourceCreate",
+        "type": "object"
+      },
+      "StreamSourceInfo": {
+        "properties": {
+          "buffer": {
+            "$ref": "#/components/schemas/PullResult"
+          },
+          "source": {
+            "$ref": "#/components/schemas/DataSource"
+          }
+        },
+        "required": [
+          "source",
+          "buffer"
+        ],
+        "title": "StreamSourceInfo",
         "type": "object"
       },
       "Study": {
@@ -10751,6 +11144,30 @@
         "title": "StudyLaunch",
         "type": "object"
       },
+      "SuggestBody": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "mode": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "llm",
+              "rules"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_version_id"
+        ],
+        "title": "SuggestBody",
+        "type": "object"
+      },
       "SuggestedAction": {
         "properties": {
           "kind": {
@@ -10795,6 +11212,98 @@
         "title": "SuggestedAction",
         "type": "object"
       },
+      "SuggestionItem": {
+        "description": "Una sugerencia con su diff: el paso antes y después (None si no existe).",
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "before": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StepSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "change": {
+            "$ref": "#/components/schemas/PipelineChange"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "index",
+          "change",
+          "before",
+          "after"
+        ],
+        "title": "SuggestionItem",
+        "type": "object"
+      },
+      "SuggestionsResult": {
+        "properties": {
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SuggestionItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "llm_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Call Id"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "pipeline_version": {
+            "title": "Pipeline Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pipeline_id",
+          "pipeline_version",
+          "origin",
+          "items"
+        ],
+        "title": "SuggestionsResult",
+        "type": "object"
+      },
       "SyncResult": {
         "properties": {
           "created": {
@@ -10821,6 +11330,80 @@
           "version"
         ],
         "title": "SyncResult",
+        "type": "object"
+      },
+      "SyncStatus": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EntitySync"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "server": {
+            "title": "Server",
+            "type": "string"
+          }
+        },
+        "required": [
+          "server",
+          "items"
+        ],
+        "title": "SyncStatus",
+        "type": "object"
+      },
+      "SystemStatus": {
+        "properties": {
+          "free_bytes": {
+            "title": "Free Bytes",
+            "type": "integer"
+          },
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectStorage"
+            },
+            "title": "Projects",
+            "type": "array"
+          },
+          "queue_mode": {
+            "title": "Queue Mode",
+            "type": "string"
+          },
+          "quotas": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Quotas",
+            "type": "object"
+          },
+          "used_bytes": {
+            "title": "Used Bytes",
+            "type": "integer"
+          },
+          "workers": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Workers",
+            "type": "array"
+          },
+          "workspace_path": {
+            "title": "Workspace Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_path",
+          "used_bytes",
+          "free_bytes",
+          "projects",
+          "quotas",
+          "queue_mode",
+          "workers"
+        ],
+        "title": "SystemStatus",
         "type": "object"
       },
       "TableSchema": {
@@ -12326,6 +12909,19 @@
             "title": "Id",
             "type": "string"
           },
+          "llm_monthly_budget_usd": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cuota de gasto LLM del workspace por mes (RF-LLM-06)",
+            "title": "Llm Monthly Budget Usd"
+          },
           "local_llm_max_privacy": {
             "anyOf": [
               {
@@ -12407,6 +13003,25 @@
             "title": "Clear Allowed Providers",
             "type": "boolean"
           },
+          "clear_llm_budget": {
+            "default": false,
+            "description": "Quita la cuota mensual",
+            "title": "Clear Llm Budget",
+            "type": "boolean"
+          },
+          "llm_monthly_budget_usd": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cuota mensual de gasto LLM (RF-LLM-06)",
+            "title": "Llm Monthly Budget Usd"
+          },
           "local_llm_max_privacy": {
             "anyOf": [
               {
@@ -12468,10 +13083,23 @@
           "method": {
             "enum": [
               "model",
-              "llm"
+              "llm",
+              "zero_shot"
             ],
             "title": "Method",
             "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Modelo zero-shot curado (method=zero_shot); por defecto el de la modalidad",
+            "title": "Model"
           },
           "run_id": {
             "anyOf": [
@@ -12973,6 +13601,28 @@
           }
         },
         "summary": "Revoke",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/system": {
+      "get": {
+        "description": "Almacenamiento, cuotas y estado de los workers para la consola (RF-SRV-06).",
+        "operationId": "getSystemStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "System Status",
         "tags": [
           "admin"
         ]
@@ -14250,6 +14900,47 @@
         ]
       }
     },
+    "/api/v1/datasets/{dataset_version_id}/dvc.zip": {
+      "get": {
+        "description": "Versión de datos con su `.dvc` (DVC 3, md5) para agregarla a un repositorio DVC.",
+        "operationId": "downloadDatasetDvc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_version_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Dvc",
+        "tags": [
+          "data"
+        ]
+      }
+    },
     "/api/v1/datasets/{dataset_version_id}/labelsets": {
       "get": {
         "operationId": "listLabelSets",
@@ -14907,6 +15598,59 @@
         ]
       }
     },
+    "/api/v1/deployments/{deployment_id}/predict/file": {
+      "post": {
+        "description": "Imágenes o audios (hasta 64 por pedido): se registra el embedding, no el archivo.",
+        "operationId": "predictDeploymentFiles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deployment_id",
+            "required": true,
+            "schema": {
+              "title": "Deployment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predictDeploymentFiles"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Predictions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict Files",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
     "/api/v1/deployments/{deployment_id}/predictions": {
       "get": {
         "operationId": "listPredictions",
@@ -15289,7 +16033,8 @@
                 "jsonl",
                 "coco",
                 "yolo",
-                "voc"
+                "voc",
+                "events"
               ],
               "title": "Format",
               "type": "string"
@@ -15346,7 +16091,8 @@
                 "jsonl",
                 "coco",
                 "yolo",
-                "voc"
+                "voc",
+                "events"
               ],
               "title": "Format",
               "type": "string"
@@ -15445,7 +16191,7 @@
     },
     "/api/v1/labelsets/{labelset_id}/prelabel": {
       "post": {
-        "description": "Sugerencias del modelo del proyecto o del LLM para lo que falta (RF-LBL-02).",
+        "description": "Sugerencias para lo que falta (RF-LBL-02): modelo del proyecto, zero-shot local o LLM.",
         "operationId": "prelabelSet",
         "parameters": [
           {
@@ -16215,6 +16961,112 @@
           }
         },
         "summary": "Preview Pipeline",
+        "tags": [
+          "pipelines"
+        ]
+      }
+    },
+    "/api/v1/pipelines/{pipeline_id}/suggestions": {
+      "post": {
+        "description": "Cambios sugeridos con justificación y diff; no se aplica nada (RF-PIP-05).",
+        "operationId": "suggestPipelineChanges",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pipeline_id",
+            "required": true,
+            "schema": {
+              "title": "Pipeline Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionsResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Suggest Pipeline Changes",
+        "tags": [
+          "pipelines"
+        ]
+      }
+    },
+    "/api/v1/pipelines/{pipeline_id}/suggestions/apply": {
+      "post": {
+        "description": "Aplica solo las sugerencias que el usuario aceptó.",
+        "operationId": "applyPipelineSuggestions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pipeline_id",
+            "required": true,
+            "schema": {
+              "title": "Pipeline Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplySuggestionsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pipeline"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Pipeline Suggestions",
         "tags": [
           "pipelines"
         ]
@@ -17146,6 +17998,59 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/datasets/retention": {
+      "post": {
+        "description": "Conserva las últimas N versiones (y las que están en uso); con `dry_run` solo informa.",
+        "operationId": "applyDatasetRetention",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset Retention",
+        "tags": [
+          "data"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/deployments": {
       "get": {
         "operationId": "listDeployments",
@@ -17784,6 +18689,164 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/remote/pull": {
+      "post": {
+        "description": "Baja los cambios del servidor y resuelve los conflictos indicados.",
+        "operationId": "remoteSyncPull",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PullBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remote Pull",
+        "tags": [
+          "remote"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/remote/push": {
+      "post": {
+        "description": "Sube lo que cambió solo en el desktop (con conflictos, primero hay que resolverlos).",
+        "operationId": "remoteSyncPush",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remote Push",
+        "tags": [
+          "remote"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/remote/status": {
+      "get": {
+        "description": "Qué cambió en el servidor, qué cambió acá y qué cambió en los dos lados (RF-SRV-03).",
+        "operationId": "remoteSyncStatus",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server",
+            "required": true,
+            "schema": {
+              "title": "Server",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remote Status",
+        "tags": [
+          "remote"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/remote/studies": {
       "post": {
         "description": "Entrena en el servidor: sube datos y arquitectura, encola y sigue el progreso.",
@@ -18246,6 +19309,51 @@
       }
     },
     "/api/v1/projects/{project_id}/sources/stream": {
+      "get": {
+        "description": "Fuentes streaming/API del proyecto con el estado de su buffer (RF-ING-05).",
+        "operationId": "listStreamSources",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StreamSourceInfo"
+                  },
+                  "title": "Response Liststreamsources",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Stream Sources",
+        "tags": [
+          "monitoring"
+        ]
+      },
       "post": {
         "operationId": "createStreamSource",
         "parameters": [
@@ -20525,6 +21633,49 @@
       }
     },
     "/api/v1/sync/projects/{project_id}": {
+      "get": {
+        "description": "El proyecto de equipo como lo tiene el servidor (edición concurrente, RF-SRV-03).",
+        "operationId": "pullProject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Pullproject",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pull Project",
+        "tags": [
+          "sync"
+        ]
+      },
       "put": {
         "description": "Crea el proyecto de equipo (mismo id que en el desktop) o lo actualiza.",
         "operationId": "syncProject",

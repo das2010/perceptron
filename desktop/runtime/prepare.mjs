@@ -79,6 +79,8 @@ function main() {
     "eval",
     "--extra",
     "sources",
+    "--extra",
+    "streaming",
   ]);
   writeFileSync(join(out, "requirements.lock.txt"), filterRequirements(exported));
 

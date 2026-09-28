@@ -216,7 +216,8 @@
     "samples": "Samples",
     "created": "Created",
     "showProfile": "Show profile",
-    "goTrain": "Next: train"
+    "goTrain": "Next: train",
+    "dvcHint": "Download this version with its .dvc file (DVC 3)"
   },
   "sourceKind": {
     "table": "Table",
@@ -731,7 +732,26 @@
     "boxClass": "Box class",
     "boxes_one": "{{count}} box",
     "boxes_other": "{{count}} boxes",
-    "undo": "Undo"
+    "undo": "Undo",
+    "shapeClass": "Shape class",
+    "shapes": {
+      "box_one": "{{count}} box",
+      "box_other": "{{count}} boxes",
+      "mask_one": "{{count}} polygon",
+      "mask_other": "{{count}} polygons",
+      "temporal_event_one": "{{count}} segment",
+      "temporal_event_other": "{{count}} segments"
+    },
+    "polygonHint": "Click to add vertices; click the first one to close.",
+    "closePolygon": "Close polygon",
+    "discard": "Discard",
+    "markStart": "Mark start",
+    "markEnd": "Mark end",
+    "segmentHint": "Play and mark the start and end of the event.",
+    "segmentFrom": "From {{s}} s…",
+    "zeroShot": "Local zero-shot",
+    "zeroShotHint": "Suggests labels with a pretrained model from the class names, no training needed (first 200 pending).",
+    "eventsCsv": "Events CSV"
   },
   "sources": {
     "fromDb": "From a database",
@@ -879,7 +899,9 @@
     "save": "Save",
     "sso": "SSO",
     "noSso": "No SSO providers configured.",
-    "ssoHint": "Configured on the server (PERCEPTRON_SERVER__OIDC); see docs/ops/sso.md."
+    "ssoHint": "Configured on the server (PERCEPTRON_SERVER__OIDC); see docs/ops/sso.md.",
+    "budget": "Monthly LLM quota (USD)",
+    "budgetHint": "Empty = no quota. When reached, AI features fall back to rules."
   },
   "monitoring": {
     "window": "Window {{from}} → {{to}} ({{n}} predictions)",
@@ -913,7 +935,9 @@
     "noAlerts": "No alerts.",
     "acknowledge": "Acknowledge",
     "resolve": "Resolve",
-    "noDeployments": "No models in use. Deploy the champion from Models."
+    "noDeployments": "No models in use. Deploy the champion from Models.",
+    "embedding": "Model internal embeddings: domain AUC {{auc}} (0.5 = no change) · MMD p {{p}} · centroid distance {{d}}",
+    "embeddingFew": "Internal embeddings: not enough predictions to compare yet."
   },
   "driftSeverity": {
     "none": "No drift",
@@ -949,7 +973,8 @@
       "rejected": "Rejected",
       "skipped": "No new data",
       "failed": "Failed"
-    }
+    },
+    "sources": "New data from streaming sources"
   },
   "license": {
     "title": "License",
@@ -1111,6 +1136,149 @@
       "running": "Uploading…",
       "succeeded": "Done: it is now a team project.",
       "failed": "Could not complete."
+    }
+  },
+  "pipelineAdvice": {
+    "title": "Suggested improvements",
+    "ask": "Ask for suggestions",
+    "rules": "No LLM ({{reason}}): suggestions based on the data profile.",
+    "none": "The pipeline already fits this data.",
+    "before": "Before",
+    "after": "After",
+    "apply_one": "Apply {{count}} accepted suggestion",
+    "apply_other": "Apply {{count}} accepted suggestions",
+    "op": {
+      "add": "Add step {{step}}",
+      "remove": "Remove step {{step}}",
+      "update": "Change step {{step}}"
+    }
+  },
+  "system": {
+    "title": "System",
+    "storage": "Storage",
+    "usage": "{{used}} used · {{free}} free at",
+    "project": "Project",
+    "size": "Size",
+    "quotas": "Quotas",
+    "quotasHint": "Configured on the server (PERCEPTRON_MAX_RUNNING_STUDIES_PER_*). The LLM quota is under Policies.",
+    "quota": {
+      "max_running_studies_per_user": "Running studies per user",
+      "max_running_studies_per_workspace": "Running studies per workspace"
+    },
+    "workers": "Workers",
+    "mode": {
+      "local": "no queue (on the server)",
+      "queue": "worker queue"
+    },
+    "noWorkers": "No workers connected.",
+    "worker": "Worker",
+    "queues": "Queues",
+    "state": "State",
+    "heartbeat": "Last heartbeat",
+    "busy": "busy",
+    "idle": "idle",
+    "secondsAgo": "{{s}} s ago"
+  },
+  "retention": {
+    "title": "Version retention",
+    "keep": "Keep the latest",
+    "hint": "Versions in use (runs, labeling, agent) and their parents are always kept.",
+    "preview": "Preview what would be deleted",
+    "wouldDelete_one": "{{count}} version would be deleted ({{mb}} MB).",
+    "wouldDelete_other": "{{count}} versions would be deleted ({{mb}} MB).",
+    "deleted_one": "{{count}} version deleted ({{mb}} MB).",
+    "deleted_other": "{{count}} versions deleted ({{mb}} MB).",
+    "inUse_one": "{{count}} more is kept because it is in use.",
+    "inUse_other": "{{count}} more are kept because they are in use.",
+    "apply_one": "Delete {{count}} version",
+    "apply_other": "Delete {{count}} versions"
+  },
+  "streams": {
+    "title": "Streaming and API sources",
+    "add": "Add source",
+    "none": "No streaming sources: add an API, a WebSocket, a Kafka or an MQTT topic.",
+    "kind": "Type",
+    "kinds": {
+      "rest": "REST API",
+      "websocket": "WebSocket",
+      "kafka": "Kafka",
+      "mqtt": "MQTT",
+      "file": "File"
+    },
+    "name": "Name",
+    "field": {
+      "url": "URL",
+      "method": "Method",
+      "records_path": "Records path",
+      "pagination": "Pagination",
+      "auth": "Authentication",
+      "max_messages": "Messages per read",
+      "bootstrap_servers": "Brokers",
+      "topic": "Topic",
+      "group_id": "Consumer group",
+      "username": "User",
+      "host": "Host",
+      "port": "Port",
+      "qos": "QoS",
+      "client_id": "Client id",
+      "path": "File path"
+    },
+    "hint": {
+      "records_path": "Where the list is in the JSON, e.g. data.items",
+      "bootstrap_servers": "host:port, comma separated",
+      "topic": "MQTT accepts + and # wildcards",
+      "path": "Inside an enabled server source"
+    },
+    "auth": {
+      "none": "None",
+      "bearer": "Bearer token",
+      "header": "Header",
+      "sasl_plain": "SASL PLAIN",
+      "sasl_scram_256": "SCRAM-SHA-256",
+      "sasl_scram_512": "SCRAM-SHA-512"
+    },
+    "secret": "Token or password",
+    "tls": "Encrypted connection (TLS)",
+    "poll": "Automatic polling (s)",
+    "pollHint": "Empty: manual only. Minimum 10 s.",
+    "create": "Create source",
+    "rows": "Buffer",
+    "buffer": "{{rows}} rows in {{batches}} batches",
+    "lastPoll": "Last read",
+    "pull": "Read now"
+  },
+  "teamSync": {
+    "title": "Team sync",
+    "server": "Team Server",
+    "synced": "Everything is up to date with the server.",
+    "pending": "To pull: {{pull}} · to push: {{push}}.",
+    "conflicts_one": "{{count}} conflict: it changed here and on the server. Choose which version stays.",
+    "conflicts_other": "{{count}} conflicts: they changed here and on the server. Choose which version stays for each.",
+    "entity": "Item",
+    "state": "State",
+    "resolution": "Resolution",
+    "resolveFor": "Resolve {{name}}",
+    "undecided": "Undecided",
+    "theirs": "Server's",
+    "mine": "Mine",
+    "refresh": "Refresh",
+    "pull": "Pull changes",
+    "push": "Push changes",
+    "done": "Pulled: {{pulled}} · pushed: {{pushed}}.",
+    "states": {
+      "synced": "Up to date",
+      "pull": "Changed on the server",
+      "push": "Changed here",
+      "server_only": "New on the server",
+      "local_only": "Only here",
+      "conflict": "Conflict"
+    },
+    "kinds": {
+      "Project": "Project",
+      "DatasetVersion": "Data",
+      "Profile": "Profile",
+      "Pipeline": "Pipeline",
+      "ArchSpecRecord": "Architecture"
     }
   }
 }

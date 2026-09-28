@@ -29,9 +29,12 @@ function PolicyForm({ ws }: { ws: Workspace }) {
   );
   const [providers, setProviders] = useState((ws.allowed_llm_providers ?? []).join(", "));
   const restricted = ws.allowed_llm_providers !== null && ws.allowed_llm_providers !== undefined;
+  const [budget, setBudget] = useState(
+    ws.llm_monthly_budget_usd == null ? "" : String(ws.llm_monthly_budget_usd),
+  );
   return (
     <form
-      className="grid gap-3 border-b border-line pb-4 sm:grid-cols-4"
+      className="grid gap-3 border-b border-line pb-4 sm:grid-cols-5"
       onSubmit={(e) => {
         e.preventDefault();
         const list = providers
@@ -45,11 +48,13 @@ function PolicyForm({ ws }: { ws: Workspace }) {
             local_llm_max_privacy: local || null,
             clear_allowed_providers: list.length === 0,
             ...(list.length ? { allowed_llm_providers: list } : {}),
+            clear_llm_budget: budget.trim() === "",
+            ...(budget.trim() ? { llm_monthly_budget_usd: Number(budget) } : {}),
           },
         });
       }}
     >
-      <p className="font-semibold sm:col-span-4">
+      <p className="font-semibold sm:col-span-5">
         {ws.name}{" "}
         {restricted ? (
           <Badge tone="warn">{t("policies.restricted")}</Badge>
@@ -79,12 +84,21 @@ function PolicyForm({ ws }: { ws: Workspace }) {
       <Field label={t("policies.providers")} hint={t("policies.providersHint")}>
         <Input value={providers} onChange={(e) => setProviders(e.target.value)} />
       </Field>
+      <Field label={t("policies.budget")} hint={t("policies.budgetHint")}>
+        <Input
+          type="number"
+          min={0}
+          step="0.01"
+          value={budget}
+          onChange={(e) => setBudget(e.target.value)}
+        />
+      </Field>
       <div className="flex items-end">
         <Button type="submit" loading={update.isPending}>
           {t("policies.save")}
         </Button>
       </div>
-      <div className="sm:col-span-4">
+      <div className="sm:col-span-5">
         <ErrorNote error={update.error} />
       </div>
     </form>

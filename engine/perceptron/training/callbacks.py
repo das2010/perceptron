@@ -15,6 +15,13 @@ import torch
 from perceptron.training.config import RunEvent
 
 
+def is_rank_zero() -> bool:
+    """Proceso principal (en DDP, Lightning lanza los demás con LOCAL_RANK > 0)."""
+    import os
+
+    return os.environ.get("LOCAL_RANK", "0") == "0" and os.environ.get("NODE_RANK", "0") == "0"
+
+
 class EventEmitter:
     """Escribe eventos como JSON en una línea (stdout del worker)."""
 
@@ -22,8 +29,11 @@ class EventEmitter:
         self.run_id = run_id
         self.stream = stream or sys.stdout
         self._lock = threading.Lock()
+        self.enabled = is_rank_zero()
 
     def emit(self, event: str, **kw: Any) -> None:
+        if not self.enabled:
+            return  # rank > 0 en DDP: solo el proceso principal informa (RF-TRN-08)
         ev = RunEvent(event=event, run_id=self.run_id, ts=time.time(), **kw)  # type: ignore[arg-type]
         with self._lock:
             self.stream.write(ev.model_dump_json() + "\n")

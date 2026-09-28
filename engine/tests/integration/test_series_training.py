@@ -59,3 +59,12 @@ def test_train_and_evaluate_series(
     else:
         assert {"precision", "recall", "f1", "threshold"} <= set(report.metrics)
         assert report.details["calibration"]["method"].startswith(("best_f1", "q"))
+
+    # RF-EVL-02: importancia por variable y por rezago sobre validación.
+    from perceptron.evaluation.explain import global_explanation
+
+    glob = global_explanation(cfg.run_dir, view.root)
+    assert glob.method == "integrated_gradients" and glob.samples > 0
+    variables = [f for f in glob.features if f.feature.startswith("variable: ")]
+    lags = [f for f in glob.features if f.feature.startswith("rezago t-")]
+    assert variables and lags and all(f.importance >= 0 for f in glob.features)

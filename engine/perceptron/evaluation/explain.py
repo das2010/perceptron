@@ -9,6 +9,9 @@
   probabilidad de la clase predicha sin él. Sirve igual con vocabulario propio o de HF.
 - Audio: Integrated Gradients sobre el espectrograma (la entrada real del modelo), como mapa
   de calor tiempo × frecuencia.
+- Series: Integrated Gradients sobre la ventana [rezagos × variables] respecto del pronóstico
+  medio del horizonte (forecasting) o del error de reconstrucción del último punto
+  (anomalías). Global: importancia por variable y por rezago sobre validación.
 
 Los modelos de código experto no se explican en el proceso del Engine (ADR-0025).
 """
@@ -141,13 +144,29 @@ def _tabular_attribute(
     return attr, names, labels
 
 
+GLOBAL_TEXTS = 100
+GLOBAL_AUDIO = 40
+TOP_TOKENS = 30
+
+
 def global_explanation(run_dir: Path, dataset_dir: Path) -> GlobalExplanation:
     trained = load_analyzable(run_dir)
-    if trained.spec.input.kind != "tabular":
-        raise ValidationError("la explicación global está disponible para modelos tabulares")
-    ds = make_dataset(DatasetView(dataset_dir), trained.pipeline, "val", train=False)
-    n = min(GLOBAL_SAMPLES, len(ds))  # type: ignore[arg-type]
-    x_num, x_cat = ds.x_num[:n], ds.x_cat[:n]  # type: ignore[attr-defined]
+    kind = trained.spec.input.kind
+    if kind == "tokens":
+        return _global_text(trained, dataset_dir)
+    if kind == "spectrogram":
+        return _global_audio(trained, dataset_dir)
+    if kind == "sequence":
+        return _global_series(trained, dataset_dir)
+    if kind != "tabular":
+        raise ValidationError(f"la explicación global todavía no cubre entradas {kind}")
+    # Solo las primeras filas de validación: alcanza para la importancia y no carga todo.
+    from perceptron.training.data import TabularDataset
+
+    val = DatasetView(dataset_dir).scan("val").head(GLOBAL_SAMPLES).collect()
+    ds = TabularDataset(trained.pipeline, val)
+    n = len(ds)
+    x_num, x_cat = ds.x_num[:n], ds.x_cat[:n]
     attr, names, _ = _tabular_attribute(trained, x_num, x_cat, GLOBAL_PERMUTATIONS)
     feats = [
         FeatureImportance(
@@ -304,4 +323,138 @@ def local_audio(run_dir: Path, path: Path) -> LocalExplanation:
         method="integrated_gradients",
         prediction=labels[0],
         heatmap_png=base64.b64encode(buf.getvalue()).decode("ascii"),
+    )
+
+
+def _global_text(trained: TrainedModel, dataset_dir: Path) -> GlobalExplanation:
+    """Tokens que más aportan a la clase predicha, promediando la oclusión sobre validación."""
+    from perceptron.data.view import Purpose
+
+    spec = trained.pipeline.spec.text
+    if spec is None:
+        raise ValidationError("el modelo no tiene pipeline de texto")
+    df = DatasetView(dataset_dir).read("val", purpose=Purpose.TRAINING).head(GLOBAL_TEXTS)
+    ids_all = torch.tensor(transform_text(trained.pipeline, df))
+    pad = int(trained.pipeline.pad_id or 0)
+    totals: dict[int, list[float]] = {}
+    with torch.no_grad():
+        for row in ids_all:
+            ids = row.unsqueeze(0)
+            positions = [i for i, v in enumerate(row.tolist()) if v != pad]
+            if not positions:
+                continue
+            out = trained.model(ids)
+            target, _ = _target_and_label(trained, out)
+            binary = trained.task.value != "regression" and out.shape[1] == 1
+            sign = -1.0 if binary and float(out[0, 0]) < 0 else 1.0
+            base = float(_score(trained, out, target, sign)[0])
+            occluded = ids.repeat(len(positions), 1)
+            for k, pos in enumerate(positions):
+                occluded[k, pos] = pad
+            scores = _score(trained, trained.model(occluded), target, sign).tolist()
+            for pos, sc in zip(positions, scores, strict=True):
+                totals.setdefault(int(row[pos]), []).append(base - float(sc))
+    ranked = sorted(totals.items(), key=lambda kv: -float(np.mean(np.abs(kv[1]))))[:TOP_TOKENS]
+    names = _token_texts(trained, [tok for tok, _ in ranked])
+    feats = [
+        FeatureImportance(
+            feature=name,
+            importance=float(np.mean(np.abs(vals))),
+            mean_attribution=float(np.mean(vals)),
+        )
+        for name, (_, vals) in zip(names, ranked, strict=True)
+    ]
+    return GlobalExplanation(
+        method="occlusion", samples=len(ids_all), target="clase predicha", features=feats
+    )
+
+
+def _global_audio(trained: TrainedModel, dataset_dir: Path) -> GlobalExplanation:
+    """Importancia por banda de frecuencia: |Integrated Gradients| promedio sobre validación."""
+    from captum.attr import IntegratedGradients
+
+    ds = make_dataset(DatasetView(dataset_dir), trained.pipeline, "val", train=False)
+    n = min(GLOBAL_AUDIO, len(ds))  # type: ignore[arg-type]
+    if n == 0:
+        raise ValidationError("no hay audios de validación")
+    x = torch.stack([ds[i][0] for i in range(n)]).float()
+    with torch.no_grad():
+        out = trained.model(x)
+    target, _ = _target_and_label(trained, out)
+    attr = IntegratedGradients(trained.model).attribute(
+        x, baselines=torch.zeros_like(x), target=target, n_steps=IG_STEPS
+    )
+    per_band = attr.detach().reshape(n, attr.shape[-2], attr.shape[-1])  # [n, bandas, tiempo]
+    importance = per_band.abs().mean(dim=(0, 2))
+    signed = per_band.mean(dim=(0, 2))
+    spec = trained.pipeline.spec.audio
+    unit = "MFCC" if spec is not None and spec.features == "mfcc" else "banda mel"
+    feats = [
+        FeatureImportance(
+            feature=f"{unit} {b}",
+            importance=float(importance[b]),
+            mean_attribution=float(signed[b]),
+        )
+        for b in range(importance.shape[0])
+    ]
+    feats.sort(key=lambda f: f.importance, reverse=True)
+    return GlobalExplanation(
+        method="integrated_gradients", samples=n, target="clase predicha", features=feats
+    )
+
+
+GLOBAL_WINDOWS = 64
+
+
+def _global_series(trained: TrainedModel, dataset_dir: Path) -> GlobalExplanation:
+    """Importancia por variable y por rezago: |Integrated Gradients| promedio sobre validación."""
+    from captum.attr import IntegratedGradients
+
+    from perceptron.data.pipeline.series_windows import channels
+    from perceptron.domain.enums import TaskType
+
+    sspec = trained.pipeline.spec.series
+    if sspec is None:
+        raise ValidationError("el modelo no tiene pipeline de series")
+    ds = make_dataset(DatasetView(dataset_dir), trained.pipeline, "val", train=False)
+    n = min(GLOBAL_WINDOWS, len(ds))  # type: ignore[arg-type]
+    if n == 0:
+        raise ValidationError("no hay ventanas de validación")
+    x = torch.stack([ds[i][0] for i in range(n)]).float()  # [n, L, C]
+    model = trained.model
+    anomaly = trained.task is TaskType.ANOMALY_DETECTION
+
+    def forward(inp: torch.Tensor) -> torch.Tensor:
+        out: torch.Tensor = model(inp)
+        if anomaly:  # error de reconstrucción del punto evaluado (el último)
+            return ((out[:, -1] - inp[:, -1]) ** 2).mean(dim=1)
+        return out.reshape(len(inp), -1).mean(dim=1)  # pronóstico medio del horizonte
+
+    attr = IntegratedGradients(forward).attribute(
+        x, baselines=torch.zeros_like(x), n_steps=IG_STEPS
+    )
+    a = attr.detach().reshape(n, x.shape[1], x.shape[2])
+    names = channels(sspec.config, sspec.calendar)
+    lookback = a.shape[1]
+    feats = [
+        FeatureImportance(
+            feature=f"variable: {names[c] if c < len(names) else c}",
+            importance=float(a[:, :, c].abs().mean()),
+            mean_attribution=float(a[:, :, c].mean()),
+        )
+        for c in range(a.shape[2])
+    ]
+    feats.sort(key=lambda f: f.importance, reverse=True)
+    lags = [
+        FeatureImportance(
+            feature=f"rezago t-{lookback - i}",
+            importance=float(a[:, i, :].abs().mean()),
+            mean_attribution=float(a[:, i, :].mean()),
+        )
+        for i in range(lookback)
+    ]
+    lags.sort(key=lambda f: f.importance, reverse=True)
+    target = "error de reconstrucción" if anomaly else "pronóstico medio"
+    return GlobalExplanation(
+        method="integrated_gradients", samples=n, target=target, features=feats + lags
     )

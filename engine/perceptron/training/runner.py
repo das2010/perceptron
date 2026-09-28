@@ -50,6 +50,10 @@ class RunHandle:
         else:
             args = [sys.executable, "-m", "perceptron.training.worker", str(path)]
             env = {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONIOENCODING": "utf-8"}
+        if config.gpu_index is not None:
+            # Cada trial ve una sola GPU (la suya): el worker usa `cuda:0` dentro del proceso.
+            env["CUDA_VISIBLE_DEVICES"] = str(config.gpu_index)
+            env["HIP_VISIBLE_DEVICES"] = str(config.gpu_index)
         self._log = (config.run_dir / WORKER_LOG).open("a", encoding="utf-8")
         self.started_at = time.time()
         self.process = subprocess.Popen(  # noqa: S603 - intérprete actual y módulo propio

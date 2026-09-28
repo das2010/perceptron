@@ -216,7 +216,8 @@
     "samples": "Muestras",
     "created": "Creada",
     "showProfile": "Ver perfil",
-    "goTrain": "Seguir: entrenar"
+    "goTrain": "Seguir: entrenar",
+    "dvcHint": "Descargar esta versión con su archivo .dvc (DVC 3)"
   },
   "sourceKind": {
     "table": "Tabla",
@@ -731,7 +732,26 @@
     "boxClass": "Clase de la caja",
     "boxes_one": "{{count}} caja",
     "boxes_other": "{{count}} cajas",
-    "undo": "Deshacer"
+    "undo": "Deshacer",
+    "shapeClass": "Clase de la forma",
+    "shapes": {
+      "box_one": "{{count}} caja",
+      "box_other": "{{count}} cajas",
+      "mask_one": "{{count}} polígono",
+      "mask_other": "{{count}} polígonos",
+      "temporal_event_one": "{{count}} segmento",
+      "temporal_event_other": "{{count}} segmentos"
+    },
+    "polygonHint": "Clic para agregar vértices; clic en el primero para cerrar.",
+    "closePolygon": "Cerrar polígono",
+    "discard": "Descartar",
+    "markStart": "Marcar inicio",
+    "markEnd": "Marcar fin",
+    "segmentHint": "Reproducí y marcá inicio y fin del evento.",
+    "segmentFrom": "Desde {{s}} s…",
+    "zeroShot": "Zero-shot local",
+    "zeroShotHint": "Sugiere etiquetas con un modelo preentrenado a partir de los nombres de clase, sin entrenar (primeras 200 pendientes).",
+    "eventsCsv": "CSV de eventos"
   },
   "sources": {
     "fromDb": "Desde una base de datos",
@@ -879,7 +899,9 @@
     "save": "Guardar",
     "sso": "SSO",
     "noSso": "No hay proveedores SSO configurados.",
-    "ssoHint": "Se configuran en el servidor (PERCEPTRON_SERVER__OIDC); ver docs/ops/sso.md."
+    "ssoHint": "Se configuran en el servidor (PERCEPTRON_SERVER__OIDC); ver docs/ops/sso.md.",
+    "budget": "Cuota LLM mensual (USD)",
+    "budgetHint": "Vacío = sin cuota. Al llegar, las funciones con IA siguen con reglas."
   },
   "monitoring": {
     "window": "Ventana {{from}} → {{to}} ({{n}} predicciones)",
@@ -913,7 +935,9 @@
     "noAlerts": "No hay alertas.",
     "acknowledge": "Reconocer",
     "resolve": "Resolver",
-    "noDeployments": "No hay modelos en uso. Desplegá el champion desde Modelos."
+    "noDeployments": "No hay modelos en uso. Desplegá el champion desde Modelos.",
+    "embedding": "Embeddings internos del modelo: AUC de dominio {{auc}} (0,5 = sin cambio) · p del MMD {{p}} · distancia de centroides {{d}}",
+    "embeddingFew": "Embeddings internos: todavía hay pocas predicciones para compararlos."
   },
   "driftSeverity": {
     "none": "Sin drift",
@@ -949,7 +973,8 @@
       "rejected": "Rechazado",
       "skipped": "Sin datos nuevos",
       "failed": "Falló"
-    }
+    },
+    "sources": "Datos nuevos de las fuentes streaming"
   },
   "license": {
     "title": "Licencia",
@@ -1111,6 +1136,149 @@
       "running": "Subiendo…",
       "succeeded": "Listo: el proyecto ya es de equipo.",
       "failed": "No se pudo completar."
+    }
+  },
+  "pipelineAdvice": {
+    "title": "Sugerencias de mejora",
+    "ask": "Pedir sugerencias",
+    "rules": "Sin LLM ({{reason}}): sugerencias según el perfil de los datos.",
+    "none": "El pipeline ya está bien para estos datos.",
+    "before": "Antes",
+    "after": "Después",
+    "apply_one": "Aplicar {{count}} sugerencia aceptada",
+    "apply_other": "Aplicar {{count}} sugerencias aceptadas",
+    "op": {
+      "add": "Agregar el paso {{step}}",
+      "remove": "Quitar el paso {{step}}",
+      "update": "Cambiar el paso {{step}}"
+    }
+  },
+  "system": {
+    "title": "Sistema",
+    "storage": "Almacenamiento",
+    "usage": "{{used}} en uso · {{free}} libres en",
+    "project": "Proyecto",
+    "size": "Tamaño",
+    "quotas": "Cuotas",
+    "quotasHint": "Se configuran en el servidor (PERCEPTRON_MAX_RUNNING_STUDIES_PER_*). La cuota LLM está en Políticas.",
+    "quota": {
+      "max_running_studies_per_user": "Estudios en curso por usuario",
+      "max_running_studies_per_workspace": "Estudios en curso por workspace"
+    },
+    "workers": "Workers",
+    "mode": {
+      "local": "sin cola (en el servidor)",
+      "queue": "cola de workers"
+    },
+    "noWorkers": "No hay workers conectados.",
+    "worker": "Worker",
+    "queues": "Colas",
+    "state": "Estado",
+    "heartbeat": "Último latido",
+    "busy": "ocupado",
+    "idle": "libre",
+    "secondsAgo": "hace {{s}} s"
+  },
+  "retention": {
+    "title": "Retención de versiones",
+    "keep": "Conservar las últimas",
+    "hint": "Las versiones en uso (runs, etiquetado, agente) y sus padres se conservan siempre.",
+    "preview": "Ver qué se borraría",
+    "wouldDelete_one": "Se borraría {{count}} versión ({{mb}} MB).",
+    "wouldDelete_other": "Se borrarían {{count}} versiones ({{mb}} MB).",
+    "deleted_one": "Se borró {{count}} versión ({{mb}} MB).",
+    "deleted_other": "Se borraron {{count}} versiones ({{mb}} MB).",
+    "inUse_one": "{{count}} más se conserva por estar en uso.",
+    "inUse_other": "{{count}} más se conservan por estar en uso.",
+    "apply_one": "Borrar {{count}} versión",
+    "apply_other": "Borrar {{count}} versiones"
+  },
+  "streams": {
+    "title": "Fuentes streaming y API",
+    "add": "Agregar fuente",
+    "none": "Sin fuentes streaming: agregá una API, un WebSocket, un tópico de Kafka o de MQTT.",
+    "kind": "Tipo",
+    "kinds": {
+      "rest": "API REST",
+      "websocket": "WebSocket",
+      "kafka": "Kafka",
+      "mqtt": "MQTT",
+      "file": "Archivo"
+    },
+    "name": "Nombre",
+    "field": {
+      "url": "URL",
+      "method": "Método",
+      "records_path": "Ruta de los registros",
+      "pagination": "Paginación",
+      "auth": "Autenticación",
+      "max_messages": "Mensajes por lectura",
+      "bootstrap_servers": "Brokers",
+      "topic": "Tópico",
+      "group_id": "Grupo de consumo",
+      "username": "Usuario",
+      "host": "Host",
+      "port": "Puerto",
+      "qos": "QoS",
+      "client_id": "Id de cliente",
+      "path": "Ruta del archivo"
+    },
+    "hint": {
+      "records_path": "Dónde está la lista en el JSON, p. ej. data.items",
+      "bootstrap_servers": "host:puerto, separados por coma",
+      "topic": "En MQTT admite comodines + y #",
+      "path": "Dentro de una fuente habilitada del servidor"
+    },
+    "auth": {
+      "none": "Ninguna",
+      "bearer": "Token bearer",
+      "header": "Encabezado",
+      "sasl_plain": "SASL PLAIN",
+      "sasl_scram_256": "SCRAM-SHA-256",
+      "sasl_scram_512": "SCRAM-SHA-512"
+    },
+    "secret": "Token o contraseña",
+    "tls": "Conexión cifrada (TLS)",
+    "poll": "Sondeo automático (s)",
+    "pollHint": "Vacío: solo a mano. Mínimo 10 s.",
+    "create": "Crear fuente",
+    "rows": "Buffer",
+    "buffer": "{{rows}} filas en {{batches}} lotes",
+    "lastPoll": "Última lectura",
+    "pull": "Leer ahora"
+  },
+  "teamSync": {
+    "title": "Sincronización con el equipo",
+    "server": "Team Server",
+    "synced": "Todo al día con el servidor.",
+    "pending": "Para bajar: {{pull}} · para subir: {{push}}.",
+    "conflicts_one": "{{count}} conflicto: cambió acá y en el servidor. Elegí qué versión queda.",
+    "conflicts_other": "{{count}} conflictos: cambiaron acá y en el servidor. Elegí qué versión queda en cada uno.",
+    "entity": "Elemento",
+    "state": "Estado",
+    "resolution": "Resolución",
+    "resolveFor": "Resolver {{name}}",
+    "undecided": "Sin decidir",
+    "theirs": "La del servidor",
+    "mine": "La mía",
+    "refresh": "Actualizar",
+    "pull": "Bajar cambios",
+    "push": "Subir cambios",
+    "done": "Bajados: {{pulled}} · subidos: {{pushed}}.",
+    "states": {
+      "synced": "Al día",
+      "pull": "Cambió en el servidor",
+      "push": "Cambió acá",
+      "server_only": "Nuevo en el servidor",
+      "local_only": "Solo acá",
+      "conflict": "Conflicto"
+    },
+    "kinds": {
+      "Project": "Proyecto",
+      "DatasetVersion": "Datos",
+      "Profile": "Perfil",
+      "Pipeline": "Pipeline",
+      "ArchSpecRecord": "Arquitectura"
     }
   }
 }

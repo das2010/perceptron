@@ -5,6 +5,10 @@ con ONNX Runtime. El preprocesamiento es el del pipeline ajustado del Engine (el
 código que en el entrenamiento), así que no hay desvío entre entrenar y servir. En tabular
 y texto no necesita torch; en imagen usa las transformaciones de evaluación (torchvision,
 CPU) y en audio las mismas features (log-mel/MFCC) normalizadas con las estadísticas de train.
+
+Embeddings internos (RF-MON-02): la entrada de la última capa lineal (la cabeza) se expone como
+salida extra del grafo ONNX al cargarlo, sin volver a exportar. Sirven para medir drift en
+imagen, texto y audio.
 """
 
 from __future__ import annotations
@@ -27,6 +31,28 @@ from perceptron.data.pipeline.pipeline import (
 )
 
 MODEL_FILE = "model.onnx"
+_HEAD_OPS = ("Gemm", "MatMul")
+
+
+def penultimate_tensor(graph: Any) -> str | None:
+    """Nombre del tensor que entra a la cabeza lineal final (o None si no hay una)."""
+    producer = {out: node for node in graph.node for out in node.output}
+    # Pesos: inicializadores y constantes (según el exportador, la matriz llega de una u otra).
+    weights = {init.name for init in graph.initializer} | {
+        out for node in graph.node if node.op_type == "Constant" for out in node.output
+    }
+    current = graph.output[0].name
+    for _ in range(64):  # sube desde la salida por activaciones, bias y reshapes
+        node = producer.get(current)
+        if node is None:
+            return None
+        acts = [i for i in node.input if i and i not in weights and i in producer]
+        if node.op_type in _HEAD_OPS:
+            return acts[0] if acts else None
+        if not acts:
+            return None
+        current = acts[0]
+    return None
 
 
 class InputError(ValueError):
@@ -72,6 +98,7 @@ class InferenceModel:
             str(model_dir / MODEL_FILE), providers=ort.get_available_providers()
         )
         self.input_names = [i.name for i in self.session.get_inputs()]
+        self._embedding: tuple[Any, list[str]] | bool | None = None
 
     @property
     def kind(self) -> str:
@@ -113,14 +140,51 @@ class InferenceModel:
     def _run(self, feed: dict[str, np.ndarray]) -> np.ndarray:
         return np.asarray(self.session.run(None, feed)[0], dtype=np.float32)
 
+    def _embedding_session(self) -> tuple[Any, list[str]] | None:
+        if self._embedding is None:
+            self._embedding = False
+            try:
+                import onnx
+                import onnxruntime as ort
+
+                proto = onnx.load(str(self.dir / MODEL_FILE))
+                name = penultimate_tensor(proto.graph)
+                if name is not None:
+                    out = proto.graph.output[0].name
+                    proto.graph.output.append(
+                        onnx.helper.make_tensor_value_info(name, onnx.TensorProto.FLOAT, None)
+                    )
+                    session = ort.InferenceSession(
+                        proto.SerializeToString(), providers=ort.get_available_providers()
+                    )
+                    self._embedding = (session, [out, name])
+            except Exception:  # sin embeddings se monitorea solo la salida
+                self._embedding = False
+        return self._embedding if isinstance(self._embedding, tuple) else None
+
+    def infer(
+        self, feed: dict[str, np.ndarray], *, embeddings: bool = False
+    ) -> tuple[list[Prediction], np.ndarray | None]:
+        """Predicciones y, si se piden y el grafo lo permite, embeddings [N, D] de la cabeza."""
+        emb = self._embedding_session() if embeddings else None
+        if emb is None:
+            return self._postprocess(self._run(feed)), None
+        session, names = emb
+        out, vec = session.run(names, feed)
+        vec = np.asarray(vec, dtype=np.float32)
+        return self._postprocess(np.asarray(out, dtype=np.float32)), vec.reshape(len(vec), -1)
+
     # ---------------------------------------------------------------- entradas
 
     def predict_rows(self, rows: list[dict[str, Any]]) -> list[Prediction]:
         """Tabular: filas como dicts con las columnas originales del dataset."""
-        if self.kind != "tabular":
-            raise InputError(f"el modelo espera {self.kind}, no filas de tabla")
         if not rows:
             return []
+        return self.infer(self.feed_rows(rows))[0]
+
+    def feed_rows(self, rows: list[dict[str, Any]]) -> dict[str, np.ndarray]:
+        if self.kind != "tabular":
+            raise InputError(f"el modelo espera {self.kind}, no filas de tabla")
         missing = sorted({c for c in self.required_columns if any(c not in r for r in rows)})
         if missing:
             raise InputError(f"faltan columnas: {', '.join(missing)}")
@@ -129,12 +193,13 @@ class InferenceModel:
         df = pl.DataFrame(clean, infer_schema_length=None)
         arrays = transform_tabular(self.pipeline, df)
         feed = {"x_num": arrays.x_num, "x_cat": arrays.x_cat}
-        return self._postprocess(
-            self._run({k: v for k, v in feed.items() if k in self.input_names})
-        )
+        return {k: v for k, v in feed.items() if k in self.input_names}
 
     def predict_images(self, images: list[Any]) -> list[Prediction]:
         """Imagen: objetos `PIL.Image` (se aplican las transformaciones de evaluación)."""
+        return self.infer(self.feed_images(images))[0]
+
+    def feed_images(self, images: list[Any]) -> dict[str, np.ndarray]:
         if self.kind != "image":
             raise InputError(f"el modelo espera {self.kind}, no imágenes")
         import torch
@@ -143,22 +208,33 @@ class InferenceModel:
         spec = self.pipeline.spec.image
         mode = "L" if spec is not None and spec.channels == 1 else "RGB"
         batch = torch.stack([tf(im.convert(mode)) for im in images]).numpy()
-        return self._postprocess(self._run({self.input_names[0]: batch.astype(np.float32)}))
+        return {self.input_names[0]: batch.astype(np.float32)}
+
+    @property
+    def text_column(self) -> str | None:
+        spec = self.pipeline.spec.text
+        return spec.column if spec is not None else None
 
     def predict_texts(self, texts: list[str]) -> list[Prediction]:
         """Texto: se normaliza y tokeniza igual que en el entrenamiento."""
+        if not texts:
+            return []
+        return self.infer(self.feed_texts(texts))[0]
+
+    def feed_texts(self, texts: list[str]) -> dict[str, np.ndarray]:
         if self.kind != "tokens":
             raise InputError(f"el modelo espera {self.kind}, no texto")
         spec = self.pipeline.spec.text
         if spec is None:
             raise InputError("el modelo no tiene pipeline de texto")
-        if not texts:
-            return []
         ids = transform_text(self.pipeline, pl.DataFrame({spec.column: texts}))
-        return self._postprocess(self._run({self.input_names[0]: ids}))
+        return {self.input_names[0]: ids}
 
     def predict_audio(self, files: list[Path]) -> list[Prediction]:
         """Audio (WAV, FLAC, OGG, MP3): se remuestrea y se calculan las features de train."""
+        return self.infer(self.feed_audio(files))[0]
+
+    def feed_audio(self, files: list[Path]) -> dict[str, np.ndarray]:
         if self.kind != "spectrogram":
             raise InputError(f"el modelo espera {self.kind}, no audio")
         from perceptron.data.audio import load
@@ -176,4 +252,4 @@ class InferenceModel:
                 raise InputError(f"no se pudo leer el audio: {exc}") from exc
             feats.append(((audio_features(spec, wav) - mean) / std).numpy())
         batch = np.stack(feats).astype(np.float32)
-        return self._postprocess(self._run({self.input_names[0]: batch}))
+        return {self.input_names[0]: batch}

@@ -25,7 +25,15 @@ if TYPE_CHECKING:
     from perceptron.domain.models import LabelSet
     from perceptron.services.labeling import LabelItem, LabelUpdate
 
-Format = Literal["csv", "jsonl", "coco", "yolo", "voc"]
+Format = Literal["csv", "jsonl", "coco", "yolo", "voc", "events"]
+# CSV de eventos de audio (RF-ING-02): una fila por evento, como `eventos.csv` de UC-09.
+EVENT_COLUMNS = ("file_name", "inicio_s", "fin_s", "etiqueta")
+_EVENT_ALIASES = {
+    "file_name": ("file_name", "file", "archivo", "path", "filename"),
+    "inicio_s": ("inicio_s", "start_s", "start", "onset", "inicio"),
+    "fin_s": ("fin_s", "end_s", "end", "offset", "fin"),
+    "etiqueta": ("etiqueta", "label", "event_label", "clase"),
+}
 
 
 def _sid(i: int) -> str:
@@ -48,20 +56,41 @@ def export_labels(
 ) -> tuple[bytes, str]:
     key = _key_column(df)
     keys = {_sid(i): (str(df[key][i]) if key else _sid(i)) for i in df["__i__"].to_list()}
-    if fmt in ("csv", "jsonl"):
+    if fmt == "jsonl":
+        # JSONL lleva todo: etiqueta y formas (cajas, polígonos, segmentos; RF-LBL-01).
+        lines = []
+        for sid, it in items.items():
+            row: dict[str, Any] = {"sample_id": sid, **({key: keys[sid]} if key else {})}
+            if it.label is not None:
+                row["label"] = _label_str(it.label)
+            for field in ("boxes", "polygons", "segments"):
+                shapes = getattr(it, field)
+                if shapes:
+                    row[field] = [sh.model_dump() for sh in shapes]
+            if len(row) > (2 if key else 1):
+                lines.append(json.dumps(row, ensure_ascii=False) + "\n")
+        return "".join(lines).encode("utf-8"), "application/x-ndjson"
+    if fmt == "csv":
         rows = [
             {"sample_id": sid, **({key: keys[sid]} if key else {}), "label": _label_str(it.label)}
             for sid, it in items.items()
             if it.label is not None
         ]
-        if fmt == "jsonl":
-            body = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
-            return body.encode("utf-8"), "application/x-ndjson"
         buf = io.StringIO()
         writer = csv.DictWriter(buf, fieldnames=["sample_id", *([key] if key else []), "label"])
         writer.writeheader()
         writer.writerows(rows)
         return buf.getvalue().encode("utf-8"), "text/csv; charset=utf-8"
+    if fmt == "events":
+        if ls.kind is not LabelKind.TEMPORAL_EVENT or key != "path":
+            raise ValidationError("el CSV de eventos exporta segmentos de audio")
+        buf_ev = io.StringIO()
+        ev_writer = csv.writer(buf_ev)
+        ev_writer.writerow(EVENT_COLUMNS)
+        for sid, it in items.items():
+            for seg in it.segments:
+                ev_writer.writerow([keys[sid], f"{seg.start_s:.3f}", f"{seg.end_s:.3f}", seg.label])
+        return buf_ev.getvalue().encode("utf-8"), "text/csv; charset=utf-8"
     if ls.kind is not LabelKind.BOX or key != "path":
         raise ValidationError(f"{fmt.upper()} exporta cajas de imágenes")
     classes = ls.classes
@@ -144,6 +173,8 @@ def import_labels(ls: LabelSet, df: pl.DataFrame, data: bytes, fmt: Format) -> l
         return [x for x in text.split(";") if x] if multilabel else text
 
     updates: list[LabelUpdate] = []
+    if fmt == "events":
+        return _import_events(ls, keys, data)
     if fmt in ("csv", "jsonl"):
         text = data.decode("utf-8-sig")
         rows = (
@@ -153,8 +184,14 @@ def import_labels(ls: LabelSet, df: pl.DataFrame, data: bytes, fmt: Format) -> l
         )
         for r in rows:
             sid = resolve(r)
-            if sid is not None and r.get("label") not in (None, ""):
-                updates.append(LabelUpdate(sample_id=sid, label=label_of(r["label"])))
+            if sid is None:
+                continue
+            label = label_of(r["label"]) if r.get("label") not in (None, "") else None
+            shapes = {f: r[f] for f in ("boxes", "polygons", "segments") if r.get(f)}
+            if label is not None or shapes:
+                updates.append(
+                    LabelUpdate.model_validate({"sample_id": sid, "label": label, **shapes})
+                )
         return updates
     if fmt == "coco":
         coco = json.loads(data.decode("utf-8"))
@@ -237,3 +274,42 @@ def import_labels(ls: LabelSet, df: pl.DataFrame, data: bytes, fmt: Format) -> l
             if got:
                 updates.append(LabelUpdate(sample_id=sid, boxes=got))
     return updates
+
+
+def _import_events(ls: LabelSet, keys: dict[str, str], data: bytes) -> list[LabelUpdate]:
+    """CSV de eventos → segmentos por muestra (el archivo se busca por ruta, nombre o stem)."""
+    from perceptron.services.labeling import LabelUpdate, Segment
+
+    if ls.kind is not LabelKind.TEMPORAL_EVENT:
+        raise ValidationError("el CSV de eventos se importa en conjuntos de segmentos")
+    reader = csv.DictReader(io.StringIO(data.decode("utf-8-sig")))
+    fields = {c.strip().lower(): c for c in reader.fieldnames or []}
+    cols: dict[str, str] = {}
+    for canon, aliases in _EVENT_ALIASES.items():
+        found = next((fields[a] for a in aliases if a in fields), None)
+        if found is None:
+            raise ValidationError(f"falta la columna {canon} en el CSV de eventos")
+        cols[canon] = found
+    by_sample: dict[str, list[Segment]] = {}
+    unknown: set[str] = set()
+    for row in reader:
+        name = str(row[cols["file_name"]]).strip().replace("\\", "/")
+        sid = keys.get(name) or keys.get(Path(name).name) or keys.get(Path(name).stem)
+        if sid is None:
+            unknown.add(name)
+            continue
+        try:
+            seg = Segment(
+                start_s=float(row[cols["inicio_s"]]),
+                end_s=float(row[cols["fin_s"]]),
+                label=str(row[cols["etiqueta"]]).strip(),
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValidationError(f"evento inválido para {name}: {exc}") from None
+        by_sample.setdefault(sid, []).append(seg)
+    if not by_sample:
+        raise ValidationError(
+            "ningún evento coincide con los archivos del dataset",
+            details={"ejemplos": sorted(unknown)[:5]},
+        )
+    return [LabelUpdate(sample_id=sid, segments=segs) for sid, segs in by_sample.items()]

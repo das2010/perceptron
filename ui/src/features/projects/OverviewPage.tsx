@@ -28,6 +28,7 @@ import { downloadFromEngine } from "@/lib/api/download";
 
 import { ActivityCard } from "./ActivityCard";
 import { PromoteButton } from "./PromoteDialog";
+import { TeamSync } from "./TeamSync";
 import { useProjectId } from "./ProjectLayout";
 
 function Stat({ label, value }: { label: string; value: number | string }) {
@@ -189,6 +190,7 @@ export function OverviewPage() {
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </Link>
       <ProjectActions project={project} />
+      {project.scope === "team" && <TeamSync project={project} />}
       <ActivityCard projectId={projectId} />
     </div>
   );

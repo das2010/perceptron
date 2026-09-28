@@ -338,4 +338,12 @@ def build_source(
         return WebSocketSource(WebSocketConfig.model_validate(config), net)
     if kind == "file":
         return FileTailSource(FileConfig.model_validate(config))
+    if kind == "kafka":
+        from perceptron.data.sources.brokers import KafkaConfig, KafkaSource
+
+        return KafkaSource(KafkaConfig.model_validate(config), net=net)
+    if kind == "mqtt":
+        from perceptron.data.sources.brokers import MqttConfig, MqttSource
+
+        return MqttSource(MqttConfig.model_validate(config), net=net)
     raise ValidationError(f"tipo de fuente streaming desconocido: {kind}")

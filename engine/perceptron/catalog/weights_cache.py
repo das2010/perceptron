@@ -195,10 +195,11 @@ def verify(model_id: str | None = None) -> VerifyReport:
 def prefetch(model: str) -> str:
     """Descarga ahora un modelo curado del catálogo para usarlo después sin conexión."""
     from perceptron.catalog.registry import HF_TEXT_MODELS, TIMM_WEIGHTS
+    from perceptron.data.labeling.zero_shot import ZERO_SHOT_MODELS
 
     if offline():
         raise ValidationError("sin conexión (PERCEPTRON_OFFLINE): no se puede descargar")
-    if model in HF_TEXT_MODELS:
+    if model in HF_TEXT_MODELS or model in ZERO_SHOT_MODELS:
         from huggingface_hub import snapshot_download
 
         snapshot_download(model)

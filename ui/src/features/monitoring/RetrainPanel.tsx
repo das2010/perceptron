@@ -22,7 +22,7 @@ import { getApiClient } from "@/lib/api/client";
 import { type Schemas, unwrap } from "@/lib/api/hooks";
 import { formatDate } from "@/lib/format";
 
-import type { Deployment } from "./hooks";
+import { type Deployment, useStreamSources } from "./hooks";
 
 type Policy = Schemas["RetrainPolicy"];
 type RetrainRun = Schemas["RetrainRun"] & { id: string };
@@ -101,11 +101,13 @@ function useRetrain(projectId: string) {
 }
 
 function PolicyForm({
+  projectId,
   deployments,
   policy,
   onSave,
   saving,
 }: {
+  projectId: string;
   deployments: Deployment[];
   policy: Policy | null;
   onSave: (body: Schemas["RetrainPolicyBody"]) => void;
@@ -120,6 +122,8 @@ function PolicyForm({
   const [cron, setCron] = useState(String(trig("cron")?.["expr"] ?? ""));
   const [approval, setApproval] = useState(policy?.require_approval ?? true);
   const [enabled, setEnabled] = useState(policy?.enabled ?? true);
+  const [sourceIds, setSourceIds] = useState<string[]>(policy?.source_ids ?? []);
+  const streams = useStreamSources(projectId);
   return (
     <form
       className="grid gap-3 sm:grid-cols-3"
@@ -131,7 +135,7 @@ function PolicyForm({
         if (cron) triggers.push({ type: "cron", expr: cron });
         onSave({
           deployment_id: deployment || null,
-          source_ids: policy?.source_ids ?? [],
+          source_ids: sourceIds,
           triggers,
           require_approval: approval,
           enabled,
@@ -165,6 +169,29 @@ function PolicyForm({
           </Select>
         </div>
       </Field>
+      {(streams.data ?? []).length > 0 && (
+        <fieldset className="sm:col-span-3">
+          <legend className="text-sm font-semibold">{t("retrain.sources")}</legend>
+          <div className="mt-1 flex flex-wrap gap-3">
+            {(streams.data ?? []).map(({ source }) => (
+              <label key={source.id} className="flex items-center gap-1 text-sm">
+                <input
+                  type="checkbox"
+                  checked={sourceIds.includes(source.id ?? "")}
+                  onChange={() =>
+                    setSourceIds((ids) =>
+                      ids.includes(source.id ?? "")
+                        ? ids.filter((x) => x !== source.id)
+                        : [...ids, source.id ?? ""],
+                    )
+                  }
+                />
+                {source.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
       <Field label={t("retrain.volume")} hint={t("retrain.volumeHint")}>
         <Input inputMode="numeric" value={volume} onChange={(e) => setVolume(e.target.value)} />
       </Field>
@@ -217,6 +244,7 @@ export function RetrainPanel({
       <ErrorNote error={policy.error ?? save.error ?? runNow.error ?? decide.error} />
       {!policy.isPending && (
         <PolicyForm
+          projectId={projectId}
           key={policy.data?.id ?? "nueva"}
           deployments={deployments}
           policy={policy.data ?? null}
