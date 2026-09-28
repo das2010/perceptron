@@ -43,7 +43,8 @@ function PolicyForm({ ws }: { ws: Workspace }) {
           policy: {
             max_privacy_level: max,
             local_llm_max_privacy: local || null,
-            ...(list.length ? { allowed_llm_providers: list } : { clear_allowed_providers: true }),
+            clear_allowed_providers: list.length === 0,
+            ...(list.length ? { allowed_llm_providers: list } : {}),
           },
         });
       }}
