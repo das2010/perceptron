@@ -74,8 +74,8 @@ function Browser({
             <Button
               size="sm"
               variant="ghost"
-              loading={create.isPending && create.variables === e.path}
-              onClick={() => create.mutate(e.path, { onSuccess: onReady })}
+              loading={create.isPending && create.variables.path === e.path}
+              onClick={() => create.mutate({ path: e.path, kind: e.kind }, { onSuccess: onReady })}
             >
               {t("serverSources.use")}
             </Button>

@@ -1196,14 +1196,14 @@ export function useBrowseServerSource(index: number | null, path: string) {
 
 export function useCreatePathSource(projectId: string) {
   return useMutation({
-    mutationFn: async (path: string) =>
+    mutationFn: async ({ path, kind }: { path: string; kind: "dir" | "file" }) =>
       previewOf(
         unwrap(
           await (
             await getApiClient()
           ).POST("/api/v1/projects/{project_id}/sources", {
             params: { path: { project_id: projectId } },
-            body: { path },
+            body: { path, type: kind === "dir" ? "folder" : "file" },
           }),
         ) as DataSource,
       ),

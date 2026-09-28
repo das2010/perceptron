@@ -1,5 +1,5 @@
 /** Sesión del Team Server (RF-SRV-01): configuración de login, usuario actual y logout. */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 
 import { getApiClient } from "@/lib/api/client";
@@ -44,13 +44,18 @@ export function useMe(enabled: boolean) {
   });
 }
 
+/** Datos del usuario anterior fuera de la caché (menos la configuración de login). */
+function clearUserData(qc: QueryClient) {
+  qc.removeQueries({ predicate: (q) => q.queryKey[0] !== "auth" });
+}
+
 export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body: Schemas["Credentials"]) =>
       unwrap(await (await getApiClient()).POST("/api/v1/auth/login", { body })),
     onSuccess: (me) => {
-      qc.clear();
+      clearUserData(qc);
       qc.setQueryData(authKeys.me, me);
     },
   });
@@ -65,7 +70,7 @@ export function useLogout() {
         throw new ApiError("logout", "http_error", res.response.status);
     },
     onSettled: () => {
-      qc.clear();
+      clearUserData(qc);
       qc.setQueryData(authKeys.me, null);
     },
   });

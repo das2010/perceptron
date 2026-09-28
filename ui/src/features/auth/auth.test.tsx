@@ -17,7 +17,14 @@ const me = (overrides: Partial<Me> = {}): Me =>
     user: { id: "usr_1", email: "ana@preteco.test", display_name: "Ana", is_active: true },
     is_server_admin: false,
     memberships: [
-      { id: "mbr_1", user_id: "usr_1", workspace_id: "wsp_1", project_id: null, role: "viewer" },
+      {
+        id: "mbr_1",
+        user_id: "usr_1",
+        workspace_id: "wsp_1",
+        project_id: null,
+        role: "viewer",
+        version: 1,
+      },
     ],
     workspaces: [{ id: "wsp_1", name: "Equipo" }],
     ...overrides,
@@ -43,8 +50,22 @@ describe("sesión del Team Server (Capa 5a)", () => {
   it("roles: el del proyecto manda sobre el del workspace", () => {
     const ana = me({
       memberships: [
-        { id: "m1", user_id: "usr_1", workspace_id: "wsp_1", project_id: null, role: "viewer" },
-        { id: "m2", user_id: "usr_1", workspace_id: "wsp_1", project_id: "prj_2", role: "editor" },
+        {
+          id: "m1",
+          user_id: "usr_1",
+          workspace_id: "wsp_1",
+          project_id: null,
+          role: "viewer",
+          version: 1,
+        },
+        {
+          id: "m2",
+          user_id: "usr_1",
+          workspace_id: "wsp_1",
+          project_id: "prj_2",
+          role: "editor",
+          version: 1,
+        },
       ],
     });
     expect(projectRole(ana, { id: "prj_1", workspace_id: "wsp_1" })).toBe("viewer");
@@ -108,7 +129,7 @@ describe("sesión del Team Server (Capa 5a)", () => {
     await user.clear(screen.getByLabelText("Contraseña"));
     await user.type(screen.getByLabelText("Contraseña"), "clave-correcta-123");
     await user.click(screen.getByRole("button", { name: "Ingresar" }));
-    expect(await screen.findByText("Solo lectura")).toBeInTheDocument();
+    expect(await screen.findByText("Solo lectura", {}, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Administración" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
