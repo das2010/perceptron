@@ -55,7 +55,7 @@ def test_expert_code_trains_in_sandbox(client: TestClient, fixtures_dir: Path) -
         ),
         201,
     )
-    base_id = prop["archspec"]["id"]
+    base_id = prop["proposals"][0]["archspec"]["id"]
 
     starter = _ok(client.get(f"{API}/archspecs/{base_id}/code/starter"))["code"]
     assert _ok(client.post(f"{API}/arch/code/lint", json={"source": starter}))["valid"]
