@@ -38,6 +38,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
   // Sin Team Server (o Engine caído: lo informa la propia app) no hay sesión que pedir.
   if (!server) return <>{children}</>;
-  if (!me.data) return <LoginPage config={config.data} />;
+  if (!me.data) return <LoginPage config={config.data ?? null} />;
   return <SessionContext.Provider value={me.data}>{children}</SessionContext.Provider>;
 }

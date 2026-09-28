@@ -356,6 +356,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/oidc/{provider}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sso Callback */
+        get: operations["ssoCallback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oidc/{provider}/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sso Start */
+        get: operations["ssoLogin"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/password": {
         parameters: {
             query?: never;
@@ -1198,6 +1232,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/remote/studies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Remote Study
+         * @description Entrena en el servidor: sube datos y arquitectura, encola y sigue el progreso.
+         */
+        post: operations["createRemoteStudy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/runs": {
         parameters: {
             query?: never;
@@ -1305,6 +1359,44 @@ export interface paths {
          */
         post: operations["uploadSource"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/remote/servers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Servers */
+        get: operations["listRemoteServers"];
+        put?: never;
+        /**
+         * Connect
+         * @description Login en el servidor; la contraseña no se guarda (solo el token de refresco).
+         */
+        post: operations["connectRemoteServer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/remote/servers/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove */
+        delete: operations["removeRemoteServer"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1903,6 +1995,154 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sync/projects/{project_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Push Project
+         * @description Crea el proyecto de equipo (mismo id que en el desktop) o lo actualiza.
+         */
+        put: operations["syncProject"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/projects/{project_id}/entities/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Pull Entities
+         * @description Entidades del proyecto para bajar al desktop (p. ej. los runs de un estudio remoto).
+         */
+        get: operations["pullEntities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/projects/{project_id}/entities/{kind}/{entity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Push Entity */
+        put: operations["syncEntity"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/projects/{project_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download File */
+        get: operations["downloadProjectFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/projects/{project_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Files */
+        get: operations["listProjectFiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/projects/{project_id}/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Upload
+         * @description Empieza (o retoma) la subida de un archivo del proyecto.
+         */
+        post: operations["startUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/uploads/{upload_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Upload Chunk
+         * @description Agrega un chunk en `offset` (debe coincidir con lo recibido: permite retomar).
+         */
+        put: operations["uploadChunk"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sync/uploads/{upload_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Upload */
+        post: operations["completeUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/hardware": {
         parameters: {
             query?: never;
@@ -2423,11 +2663,8 @@ export interface components {
              * @constant
              */
             mode: "server";
-            /**
-             * Oidc Providers
-             * @description Capa 5c
-             */
-            oidc_providers?: string[];
+            /** Oidc Providers */
+            oidc_providers?: components["schemas"]["SsoProvider"][];
             /**
              * Password Login
              * @default true
@@ -3024,6 +3261,15 @@ export interface components {
              * @default 5
              */
             patience: number;
+        };
+        /** EntityPush */
+        EntityPush: {
+            /** Base Version */
+            base_version?: number | null;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
         };
         /** ErrorAnalysis */
         ErrorAnalysis: {
@@ -4531,6 +4777,18 @@ export interface components {
              */
             version: number;
         };
+        /** ProjectPush */
+        ProjectPush: {
+            /**
+             * Base Version
+             * @description Versión del servidor conocida
+             */
+            base_version?: number | null;
+            /** Project */
+            project: {
+                [key: string]: unknown;
+            };
+        };
         /**
          * ProjectScope
          * @enum {string}
@@ -4690,6 +4948,46 @@ export interface components {
             rmse: number;
             /** Smape */
             smape: number;
+        };
+        /** RemoteFile */
+        RemoteFile: {
+            /** Path */
+            path: string;
+            /** Size */
+            size: number;
+        };
+        /** RemoteServer */
+        RemoteServer: {
+            /** Display Name */
+            display_name?: string | null;
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Url */
+            url: string;
+            /** User Id */
+            user_id?: string | null;
+        };
+        /** RemoteStudyCreate */
+        RemoteStudyCreate: {
+            /** Archspec Id */
+            archspec_id: string;
+            budget?: components["schemas"]["Budget"];
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /** @description cuda/rocm/xpu → cola GPU */
+            device?: components["schemas"]["Device"] | null;
+            /** Pipeline Id */
+            pipeline_id: string;
+            /** Server */
+            server: string;
+            strategy?: components["schemas"]["HPOStrategy"] | null;
+            /**
+             * Workspace Id
+             * @description Workspace del servidor
+             */
+            workspace_id?: string | null;
         };
         /** Report */
         Report: {
@@ -4954,6 +5252,20 @@ export interface components {
              */
             jitter: number;
         };
+        /** ServerConnect */
+        ServerConnect: {
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /**
+             * Password
+             * @description Solo para el login
+             */
+            password: string;
+            /** Url */
+            url: string;
+        };
         /** ServerEntry */
         ServerEntry: {
             /**
@@ -5094,6 +5406,18 @@ export interface components {
          * @enum {string}
          */
         SplitStrategy: "random" | "stratified" | "group" | "temporal" | "kfold";
+        /** SsoProvider */
+        SsoProvider: {
+            /** Display Name */
+            display_name: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "entra" | "google" | "generic";
+        };
         /**
          * Stage
          * @enum {string}
@@ -5233,6 +5557,23 @@ export interface components {
             target?: string | null;
             /** Value */
             value?: unknown;
+        };
+        /** SyncResult */
+        SyncResult: {
+            /**
+             * Created
+             * @default false
+             */
+            created: boolean;
+            /** Id */
+            id: string;
+            /**
+             * Unchanged
+             * @default false
+             */
+            unchanged: boolean;
+            /** Version */
+            version: number;
         };
         /** TableSchema */
         TableSchema: {
@@ -5499,6 +5840,28 @@ export interface components {
              * @enum {string}
              */
             precision: "auto" | "32" | "16-mixed" | "bf16-mixed";
+        };
+        /** UploadStart */
+        UploadStart: {
+            /** Path */
+            path: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size */
+            size: number;
+        };
+        /** UploadState */
+        UploadState: {
+            /** Complete */
+            complete: boolean;
+            /** Offset */
+            offset: number;
+            /** Path */
+            path: string;
+            /** Size */
+            size: number;
+            /** Upload Id */
+            upload_id: string | null;
         };
         /** User */
         User: {
@@ -6438,6 +6801,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Me"];
+                };
+            };
+        };
+    };
+    ssoCallback: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                error?: string | null;
+                error_description?: string | null;
+            };
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            307: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ssoLogin: {
+        parameters: {
+            query?: {
+                next?: string | null;
+            };
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            307: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -8233,6 +8660,41 @@ export interface operations {
             };
         };
     };
+    createRemoteStudy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoteStudyCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listRuns: {
         parameters: {
             query?: {
@@ -8429,6 +8891,88 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DataSource"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listRemoteServers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemoteServer"][];
+                };
+            };
+        };
+    };
+    connectRemoteServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServerConnect"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemoteServer"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    removeRemoteServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -9477,6 +10021,280 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudyLaunch"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    syncProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectPush"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pullEntities: {
+        parameters: {
+            query?: {
+                ids?: string[] | null;
+                study_id?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+                kind: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    syncEntity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+                kind: string;
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntityPush"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    downloadProjectFile: {
+        parameters: {
+            query: {
+                path: string;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listProjectFiles: {
+        parameters: {
+            query: {
+                prefix: string;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemoteFile"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    startUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    uploadChunk: {
+        parameters: {
+            query: {
+                offset: number;
+            };
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    completeUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadState"];
                 };
             };
             /** @description Validation Error */
