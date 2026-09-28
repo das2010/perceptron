@@ -49,15 +49,28 @@ Objetivo: ver de punta a punta un proyecto desde la UI antes de los editores.
   rol "guía de definición"; "ver como código" (RF-ARC-07) en Monaco.
 - E2E: UC-04 guiado por el wizard.
 
+## 3b′ — Modo experto (RF-ARC-06)
+
+Salió de la 3b en un PR propio por ser un cambio de seguridad (ADR-0025):
+- código Python con la interfaz `build_model(config)`;
+- validación estática (AST) y dinámica en el sandbox;
+- entrenamiento y evaluación dentro del sandbox;
+- editor Monaco con lint en vivo y confirmación explícita.
+
+También incluye la comparación de runs.
+
 ## 3c — Desktop (Tauri 2)
 
-- `desktop/src-tauri`: sidecar `perceptron serve --new-token` (puerto aleatorio, token
-  efímero), `TauriPlatformBridge`, keychain (plugin), selector de carpetas, deep links,
-  updater firmado (configurado, sin claves en el repo).
-- `desktop/runtime`: Python embebido (python-build-standalone vía uv) y selección de la
-  variante de PyTorch según el hardware (RF-TRN-02, `POST /system/torch-variant`).
-- Instaladores MSI/NSIS y AppImage/.deb construidos en CI (Windows y Linux), con smoke test
-  de arranque del sidecar.
+Diseño en ADR-0026.
+- `desktop/src-tauri`:
+  - sidecar `serve --new-token` (puerto aleatorio, token efímero, handshake `ready`);
+  - keychain con el crate `keyring`;
+  - selector de carpetas (plugin de diálogos);
+  - modo `--provision-only` para el smoke test.
+
+  El updater firmado y la firma de código quedan pendientes de las claves y el certificado de la empresa.
+- Runtime embebido: uv instala Python 3.12, las dependencias fijadas sin torch y la wheel del Engine. Después detecta el hardware con el Engine e instala la variante de PyTorch desde su índice (RF-TRN-02). La variante se cambia desde Configuración sin reinstalar la app.
+- CI `desktop.yml`: instaladores NSIS/MSI y .deb/AppImage en Windows y Ubuntu 24.04, con instalación limpia y aprovisionamiento desde cero.
 
 ## Riesgos
 
