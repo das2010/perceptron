@@ -277,7 +277,7 @@ def _torchscript(
     traced = torch.jit.trace(model, inputs, check_trace=False)  # type: ignore[no-untyped-call]
     path = out_dir / "model.torchscript.pt"
     with path.open("wb") as f:
-        torch.jit.save(traced, f)  # type: ignore[no-untyped-call]
+        torch.jit.save(traced, f)
     with path.open("rb") as f:
         got = _as_numpy(torch.jit.load(f)(*inputs))  # type: ignore[no-untyped-call]
     return _artifact(path, "torchscript", _verify(ref, got, TOL_FP32), legacy=True)
