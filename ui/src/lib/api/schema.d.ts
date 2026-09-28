@@ -6080,6 +6080,11 @@ export interface components {
              * @default 42
              */
             seed: number;
+            /**
+             * Split Column
+             * @description predefined: columna con train/val/test (se quita después)
+             */
+            split_column?: string | null;
             /** @default stratified */
             strategy: components["schemas"]["SplitStrategy"];
             /**
@@ -6099,7 +6104,7 @@ export interface components {
          * SplitStrategy
          * @enum {string}
          */
-        SplitStrategy: "random" | "stratified" | "group" | "temporal" | "kfold";
+        SplitStrategy: "random" | "stratified" | "group" | "temporal" | "kfold" | "predefined";
         /** SsoProvider */
         SsoProvider: {
             /** Display Name */

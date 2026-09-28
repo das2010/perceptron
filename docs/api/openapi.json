@@ -9028,6 +9028,18 @@
             "title": "Seed",
             "type": "integer"
           },
+          "split_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "predefined: columna con train/val/test (se quita después)",
+            "title": "Split Column"
+          },
           "strategy": {
             "$ref": "#/components/schemas/SplitStrategy",
             "default": "stratified"
@@ -9067,7 +9079,8 @@
           "stratified",
           "group",
           "temporal",
-          "kfold"
+          "kfold",
+          "predefined"
         ],
         "title": "SplitStrategy",
         "type": "string"
