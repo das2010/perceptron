@@ -170,6 +170,13 @@ impl Runtime {
         cmd
     }
 
+    /// El `python` de la instalación administrada por uv (la carpeta de la versión con parche,
+    /// p. ej. `cpython-3.12.11-windows-x86_64-none`), sin pasar por el enlace de la versión
+    /// menor (`cpython-3.12-...`), que es un junction en Windows.
+    fn managed_python(&self) -> Option<PathBuf> {
+        managed_python_in(&self.root.join("python"))
+    }
+
     fn read_json<T: for<'de> Deserialize<'de>>(&self, name: &str) -> Result<T, String> {
         let path = self.resources.join(name);
         let raw = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
@@ -208,11 +215,25 @@ impl Runtime {
             say("python", "Instalando Python");
             let mut cmd = self.uv_cmd();
             cmd.args(["python", "install", PYTHON_VERSION]);
-            run(cmd, "uv python install")?;
+            // El último paso de uv es crear el enlace de la versión menor (un junction en
+            // Windows). Con OneDrive "Archivos a petición" o políticas de redirección, Windows
+            // lo rechaza (os error 448) aunque Python ya quedó instalado: se sigue con el
+            // ejecutable de la versión con parche, que no necesita el enlace (astral-sh/uv#19616).
+            if let Err(err) = run(cmd, "uv python install") {
+                if self.managed_python().is_none() {
+                    return Err(err);
+                }
+                // Un enlace que Windows no deja atravesar rompería el entorno: se quita (solo
+                // el enlace, no la instalación) para que `uv venv` use la carpeta real.
+                remove_minor_links(&self.root.join("python"));
+            }
+            let interpreter = self.managed_python().ok_or_else(|| {
+                format!("uv python install no dejó Python {PYTHON_VERSION} en {}", self.root.display())
+            })?;
 
             say("venv", "Creando el entorno");
             let mut cmd = self.uv_cmd();
-            cmd.args(["venv", "--clear", "--python", PYTHON_VERSION]).arg(self.venv());
+            cmd.args(["venv", "--clear", "--python"]).arg(&interpreter).arg(self.venv());
             run(cmd, "uv venv")?;
 
             // El lock exportado es el cierre completo sin torch: `--no-deps` evita que uv
@@ -269,9 +290,81 @@ impl Runtime {
     }
 }
 
+fn managed_python_in(dir: &Path) -> Option<PathBuf> {
+    let prefix = format!("cpython-{PYTHON_VERSION}.");
+    let mut found: Vec<PathBuf> = fs::read_dir(dir)
+        .ok()?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_name().to_str().is_some_and(|n| n.starts_with(&prefix)))
+        // Solo carpetas reales: el enlace de la versión menor no empieza con `3.12.` igual.
+        .filter(|e| e.file_type().is_ok_and(|t| t.is_dir() && !t.is_symlink()))
+        .map(|e| {
+            if cfg!(windows) {
+                e.path().join("python.exe")
+            } else {
+                e.path().join("bin").join("python3")
+            }
+        })
+        .filter(|p| p.is_file())
+        .collect();
+    // La de parche más alto (orden numérico: 3.12.10 > 3.12.9).
+    found.sort_by_key(|p| patch_of(p));
+    found.pop()
+}
+
+fn remove_minor_links(dir: &Path) {
+    let link = format!("cpython-{PYTHON_VERSION}-");
+    for entry in fs::read_dir(dir).into_iter().flatten().flatten() {
+        let is_link = entry.file_type().is_ok_and(|t| t.is_symlink());
+        if is_link && entry.file_name().to_str().is_some_and(|n| n.starts_with(&link)) {
+            // En Windows un junction se borra como directorio; en Unix, como archivo.
+            let _ = fs::remove_dir(entry.path()).or_else(|_| fs::remove_file(entry.path()));
+        }
+    }
+}
+
+fn patch_of(python: &Path) -> u32 {
+    let dir = if cfg!(windows) { python.parent() } else { python.parent().and_then(Path::parent) };
+    dir.and_then(|d| d.file_name())
+        .and_then(|n| n.to_str())
+        .and_then(|n| n.strip_prefix(&format!("cpython-{PYTHON_VERSION}.")))
+        .and_then(|rest| rest.split(|c: char| !c.is_ascii_digit()).next())
+        .and_then(|patch| patch.parse().ok())
+        .unwrap_or(0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn managed_python_skips_the_minor_link_and_picks_the_highest_patch() {
+        let root = std::env::temp_dir().join(format!("perceptron rt ñ {}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let exe = |dir: &Path| {
+            if cfg!(windows) {
+                dir.join("python.exe")
+            } else {
+                dir.join("bin").join("python3")
+            }
+        };
+        for name in [
+            "cpython-3.12.9-windows-x86_64-none",
+            "cpython-3.12.11-windows-x86_64-none",
+            "cpython-3.12-windows-x86_64-none", // lo que sería el enlace, acá sin python
+            "cpython-3.11.9-windows-x86_64-none",
+        ] {
+            let dir = root.join(name);
+            fs::create_dir_all(exe(&dir).parent().unwrap()).unwrap();
+            if name.starts_with("cpython-3.12.") || name.starts_with("cpython-3.11.") {
+                fs::write(exe(&dir), b"").unwrap();
+            }
+        }
+        let got = managed_python_in(&root).unwrap();
+        assert!(got.to_string_lossy().contains("cpython-3.12.11-"), "{}", got.display());
+        assert!(managed_python_in(&root.join("no existe")).is_none());
+        fs::remove_dir_all(&root).unwrap();
+    }
 
     fn indexes() -> TorchIndexes {
         serde_json::from_str(include_str!("../../runtime/torch-indexes.json")).unwrap()
