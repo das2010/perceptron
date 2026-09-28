@@ -886,3 +886,96 @@ export function useDatasetSample(datasetVersionId: string | undefined) {
       ),
   });
 }
+
+// ---------------------------------------------------------------- evaluación avanzada (Capa 4b)
+
+export type ErrorAnalysis = Schemas["ErrorAnalysis"];
+export type FairnessReport = Schemas["FairnessReport"];
+export type GlobalExplanation = Schemas["GlobalExplanation"];
+export type LocalExplanation = Schemas["LocalExplanation"];
+export type RobustnessReport = Schemas["RobustnessReport"];
+
+export function useErrorAnalysis(runId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["runs", runId, "errors"],
+    enabled,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/runs/{run_id}/errors", { params: { path: { run_id: runId } } }),
+      ),
+  });
+}
+
+export function useExplanation(runId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["runs", runId, "explain"],
+    enabled,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/runs/{run_id}/explain", { params: { path: { run_id: runId } } }),
+      ),
+  });
+}
+
+export function useRobustness(runId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["runs", runId, "robustness"],
+    enabled,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/runs/{run_id}/robustness", { params: { path: { run_id: runId } } }),
+      ),
+  });
+}
+
+export function useFairness(runId: string) {
+  return useMutation({
+    mutationFn: async (body: { attributes: string[]; positive_class: string | null }) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/fairness", {
+          params: { path: { run_id: runId } },
+          body: { ...body, threshold: 0.1 },
+        }),
+      ),
+  });
+}
+
+export function useExplainRow(runId: string) {
+  return useMutation({
+    mutationFn: async (row: Record<string, unknown>) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/explain/row", {
+          params: { path: { run_id: runId } },
+          body: { row },
+        }),
+      ),
+  });
+}
+
+export function useExplainImage(runId: string) {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      return unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/explain/image", {
+          params: { path: { run_id: runId } },
+          body: form as unknown as Schemas["Body_explainImage"],
+          bodySerializer: (b) => b as unknown as FormData,
+        }),
+      );
+    },
+  });
+}

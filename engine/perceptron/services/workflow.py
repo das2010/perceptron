@@ -640,6 +640,119 @@ class Workflow:
             _INFERENCE_CACHE[run_id] = cached
         return cached[1]
 
+    # ------------------------------------------------------------------ análisis (RF-EVL-03/04)
+
+    def _eval_paths(self, run_id: str) -> tuple[Run, Path, Path]:
+        run = self.ctx.repo(Run).get(run_id)
+        dataset_dir = self.view(self.dataset(run.dataset_version_id)).root
+        return run, self._run_dir(run) / EVALUATION_DIR, dataset_dir
+
+    def error_analysis(self, run_id: str) -> Any:
+        from perceptron.evaluation.errors import analyze_errors
+
+        run, eval_dir, dataset_dir = self._eval_paths(run_id)
+        target = self.dataset(run.dataset_version_id).target
+        return analyze_errors(eval_dir, dataset_dir, target)
+
+    def fairness(
+        self,
+        run_id: str,
+        attributes: list[str],
+        *,
+        positive_class: str | None = None,
+        threshold: float = 0.1,
+    ) -> list[Any]:
+        from perceptron.evaluation.fairness import fairness_report
+
+        _, eval_dir, dataset_dir = self._eval_paths(run_id)
+        reports = [
+            fairness_report(
+                eval_dir, dataset_dir, a, positive_class=positive_class, threshold=threshold
+            )
+            for a in attributes
+        ]
+        (eval_dir / "fairness.json").write_text(
+            json.dumps([r.model_dump(mode="json") for r in reports], indent=2), encoding="utf-8"
+        )
+        return reports
+
+    def explanation(self, run_id: str) -> Any:
+        """Importancia global de las features (RF-EVL-02), cacheada junto a la evaluación."""
+        from perceptron.evaluation.explain import GlobalExplanation, global_explanation
+
+        run = self.ctx.repo(Run).get(run_id)
+        path = self._run_dir(run) / EVALUATION_DIR / "explanation.json"
+        if path.is_file():
+            return GlobalExplanation.model_validate_json(path.read_text(encoding="utf-8"))
+        dataset_dir = self.view(self.dataset(run.dataset_version_id)).root
+        result = global_explanation(self._run_dir(run), dataset_dir)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
+        return result
+
+    def explain_row(self, run_id: str, row: dict[str, Any]) -> Any:
+        from perceptron.evaluation.explain import local_tabular
+
+        return local_tabular(self._run_dir(self.ctx.repo(Run).get(run_id)), row)
+
+    def explain_image(self, run_id: str, image: Any) -> Any:
+        from perceptron.evaluation.explain import local_image
+
+        return local_image(self._run_dir(self.ctx.repo(Run).get(run_id)), image)
+
+    def robustness(self, run_id: str) -> Any:
+        """Degradación ante perturbaciones (RF-EVL-05), cacheada junto a la evaluación."""
+        from perceptron.evaluation.robustness import RobustnessReport, robustness_report
+
+        run = self.ctx.repo(Run).get(run_id)
+        path = self._run_dir(run) / EVALUATION_DIR / "robustness.json"
+        if path.is_file():
+            return RobustnessReport.model_validate_json(path.read_text(encoding="utf-8"))
+        dataset_dir = self.view(self.dataset(run.dataset_version_id)).root
+        result = robustness_report(self._run_dir(run), dataset_dir)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
+        return result
+
+    def report_document(self, run_id: str, fmt: str) -> tuple[bytes, str]:
+        """Informe final con marca (RF-EVL-06): html, pdf o md, con lo que ya se analizó."""
+        from perceptron.evaluation.report_render import (
+            ReportInputs,
+            render_html,
+            render_markdown,
+            render_pdf,
+        )
+        from perceptron.services.llm_roles import REPORT_DIR
+
+        run = self.ctx.repo(Run).get(run_id)
+        run_dir = self._run_dir(run)
+        stored = run_dir / REPORT_DIR / "report.json"
+        report = (
+            Report.model_validate_json(stored.read_text(encoding="utf-8"))
+            if stored.is_file()
+            else self.roles.report(run_id, mode="rules")  # sin LLM ni costo si no hay uno
+        )
+        eval_dir = run_dir / EVALUATION_DIR
+
+        def cached(name: str) -> Any:
+            p = eval_dir / name
+            return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else None
+
+        inputs = ReportInputs(
+            report=report,
+            evaluation=self.evaluation_report(run_id),
+            run_id=run_id,
+            project=self.project(run.project_id).name,
+            explanation=cached("explanation.json"),
+            fairness=cached("fairness.json") or [],
+            robustness=cached("robustness.json"),
+        )
+        if fmt == "pdf":
+            return render_pdf(inputs), "application/pdf"
+        if fmt == "md":
+            return render_markdown(inputs).encode("utf-8"), "text/markdown; charset=utf-8"
+        return render_html(inputs).encode("utf-8"), "text/html; charset=utf-8"
+
     def evaluation_report(self, run_id: str) -> EvaluationReport:
         run = self.ctx.repo(Run).get(run_id)
         path = self._run_dir(run) / EVALUATION_DIR / EVALUATION_FILE

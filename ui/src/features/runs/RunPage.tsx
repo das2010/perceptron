@@ -28,6 +28,7 @@ import {
 } from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
 
+import { AnalysisPanel } from "./AnalysisPanel";
 import { ExportPanel } from "./ExportPanel";
 import { PlaygroundPanel } from "./PlaygroundPanel";
 
@@ -240,6 +241,13 @@ export function RunPage() {
       </Card>
 
       {evaluated && <Confusion report={evaluated} />}
+      {evaluated && (
+        <AnalysisPanel
+          runId={runId}
+          datasetVersionId={r.dataset_version_id}
+          classes={evaluated.classification?.labels ?? []}
+        />
+      )}
 
       {done && <ExportPanel runId={runId} />}
       {done &&

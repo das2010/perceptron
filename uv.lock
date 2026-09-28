@@ -235,6 +235,23 @@ wheels = [
 ]
 
 [[package]]
+name = "captum"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "torch", version = "2.14.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
+    { name = "torch", version = "2.14.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f7/9e/f31758e20c3d2b42b05420936b75f663e7aeae9ba63b84aee5cad1b044a3/captum-0.9.0.tar.gz", hash = "sha256:e4868e22b68224f1a5355d2b7966803c021cf9fe5d893f51f587b4002a666b54", size = 363381, upload-time = "2026-04-17T06:11:39.577Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/75/c99571fee171bb9d34d3e1df5fdb16d57e2c4c15339eb220e6e6e4539f1c/captum-0.9.0-py3-none-any.whl", hash = "sha256:cda38e1d42c37591d71560bb2f5813ac4cae8d8543afac45279c7efd5945997e", size = 455196, upload-time = "2026-04-17T06:11:38.229Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.7.22"
 source = { registry = "https://pypi.org/simple" }
@@ -1920,6 +1937,11 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+eval = [
+    { name = "captum" },
+    { name = "markdown-it-py" },
+    { name = "reportlab" },
+]
 export = [
     { name = "onnx" },
     { name = "onnxconverter-common" },
@@ -1961,6 +1983,7 @@ ml = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", marker = "extra == 'llm'", specifier = ">=0.40" },
+    { name = "captum", marker = "extra == 'eval'", specifier = ">=0.7" },
     { name = "cmaes", marker = "extra == 'ml'", specifier = ">=0.11" },
     { name = "cryptography", marker = "extra == 'llm'", specifier = ">=43" },
     { name = "fastapi", specifier = ">=0.115" },
@@ -1971,6 +1994,7 @@ requires-dist = [
     { name = "keyring", marker = "extra == 'llm'", specifier = ">=25" },
     { name = "lightgbm", marker = "extra == 'ml'", specifier = ">=4.5" },
     { name = "lightning", marker = "extra == 'ml'", specifier = ">=2.4" },
+    { name = "markdown-it-py", marker = "extra == 'eval'", specifier = ">=3" },
     { name = "mlflow", marker = "extra == 'ml'", specifier = ">=2.16" },
     { name = "onnx", marker = "extra == 'export'", specifier = ">=1.17" },
     { name = "onnxconverter-common", marker = "extra == 'export'", specifier = ">=1.14" },
@@ -1990,6 +2014,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "python-ulid", specifier = ">=3.0" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "reportlab", marker = "extra == 'eval'", specifier = ">=4.2" },
     { name = "scikit-learn", marker = "extra == 'ml'", specifier = ">=1.5" },
     { name = "soundfile", marker = "extra == 'ml'", specifier = ">=0.12" },
     { name = "sqlalchemy", specifier = ">=2.0" },
@@ -2002,7 +2027,7 @@ requires-dist = [
     { name = "typer", specifier = ">=0.12" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
-provides-extras = ["ml", "llm", "export"]
+provides-extras = ["ml", "llm", "export", "eval"]
 
 [[package]]
 name = "perceptron-server"
@@ -2025,7 +2050,7 @@ dev = [
     { name = "httpx" },
     { name = "hypothesis" },
     { name = "mypy" },
-    { name = "perceptron-engine", extra = ["export", "llm", "ml"] },
+    { name = "perceptron-engine", extra = ["eval", "export", "llm", "ml"] },
     { name = "perceptron-server" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -2043,7 +2068,7 @@ dev = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "hypothesis", specifier = ">=6" },
     { name = "mypy", specifier = ">=1.11" },
-    { name = "perceptron-engine", extras = ["ml", "llm", "export"], editable = "engine" },
+    { name = "perceptron-engine", extras = ["ml", "llm", "export", "eval"], editable = "engine" },
     { name = "perceptron-server", editable = "server" },
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-cov", specifier = ">=5" },
@@ -2588,6 +2613,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/63/03/c28a6bebedc3e2d86ee27ec2de16f7ec0419dcd10e771d43dcc9c58a2e99/regex-2026.9.10-cp313-cp313-win32.whl", hash = "sha256:7abb38b8c40f3a235235a44da452c64b7b5c1d650ec6351027db0e090804f2e5", size = 267298, upload-time = "2026-09-09T20:58:00.009Z" },
     { url = "https://files.pythonhosted.org/packages/cd/fd/5c85fa6cfb8e034080bda5a72fa0a4df2b7777a35eb7e73c2799c2adda7a/regex-2026.9.10-cp313-cp313-win_amd64.whl", hash = "sha256:20e8bfb07ad79a282f8b95b56fe67f9750b1b7f775724e4ba1f23cb296115ce4", size = 277894, upload-time = "2026-09-09T20:58:01.731Z" },
     { url = "https://files.pythonhosted.org/packages/c1/28/f5a25f6f65501675977fda35d9f61abb1468c4b87c0f73e536d8b21a60b8/regex-2026.9.10-cp313-cp313-win_arm64.whl", hash = "sha256:3bdeed3318a8eb2bbadc9c56347e0ff651639e934a47e168d05a3b12929fd0e7", size = 277436, upload-time = "2026-09-09T20:58:03.422Z" },
+]
+
+[[package]]
+name = "reportlab"
+version = "5.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "charset-normalizer" },
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4a/51/dbe28534ae12c852f61be91f039f343305fd1f34f1c66b8de75afae7a525/reportlab-5.0.1.tar.gz", hash = "sha256:ebd13154be1c8515e665de70bd2d303ae9ddc3ef47e44afd5116441ca0283a26", size = 3945711, upload-time = "2026-08-20T13:48:16.461Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/db/cb/dacbc268cb68d0428ea2cbd85266195a9ab3e677449589ddae59bd7542ac/reportlab-5.0.1-py3-none-any.whl", hash = "sha256:1c36e6bb0e71780c72331eba60da7f602e8d4389a8723825af71342e49d791e8", size = 1957258, upload-time = "2026-08-20T13:48:14.026Z" },
 ]
 
 [[package]]

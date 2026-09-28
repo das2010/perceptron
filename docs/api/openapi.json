@@ -952,6 +952,20 @@
         "title": "AugmentSpec",
         "type": "object"
       },
+      "Body_explainImage": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_explainImage",
+        "type": "object"
+      },
       "Body_predictFile": {
         "properties": {
           "file": {
@@ -1591,6 +1605,50 @@
           "equals"
         ],
         "title": "Condition",
+        "type": "object"
+      },
+      "Confusion": {
+        "properties": {
+          "actual": {
+            "title": "Actual",
+            "type": "string"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "predicted": {
+            "title": "Predicted",
+            "type": "string"
+          }
+        },
+        "required": [
+          "actual",
+          "predicted",
+          "count"
+        ],
+        "title": "Confusion",
+        "type": "object"
+      },
+      "Contribution": {
+        "properties": {
+          "attribution": {
+            "title": "Attribution",
+            "type": "number"
+          },
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "feature",
+          "attribution"
+        ],
+        "title": "Contribution",
         "type": "object"
       },
       "DataSource": {
@@ -2290,6 +2348,110 @@
         "title": "EarlyStopping",
         "type": "object"
       },
+      "ErrorAnalysis": {
+        "properties": {
+          "confusions": {
+            "items": {
+              "$ref": "#/components/schemas/Confusion"
+            },
+            "title": "Confusions",
+            "type": "array"
+          },
+          "label_issues": {
+            "title": "Label Issues",
+            "type": "integer"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "num_errors": {
+            "title": "Num Errors",
+            "type": "integer"
+          },
+          "num_samples": {
+            "title": "Num Samples",
+            "type": "integer"
+          },
+          "overall": {
+            "title": "Overall",
+            "type": "number"
+          },
+          "samples": {
+            "items": {
+              "$ref": "#/components/schemas/ErrorSample"
+            },
+            "title": "Samples",
+            "type": "array"
+          },
+          "slices": {
+            "items": {
+              "$ref": "#/components/schemas/Slice"
+            },
+            "title": "Slices",
+            "type": "array"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "task",
+          "metric",
+          "overall",
+          "num_samples",
+          "num_errors",
+          "slices",
+          "confusions",
+          "label_issues",
+          "samples"
+        ],
+        "title": "ErrorAnalysis",
+        "type": "object"
+      },
+      "ErrorSample": {
+        "properties": {
+          "actual": {
+            "title": "Actual"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "features": {
+            "additionalProperties": true,
+            "title": "Features",
+            "type": "object"
+          },
+          "label_issue": {
+            "default": false,
+            "title": "Label Issue",
+            "type": "boolean"
+          },
+          "predicted": {
+            "title": "Predicted"
+          },
+          "row": {
+            "title": "Row",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row",
+          "actual",
+          "predicted"
+        ],
+        "title": "ErrorSample",
+        "type": "object"
+      },
       "Evaluation": {
         "additionalProperties": false,
         "properties": {
@@ -2422,6 +2584,21 @@
           "checkpoint"
         ],
         "title": "EvaluationReport",
+        "type": "object"
+      },
+      "ExplainRow": {
+        "additionalProperties": false,
+        "properties": {
+          "row": {
+            "additionalProperties": true,
+            "title": "Row",
+            "type": "object"
+          }
+        },
+        "required": [
+          "row"
+        ],
+        "title": "ExplainRow",
         "type": "object"
       },
       "ExportArtifact": {
@@ -2574,6 +2751,148 @@
         "title": "ExportRequest",
         "type": "object"
       },
+      "FairnessBody": {
+        "additionalProperties": false,
+        "properties": {
+          "attributes": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Attributes",
+            "type": "array"
+          },
+          "positive_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Positive Class"
+          },
+          "threshold": {
+            "default": 0.1,
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "attributes"
+        ],
+        "title": "FairnessBody",
+        "type": "object"
+      },
+      "FairnessReport": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "attribute": {
+            "title": "Attribute",
+            "type": "string"
+          },
+          "demographic_parity_difference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Demographic Parity Difference"
+          },
+          "equalized_odds_difference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equalized Odds Difference"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupMetrics"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "mae_difference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mae Difference"
+          },
+          "positive_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Positive Class"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "number"
+          }
+        },
+        "required": [
+          "attribute",
+          "task",
+          "groups",
+          "threshold"
+        ],
+        "title": "FairnessReport",
+        "type": "object"
+      },
+      "FeatureImportance": {
+        "properties": {
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "importance": {
+            "title": "Importance",
+            "type": "number"
+          },
+          "mean_attribution": {
+            "title": "Mean Attribution",
+            "type": "number"
+          }
+        },
+        "required": [
+          "feature",
+          "importance",
+          "mean_attribution"
+        ],
+        "title": "FeatureImportance",
+        "type": "object"
+      },
       "GPUInfo": {
         "properties": {
           "backend": {
@@ -2637,6 +2956,110 @@
           "vram_total_gb"
         ],
         "title": "GPUInfo",
+        "type": "object"
+      },
+      "GlobalExplanation": {
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureImportance"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "samples": {
+            "title": "Samples",
+            "type": "integer"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "samples",
+          "target",
+          "features"
+        ],
+        "title": "GlobalExplanation",
+        "type": "object"
+      },
+      "GroupMetrics": {
+        "properties": {
+          "accuracy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "fpr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fpr"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "mae": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mae"
+          },
+          "selection_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selection Rate"
+          },
+          "support": {
+            "title": "Support",
+            "type": "integer"
+          },
+          "tpr": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tpr"
+          }
+        },
+        "required": [
+          "group",
+          "support"
+        ],
+        "title": "GroupMetrics",
         "type": "object"
       },
       "GuideBody": {
@@ -3693,6 +4116,43 @@
         "title": "LabelingGuide",
         "type": "object"
       },
+      "LocalExplanation": {
+        "properties": {
+          "contributions": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Contribution"
+            },
+            "title": "Contributions",
+            "type": "array"
+          },
+          "heatmap_png": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heatmap Png"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "prediction": {
+            "title": "Prediction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "prediction"
+        ],
+        "title": "LocalExplanation",
+        "type": "object"
+      },
       "LossSpec": {
         "additionalProperties": false,
         "properties": {
@@ -4191,6 +4651,34 @@
           "support"
         ],
         "title": "PerClass",
+        "type": "object"
+      },
+      "PerturbationResult": {
+        "properties": {
+          "degradation": {
+            "title": "Degradation",
+            "type": "number"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "number"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "severity",
+          "metric",
+          "degradation"
+        ],
+        "title": "PerturbationResult",
         "type": "object"
       },
       "Pipeline": {
@@ -5612,6 +6100,42 @@
         "title": "ReportBody",
         "type": "object"
       },
+      "RobustnessReport": {
+        "properties": {
+          "baseline": {
+            "title": "Baseline",
+            "type": "number"
+          },
+          "higher_is_better": {
+            "title": "Higher Is Better",
+            "type": "boolean"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/PerturbationResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "samples": {
+            "title": "Samples",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "metric",
+          "higher_is_better",
+          "baseline",
+          "samples",
+          "results"
+        ],
+        "title": "RobustnessReport",
+        "type": "object"
+      },
       "Run": {
         "additionalProperties": false,
         "properties": {
@@ -6121,6 +6645,40 @@
         ],
         "title": "Severity",
         "type": "string"
+      },
+      "Slice": {
+        "properties": {
+          "column": {
+            "title": "Column",
+            "type": "string"
+          },
+          "gap": {
+            "description": "Cuánto peor que el total (en la dirección del error)",
+            "title": "Gap",
+            "type": "number"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "number"
+          },
+          "support": {
+            "title": "Support",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "column",
+          "value",
+          "support",
+          "metric",
+          "gap"
+        ],
+        "title": "Slice",
+        "type": "object"
       },
       "SourceCreate": {
         "additionalProperties": false,
@@ -10302,6 +10860,49 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/errors": {
+      "get": {
+        "description": "Slices de bajo rendimiento, confusiones, posibles errores de etiqueta y mal predichos.",
+        "operationId": "getErrorAnalysis",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorAnalysis"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Error Analysis",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/evaluate": {
       "post": {
         "operationId": "evaluateRun",
@@ -10429,6 +11030,155 @@
         "summary": "List Evaluations",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/explain": {
+      "get": {
+        "description": "Importancia global de las features (Shapley por muestreo sobre validación, RF-EVL-02).",
+        "operationId": "getExplanation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlobalExplanation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Explanation",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/explain/image": {
+      "post": {
+        "description": "Integrated Gradients de una imagen: mapa de calor sobre la clase predicha.",
+        "operationId": "explainImage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_explainImage"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalExplanation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Explain Image",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/explain/row": {
+      "post": {
+        "description": "Explicación local de una fila: contribución de cada feature a la predicción.",
+        "operationId": "explainRow",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainRow"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalExplanation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Explain Row",
+        "tags": [
+          "analysis"
         ]
       }
     },
@@ -10653,6 +11403,63 @@
         "summary": "Download Serving Bundle",
         "tags": [
           "export"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/fairness": {
+      "post": {
+        "description": "Métricas por subgrupo de los atributos sensibles que marca el usuario (RF-EVL-04).",
+        "operationId": "computeFairness",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FairnessBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FairnessReport"
+                  },
+                  "title": "Response Computefairness",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compute Fairness",
+        "tags": [
+          "analysis"
         ]
       }
     },
@@ -10903,6 +11710,105 @@
         "summary": "Create Report",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/report/document": {
+      "get": {
+        "description": "Informe con marca Preteco (RF-EVL-06): HTML autocontenido, PDF o Markdown.",
+        "operationId": "getReportDocument",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "html",
+              "enum": [
+                "html",
+                "pdf",
+                "md"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report Document",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/robustness": {
+      "get": {
+        "description": "Métrica del test con entradas perturbadas a tres severidades (RF-EVL-05).",
+        "operationId": "getRobustness",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RobustnessReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Robustness",
+        "tags": [
+          "analysis"
         ]
       }
     },
