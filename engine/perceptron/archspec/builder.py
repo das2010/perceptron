@@ -17,6 +17,7 @@ from torch import nn
 
 from perceptron.archspec.schema import INPUT_NODE, ArchSpec, Scalar, resolve
 from perceptron.catalog.registry import (
+    CODE_BLOCK,
     SHAPE_PRESERVING,
     BlockSpec,
     BuildContext,
@@ -235,10 +236,16 @@ def build_model(
         if block.is_backbone:
             backbones.append(node_id)
         try:
-            with meta:
+            if block.key == CODE_BLOCK:
+                # El código experto no se asume compatible con tensores meta: se construye y
+                # se prueba sobre un batch real chico (solo ocurre dentro del sandbox).
                 module = block.build(params, in_specs, ctx)
-                args = [t for p in preds[node_id] for t in values[p]]
-                out = module(*args)
+                out = module(*_dummy(in_specs[0], torch.device("cpu")))
+            else:
+                with meta:
+                    module = block.build(params, in_specs, ctx)
+                    args = [t for p in preds[node_id] for t in values[p]]
+                    out = module(*args)
         except ArchBuildError:
             raise
         except (ValueError, RuntimeError, TypeError) as e:

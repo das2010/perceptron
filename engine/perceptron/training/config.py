@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from perceptron.archspec.schema import Scalar
 from perceptron.domain.enums import Device
+from perceptron.sandbox.process import SandboxLimits
 
 RUN_CONFIG_FILE = "run.json"
 RESULT_FILE = "result.json"
@@ -40,6 +41,10 @@ class RunConfig(BaseModel):
     pretrained_allowed: bool = True
     limit_train_batches: float | int | None = None
     emit_every_n_batches: int = Field(default=20, ge=1)
+    code: str | None = Field(
+        default=None, description="Código experto (RF-ARC-06): el run corre en el sandbox"
+    )
+    sandbox: SandboxLimits = Field(default_factory=SandboxLimits)
 
     def save(self) -> Path:
         self.run_dir.mkdir(parents=True, exist_ok=True)

@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 
 from perceptron.archspec.builder import ArchBuildError, build_model, topological_order
 from perceptron.archspec.schema import ArchSpec, Scalar, resolve
-from perceptron.catalog.registry import BLOCKS, TIMM_WEIGHTS
+from perceptron.catalog.registry import BLOCKS, CODE_BLOCK, TIMM_WEIGHTS
 
 BYTES_PER_FLOAT = 4
 # pesos + gradientes + 2 momentos de Adam
@@ -198,6 +198,29 @@ def validate_archspec(
             Issue(stage=Stage.GRAPH, severity=Severity.ERROR, path=e.path, message=e.message)
         )
         return ValidationReport(valid=False, issues=issues, spec=spec)
+
+    # Código experto (RF-ARC-06): el Engine no lo ejecuta; shapes y recursos se validan al
+    # construirlo dentro del sandbox (ADR-0025).
+    if any(n.block == CODE_BLOCK for n in spec.nodes):
+        if len(spec.nodes) != 1:
+            issues.append(
+                Issue(
+                    stage=Stage.GRAPH,
+                    severity=Severity.ERROR,
+                    path="nodes",
+                    message=f"una ArchSpec de código tiene un único nodo {CODE_BLOCK}",
+                )
+            )
+            return ValidationReport(valid=False, issues=issues, spec=spec)
+        issues.append(
+            Issue(
+                stage=Stage.SHAPES,
+                severity=Severity.WARNING,
+                path="nodes[0]",
+                message="código experto: las formas y los recursos se validan en el sandbox",
+            )
+        )
+        return ValidationReport(valid=True, issues=issues, spec=spec)
 
     # 4. shapes (y parámetros en rango)
     try:

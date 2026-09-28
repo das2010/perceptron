@@ -13,6 +13,9 @@ import torch
 from pydantic import BaseModel, Field
 from torch.utils.data import DataLoader
 
+from perceptron.archspec.schema import ArchSpec
+from perceptron.catalog.registry import CODE_BLOCK
+from perceptron.data.pipeline.pipeline import FittedPipeline
 from perceptron.data.view import DatasetView, Purpose
 from perceptron.domain.enums import ModelStage, TaskType
 from perceptron.domain.models import ModelVersion
@@ -21,7 +24,7 @@ from perceptron.storage.filesystem import write_json
 from perceptron.tasks import get_adapter
 from perceptron.training.config import RESULT_FILE, RunResult
 from perceptron.training.data import make_dataset
-from perceptron.training.inference import TrainedModel, load_trained, predict
+from perceptron.training.inference import load_run_artifacts, load_trained, predict
 
 EVALUATION_DIR = "evaluation"
 EVALUATION_FILE = "evaluation.json"
@@ -79,10 +82,8 @@ def evaluate_run(run_dir: Path, dataset_dir: Path, *, split: str = "test") -> Ev
     return report
 
 
-def signature(trained: TrainedModel) -> dict[str, Any]:
+def signature(spec: ArchSpec, fp: FittedPipeline) -> dict[str, Any]:
     """Firma de entrada/salida del modelo (RF-EXP-05)."""
-    fp = trained.pipeline
-    spec = trained.spec
     inp: dict[str, Any] = {"kind": spec.input.kind}
     if spec.input.kind == "tabular":
         steps_cols = sorted({c for s in fp.spec.steps for c in s.columns})
@@ -110,7 +111,8 @@ def build_model_version(
     dataset_hash: str | None = None,
 ) -> ModelVersion:
     """`ModelVersion` en stage `candidate` con firma y model card básica (RF-TRK-03 en Capa 4)."""
-    trained = load_trained(run_dir)
+    # Sin construir el modelo: el de código experto solo se construye en el sandbox.
+    spec, pipeline, _ = load_run_artifacts(run_dir)
     result_file = run_dir / RESULT_FILE
     result = (
         RunResult.model_validate_json(result_file.read_text(encoding="utf-8"))
@@ -118,9 +120,10 @@ def build_model_version(
         else None
     )
     card = {
-        "name": trained.spec.name,
-        "template": trained.spec.provenance.template,
-        "rationale": trained.spec.provenance.rationale,
+        "name": spec.name,
+        "declarative": not any(n.block == CODE_BLOCK for n in spec.nodes),
+        "template": spec.provenance.template,
+        "rationale": spec.provenance.rationale,
         "task": report.task.value,
         "test_metrics": report.metrics,
         "validation_metrics": result.best_metrics if result else {},
@@ -135,6 +138,6 @@ def build_model_version(
         project_id=project_id,
         run_id=run_id,
         stage=ModelStage.CANDIDATE,
-        signature=signature(trained),
+        signature=signature(spec, pipeline),
         model_card=card,
     )
