@@ -18,7 +18,7 @@ from perceptron.core.errors import (
     RateLimitedError,
     ValidationError,
 )
-from perceptron.core.ids import IdPrefix, new_id
+from perceptron.core.ids import IdPrefix, new_id, parse_id
 from perceptron.domain.enums import Role
 from perceptron.domain.models import Membership, Project, User, Workspace, utcnow
 from perceptron_server.db import AccountRow, RefreshTokenRow
@@ -290,7 +290,9 @@ class Accounts:
     ) -> TokenPair:
         refresh = new_token()
         now = utcnow()
-        refresh_exp = now + timedelta(seconds=self.settings.refresh_ttl_s)
+        refresh_exp = min(
+            now + timedelta(seconds=self.settings.refresh_ttl_s), self._session_deadline(family_id)
+        )
         with self.ctx.db.session() as s:
             s.add(
                 RefreshTokenRow(
@@ -311,6 +313,11 @@ class Accounts:
             self.settings.access_ttl_s,
         )
         return TokenPair(access, access_exp, refresh, refresh_exp, family_id)
+
+    def _session_deadline(self, session_id: str) -> datetime:
+        """La sesión nace con su id (ULID con fecha) y no se renueva más allá de su vida máxima."""
+        started = parse_id(session_id)[1].datetime
+        return started + timedelta(seconds=self.settings.session_max_age_s)
 
     def start_session(self, user_id: str, user_agent: str | None, ip: str | None) -> TokenPair:
         return self._issue(user_id, new_id(IdPrefix.SESSION), user_agent, ip)
@@ -342,6 +349,9 @@ class Accounts:
                 row.revoked_at = now
         user = self.users.find(user_id)
         if user is None or not user.is_active:
+            return None
+        if self._session_deadline(family_id) <= now:
+            self.revoke_session(family_id)  # vida absoluta cumplida: re-autenticar
             return None
         if revoked_at is not None:
             if now - aware(revoked_at) <= REFRESH_GRACE and self.session_active(family_id):
