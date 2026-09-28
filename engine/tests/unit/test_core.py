@@ -150,3 +150,11 @@ def test_configure_logging_is_idempotent(tmp_path: Path) -> None:
         h.flush()
     assert "hola ñ" in (tmp_path / "logs" / "engine.log").read_text(encoding="utf-8")
     configure_logging(LoggingSettings(to_file=False))  # dejar el entorno limpio
+
+
+def test_workspace_dir_is_absolute(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regresión: con `-w` relativo el worker (otro cwd) no encontraba run.json."""
+    monkeypatch.chdir(tmp_path)
+    s = Settings(workspace_dir=Path("rel") / "ws")
+    assert s.workspace_dir.is_absolute()
+    assert s.workspace_dir == Path.cwd() / "rel" / "ws"

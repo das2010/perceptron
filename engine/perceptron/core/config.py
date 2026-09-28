@@ -13,7 +13,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from perceptron.core.paths import WorkspacePaths, default_workspace_dir
@@ -96,6 +96,12 @@ class Settings(BaseSettings):
     api: ApiSettings = Field(default_factory=ApiSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
+
+    @field_validator("workspace_dir")
+    @classmethod
+    def _absolute_workspace(cls, value: Path) -> Path:
+        # Los workers corren como subprocesos con otro cwd: las rutas deben ser absolutas.
+        return value.expanduser().absolute()
 
     @property
     def paths(self) -> WorkspacePaths:
