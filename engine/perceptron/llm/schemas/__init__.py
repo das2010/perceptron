@@ -11,7 +11,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from perceptron.archspec.schema import ArchSpec
-from perceptron.hpo.strategy import Objective, PrunerName, SearchParam, StrategyName
+from perceptron.hpo.strategy import Condition, Objective, PrunerName, StrategyName
 
 # ------------------------------------------------------------------ arquitecto
 
@@ -33,10 +33,28 @@ class ArchProposalSet(BaseModel):
 # ------------------------------------------------------------------ estratega de HPO
 
 
+class ProposedParam(BaseModel):
+    """Hiperparámetro tal como lo propone el LLM: puede venir incompleto.
+
+    El sistema lo completa y acota con los límites del catálogo (`HPOSpace.repair`) antes de
+    validarlo como `SearchParam`; así un límite omitido no descarta toda la propuesta.
+    """
+
+    name: str
+    type: Literal["int", "float", "categorical"] | None = None
+    low: float | None = None
+    high: float | None = None
+    log: bool | None = None
+    step: float | None = None
+    choices: list[Any] | None = None
+    condition: Condition | None = None
+    default: Any = None
+
+
 class HPOProposal(BaseModel):
     strategy: StrategyName
     pruner: PrunerName
-    search_space: list[SearchParam]
+    search_space: list[ProposedParam]
     objectives: list[Objective] = Field(min_length=1)
     max_trials: int = Field(ge=1)
     max_epochs_per_trial: int | None = Field(default=None, ge=1)
@@ -151,6 +169,7 @@ __all__ = [
     "Prelabel",
     "PrelabelBatch",
     "Problem",
+    "ProposedParam",
     "Report",
     "SuggestedAction",
 ]
