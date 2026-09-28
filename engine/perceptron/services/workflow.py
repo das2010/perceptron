@@ -87,6 +87,9 @@ from perceptron.tracking.tracker import MlflowTracker, RunRecorder, Tracker
 from perceptron.training.config import RunConfig, RunEvent, RunResult
 from perceptron.training.hardware import detect_hardware
 
+# Playground: sesiones de ONNX Runtime por run (se recargan si cambia el export).
+_INFERENCE_CACHE: dict[str, tuple[tuple[str, int], Any]] = {}
+
 if TYPE_CHECKING:
     from perceptron.services.llm_roles import LLMRoles
 
@@ -602,6 +605,31 @@ class Workflow:
         if name not in allowed:
             raise NotFoundError(f"el export del run {run_id} no tiene {name!r}")
         return self._run_dir(self.ctx.repo(Run).get(run_id)) / EXPORT_DIR / name
+
+    def serving_bundle(self, run_id: str) -> Path:
+        """Zip del servidor de inferencia (RF-EXP-03) desde el export ONNX verificado."""
+        from perceptron.serving.bundle import build_bundle
+
+        run = self.ctx.repo(Run).get(run_id)
+        record = self.ctx.repo(ArchSpecRecord).find(run.archspec_id)
+        name = record.name if record else run_id
+        return build_bundle(self._run_dir(run), name)
+
+    def inference_model(self, run_id: str) -> Any:
+        """Modelo ONNX exportado listo para el playground (RF-EXP-02), cacheado por archivo."""
+        from perceptron.serving.runtime import MODEL_FILE, InferenceModel
+
+        run = self.ctx.repo(Run).get(run_id)
+        model_dir = self._run_dir(run) / EXPORT_DIR
+        onnx = model_dir / MODEL_FILE
+        if not onnx.is_file():
+            raise NotFoundError(f"el run {run_id} no tiene export ONNX (exportalo primero)")
+        key = (str(onnx), onnx.stat().st_mtime_ns)
+        cached = _INFERENCE_CACHE.get(run_id)
+        if cached is None or cached[0] != key:
+            cached = (key, InferenceModel(model_dir))
+            _INFERENCE_CACHE[run_id] = cached
+        return cached[1]
 
     def evaluation_report(self, run_id: str) -> EvaluationReport:
         run = self.ctx.repo(Run).get(run_id)

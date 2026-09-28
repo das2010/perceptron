@@ -63,6 +63,7 @@ export = [
   "onnxscript>=0.2",
   "onnxruntime>=1.20",
   "onnxconverter-common>=1.14",
+  "prometheus-client>=0.20",
 ]
 # NER para PII en texto libre (L2, ADR-0022): `presidio-analyzer` y `presidio-anonymizer` se
 # instalan aparte junto con un modelo NER de licencia compatible. No es un extra: spaCy

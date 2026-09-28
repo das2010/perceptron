@@ -1,0 +1,87 @@
+"""Servidor de inferencia de «{{ name }}» generado por Perceptron {{ version }} (RF-EXP-03).
+
+Modelo ONNX con el pipeline de preprocesamiento embebido. Endpoints: /health, /signature,
+/predict, /predict/batch, /metrics (Prometheus). Si PERCEPTRON_API_KEY está definida, las
+predicciones exigen la cabecera X-API-Key.
+"""
+
+from __future__ import annotations
+
+import csv
+import io
+import os
+import secrets
+import time
+from pathlib import Path
+from typing import Any
+
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
+from fastapi.responses import PlainTextResponse
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from pydantic import BaseModel
+
+from perceptron.serving.runtime import InferenceModel, InputError
+
+MODEL_DIR = Path(os.environ.get("PERCEPTRON_MODEL_DIR", Path(__file__).parent / "model"))
+API_KEY = os.environ.get("PERCEPTRON_API_KEY")
+
+model = InferenceModel(MODEL_DIR)
+app = FastAPI(title="{{ name }}", version="{{ model_version }}", description="{{ description }}")
+REQUESTS = Counter("predictions_total", "Predicciones servidas", ["endpoint"])
+LATENCY = Histogram("prediction_seconds", "Latencia de predicción", ["endpoint"])
+
+
+def require_key(x_api_key: str | None = Header(default=None)) -> None:
+    if API_KEY and not (x_api_key and secrets.compare_digest(x_api_key, API_KEY)):
+        raise HTTPException(status_code=401, detail="API key inválida o ausente")
+
+
+class PredictRequest(BaseModel):
+    rows: list[dict[str, Any]]
+
+
+@app.get("/health")
+def health() -> dict[str, Any]:
+    return {"status": "ok", "model": "{{ name }}", "task": model.task, "input": model.kind}
+
+
+@app.get("/signature")
+def signature() -> dict[str, Any]:
+    return model.signature
+
+
+@app.post("/predict", dependencies=[Depends(require_key)])
+def predict(body: PredictRequest) -> dict[str, Any]:
+    start = time.perf_counter()
+    try:
+        preds = model.predict_rows(body.rows)
+    except InputError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    REQUESTS.labels("predict").inc(len(body.rows))
+    LATENCY.labels("predict").observe(time.perf_counter() - start)
+    return {"predictions": [p.to_dict() for p in preds]}
+
+
+@app.post("/predict/batch", dependencies=[Depends(require_key)])
+async def predict_batch(file: UploadFile = File(...)) -> dict[str, Any]:
+    """CSV (tabular) o imágenes sueltas; devuelve una predicción por fila o archivo."""
+    start = time.perf_counter()
+    data = await file.read()
+    try:
+        if model.kind == "tabular":
+            rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))
+            preds = model.predict_rows(rows)
+        else:
+            from PIL import Image
+
+            preds = model.predict_images([Image.open(io.BytesIO(data))])
+    except InputError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    REQUESTS.labels("batch").inc(len(preds))
+    LATENCY.labels("batch").observe(time.perf_counter() - start)
+    return {"predictions": [p.to_dict() for p in preds]}
+
+
+@app.get("/metrics")
+def metrics() -> PlainTextResponse:
+    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)

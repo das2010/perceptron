@@ -109,3 +109,90 @@ def test_export_all_formats_verified(client: TestClient, fixtures_dir: Path) -> 
 
 def test_export_unknown_run(client: TestClient) -> None:
     assert client.post(f"{API}/runs/run_nope/export", json={}).status_code == 404
+
+
+def _churn_rows(fixtures_dir: Path, n: int = 3) -> list[dict[str, Any]]:
+    import csv
+
+    with (fixtures_dir / "uc01_churn" / "churn.csv").open(encoding="utf-8") as f:
+        rows = [dict(r) for _, r in zip(range(n), csv.DictReader(f), strict=False)]
+    for r in rows:
+        r.pop("churn")
+    return rows
+
+
+def test_playground_and_serving_bundle(
+    client: TestClient, fixtures_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import importlib.util
+    import json
+    import subprocess
+    import sys
+    import zipfile
+
+    run_id = _trained_run(client, fixtures_dir)
+    rows = _churn_rows(fixtures_dir)
+    # Sin export ONNX todavía: el playground lo pide.
+    assert client.post(f"{API}/runs/{run_id}/predict", json={"rows": rows}).status_code == 404
+    launch = _ok(client.post(f"{API}/runs/{run_id}/export", json={"formats": ["onnx"]}), 202)
+    assert _wait_job(client, launch["job"]["id"])["status"] == "succeeded"
+
+    # Playground (RF-EXP-02).
+    res = _ok(client.post(f"{API}/runs/{run_id}/predict", json={"rows": rows}))
+    assert res["task"] == "classification" and len(res["predictions"]) == len(rows)
+    first = res["predictions"][0]
+    assert first["prediction"] in {"0", "1"} and 0.5 <= first["confidence"] <= 1.0
+    assert abs(sum(first["probabilities"].values()) - 1.0) < 1e-5
+    partial = [{k: v for k, v in rows[0].items() if k != next(iter(rows[0]))}]
+    bad = client.post(f"{API}/runs/{run_id}/predict", json={"rows": partial})
+    assert bad.status_code == 422 and "faltan columnas" in bad.text
+
+    # Paquete de serving (RF-EXP-03).
+    zip_resp = client.get(f"{API}/runs/{run_id}/export/serving.zip")
+    assert zip_resp.status_code == 200
+    bundle = tmp_path / "bundle con espacio"
+    archive = tmp_path / "serving.zip"
+    archive.write_bytes(zip_resp.content)
+    with zipfile.ZipFile(archive) as z:
+        z.extractall(bundle)
+    for rel in ("app/app.py", "app/model/model.onnx", "Dockerfile.cpu", "Dockerfile.cuda"):
+        assert (bundle / rel).is_file(), rel
+    reqs = (bundle / "requirements.txt").read_text(encoding="utf-8")
+    assert "onnxruntime==" in reqs and "torch" not in reqs  # tabular: sin torch
+
+    # El código vendorizado alcanza para predecir en un proceso aislado (-I: sin site del usuario).
+    probe = (
+        "import json, sys; from pathlib import Path; "
+        f"sys.path.insert(0, {str(bundle / 'vendor')!r}); "
+        "import perceptron, perceptron.serving.runtime as r; "
+        f"assert Path(perceptron.__file__).is_relative_to({str(bundle / 'vendor')!r}); "
+        f"m = r.InferenceModel(Path({str(bundle / 'app' / 'model')!r})); "
+        f"print(json.dumps([p.to_dict() for p in m.predict_rows({rows!r})]))"
+    )
+    out = subprocess.run(  # noqa: S603
+        [sys.executable, "-I", "-c", probe],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert out.returncode == 0, out.stderr
+    vendored = json.loads(out.stdout.strip().splitlines()[-1])
+    assert [p["prediction"] for p in vendored] == [p["prediction"] for p in res["predictions"]]
+
+    # El servidor generado: health, API key y predicción.
+    monkeypatch.setenv("PERCEPTRON_MODEL_DIR", str(bundle / "app" / "model"))
+    monkeypatch.setenv("PERCEPTRON_API_KEY", "clave")
+    spec = importlib.util.spec_from_file_location("bundle_app", bundle / "app" / "app.py")
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    served = TestClient(module.app)
+    assert served.get("/health").json()["task"] == "classification"
+    assert served.post("/predict", json={"rows": rows}).status_code == 401
+    ok = served.post("/predict", json={"rows": rows}, headers={"X-API-Key": "clave"})
+    assert ok.status_code == 200
+    assert [p["prediction"] for p in ok.json()["predictions"]] == [
+        p["prediction"] for p in res["predictions"]
+    ]
+    assert "predictions_total" in served.get("/metrics").text

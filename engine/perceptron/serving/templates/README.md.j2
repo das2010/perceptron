@@ -1,0 +1,32 @@
+# {{ name }} — servidor de inferencia
+
+Generado por Perceptron {{ version }} el {{ created }} desde el run `{{ run_id }}`.
+
+- Entrada: **{{ kind }}**{% if columns %} con las columnas {{ columns | join(", ") }}{% endif %}.
+- Tarea: **{{ task }}**{% if classes %} ({{ classes | join(", ") }}){% endif %}.
+- Modelo: ONNX verificado contra PyTorch (máx. diferencia {{ max_diff }}).
+
+## Ejecutar con Docker
+
+```bash
+docker build -f Dockerfile.cpu -t {{ slug }} .
+docker run -p 8000:8000 -e PERCEPTRON_API_KEY=cambiame {{ slug }}
+```
+
+GPU: `docker build -f Dockerfile.cuda -t {{ slug }}-gpu .` y `docker run --gpus all ...`.
+
+## Ejecutar sin Docker
+
+```bash
+uv venv && uv pip install -r requirements.txt
+PYTHONPATH=vendor uvicorn app.app:app --port 8000
+```
+
+## Uso
+
+```bash
+curl -X POST localhost:8000/predict -H "X-API-Key: cambiame" \
+  -H "Content-Type: application/json" -d '{"rows": [{...}]}'
+```
+
+`/predict/batch` recibe un CSV (tabular) o una imagen. `/metrics` expone métricas Prometheus, `/signature` la firma del modelo y `/docs` el OpenAPI.
