@@ -44,7 +44,7 @@ explicit = true
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-extend-exclude = ["ui", "desktop", "server/migrations"]
+extend-exclude = ["ui", "desktop"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "PTH", "S", "N", "C4", "PL"]
@@ -61,6 +61,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "engine/tests/**" = ["S101", "S105", "S106", "PLR2004", "PLC0415"]
+"server/tests/**" = ["S101", "S105", "S106", "PLR2004", "PLC0415"]
+"server/perceptron_server/migrations/**" = ["N999", "INP001"]
 "fixtures/**" = ["S311", "E501", "PLR0914"]
 
 [tool.ruff.lint.isort]
@@ -75,11 +77,12 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 check_untyped_defs = true
 no_implicit_optional = true
-files = ["engine/perceptron"]
+files = ["engine/perceptron", "server/perceptron_server"]
+exclude = ["server/perceptron_server/migrations/"]
 
 # mypy strict en core/domain/archspec/llm (SPEC §13.6)
 [[tool.mypy.overrides]]
-module = ["perceptron.core.*", "perceptron.domain.*", "perceptron.archspec.*", "perceptron.llm.*", "perceptron.agent.*"]
+module = ["perceptron.core.*", "perceptron.domain.*", "perceptron.archspec.*", "perceptron.llm.*", "perceptron.agent.*", "perceptron.api.access", "perceptron_server.*"]
 strict = true
 
 # Librerías de ML sin stubs completos
@@ -94,7 +97,7 @@ warn_required_dynamic_aliases = true
 
 # ---------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
-testpaths = ["engine/tests"]
+testpaths = ["engine/tests", "server/tests"]
 addopts = "-ra --strict-markers -m 'not e2e and not llm_live and not golden'"
 # Un test colgado falla en vez de bloquear el CI (ej.: deadlock de DataLoader).
 timeout = 600

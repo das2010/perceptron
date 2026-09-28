@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from typing import Any
 
 from sqlalchemy import select
@@ -59,9 +59,16 @@ class SqlRepository[E: Entity]:
         return entity
 
     def list(
-        self, *, filters: Mapping[str, Any] | None = None, limit: int = 100, offset: int = 0
+        self,
+        *,
+        filters: Mapping[str, Any] | None = None,
+        ids: Collection[str] | None = None,
+        limit: int = 100,
+        offset: int = 0,
     ) -> Sequence[E]:
         stmt = select(EntityRow).where(EntityRow.kind == self.kind)
+        if ids is not None:
+            stmt = stmt.where(EntityRow.id.in_(list(ids)))
         for key, value in (filters or {}).items():
             if key in _INDEXED_FILTERS:
                 stmt = stmt.where(getattr(EntityRow, key) == value)

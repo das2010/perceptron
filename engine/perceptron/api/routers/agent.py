@@ -55,7 +55,8 @@ def _continue(ctx: EngineContext, agent_id: str, first: Any = None) -> Job:
         ar = runner.run(agent_id)
         return {"state": ar.state.value, "best_run_id": ar.best_run_id}
 
-    return ctx.jobs.submit("agent", work, refs={"agent_run_id": agent_id})
+    project_id = ctx.repo(AgentRun).get(agent_id).project_id
+    return ctx.jobs.submit("agent", work, refs={"agent_run_id": agent_id, "project_id": project_id})
 
 
 @router.post(

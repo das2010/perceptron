@@ -43,8 +43,12 @@ class EngineContext:
     @classmethod
     def create(cls, settings: Settings) -> EngineContext:
         settings.paths.ensure()
-        db = Database.for_file(settings.paths.db_file)
-        db.create_all()
+        db = (
+            Database(settings.database_url.get_secret_value())
+            if settings.database_url
+            else Database.for_file(settings.paths.db_file)
+        )
+        db.create_all()  # idempotente; en el Team Server el esquema lo migra Alembic antes
         return cls(settings=settings, db=db)
 
     @property

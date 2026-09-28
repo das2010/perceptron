@@ -101,6 +101,17 @@ class Settings(BaseSettings):
     api: ApiSettings = Field(default_factory=ApiSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
+    database_url: SecretStr | None = Field(
+        default=None,
+        description="URL SQLAlchemy de la metadata (Team Server: PostgreSQL); None = SQLite local",
+    )
+    source_roots: list[Path] | None = Field(
+        default=None,
+        description=(
+            "Si está, las fuentes por ruta solo pueden leer debajo de estas carpetas "
+            "(Team Server: «fuentes del servidor», RF-SRV-05); None = cualquier ruta (desktop)"
+        ),
+    )
 
     @field_validator("workspace_dir")
     @classmethod

@@ -40,6 +40,41 @@ jobs:
       - name: CLI smoke
         run: uv run perceptron --version
 
+  server-postgres:
+    name: server (PostgreSQL 16)
+    # Team Server (Capa 5): los mismos tests del servidor sobre PostgreSQL real + migraciones.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: perceptron
+          POSTGRES_PASSWORD: perceptron
+          POSTGRES_DB: perceptron
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U perceptron"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --locked
+      - name: Pytest (server/tests contra PostgreSQL)
+        run: uv run pytest server/tests -v
+        env:
+          PERCEPTRON_TEST_DATABASE_URL: postgresql+pg8000://perceptron:perceptron@localhost:5432/perceptron
+      - name: CLI (migrate + create-user)
+        run: |
+          uv run perceptron-server migrate
+          PERCEPTRON_NEW_PASSWORD=clave-larga-de-ci uv run perceptron-server create-user ci@preteco.test --admin
+        env:
+          PERCEPTRON_DATABASE_URL: postgresql+pg8000://perceptron:perceptron@localhost:5432/perceptron
+          PERCEPTRON_SERVER__SECRET_KEY: ci-secret-key-de-al-menos-32-caracteres
+          PERCEPTRON_WORKSPACE_DIR: ${{ runner.temp }}/ws
+
   ui:
     name: ui (${{ matrix.os }})
     strategy:

@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from perceptron import __version__
+from perceptron.api.access import AccessPolicy, OpenAccess, authorized
 from perceptron.api.context import EngineContext
 from perceptron.api.routers import (
     agent,
@@ -32,13 +33,21 @@ TOKEN_HEADER = "X-Perceptron-Token"  # noqa: S105 - nombre de cabecera, no un se
 _PUBLIC_PATHS = {f"{API_PREFIX}/system/health"}
 
 
-def create_app(settings: Settings | None = None, ctx: EngineContext | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    ctx: EngineContext | None = None,
+    access: AccessPolicy | None = None,
+    ctx_factory: Callable[[Settings], EngineContext] | None = None,
+) -> FastAPI:
+    """App del Engine. `access` es la política de acceso: abierta en desktop; el Team Server
+    instala la suya (autenticación + RBAC) sin cambiar los routers. `ctx_factory` crea el
+    contexto al arrancar (el servidor migra la base antes y arma sus servicios después)."""
     settings = settings or (ctx.settings if ctx else get_settings())
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         owned = ctx is None
-        app.state.ctx = ctx or EngineContext.create(settings)
+        app.state.ctx = ctx or (ctx_factory or EngineContext.create)(settings)
         try:
             yield
         finally:
@@ -53,6 +62,7 @@ def create_app(settings: Settings | None = None, ctx: EngineContext | None = Non
         redoc_url=None,
         lifespan=lifespan,
     )
+    app.state.access = access or OpenAccess()
 
     app.add_middleware(
         CORSMiddleware,
@@ -85,14 +95,17 @@ def create_app(settings: Settings | None = None, ctx: EngineContext | None = Non
     async def perceptron_error_handler(_: Request, exc: PerceptronError) -> JSONResponse:
         return JSONResponse(exc.to_dict(), status_code=exc.http_status)
 
-    app.include_router(system.router, prefix=API_PREFIX)
-    app.include_router(projects.router, prefix=API_PREFIX)
-    app.include_router(data.router, prefix=API_PREFIX)
-    app.include_router(modeling.router, prefix=API_PREFIX)
-    app.include_router(llm.router, prefix=API_PREFIX)
-    app.include_router(agent.router, prefix=API_PREFIX)
-    app.include_router(wizard.router, prefix=API_PREFIX)
-    app.include_router(export.router, prefix=API_PREFIX)
-    app.include_router(analysis.router, prefix=API_PREFIX)
-    app.include_router(labeling.router, prefix=API_PREFIX)
+    for module in (
+        system,
+        projects,
+        data,
+        modeling,
+        llm,
+        agent,
+        wizard,
+        export,
+        analysis,
+        labeling,
+    ):
+        app.include_router(module.router, prefix=API_PREFIX, dependencies=[authorized])
     return app
