@@ -5879,6 +5879,87 @@
         "title": "StepSpec",
         "type": "object"
       },
+      "StepsPreview": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "dtypes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dtypes",
+            "type": "array"
+          },
+          "rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "step_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Id"
+          }
+        },
+        "required": [
+          "step_id",
+          "columns",
+          "dtypes",
+          "rows"
+        ],
+        "title": "StepsPreview",
+        "type": "object"
+      },
+      "StepsPreviewBody": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "graph": {
+            "$ref": "#/components/schemas/PipelineSpec"
+          },
+          "rows": {
+            "default": 10,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Rows",
+            "type": "integer"
+          },
+          "upto_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upto Step"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "graph"
+        ],
+        "title": "StepsPreviewBody",
+        "type": "object"
+      },
       "StrategyBody": {
         "additionalProperties": false,
         "properties": {
@@ -8866,6 +8947,59 @@
           }
         },
         "summary": "List Pipelines",
+        "tags": [
+          "pipelines"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/pipelines/preview-steps": {
+      "post": {
+        "description": "Vista previa de un grafo (guardado o no) tras un paso, sobre filas de train (RF-PIP-02).",
+        "operationId": "previewPipelineSteps",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepsPreviewBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepsPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Pipeline Steps",
         "tags": [
           "pipelines"
         ]

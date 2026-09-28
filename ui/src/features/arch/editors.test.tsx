@@ -159,8 +159,8 @@ describe("editor visual de ArchSpec (RF-ARC-05)", () => {
     await userEvent.clear(name);
     await userEvent.type(name, "mlp-editada");
     await waitFor(() => expect(validated.at(-1)?.name).toBe("mlp-editada"), { timeout: 8000 });
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: /Guardar como nueva/ })).toBeEnabled(),
+    await waitFor(
+      () => expect(screen.getByRole("button", { name: /Guardar como nueva/ })).toBeEnabled(),
       { timeout: 8000 },
     );
     await userEvent.click(screen.getByRole("button", { name: /Guardar como nueva/ }));
@@ -218,5 +218,63 @@ describe("editor visual de pipeline (RF-PIP-02)", () => {
     await userEvent.click(screen.getByRole("button", { name: /^Guardar$/ }));
     await waitFor(() => expect(put?.version).toBe(3));
     expect(put?.graph.steps.map((s) => s.id)).toEqual(["esc", "imp"]);
+  });
+});
+
+describe("vista previa por paso (RF-PIP-02)", () => {
+  beforeEach(() => resetApiClient());
+
+  it("previsualiza el grafo sin guardar tras el paso elegido", async () => {
+    const bodies: { upto_step: string | null; graph: { steps: { kind: string }[] } }[] = [];
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/datasets": () => [
+        {
+          id: "dsv_1",
+          project_id: "prj_1",
+          content_hash: "abcdef123456",
+          num_samples: 400,
+          size_bytes: 1,
+          target: "churn",
+        },
+      ],
+      "GET /api/v1/pipelines/pip_1": () => ({
+        id: "pip_1",
+        project_id: "prj_1",
+        name: "tabular",
+        origin: "rules",
+        version: 1,
+        graph: {
+          modality: "tabular",
+          pipeline_version: "1.0",
+          target: null,
+          steps: [
+            { id: "imp", kind: "impute_numeric", columns: ["edad"], params: {} },
+            { id: "esc", kind: "scale", columns: ["edad"], params: {} },
+          ],
+        },
+      }),
+      "POST /api/v1/projects/prj_1/pipelines/preview-steps": async (req) => {
+        bodies.push((await req.json()) as (typeof bodies)[number]);
+        return {
+          step_id: "imp",
+          columns: ["edad", "plan"],
+          dtypes: ["Float64", "String"],
+          rows: [
+            [31.5, "pro"],
+            [null, "free"],
+          ],
+        };
+      },
+    });
+    renderAt("/projects/prj_1/pipelines/pip_1");
+    await userEvent.click(await screen.findByRole("button", { name: /^1\. impute_numeric/ }));
+    await userEvent.selectOptions(screen.getByLabelText("Tipo de paso"), "log1p");
+    await userEvent.click(await screen.findByRole("button", { name: "Ver resultado tras «imp»" }));
+    expect(await screen.findByText("31.500")).toBeInTheDocument();
+    expect(screen.getByText("∅")).toBeInTheDocument();
+    expect(bodies[0]?.upto_step).toBe("imp");
+    expect(bodies[0]?.graph.steps[0]?.kind).toBe("log1p"); // cambios sin guardar incluidos
   });
 });

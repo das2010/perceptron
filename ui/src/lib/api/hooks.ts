@@ -536,7 +536,6 @@ export function useUpdateDraft(projectId: string) {
 export type ArchSpecRecord = WithId<Schemas["ArchSpecRecord"]>;
 export type ValidationReport = Awaited<ReturnType<typeof validateArchSpec>>;
 export type PipelineSpec = Schemas["PipelineSpec"];
-export type PipelinePreview = Schemas["PipelinePreview"];
 
 export function useArchSpecs(projectId: string) {
   return useQuery({
@@ -665,15 +664,20 @@ export function useUpdatePipeline(pipelineId: string) {
   });
 }
 
-export function usePreviewPipeline(pipelineId: string) {
+/** Salida intermedia de un grafo (guardado o no) tras un paso, sobre train (RF-PIP-02). */
+export function usePreviewSteps(projectId: string) {
   return useMutation({
-    mutationFn: async (datasetVersionId: string) =>
+    mutationFn: async (body: {
+      dataset_version_id: string;
+      graph: PipelineSpec;
+      upto_step: string | null;
+    }) =>
       unwrap(
         await (
           await getApiClient()
-        ).POST("/api/v1/pipelines/{pipeline_id}/preview", {
-          params: { path: { pipeline_id: pipelineId } },
-          body: { dataset_version_id: datasetVersionId, rows: 10 },
+        ).POST("/api/v1/projects/{project_id}/pipelines/preview-steps", {
+          params: { path: { project_id: projectId } },
+          body: { ...body, rows: 10 },
         }),
       ),
   });

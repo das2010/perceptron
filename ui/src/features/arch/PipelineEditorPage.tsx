@@ -29,7 +29,7 @@ import {
   type PipelineSpec,
   useDatasets,
   usePipeline,
-  usePreviewPipeline,
+  usePreviewSteps,
   useUpdatePipeline,
 } from "@/lib/api/hooks";
 
@@ -114,14 +114,23 @@ function StepPanel({ step, onChange }: { step: Step; onChange: (s: Step) => void
   );
 }
 
-function Preview({ pipeline, dirty }: { pipeline: Pipeline; dirty: boolean }) {
+function Preview({
+  projectId,
+  graph,
+  step,
+}: {
+  projectId: string;
+  graph: PipelineSpec;
+  step: Step | undefined;
+}) {
   const { t } = useTranslation();
-  const datasets = useDatasets(pipeline.project_id);
+  const datasets = useDatasets(projectId);
   const [dv, setDv] = useState("");
-  const preview = usePreviewPipeline(pipeline.id ?? "");
+  const preview = usePreviewSteps(projectId);
   const chosen = dv || datasets.data?.at(-1)?.id || "";
   const data = preview.data;
-  const headers = data ? [...data.numeric_features, ...data.categorical_features] : [];
+  const cell = (v: unknown) =>
+    v === null ? "∅" : typeof v === "number" && !Number.isInteger(v) ? v.toFixed(3) : String(v);
   return (
     <Card>
       <CardTitle>{t("pipeline.preview")}</CardTitle>
@@ -139,32 +148,40 @@ function Preview({ pipeline, dirty }: { pipeline: Pipeline; dirty: boolean }) {
         </Select>
         <Button
           variant="secondary"
-          disabled={!chosen || dirty}
+          disabled={!chosen}
           loading={preview.isPending}
-          onClick={() => preview.mutate(chosen)}
+          onClick={() =>
+            preview.mutate({ dataset_version_id: chosen, graph, upto_step: step?.id ?? null })
+          }
         >
           <Eye className="h-4 w-4" aria-hidden="true" />
-          {t("pipeline.runPreview")}
+          {step ? t("pipeline.previewStep", { step: step.id }) : t("pipeline.previewAll")}
         </Button>
-        {dirty && <span className="text-xs text-muted">{t("pipeline.saveFirst")}</span>}
       </div>
       <ErrorNote error={preview.error} />
-      {data && headers.length > 0 && (
+      {data && (
         <div className="mt-3 max-h-80 overflow-auto">
+          <p className="mb-2 text-xs text-muted">
+            {data.step_id
+              ? t("pipeline.previewAfter", { step: data.step_id })
+              : t("pipeline.previewAfterAll")}
+          </p>
           <Table>
             <thead>
               <tr>
-                {headers.map((h) => (
-                  <Th key={h}>{h}</Th>
+                {data.columns.map((c, i) => (
+                  <Th key={c}>
+                    {c} <span className="font-normal text-muted">{data.dtypes[i]}</span>
+                  </Th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {data.x_num.map((row, i) => (
+              {data.rows.map((row, i) => (
                 <tr key={i}>
-                  {[...row, ...(data.x_cat[i] ?? [])].map((v, j) => (
+                  {row.map((v, j) => (
                     <Td key={j} className="font-mono text-xs">
-                      {Number.isInteger(v) ? v : v.toFixed(3)}
+                      {cell(v)}
                     </Td>
                   ))}
                 </tr>
@@ -172,9 +189,6 @@ function Preview({ pipeline, dirty }: { pipeline: Pipeline; dirty: boolean }) {
             </tbody>
           </Table>
         </div>
-      )}
-      {data && headers.length === 0 && (
-        <p className="mt-2 text-sm text-muted">{t("pipeline.noTabularPreview")}</p>
       )}
     </Card>
   );
@@ -331,7 +345,9 @@ function PipelineEditor({ pipeline }: { pipeline: Pipeline }) {
           )}
         </div>
       </div>
-      <Preview pipeline={pipeline} dirty={dirty} />
+      {graph.modality === "tabular" && (
+        <Preview projectId={pipeline.project_id} graph={graph} step={step} />
+      )}
     </div>
   );
 }

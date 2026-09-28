@@ -457,9 +457,6 @@
     "paramsHint": "Por ejemplo {\"method\": \"robust\"}.",
     "paramsInvalid": "El JSON de parámetros no es válido; no se aplicó.",
     "preview": "Vista previa sobre train",
-    "runPreview": "Ver resultado",
-    "saveFirst": "Guardá los cambios para previsualizarlos.",
-    "noTabularPreview": "La vista previa de filas está disponible para datos tabulares.",
     "unsaved": "Sin guardar",
     "discard": "Descartar",
     "save": "Guardar",
@@ -468,6 +465,10 @@
     "down": "Bajar",
     "selectHint": "Tocá un paso para editarlo, reordenarlo o quitarlo.",
     "rationale": "Por qué estos pasos",
-    "steps": "Pasos"
+    "steps": "Pasos",
+    "previewStep": "Ver resultado tras «{{step}}»",
+    "previewAll": "Ver resultado del pipeline",
+    "previewAfter": "Primeras filas de train después del paso «{{step}}» (incluye cambios sin guardar).",
+    "previewAfterAll": "Primeras filas de train después de todo el pipeline (incluye cambios sin guardar)."
   }
 }

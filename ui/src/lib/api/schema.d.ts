@@ -597,6 +597,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/pipelines/preview-steps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Pipeline Steps
+         * @description Vista previa de un grafo (guardado o no) tras un paso, sobre filas de train (RF-PIP-02).
+         */
+        post: operations["previewPipelineSteps"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/pipelines/propose": {
         parameters: {
             query?: never;
@@ -3353,6 +3373,30 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** StepsPreview */
+        StepsPreview: {
+            /** Columns */
+            columns: string[];
+            /** Dtypes */
+            dtypes: string[];
+            /** Rows */
+            rows: unknown[][];
+            /** Step Id */
+            step_id: string | null;
+        };
+        /** StepsPreviewBody */
+        StepsPreviewBody: {
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            graph: components["schemas"]["PipelineSpec"];
+            /**
+             * Rows
+             * @default 10
+             */
+            rows: number;
+            /** Upto Step */
+            upto_step?: string | null;
+        };
         /** StrategyBody */
         StrategyBody: {
             /** Archspec Id */
@@ -5059,6 +5103,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Pipeline"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previewPipelineSteps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StepsPreviewBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StepsPreview"];
                 };
             };
             /** @description Validation Error */

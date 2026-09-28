@@ -123,7 +123,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Vista del agente: lanzamiento con límites y aprobaciones, bitácora en vivo, aprobar/rechazar/detener | ✅ |
 | Editor visual de ArchSpec (React Flow) con validación en vivo y "ver como código" (Monaco empaquetado, sin CDN) | ✅ |
 | Editor visual de pipeline (React Flow): agregar, quitar, reordenar, parametrizar, vista previa | ✅ |
-| E2E Playwright UC-04 guiado por el wizard (incluye editor visual y código) | 🟡 en CI |
+| E2E Playwright UC-04 guiado por el wizard (incluye editor visual y código) | ✅ 40 s de punta a punta (O1: < 15 min) |
 
 ## Requisitos funcionales
 
@@ -152,7 +152,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-PRF-07 | sí | 1 | Genera un Dataset Profile Card (JSON + vista) que es la entrada principal del LLM en… | ✅ `ProfileCard` sin valores individuales (test de propiedad) |
 | RF-PRF-08 |  | 1 | Estimación de complejidad y costo: tamaño efectivo, memoria estimada por batch, tiempo… | ⬜ pendiente |
 | RF-PIP-01 | sí | 1/3 | El sistema propone automáticamente un pipeline según profiling (imputación, encoding,… | ✅ `pipeline.propose` con justificación por paso |
-| RF-PIP-02 |  | 1/3 | Editor visual (React Flow) de un DAG de pasos: agregar, quitar, reordenar,… | 🟡 editor React Flow (agregar, quitar, reordenar, parametrizar, guardar con versión) y vista previa del pipeline completo sobre train; vista previa por nodo pendiente |
+| RF-PIP-02 |  | 1/3 | Editor visual (React Flow) de un DAG de pasos: agregar, quitar, reordenar,… | ✅ editor React Flow (agregar, quitar, reordenar, parametrizar, guardar con versión) con vista previa por paso del grafo sin guardar (`POST /projects/{id}/pipelines/preview-steps`) |
 | RF-PIP-03 |  | 1/3 | Catálogo de pasos por modalidad (extensible por plugins): | ✅ tabular, imagen, texto, series, audio (augmentations incluidas) |
 | RF-PIP-04 | sí | 1/3 | El pipeline se serializa (JSON) y se ajusta solo con train (fit/transform separado)… | ✅ fit solo con train, estado JSON empaquetable |
 | RF-PIP-05 |  | 1/3 | El LLM puede sugerir cambios al pipeline con justificación; el usuario acepta/rechaza… | ⬜ pendiente |
@@ -163,7 +163,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-LBL-05 |  | 4 | Métricas de calidad del etiquetado: acuerdo humano-modelo, clases confusas, posibles… | ⬜ pendiente |
 | RF-LBL-06 |  | 4 | Importar/exportar etiquetas en COCO, YOLO, VOC, CSV, JSONL. | ⬜ pendiente |
 | RF-WIZ-01 | sí | 3 | Pasos 1, 2, 3, 5, 6, 7, 8, 9 para tabular e imagen. | ✅ los 9 pasos para tabular e imagen (UI + `ProjectDraft`) |
-| RF-WIZ-02 |  | 3 | Cada paso muestra "¿Por qué?" con la explicación del LLM y permite rechazar/editar. | 🟡 propuestas del LLM con justificación, aceptables o rechazables (arquitectura, HPO, copiloto); "¿Por qué?" en todos los pasos pendiente |
+| RF-WIZ-02 |  | 3 | Cada paso muestra "¿Por qué?" con la explicación del LLM y permite rechazar/editar. | ✅ "¿Por qué?" en cada paso (pregunta al copiloto con el contexto del borrador); propuestas del LLM con justificación, aceptables o rechazables |
 | RF-WIZ-03 |  | 3 | Sin LLM configurado (o privacidad L0) el wizard funciona con recomendaciones por… | ✅ sin LLM (o L0) cada paso usa las recomendaciones por reglas |
 | RF-WIZ-04 |  | 3 | El estado del wizard es un documento ProjectDraft versionado. | ✅ `ProjectDraft` versionado con bloqueo optimista e historial de cambios (usuario/copiloto) |
 | RF-LLM-01 | sí | 2 | Interfaz única LLMProvider con adaptadores: Anthropic, OpenAI, Google Gemini, Kimi /… | ✅ `llm.providers`: Anthropic, OpenAI, Gemini, Kimi/Moonshot, OpenAI-compatible, Ollama |
