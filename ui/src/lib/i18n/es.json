@@ -674,5 +674,33 @@
     "boxes_one": "{{count}} caja",
     "boxes_other": "{{count}} cajas",
     "undo": "Deshacer"
+  },
+  "sources": {
+    "fromDb": "Desde una base de datos",
+    "fromHub": "Dataset público (Hugging Face / Kaggle)",
+    "dialect": "Motor",
+    "dialects": {
+      "postgresql": "PostgreSQL",
+      "mysql": "MySQL / MariaDB",
+      "mssql": "SQL Server",
+      "sqlite": "SQLite (archivo)"
+    },
+    "database": "Base",
+    "file": "Archivo .sqlite",
+    "name": "Nombre",
+    "host": "Servidor",
+    "port": "Puerto",
+    "user": "Usuario",
+    "password": "Contraseña",
+    "passwordHint": "Se guarda en el llavero del sistema, nunca en el proyecto.",
+    "query": "Consulta SQL",
+    "queryHint": "Solo lectura. Se lee por lotes y se guarda como una copia del proyecto.",
+    "runQuery": "Ejecutar y previsualizar",
+    "provider": "Origen",
+    "dataset": "Dataset",
+    "split": "Split",
+    "hfToken": "Token de Hugging Face (opcional)",
+    "kaggleKey": "Credenciales de Kaggle (usuario:clave)",
+    "download": "Descargar y previsualizar"
   }
 }

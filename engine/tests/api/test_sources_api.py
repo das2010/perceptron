@@ -16,6 +16,8 @@ from fastapi.testclient import TestClient
 from perceptron.data.sources import remote
 
 API = "/api/v1"
+# Almacén de secretos en memoria (el runner de CI no tiene llavero del sistema).
+pytestmark = pytest.mark.usefixtures("fake_llm")
 
 
 def _ok(r: Any, code: int = 200) -> Any:
@@ -161,3 +163,21 @@ def test_hf_file_selection() -> None:
     ]
     assert remote.hf_data_files(["x/test/data.csv"], "test") == ["x/test/data.csv"]
     assert remote.hf_data_files(["README.md"], None) == []
+
+
+def test_secret_store_without_keychain_is_a_clear_error() -> None:
+    from perceptron.core.errors import ValidationError
+    from perceptron.llm.secrets import ChainSecrets, EnvSecrets
+
+    class Broken:
+        def get(self, name: str) -> str | None:
+            return None
+
+        def set(self, name: str, value: str) -> None:
+            raise RuntimeError("sin backend")
+
+        def delete(self, name: str) -> None:
+            return None
+
+    with pytest.raises(ValidationError, match="llavero"):
+        ChainSecrets([Broken(), EnvSecrets()]).set("x", "y")

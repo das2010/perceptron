@@ -1119,3 +1119,47 @@ export function useApplyLabels(labelsetId: string, projectId: string) {
     },
   });
 }
+
+// ---------------------------------------------------------------- fuentes remotas (Capa 4c)
+
+async function previewOf(source: DataSource) {
+  const api = await getApiClient();
+  const preview = unwrap(
+    await api.POST("/api/v1/sources/{source_id}/preview", {
+      params: { path: { source_id: source.id } },
+    }),
+  );
+  return { source, preview };
+}
+
+export function useCreateDbSource(projectId: string) {
+  return useMutation({
+    mutationFn: async (body: Schemas["DbSourceCreate"]) =>
+      previewOf(
+        unwrap(
+          await (
+            await getApiClient()
+          ).POST("/api/v1/projects/{project_id}/sources/db", {
+            params: { path: { project_id: projectId } },
+            body,
+          }),
+        ) as DataSource,
+      ),
+  });
+}
+
+export function useCreateHubSource(projectId: string) {
+  return useMutation({
+    mutationFn: async (body: Schemas["HubSourceCreate"]) =>
+      previewOf(
+        unwrap(
+          await (
+            await getApiClient()
+          ).POST("/api/v1/projects/{project_id}/sources/hub", {
+            params: { path: { project_id: projectId } },
+            body,
+          }),
+        ) as DataSource,
+      ),
+  });
+}

@@ -674,5 +674,33 @@
     "boxes_one": "{{count}} box",
     "boxes_other": "{{count}} boxes",
     "undo": "Undo"
+  },
+  "sources": {
+    "fromDb": "From a database",
+    "fromHub": "Public dataset (Hugging Face / Kaggle)",
+    "dialect": "Engine",
+    "dialects": {
+      "postgresql": "PostgreSQL",
+      "mysql": "MySQL / MariaDB",
+      "mssql": "SQL Server",
+      "sqlite": "SQLite (file)"
+    },
+    "database": "Database",
+    "file": ".sqlite file",
+    "name": "Name",
+    "host": "Host",
+    "port": "Port",
+    "user": "User",
+    "password": "Password",
+    "passwordHint": "Stored in the system keychain, never in the project.",
+    "query": "SQL query",
+    "queryHint": "Read-only. Read in batches and saved as a project copy.",
+    "runQuery": "Run and preview",
+    "provider": "Source",
+    "dataset": "Dataset",
+    "split": "Split",
+    "hfToken": "Hugging Face token (optional)",
+    "kaggleKey": "Kaggle credentials (user:key)",
+    "download": "Download and preview"
   }
 }

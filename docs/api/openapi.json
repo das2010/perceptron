@@ -1964,6 +1964,115 @@
         "title": "DatasetVersion",
         "type": "object"
       },
+      "DbConfig": {
+        "properties": {
+          "database": {
+            "description": "Nombre de la base (o ruta del archivo en SQLite)",
+            "title": "Database",
+            "type": "string"
+          },
+          "dialect": {
+            "enum": [
+              "sqlite",
+              "postgresql",
+              "mysql",
+              "mssql"
+            ],
+            "title": "Dialect",
+            "type": "string"
+          },
+          "host": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Host"
+          },
+          "max_rows": {
+            "default": 5000000,
+            "minimum": 1.0,
+            "title": "Max Rows",
+            "type": "integer"
+          },
+          "odbc_driver": {
+            "default": "ODBC Driver 18 for SQL Server",
+            "title": "Odbc Driver",
+            "type": "string"
+          },
+          "port": {
+            "anyOf": [
+              {
+                "maximum": 65535.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Port"
+          },
+          "query": {
+            "description": "Consulta SQL de solo lectura",
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User"
+          }
+        },
+        "required": [
+          "dialect",
+          "database",
+          "query"
+        ],
+        "title": "DbConfig",
+        "type": "object"
+      },
+      "DbSourceCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/DbConfig"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo de escritura: va al keychain",
+            "title": "Password"
+          }
+        },
+        "required": [
+          "name",
+          "config"
+        ],
+        "title": "DbSourceCreate",
+        "type": "object"
+      },
       "DefineBody": {
         "additionalProperties": false,
         "properties": {
@@ -3428,6 +3537,66 @@
           "version"
         ],
         "title": "Health",
+        "type": "object"
+      },
+      "HubSourceCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset": {
+            "description": "repo_id (HF) u owner/slug (Kaggle)",
+            "minLength": 3,
+            "title": "Dataset",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "provider": {
+            "enum": [
+              "huggingface",
+              "kaggle"
+            ],
+            "title": "Provider",
+            "type": "string"
+          },
+          "split": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Split de HF (train, test…)",
+            "title": "Split"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo de escritura: token de HF o «usuario:clave» de Kaggle",
+            "title": "Token"
+          }
+        },
+        "required": [
+          "provider",
+          "dataset"
+        ],
+        "title": "HubSourceCreate",
         "type": "object"
       },
       "ImageProfile": {
@@ -11780,6 +11949,112 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/sources/db": {
+      "post": {
+        "description": "Consulta SQL (SQL Server, PostgreSQL, MySQL/MariaDB, SQLite) materializada en Parquet.",
+        "operationId": "createDbSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DbSourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Db Source",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/sources/hub": {
+      "post": {
+        "description": "Dataset público de Hugging Face o Kaggle, descargado a la caché del proyecto.",
+        "operationId": "createHubSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HubSourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Hub Source",
+        "tags": [
+          "data"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/studies": {
       "post": {
         "operationId": "createStudy",
@@ -13094,6 +13369,49 @@
           }
         },
         "summary": "Preview Source",
+        "tags": [
+          "data"
+        ]
+      }
+    },
+    "/api/v1/sources/{source_id}/refresh": {
+      "post": {
+        "description": "Vuelve a ejecutar la consulta o la descarga; la próxima ingesta crea otra versión.",
+        "operationId": "refreshSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh Source",
         "tags": [
           "data"
         ]

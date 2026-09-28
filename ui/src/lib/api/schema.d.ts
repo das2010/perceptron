@@ -999,6 +999,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/sources/db": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Db Source
+         * @description Consulta SQL (SQL Server, PostgreSQL, MySQL/MariaDB, SQLite) materializada en Parquet.
+         */
+        post: operations["createDbSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/sources/hub": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Hub Source
+         * @description Dataset público de Hugging Face o Kaggle, descargado a la caché del proyecto.
+         */
+        post: operations["createHubSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/studies": {
         parameters: {
             query?: never;
@@ -1482,6 +1522,26 @@ export interface paths {
         put?: never;
         /** Preview Source */
         post: operations["previewSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sources/{source_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Source
+         * @description Vuelve a ejecutar la consulta o la descarga; la próxima ingesta crea otra versión.
+         */
+        post: operations["refreshSource"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2410,6 +2470,51 @@ export interface components {
              */
             version: number;
         };
+        /** DbConfig */
+        DbConfig: {
+            /**
+             * Database
+             * @description Nombre de la base (o ruta del archivo en SQLite)
+             */
+            database: string;
+            /**
+             * Dialect
+             * @enum {string}
+             */
+            dialect: "sqlite" | "postgresql" | "mysql" | "mssql";
+            /** Host */
+            host?: string | null;
+            /**
+             * Max Rows
+             * @default 5000000
+             */
+            max_rows: number;
+            /**
+             * Odbc Driver
+             * @default ODBC Driver 18 for SQL Server
+             */
+            odbc_driver: string;
+            /** Port */
+            port?: number | null;
+            /**
+             * Query
+             * @description Consulta SQL de solo lectura
+             */
+            query: string;
+            /** User */
+            user?: string | null;
+        };
+        /** DbSourceCreate */
+        DbSourceCreate: {
+            config: components["schemas"]["DbConfig"];
+            /** Name */
+            name: string;
+            /**
+             * Password
+             * @description Solo de escritura: va al keychain
+             */
+            password?: string | null;
+        };
         /** DefineBody */
         DefineBody: {
             /**
@@ -2972,6 +3077,31 @@ export interface components {
             status: "ok";
             /** Version */
             version: string;
+        };
+        /** HubSourceCreate */
+        HubSourceCreate: {
+            /**
+             * Dataset
+             * @description repo_id (HF) u owner/slug (Kaggle)
+             */
+            dataset: string;
+            /** Name */
+            name?: string | null;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "huggingface" | "kaggle";
+            /**
+             * Split
+             * @description Split de HF (train, test…)
+             */
+            split?: string | null;
+            /**
+             * Token
+             * @description Solo de escritura: token de HF o «usuario:clave» de Kaggle
+             */
+            token?: string | null;
         };
         /** ImageProfile */
         ImageProfile: {
@@ -7082,6 +7212,76 @@ export interface operations {
             };
         };
     };
+    createDbSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DbSourceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createHubSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HubSourceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     createStudy: {
         parameters: {
             query?: never;
@@ -7960,6 +8160,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourcePreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refreshSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSource"];
                 };
             };
             /** @description Validation Error */
