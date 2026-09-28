@@ -22,6 +22,7 @@ import polars as pl
 from pydantic import BaseModel, Field
 
 from perceptron.core.errors import ValidationError
+from perceptron.core.netguard import NetPolicy, check_url, same_origin
 from perceptron.domain.models import utcnow
 
 HttpFactory = Callable[[], httpx.Client]
@@ -29,7 +30,8 @@ MAX_BATCH_ROWS = 100_000
 
 
 def default_http() -> httpx.Client:
-    return httpx.Client(timeout=httpx.Timeout(30.0), follow_redirects=True)
+    # Sin redirects: cada URL pasa por la política de red antes de conectar (SSRF).
+    return httpx.Client(timeout=httpx.Timeout(30.0), follow_redirects=False)
 
 
 class Batch(BaseModel):
@@ -95,9 +97,12 @@ class RestConfig(BaseModel):
 
 
 class RestSource:
-    def __init__(self, config: RestConfig, http: HttpFactory = default_http) -> None:
+    def __init__(
+        self, config: RestConfig, http: HttpFactory = default_http, net: NetPolicy | None = None
+    ) -> None:
         self.config = config
         self.http = http
+        self.net = net or NetPolicy()
 
     def _headers(self, secret: str | None) -> dict[str, str]:
         headers = dict(self.config.headers)
@@ -133,6 +138,10 @@ class RestSource:
                 if url is None:
                     exhausted = True
                     break
+                if not same_origin(url, cfg.url):
+                    # `Link: next` a otro host: no se sigue ni se le mandan las credenciales.
+                    raise ValidationError("la paginación apunta a otro host")
+                check_url(url, self.net)
                 res = client.request(
                     cfg.method,
                     url,
@@ -196,8 +205,9 @@ class WebSocketConfig(BaseModel):
 class WebSocketSource:
     """Lee mensajes JSON hasta `max_messages` o `idle_timeout_s` sin mensajes."""
 
-    def __init__(self, config: WebSocketConfig) -> None:
+    def __init__(self, config: WebSocketConfig, net: NetPolicy | None = None) -> None:
         self.config = config
+        self.net = net or NetPolicy()
 
     def fetch(self, state: dict[str, Any], secret: str | None) -> Batch:
         from websockets.exceptions import ConnectionClosed
@@ -210,6 +220,7 @@ class WebSocketSource:
                 raise ValidationError("la fuente requiere un token")
             headers[cfg.auth_header] = f"Bearer {secret}" if cfg.auth == "bearer" else secret
         rows: list[dict[str, Any]] = []
+        check_url(cfg.url, self.net, schemes=("ws", "wss"))
         with connect(cfg.url, additional_headers=headers, open_timeout=15) as ws:
             try:
                 while len(rows) < cfg.max_messages:
@@ -314,12 +325,17 @@ class StreamBuffer:
 
 
 def build_source(
-    kind: str, config: dict[str, Any], http: HttpFactory | None = None
+    kind: str,
+    config: dict[str, Any],
+    http: HttpFactory | None = None,
+    *,
+    net: NetPolicy | None = None,
 ) -> StreamSource:
+    """`net`: política de destinos de red (`Settings.net_policy()`); None = sin restricción."""
     if kind == "rest":
-        return RestSource(RestConfig.model_validate(config), http or default_http)
+        return RestSource(RestConfig.model_validate(config), http or default_http, net)
     if kind == "websocket":
-        return WebSocketSource(WebSocketConfig.model_validate(config))
+        return WebSocketSource(WebSocketConfig.model_validate(config), net)
     if kind == "file":
         return FileTailSource(FileConfig.model_validate(config))
     raise ValidationError(f"tipo de fuente streaming desconocido: {kind}")

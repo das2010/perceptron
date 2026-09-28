@@ -16,6 +16,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from perceptron.core.netguard import NetPolicy
 from perceptron.core.paths import WorkspacePaths, default_workspace_dir
 
 
@@ -39,6 +40,9 @@ class ApiSettings(BaseModel):
             "tauri://localhost",
             "http://tauri.localhost",
         ]
+    )
+    docs: bool = Field(
+        default=True, description="Swagger UI y /openapi.json (el Team Server los apaga)"
     )
 
 
@@ -127,6 +131,22 @@ class TelemetrySettings(BaseModel):
     interval_s: float = Field(default=6 * 3600, ge=60)
 
 
+class NetworkSettings(BaseModel):
+    """Destinos que el Engine contacta por pedido de un usuario (fuentes API/WebSocket,
+    webhooks, bases de datos): protección SSRF (`core/netguard.py`)."""
+
+    allow_private: bool | None = Field(
+        default=None,
+        description=(
+            "Direcciones internas (loopback, LAN, link-local, metadata de la nube). "
+            "None = permitidas en el desktop, bloqueadas en el Team Server"
+        ),
+    )
+    allowed_hosts: list[str] = Field(
+        default_factory=list, description="Hosts internos habilitados igual (p. ej. una API)"
+    )
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="PERCEPTRON_",
@@ -146,6 +166,7 @@ class Settings(BaseSettings):
     monitoring: MonitoringSettings = Field(default_factory=MonitoringSettings)
     license: LicenseSettings = Field(default_factory=LicenseSettings)
     telemetry: TelemetrySettings = Field(default_factory=TelemetrySettings)
+    network: NetworkSettings = Field(default_factory=NetworkSettings)
     database_url: SecretStr | None = Field(
         default=None,
         description="URL SQLAlchemy de la metadata (Team Server: PostgreSQL); None = SQLite local",
@@ -171,6 +192,13 @@ class Settings(BaseSettings):
     @property
     def paths(self) -> WorkspacePaths:
         return WorkspacePaths(self.workspace_dir)
+
+    def net_policy(self) -> NetPolicy:
+        allow = self.network.allow_private
+        return NetPolicy(
+            allow_private=self.mode is not RuntimeMode.SERVER if allow is None else allow,
+            allowed_hosts=frozenset(h.lower().rstrip(".") for h in self.network.allowed_hosts),
+        )
 
 
 @lru_cache(maxsize=1)
