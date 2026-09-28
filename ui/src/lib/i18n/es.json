@@ -1245,5 +1245,39 @@
     "buffer": "{{rows}} filas en {{batches}} lotes",
     "lastPoll": "Última lectura",
     "pull": "Leer ahora"
+  },
+  "teamSync": {
+    "title": "Sincronización con el equipo",
+    "server": "Team Server",
+    "synced": "Todo al día con el servidor.",
+    "pending": "Para bajar: {{pull}} · para subir: {{push}}.",
+    "conflicts_one": "{{count}} conflicto: cambió acá y en el servidor. Elegí qué versión queda.",
+    "conflicts_other": "{{count}} conflictos: cambiaron acá y en el servidor. Elegí qué versión queda en cada uno.",
+    "entity": "Elemento",
+    "state": "Estado",
+    "resolution": "Resolución",
+    "resolveFor": "Resolver {{name}}",
+    "undecided": "Sin decidir",
+    "theirs": "La del servidor",
+    "mine": "La mía",
+    "refresh": "Actualizar",
+    "pull": "Bajar cambios",
+    "push": "Subir cambios",
+    "done": "Bajados: {{pulled}} · subidos: {{pushed}}.",
+    "states": {
+      "synced": "Al día",
+      "pull": "Cambió en el servidor",
+      "push": "Cambió acá",
+      "server_only": "Nuevo en el servidor",
+      "local_only": "Solo acá",
+      "conflict": "Conflicto"
+    },
+    "kinds": {
+      "Project": "Proyecto",
+      "DatasetVersion": "Datos",
+      "Profile": "Perfil",
+      "Pipeline": "Pipeline",
+      "ArchSpecRecord": "Arquitectura"
+    }
   }
 }

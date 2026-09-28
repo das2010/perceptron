@@ -1856,6 +1856,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/remote/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["remoteSyncStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/remote/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["remoteSyncPull"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/remote/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["remoteSyncPush"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/sources/stream": {
         parameters: {
             query?: never;
@@ -7279,6 +7327,34 @@ export interface components {
             mode: "auto" | "llm" | "rules";
         };
         /** StreamSourceCreate */
+        EntitySync: {
+            id: string;
+            kind: string;
+            local_version?: number | null;
+            name?: string | null;
+            server_version?: number | null;
+            /** @enum {string} */
+            state: "synced" | "pull" | "push" | "conflict" | "server_only" | "local_only";
+        };
+        SyncStatus: {
+            items: components["schemas"]["EntitySync"][];
+            server: string;
+        };
+        PullOutcome: {
+            conflicts_left: string[];
+            downloaded: number;
+            pulled: number;
+            pushed: number;
+        };
+        PullBody: {
+            resolutions?: {
+                [key: string]: "theirs" | "mine";
+            };
+            server: string;
+        };
+        PushBody: {
+            server: string;
+        };
         /** StreamSourceInfo */
         StreamSourceInfo: {
             buffer: components["schemas"]["PullResult"];
@@ -13114,6 +13190,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remoteSyncStatus: {
+        parameters: {
+            query: {
+                server: string;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatus"];
+                };
+            };
+        };
+    };
+    remoteSyncPull: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PullBody"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+        };
+    };
+    remoteSyncPush: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushBody"];
+            };
+        };
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
                 };
             };
         };

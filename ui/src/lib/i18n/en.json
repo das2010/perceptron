@@ -1245,5 +1245,39 @@
     "buffer": "{{rows}} rows in {{batches}} batches",
     "lastPoll": "Last read",
     "pull": "Read now"
+  },
+  "teamSync": {
+    "title": "Team sync",
+    "server": "Team Server",
+    "synced": "Everything is up to date with the server.",
+    "pending": "To pull: {{pull}} · to push: {{push}}.",
+    "conflicts_one": "{{count}} conflict: it changed here and on the server. Choose which version stays.",
+    "conflicts_other": "{{count}} conflicts: they changed here and on the server. Choose which version stays for each.",
+    "entity": "Item",
+    "state": "State",
+    "resolution": "Resolution",
+    "resolveFor": "Resolve {{name}}",
+    "undecided": "Undecided",
+    "theirs": "Server's",
+    "mine": "Mine",
+    "refresh": "Refresh",
+    "pull": "Pull changes",
+    "push": "Push changes",
+    "done": "Pulled: {{pulled}} · pushed: {{pushed}}.",
+    "states": {
+      "synced": "Up to date",
+      "pull": "Changed on the server",
+      "push": "Changed here",
+      "server_only": "New on the server",
+      "local_only": "Only here",
+      "conflict": "Conflict"
+    },
+    "kinds": {
+      "Project": "Project",
+      "DatasetVersion": "Data",
+      "Profile": "Profile",
+      "Pipeline": "Pipeline",
+      "ArchSpecRecord": "Architecture"
+    }
   }
 }

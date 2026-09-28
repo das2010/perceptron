@@ -7,7 +7,7 @@ en el desktop.
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Response, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -21,6 +21,7 @@ from perceptron.domain.models import ArchSpecRecord
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.remote.client import RemoteClient, RemoteServer
 from perceptron.remote.jobs import launch_remote_study
+from perceptron.remote.sync import SyncStatus
 from perceptron.services.workflow import Workflow
 
 router = APIRouter(prefix="/remote", tags=["remote"])
@@ -154,3 +155,80 @@ def promote_project(project_id: str, body: PromoteBody, ctx: Ctx) -> Job:
         )
 
     return ctx.jobs.submit("promote", work, refs={"project_id": project_id, "server": body.server})
+
+
+# ------------------------------------------------------------------ edición concurrente
+
+
+class PullBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    server: str
+    resolutions: dict[str, Literal["theirs", "mine"]] = Field(
+        default_factory=dict, description="Conflictos: id → versión del servidor o la propia"
+    )
+
+
+class PushBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    server: str
+
+
+@project_router.get(
+    "/projects/{project_id}/remote/status",
+    operation_id="remoteSyncStatus",
+    dependencies=DesktopOnly,
+)
+def remote_status(project_id: str, server: str, ctx: Ctx) -> SyncStatus:
+    """Qué cambió en el servidor, qué cambió acá y qué cambió en los dos lados (RF-SRV-03)."""
+    from perceptron.remote.sync import ProjectSync
+
+    ctx.projects.get(project_id)
+    return ProjectSync(ctx, client_for(ctx, server), project_id).status()
+
+
+@project_router.post(
+    "/projects/{project_id}/remote/pull",
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="remoteSyncPull",
+    dependencies=DesktopOnly,
+)
+def remote_pull(project_id: str, body: PullBody, ctx: Ctx) -> Job:
+    """Baja los cambios del servidor y resuelve los conflictos indicados."""
+    from perceptron.remote.sync import ProjectSync
+
+    ctx.projects.get(project_id)
+    client = client_for(ctx, body.server)
+
+    def work(job: Any) -> dict[str, Any]:
+        sync = ProjectSync(ctx, client, project_id)
+        out = sync.pull(
+            dict(body.resolutions), progress=lambda step, **d: job.emit("sync", step=step, **d)
+        )
+        return out.model_dump(mode="json")
+
+    return ctx.jobs.submit(
+        "sync_pull", work, refs={"project_id": project_id, "server": body.server}
+    )
+
+
+@project_router.post(
+    "/projects/{project_id}/remote/push",
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="remoteSyncPush",
+    dependencies=DesktopOnly,
+)
+def remote_push(project_id: str, body: PushBody, ctx: Ctx) -> Job:
+    """Sube lo que cambió solo en el desktop (con conflictos, primero hay que resolverlos)."""
+    from perceptron.remote.sync import ProjectSync
+
+    ctx.projects.get(project_id)
+    client = client_for(ctx, body.server)
+
+    def work(job: Any) -> dict[str, Any]:
+        sync = ProjectSync(ctx, client, project_id)
+        out = sync.push_changes(progress=lambda step, **d: job.emit("sync", step=step, **d))
+        return out.model_dump(mode="json")
+
+    return ctx.jobs.submit(
+        "sync_push", work, refs={"project_id": project_id, "server": body.server}
+    )
