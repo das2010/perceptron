@@ -1,0 +1,43 @@
+# ADR-0033: Monitoreo, drift y champion/challenger (Capa 6a)
+- Estado: propuesto
+- Fecha: 2026-09-28
+- Contexto:
+  - RF-MON-01..04 y 06..07 piden:
+    - registro de predicciones y feedback;
+    - drift de datos (tabular «con Evidently»: PSI, KS, JS, χ²) y de embeddings (MMD, centroides, clasificador de dominio);
+    - drift de performance y alertas por app, email y webhook;
+    - champion/challenger con rollback;
+    - versionado con linaje y diff.
+  - El producto se distribuye como desktop offline (SPEC §2) y el Team Server es on-premise.
+- Decisión:
+  - **Métricas de drift propias (numpy/scipy) en lugar de Evidently:**
+    - Evidently suma decenas de dependencias (plotly, nltk, scikit-learn en versiones fijas, etc.) a un runtime que se empaqueta con el desktop, para unas pocas métricas estándar.
+    - scipy (BSD-3) ya llegaba por scikit-learn: ahora se declara explícitamente.
+    - Tabular: PSI (10 bins por cuantiles de la referencia), KS, Jensen-Shannon, χ² y fracción de categorías nuevas.
+    - Severidad por umbrales convencionales (PSI 0,1/0,2/0,3). Una feature alta sola, con menos del 25 % del total afectado, pesa como media.
+    - Embeddings: MMD con RBF (ancho por la mediana y p-valor por permutaciones), distancia de centroides estandarizada y AUC de un clasificador de dominio.
+    - Si hiciera falta, un reporte HTML de Evidently podría sumarse como extra opcional.
+  - **Referencia del drift:** el split de entrenamiento de la versión con la que se entrenó el champion (muestra de 5000 filas).
+  - **Drift de salida:** hasta que el export incluya la penúltima capa, el embedding es el espacio de salida del modelo (probabilidades). Detecta cambios que afectan a las decisiones, que es lo que importa operativamente; el drift de embeddings de imagen, texto y audio sobre las features internas queda para cuando se agregue ese export.
+  - **Registro de predicciones:**
+    - Parquet por lote en `projects/<id>/monitoring/<deployment>/`, con muestreo configurable.
+    - Se guardan solo las features que usa el modelo (columnas de la firma), más la clave de negocio si se configuró, para asociar el feedback: nada de otras columnas del request.
+    - El feedback se asocia por `prediction_id` o por clave.
+  - **Deployments servidos por el Engine:**
+    - usan el ONNX exportado (el mismo artefacto que el bundle de serving) y siguen al champion del proyecto;
+    - el primer deployment fija el champion;
+    - el chequeo corre por ventana de N predicciones (en segundo plano) o a pedido.
+  - **Alertas:**
+    - entidad `Alert` (abierta, reconocida, resuelta) y evento en el bus;
+    - email por SMTP de la stdlib, con la clave en el almacén de secretos;
+    - webhook JSON con `text` (Slack/Teams), con la URL en el almacén de secretos;
+    - cooldown por tipo y deployment.
+  - **Champion/challenger:**
+    - los dos modelos (ONNX) se evalúan sobre el mismo holdout: el feedback etiquetado reciente o el test de otra versión de datos (propósito de evaluación final);
+    - se promueve solo si la métrica primaria mejora más que `min_improvement`;
+    - el champion anterior queda archivado con `retired_at` y el rollback vuelve al último retirado;
+    - las evaluaciones quedan registradas con `split="holdout"` y la versión usada.
+  - **Diff de versiones:** hash por fila sobre las columnas comunes, cambios de esquema, las mismas métricas de drift por columna y el manifiesto de archivos. **Linaje** por `parent_id`/`transformation`. La lectura usa un propósito nuevo, `VERSIONING` (compara todo, no entrena ni elige).
+- Consecuencias:
+  - Tests: métricas con distribuciones conocidas; API de punta a punta con alerta por webhook simulado, cooldown, feedback por id y por clave, champion/challenger y rollback, diff y linaje.
+  - Pendiente (6b): `RetrainPolicy` con disparadores (drift, cron, volumen, degradación), fuentes REST y streaming (RF-ING-05), holdout reciente reservado para no comparar sobre datos de entrenamiento, y la aceptación UC-10.
