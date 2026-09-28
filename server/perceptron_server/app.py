@@ -91,7 +91,8 @@ class SpaFiles(StaticFiles):
             if exc.status_code != 404 or path.startswith("api"):
                 raise
             response = await super().get_response("index.html", scope)
-        immutable = path.startswith("assets/") and response.status_code == 200
+        # En Windows Starlette pasa la ruta con "\\" (os.path.normpath).
+        immutable = path.replace("\\", "/").startswith("assets/") and response.status_code == 200
         response.headers["cache-control"] = (
             "public, max-age=31536000, immutable" if immutable else "no-cache"
         )
