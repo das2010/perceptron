@@ -90,6 +90,19 @@ def test_full_flow_uc01(client: TestClient, fixtures_dir: Path) -> None:
     assert prop["estimates"]["num_params"] > 0
     spec = prop["archspec"]["spec"]
     assert _ok(client.post(f"{API}/arch/validate", json=spec))["valid"]
+    # Editor visual (RF-ARC-05): listar, leer y guardar una ArchSpec editada.
+    assert any(
+        a["id"] == prop["archspec"]["id"]
+        for a in _ok(client.get(f"{API}/projects/{pid}/archspecs"))
+    )
+    assert _ok(client.get(f"{API}/archspecs/{prop['archspec']['id']}"))["name"] == spec["name"]
+    edited = {**spec, "name": "mlp-editada"}
+    saved = _ok(client.post(f"{API}/projects/{pid}/archspecs", json={"spec": edited}), 201)
+    assert saved["origin"] == "manual" and saved["name"] == "mlp-editada"
+    broken = {**spec, "nodes": [{**spec["nodes"][0], "block": "no.existe"}, *spec["nodes"][1:]]}
+    assert client.post(f"{API}/projects/{pid}/archspecs", json={"spec": broken}).status_code == 422
+    assert any(p["id"] == pipe["id"] for p in _ok(client.get(f"{API}/projects/{pid}/pipelines")))
+    assert _ok(client.get(f"{API}/pipelines/{pipe['id']}"))["id"] == pipe["id"]
     code = _ok(client.post(f"{API}/arch/to-code", json=spec))["code"]
     assert "class Model(nn.Module)" in code
     blocks = _ok(client.get(f"{API}/catalog/blocks?modality=tabular"))

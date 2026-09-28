@@ -68,6 +68,16 @@ def propose_pipeline(project_id: str, body: ProposePipelineBody, ctx: Ctx) -> Pi
     return Workflow(ctx).propose_pipeline(body.dataset_version_id, pretrained=body.pretrained)
 
 
+@router.get("/projects/{project_id}/pipelines", tags=["pipelines"], operation_id="listPipelines")
+def list_pipelines(project_id: str, ctx: Ctx) -> list[Pipeline]:
+    return list(ctx.repo(Pipeline).list(filters={"project_id": project_id}, limit=500))
+
+
+@router.get("/pipelines/{pipeline_id}", tags=["pipelines"], operation_id="getPipeline")
+def get_pipeline(pipeline_id: str, ctx: Ctx) -> Pipeline:
+    return ctx.repo(Pipeline).get(pipeline_id)
+
+
 @router.put("/pipelines/{pipeline_id}", tags=["pipelines"], operation_id="updatePipeline")
 def update_pipeline(pipeline_id: str, body: PipelineUpdate, ctx: Ctx) -> Pipeline:
     return Workflow(ctx).update_pipeline(pipeline_id, body.graph, body.version)
@@ -177,6 +187,37 @@ def propose_architecture(project_id: str, body: ProposeArchBody, ctx: Ctx) -> Ar
         llm_call_id=out.llm_call_id,
         fallback_reason=out.fallback_reason,
     )
+
+
+class ArchSpecCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    spec: ArchSpec
+
+
+@router.get("/projects/{project_id}/archspecs", tags=["arch"], operation_id="listArchSpecs")
+def list_archspecs(project_id: str, ctx: Ctx) -> list[ArchSpecRecord]:
+    return list(ctx.repo(ArchSpecRecord).list(filters={"project_id": project_id}, limit=500))
+
+
+@router.get("/archspecs/{archspec_id}", tags=["arch"], operation_id="getArchSpec")
+def get_archspec(archspec_id: str, ctx: Ctx) -> ArchSpecRecord:
+    return ctx.repo(ArchSpecRecord).get(archspec_id)
+
+
+@router.post(
+    "/projects/{project_id}/archspecs",
+    status_code=status.HTTP_201_CREATED,
+    tags=["arch"],
+    operation_id="createArchSpec",
+)
+def create_archspec(project_id: str, body: ArchSpecCreate, ctx: Ctx) -> ArchSpecRecord:
+    """Guarda una ArchSpec editada por el usuario (editor visual, RF-ARC-05): valida primero."""
+    ctx.projects.get(project_id)
+    from perceptron.archspec.schema import Provenance
+
+    spec = body.spec.model_copy(update={"provenance": Provenance(origin=Origin.MANUAL)})
+    return Workflow(ctx).save_archspec(project_id, spec, origin=Origin.MANUAL)
 
 
 @router.post("/arch/validate", tags=["arch"], operation_id="validateArchitecture")
