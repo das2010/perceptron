@@ -73,6 +73,8 @@ function main() {
     "ml",
     "--extra",
     "llm",
+    "--extra",
+    "export",
   ]);
   writeFileSync(join(out, "requirements.lock.txt"), filterRequirements(exported));
 
