@@ -5,14 +5,27 @@ import "@/styles/global.css";
 
 import { App } from "@/app/App";
 import { Providers } from "@/app/providers";
+import { RuntimeGate } from "@/features/desktop/RuntimeGate";
+import { isTauri, setPlatform } from "@/lib/platform/bridge";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("#root not found");
 
-createRoot(root).render(
-  <StrictMode>
-    <Providers>
-      <App />
-    </Providers>
-  </StrictMode>,
-);
+async function boot(el: HTMLElement) {
+  // En el desktop, el Engine es un sidecar local con token efímero (ADR-0026).
+  if (isTauri()) {
+    const { TauriPlatformBridge } = await import("@/lib/platform/tauri");
+    setPlatform(new TauriPlatformBridge());
+  }
+  createRoot(el).render(
+    <StrictMode>
+      <Providers>
+        <RuntimeGate>
+          <App />
+        </RuntimeGate>
+      </Providers>
+    </StrictMode>,
+  );
+}
+
+void boot(root);

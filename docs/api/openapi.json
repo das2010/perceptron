@@ -2670,6 +2670,18 @@
             "title": "Notes",
             "type": "array"
           },
+          "nvidia_driver": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Versión del driver NVIDIA (elige el índice CUDA de PyTorch)",
+            "title": "Nvidia Driver"
+          },
           "os": {
             "title": "Os",
             "type": "string"

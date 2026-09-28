@@ -62,6 +62,9 @@ class HardwareReport(BaseModel):
     torch: TorchInfo
     recommended_device: Device
     recommended_torch_variant: str
+    nvidia_driver: str | None = Field(
+        default=None, description="Versión del driver NVIDIA (elige el índice CUDA de PyTorch)"
+    )
     notes: list[str] = Field(default_factory=list)
 
 
@@ -207,5 +210,6 @@ def detect_hardware(workspace_dir: Path | None = None) -> HardwareReport:
         torch=torch_info,
         recommended_device=recommend_device(gpus),
         recommended_torch_variant=recommend_torch_variant(os_name, gpus, driver),
+        nvidia_driver=driver,
         notes=notes,
     )

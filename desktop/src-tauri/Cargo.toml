@@ -1,0 +1,36 @@
+[package]
+name = "perceptron-desktop"
+version = "0.1.0"
+description = "Perceptron: shell de escritorio (Tauri 2) con el Engine Python como sidecar"
+authors = ["Preteco"]
+license = "LicenseRef-Proprietary"
+edition = "2021"
+rust-version = "1.80"
+publish = false
+
+[lib]
+name = "perceptron_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(windows)'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+strip = true
