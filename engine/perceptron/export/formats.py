@@ -238,13 +238,15 @@ def _onnx(
             artifacts.append(_failed("onnx_fp16", e))
     if request.int8:
         try:
+            import onnx
             from onnxruntime.quantization import QuantType, quantize_dynamic
-            from onnxruntime.quantization.shape_inference import quant_pre_process
 
-            # Preprocesamiento recomendado por ONNX Runtime (inferencia de formas y
-            # optimización) antes de cuantizar un grafo del exportador dynamo.
+            # El exportador dynamo deja anotaciones de formas (value_info) que la inferencia
+            # de ONNX contradice al cuantizar: se borran y el cuantizador las vuelve a inferir.
             pre = out_dir / "model.int8-pre.onnx"
-            quant_pre_process(str(path), str(pre), skip_symbolic_shape=True)
+            graph = onnx.load(str(path))
+            del graph.graph.value_info[:]
+            onnx.save(graph, str(pre))
             q = out_dir / "model.int8.onnx"
             quantize_dynamic(str(pre), str(q), weight_type=QuantType.QInt8)
             pre.unlink(missing_ok=True)
