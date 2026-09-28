@@ -261,8 +261,13 @@ def _torch_export(
 ) -> ExportArtifact:
     program = torch.export.export(model, inputs, dynamic_shapes=_batch_dynamic(len(inputs)))
     path = out_dir / "model.pt2"
-    torch.export.save(program, path)
-    got = _as_numpy(torch.export.load(path).module()(*inputs))
+    # Por archivo abierto desde Python: el escritor C++ de PyTorch no resuelve en Windows las
+    # rutas con acentos (workspaces en OneDrive corporativo, §13.5).
+    with path.open("wb") as f:
+        torch.export.save(program, f)
+    with path.open("rb") as f:
+        loaded = torch.export.load(f)
+    got = _as_numpy(loaded.module()(*inputs))
     return _artifact(path, "torch_export", _verify(ref, got, TOL_FP32))
 
 
@@ -271,8 +276,10 @@ def _torchscript(
 ) -> ExportArtifact:
     traced = torch.jit.trace(model, inputs, check_trace=False)  # type: ignore[no-untyped-call]
     path = out_dir / "model.torchscript.pt"
-    traced.save(str(path))
-    got = _as_numpy(torch.jit.load(str(path))(*inputs))  # type: ignore[no-untyped-call]
+    with path.open("wb") as f:
+        torch.jit.save(traced, f)  # type: ignore[no-untyped-call]
+    with path.open("rb") as f:
+        got = _as_numpy(torch.jit.load(f)(*inputs))  # type: ignore[no-untyped-call]
     return _artifact(path, "torchscript", _verify(ref, got, TOL_FP32), legacy=True)
 
 
