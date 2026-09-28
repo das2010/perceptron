@@ -4,16 +4,17 @@
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
-use std::net::TcpStream;
+use std::net::{SocketAddr, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::runtime::hide_console;
 
 const READY_TIMEOUT: Duration = Duration::from_secs(180);
+const LISTEN_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Connection {
@@ -128,7 +129,14 @@ pub fn launch(launcher: &Launcher, logs_dir: &Path) -> Result<EngineProcess, Str
         }
     });
     match rx.recv_timeout(READY_TIMEOUT) {
-        Ok(connection) => Ok(EngineProcess { child, connection }),
+        Ok(connection) => {
+            // El Engine emite `ready` antes de que uvicorn abra el puerto: esperar a que acepte.
+            if let Err(e) = wait_listening(&connection, LISTEN_TIMEOUT) {
+                let _ = child.kill();
+                return Err(e);
+            }
+            Ok(EngineProcess { child, connection })
+        }
         Err(_) => {
             let _ = child.kill();
             Err(format!(
@@ -137,6 +145,21 @@ pub fn launch(launcher: &Launcher, logs_dir: &Path) -> Result<EngineProcess, Str
                 logs_dir.join("engine.log").display()
             ))
         }
+    }
+}
+
+fn wait_listening(conn: &Connection, timeout: Duration) -> Result<(), String> {
+    let addr = conn.base_url.trim_start_matches("http://");
+    let target: SocketAddr = addr.parse().map_err(|e| format!("{addr}: {e}"))?;
+    let deadline = Instant::now() + timeout;
+    loop {
+        if TcpStream::connect_timeout(&target, Duration::from_millis(500)).is_ok() {
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err(format!("el Engine no abrió {addr} en {} s", timeout.as_secs()));
+        }
+        thread::sleep(Duration::from_millis(200));
     }
 }
 
