@@ -24,8 +24,8 @@ jobs:
     # Windows: la suite completa ya tarda ~28 min más mypy.
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Install
@@ -69,8 +69,8 @@ jobs:
           --health-cmd "pg_isready -U perceptron"
           --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - run: uv sync --all-packages --locked
@@ -96,9 +96,9 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -120,8 +120,8 @@ jobs:
       matrix:
         uc: [uc01, uc03, uc04, uc05, uc06, uc07, uc08, uc09]
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - run: uv sync --all-packages --locked
@@ -134,14 +134,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Install engine
         run: uv sync --all-packages --locked
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -152,7 +152,7 @@ jobs:
         run: pnpm -C ui e2e
         env:
           CI: "true"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
@@ -169,7 +169,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: .env de prueba y fuente del servidor
         run: |
           cat > server/deploy/.env <<EOF
@@ -228,13 +228,13 @@ jobs:
           --health-cmd "pg_isready -U perceptron"
           --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - run: uv sync --all-packages --locked
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -247,7 +247,7 @@ jobs:
         env:
           CI: "true"
           PERCEPTRON_DATABASE_URL: postgresql+pg8000://perceptron:perceptron@localhost:5432/perceptron
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report-server
@@ -260,8 +260,8 @@ jobs:
     name: helm (chart del Team Server)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
       - name: Lint, render y validación de esquemas (kubeconform)
         run: |
           chart=server/deploy/helm/perceptron
@@ -277,20 +277,20 @@ jobs:
     # Aceptación de la Capa 7: sin dependencias incompatibles con la distribución comercial.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - run: uv sync --all-packages --locked
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Auditoría (Python, JS, Rust y pesos preentrenados)
         run: uv run python scripts/license_audit.py --out build/licenses
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: informe-de-licencias
@@ -300,16 +300,16 @@ jobs:
     name: seguridad (vulnerabilidades conocidas)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
       - name: pip-audit del runtime Python
         run: |
           # Versiones fijadas del lock, sin instalar (torch +cpu no está en PyPI: se audita la base).
           uv export --no-dev --all-packages --no-hashes --no-emit-workspace --format requirements-txt \
             | sed -E 's/\+(cpu|cu[0-9]+)//' > req.txt
           uvx pip-audit==2.9.0 -r req.txt --no-deps --disable-pip --progress-spinner off
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -326,11 +326,11 @@ jobs:
     name: documentación de usuario (MkDocs)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
       - name: Compilar el sitio (es/en)
         run: uvx --with mkdocs-material==9.6.* mkdocs build --strict --site-dir build/site
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: guia-de-usuario
           path: build/site
@@ -340,10 +340,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Workspace creado con la versión anterior (main)
@@ -363,10 +363,10 @@ jobs:
     name: OpenAPI ↔ TypeScript
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -377,7 +377,7 @@ jobs:
         run: git diff --exit-code -- docs/api/openapi.json ui/src/lib/api/schema.d.ts
       - name: Publicar contrato regenerado (para commitearlo)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: api-contract
           path: |
@@ -389,8 +389,8 @@ jobs:
     # Generados en Windows; libm puede diferir en el último bit entre SO.
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: python fixtures/generate.py --check
@@ -398,7 +398,7 @@ jobs:
       - name: Regenerar fixtures
         if: failure()
         run: python fixtures/generate.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: fixtures-regenerados
@@ -411,8 +411,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - run: uv sync --all-packages --locked
