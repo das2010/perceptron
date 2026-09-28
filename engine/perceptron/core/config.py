@@ -86,6 +86,23 @@ class LLMSettings(BaseModel):
     )
 
 
+class AlertSettings(BaseModel):
+    """Canales de alertas del monitoreo (RF-MON-04). La clave SMTP va al almacén de secretos
+    (`alerts/smtp/password`), nunca acá."""
+
+    smtp_host: str | None = None
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_user: str | None = None
+    smtp_from: str | None = None
+    smtp_starttls: bool = True
+    public_url: str | None = Field(
+        default=None, description="URL de la UI para los links de las alertas"
+    )
+    cooldown_s: int = Field(
+        default=3600, ge=0, description="No repite la misma alerta abierta antes de este plazo"
+    )
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="PERCEPTRON_",
@@ -101,6 +118,7 @@ class Settings(BaseSettings):
     api: ApiSettings = Field(default_factory=ApiSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
+    alerts: AlertSettings = Field(default_factory=AlertSettings)
     database_url: SecretStr | None = Field(
         default=None,
         description="URL SQLAlchemy de la metadata (Team Server: PostgreSQL); None = SQLite local",

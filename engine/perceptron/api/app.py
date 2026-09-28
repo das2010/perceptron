@@ -21,6 +21,7 @@ from perceptron.api.routers import (
     labeling,
     llm,
     modeling,
+    monitoring,
     projects,
     remote,
     system,
@@ -108,6 +109,7 @@ def create_app(
         analysis,
         labeling,
         remote,
+        monitoring,
     ):
         app.include_router(module.router, prefix=API_PREFIX, dependencies=[authorized])
     app.include_router(remote.project_router, prefix=API_PREFIX, dependencies=[authorized])

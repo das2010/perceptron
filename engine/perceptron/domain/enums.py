@@ -147,6 +147,28 @@ class Severity(StrEnum):
     MEDIUM = "medium"
     HIGH = "high"
 
+    @property
+    def rank(self) -> int:
+        return ["none", "low", "medium", "high"].index(self.value)
+
+
+class DeploymentStatus(StrEnum):
+    ACTIVE = "active"
+    STOPPED = "stopped"
+
+
+class AlertKind(StrEnum):
+    DATA_DRIFT = "data_drift"
+    PERFORMANCE = "performance"
+    RETRAIN = "retrain"
+    PROMOTION = "promotion"
+
+
+class AlertStatus(StrEnum):
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
+
 
 class LLMPurpose(StrEnum):
     """Propósitos del LLM, cada uno con su perfil de modelo (RF-LLM-03)."""

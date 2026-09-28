@@ -47,6 +47,7 @@ ml = [
   "soundfile>=0.12",
   "pycocotools>=2.0.8",
   "lightgbm>=4.5",
+  "scipy>=1.11",  # BSD-3 (drift: KS, χ², Capa 6; ya llegaba por scikit-learn)
 ]
 # Capa 2 (ADR-0020): SDKs de Anthropic y OpenAI (también Kimi y compatibles), keychain y
 # cifrado de claves. Gemini y Ollama van por HTTP (httpx, en la base).
