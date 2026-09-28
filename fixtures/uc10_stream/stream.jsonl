@@ -1,423 +1,423 @@
-{"antiguedad_meses": 46, "batch": 0, "cargo_mensual": 53.52, "churn": 0, "customer_id": "N00000", "edad": 76, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 24, "batch": 0, "cargo_mensual": 53.43, "churn": 0, "customer_id": "N00001", "edad": 53, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
-{"antiguedad_meses": 44, "batch": 0, "cargo_mensual": 23.06, "churn": 1, "customer_id": "N00002", "edad": 68, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 58, "batch": 0, "cargo_mensual": 88.37, "churn": 0, "customer_id": "N00003", "edad": 32, "plan": "premium", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 45, "batch": 0, "cargo_mensual": 51.97, "churn": 0, "customer_id": "N00004", "edad": 65, "plan": "estándar", "region": "Córdoba", "tickets_90d": 8}
-{"antiguedad_meses": 58, "batch": 0, "cargo_mensual": 23.99, "churn": 0, "customer_id": "N00005", "edad": 58, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 65, "batch": 0, "cargo_mensual": 89.98, "churn": 0, "customer_id": "N00006", "edad": 18, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 58, "batch": 0, "cargo_mensual": 50.81, "churn": 0, "customer_id": "N00007", "edad": 36, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 18, "batch": 0, "cargo_mensual": 52.5, "churn": 1, "customer_id": "N00008", "edad": 41, "plan": "estándar", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 20, "batch": 0, "cargo_mensual": 22.83, "churn": 1, "customer_id": "N00009", "edad": 29, "plan": "básico", "region": "Santa Fe", "tickets_90d": 4}
-{"antiguedad_meses": 48, "batch": 0, "cargo_mensual": 91.93, "churn": 0, "customer_id": "N00010", "edad": 38, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 35, "batch": 0, "cargo_mensual": 49.9, "churn": 0, "customer_id": "N00011", "edad": 42, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 70, "batch": 0, "cargo_mensual": 88.26, "churn": 0, "customer_id": "N00012", "edad": 45, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 2, "batch": 0, "cargo_mensual": 22.63, "churn": 1, "customer_id": "N00013", "edad": 78, "plan": "básico", "region": "Santa Fe", "tickets_90d": 4}
-{"antiguedad_meses": 33, "batch": 0, "cargo_mensual": 23.49, "churn": 0, "customer_id": "N00014", "edad": 35, "plan": "básico", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 62, "batch": 0, "cargo_mensual": 49.81, "churn": 0, "customer_id": "N00015", "edad": 57, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 71, "batch": 0, "cargo_mensual": 22.51, "churn": 0, "customer_id": "N00016", "edad": 37, "plan": "básico", "region": "Santa Fe", "tickets_90d": 4}
-{"antiguedad_meses": 49, "batch": 0, "cargo_mensual": 90.54, "churn": 0, "customer_id": "N00017", "edad": 52, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 44, "batch": 0, "cargo_mensual": 22.64, "churn": 0, "customer_id": "N00018", "edad": 77, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 9, "batch": 0, "cargo_mensual": 95.72, "churn": 0, "customer_id": "N00019", "edad": 35, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 69, "batch": 0, "cargo_mensual": 53.2, "churn": 0, "customer_id": "N00020", "edad": 71, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 47, "batch": 0, "cargo_mensual": 50.05, "churn": 0, "customer_id": "N00021", "edad": 54, "plan": "estándar", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 49, "batch": 0, "cargo_mensual": 88.16, "churn": 0, "customer_id": "N00022", "edad": 34, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 32, "batch": 0, "cargo_mensual": 23.05, "churn": 1, "customer_id": "N00023", "edad": 27, "plan": "básico", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 38, "batch": 0, "cargo_mensual": 23.91, "churn": 0, "customer_id": "N00024", "edad": 20, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 11, "batch": 0, "cargo_mensual": 88.02, "churn": 0, "customer_id": "N00025", "edad": 68, "plan": "premium", "region": "Córdoba", "tickets_90d": 3}
-{"antiguedad_meses": 14, "batch": 0, "cargo_mensual": 23.07, "churn": 1, "customer_id": "N00026", "edad": 79, "plan": "básico", "region": "AMBA", "tickets_90d": 7}
-{"antiguedad_meses": 17, "batch": 0, "cargo_mensual": 50.51, "churn": 0, "customer_id": "N00027", "edad": 75, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 66, "batch": 0, "cargo_mensual": 95.92, "churn": 0, "customer_id": "N00028", "edad": 45, "plan": "premium", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 68, "batch": 0, "cargo_mensual": 22.76, "churn": 0, "customer_id": "N00029", "edad": 18, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 39, "batch": 0, "cargo_mensual": 52.0, "churn": 0, "customer_id": "N00030", "edad": 36, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
-{"antiguedad_meses": 43, "batch": 0, "cargo_mensual": 23.57, "churn": 0, "customer_id": "N00031", "edad": 40, "plan": "básico", "region": "Córdoba", "tickets_90d": 4}
-{"antiguedad_meses": 70, "batch": 0, "cargo_mensual": 94.1, "churn": 0, "customer_id": "N00032", "edad": 70, "plan": "premium", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 64, "batch": 0, "cargo_mensual": 50.38, "churn": 0, "customer_id": "N00033", "edad": 50, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 14, "batch": 0, "cargo_mensual": 53.94, "churn": 0, "customer_id": "N00034", "edad": 28, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 51, "batch": 0, "cargo_mensual": 50.89, "churn": 0, "customer_id": "N00035", "edad": 61, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 47, "batch": 0, "cargo_mensual": 53.71, "churn": 0, "customer_id": "N00036", "edad": 25, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 70, "batch": 0, "cargo_mensual": 49.8, "churn": 0, "customer_id": "N00037", "edad": 61, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 40, "batch": 0, "cargo_mensual": 23.69, "churn": 0, "customer_id": "N00038", "edad": 72, "plan": "básico", "region": "Santa Fe", "tickets_90d": 3}
-{"antiguedad_meses": 58, "batch": 0, "cargo_mensual": 51.3, "churn": 0, "customer_id": "N00039", "edad": 44, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 21, "batch": 0, "cargo_mensual": 91.01, "churn": 0, "customer_id": "N00040", "edad": 22, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
-{"antiguedad_meses": 62, "batch": 0, "cargo_mensual": 90.61, "churn": 0, "customer_id": "N00041", "edad": 78, "plan": "premium", "region": "Córdoba", "tickets_90d": 8}
-{"antiguedad_meses": 65, "batch": 0, "cargo_mensual": 93.34, "churn": 0, "customer_id": "N00042", "edad": 50, "plan": "premium", "region": "Mendoza", "tickets_90d": 0}
-{"antiguedad_meses": 2, "batch": 0, "cargo_mensual": 88.0, "churn": 1, "customer_id": "N00043", "edad": 23, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 70, "batch": 0, "cargo_mensual": 89.96, "churn": 0, "customer_id": "N00044", "edad": 26, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 12, "batch": 0, "cargo_mensual": 23.64, "churn": 1, "customer_id": "N00045", "edad": 53, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 47, "batch": 0, "cargo_mensual": 23.25, "churn": 0, "customer_id": "N00046", "edad": 75, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 37, "batch": 0, "cargo_mensual": 95.41, "churn": 0, "customer_id": "N00047", "edad": 25, "plan": "premium", "region": "Mendoza", "tickets_90d": 8}
-{"antiguedad_meses": 43, "batch": 0, "cargo_mensual": 53.24, "churn": 0, "customer_id": "N00048", "edad": 54, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 8, "batch": 0, "cargo_mensual": 52.14, "churn": 1, "customer_id": "N00049", "edad": 55, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 13, "batch": 0, "cargo_mensual": 92.89, "churn": 0, "customer_id": "N00050", "edad": 25, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 44, "batch": 0, "cargo_mensual": 50.93, "churn": 0, "customer_id": "N00051", "edad": 33, "plan": "estándar", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 1, "batch": 0, "cargo_mensual": 89.48, "churn": 1, "customer_id": "N00052", "edad": 80, "plan": "premium", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 4, "batch": 0, "cargo_mensual": 23.54, "churn": 1, "customer_id": "N00053", "edad": 50, "plan": "básico", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 2, "batch": 0, "cargo_mensual": 22.94, "churn": 0, "customer_id": "N00054", "edad": 62, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 53, "batch": 0, "cargo_mensual": 93.47, "churn": 0, "customer_id": "N00055", "edad": 80, "plan": "premium", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 62, "batch": 0, "cargo_mensual": 93.23, "churn": 0, "customer_id": "N00056", "edad": 76, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 3, "batch": 0, "cargo_mensual": 92.85, "churn": 1, "customer_id": "N00057", "edad": 75, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 63, "batch": 0, "cargo_mensual": 22.38, "churn": 0, "customer_id": "N00058", "edad": 22, "plan": "básico", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 22, "batch": 0, "cargo_mensual": 53.84, "churn": 1, "customer_id": "N00059", "edad": 38, "plan": "estándar", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 66, "batch": 1, "cargo_mensual": 22.44, "churn": 0, "customer_id": "N01000", "edad": 50, "plan": "básico", "region": "Córdoba", "tickets_90d": 3}
-{"antiguedad_meses": 61, "batch": 1, "cargo_mensual": 23.16, "churn": 0, "customer_id": "N01001", "edad": 49, "plan": "básico", "region": "Córdoba", "tickets_90d": 4}
-{"antiguedad_meses": 62, "batch": 1, "cargo_mensual": 93.77, "churn": 0, "customer_id": "N01002", "edad": 35, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 69, "batch": 1, "cargo_mensual": 22.89, "churn": 0, "customer_id": "N01003", "edad": 64, "plan": "básico", "region": "AMBA", "tickets_90d": 7}
-{"antiguedad_meses": 16, "batch": 1, "cargo_mensual": 90.02, "churn": 1, "customer_id": "N01004", "edad": 80, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 6, "batch": 1, "cargo_mensual": 50.63, "churn": 1, "customer_id": "N01005", "edad": 69, "plan": "estándar", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 7, "batch": 1, "cargo_mensual": 93.14, "churn": 0, "customer_id": "N01006", "edad": 49, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 12, "batch": 1, "cargo_mensual": 23.78, "churn": 0, "customer_id": "N01007", "edad": 23, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 53, "batch": 1, "cargo_mensual": 22.73, "churn": 0, "customer_id": "N01008", "edad": 19, "plan": "básico", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 28, "batch": 1, "cargo_mensual": 50.87, "churn": 0, "customer_id": "N01009", "edad": 60, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 66, "batch": 1, "cargo_mensual": 93.52, "churn": 0, "customer_id": "N01010", "edad": 56, "plan": "premium", "region": "Córdoba", "tickets_90d": 3}
-{"antiguedad_meses": 44, "batch": 1, "cargo_mensual": 22.41, "churn": 1, "customer_id": "N01011", "edad": 71, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 38, "batch": 1, "cargo_mensual": 22.44, "churn": 0, "customer_id": "N01012", "edad": 66, "plan": "básico", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 51, "batch": 1, "cargo_mensual": 52.59, "churn": 0, "customer_id": "N01013", "edad": 41, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 8, "batch": 1, "cargo_mensual": 93.56, "churn": 1, "customer_id": "N01014", "edad": 31, "plan": "premium", "region": "Córdoba", "tickets_90d": 8}
-{"antiguedad_meses": 66, "batch": 1, "cargo_mensual": 88.43, "churn": 0, "customer_id": "N01015", "edad": 22, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
-{"antiguedad_meses": 31, "batch": 1, "cargo_mensual": 92.16, "churn": 0, "customer_id": "N01016", "edad": 26, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 7, "batch": 1, "cargo_mensual": 22.25, "churn": 1, "customer_id": "N01017", "edad": 70, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 58, "batch": 1, "cargo_mensual": 52.9, "churn": 0, "customer_id": "N01018", "edad": 60, "plan": "estándar", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 38, "batch": 1, "cargo_mensual": 23.51, "churn": 0, "customer_id": "N01019", "edad": 53, "plan": "básico", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 3, "batch": 1, "cargo_mensual": 89.96, "churn": 1, "customer_id": "N01020", "edad": 37, "plan": "premium", "region": "Córdoba", "tickets_90d": 4}
-{"antiguedad_meses": 63, "batch": 1, "cargo_mensual": 52.54, "churn": 0, "customer_id": "N01021", "edad": 32, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 28, "batch": 1, "cargo_mensual": 95.01, "churn": 0, "customer_id": "N01022", "edad": 79, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 69, "batch": 1, "cargo_mensual": 89.03, "churn": 0, "customer_id": "N01023", "edad": 37, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 40, "batch": 1, "cargo_mensual": 94.96, "churn": 0, "customer_id": "N01024", "edad": 72, "plan": "premium", "region": "Córdoba", "tickets_90d": 8}
-{"antiguedad_meses": 13, "batch": 1, "cargo_mensual": 92.82, "churn": 0, "customer_id": "N01025", "edad": 33, "plan": "premium", "region": "Mendoza", "tickets_90d": 0}
-{"antiguedad_meses": 19, "batch": 1, "cargo_mensual": 23.45, "churn": 1, "customer_id": "N01026", "edad": 18, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 44, "batch": 1, "cargo_mensual": 22.48, "churn": 0, "customer_id": "N01027", "edad": 56, "plan": "básico", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 70, "batch": 1, "cargo_mensual": 49.84, "churn": 0, "customer_id": "N01028", "edad": 31, "plan": "estándar", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 69, "batch": 1, "cargo_mensual": 22.58, "churn": 0, "customer_id": "N01029", "edad": 68, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 28, "batch": 1, "cargo_mensual": 50.48, "churn": 0, "customer_id": "N01030", "edad": 69, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 8, "batch": 1, "cargo_mensual": 95.51, "churn": 0, "customer_id": "N01031", "edad": 56, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
-{"antiguedad_meses": 1, "batch": 1, "cargo_mensual": 23.11, "churn": 1, "customer_id": "N01032", "edad": 36, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 13, "batch": 1, "cargo_mensual": 23.37, "churn": 0, "customer_id": "N01033", "edad": 50, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 6, "batch": 1, "cargo_mensual": 22.21, "churn": 1, "customer_id": "N01034", "edad": 20, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 67, "batch": 1, "cargo_mensual": 52.19, "churn": 0, "customer_id": "N01035", "edad": 35, "plan": "estándar", "region": "Mendoza", "tickets_90d": 1}
-{"antiguedad_meses": 62, "batch": 1, "cargo_mensual": 23.66, "churn": 0, "customer_id": "N01036", "edad": 44, "plan": "básico", "region": "Córdoba", "tickets_90d": 2}
-{"antiguedad_meses": 38, "batch": 1, "cargo_mensual": 22.66, "churn": 0, "customer_id": "N01037", "edad": 50, "plan": "básico", "region": "Córdoba", "tickets_90d": 4}
-{"antiguedad_meses": 13, "batch": 1, "cargo_mensual": 93.29, "churn": 1, "customer_id": "N01038", "edad": 51, "plan": "premium", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 45, "batch": 1, "cargo_mensual": 23.44, "churn": 1, "customer_id": "N01039", "edad": 37, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 27, "batch": 1, "cargo_mensual": 90.2, "churn": 1, "customer_id": "N01040", "edad": 58, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 13, "batch": 1, "cargo_mensual": 51.97, "churn": 0, "customer_id": "N01041", "edad": 29, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 4, "batch": 1, "cargo_mensual": 23.58, "churn": 0, "customer_id": "N01042", "edad": 39, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 40, "batch": 1, "cargo_mensual": 53.37, "churn": 0, "customer_id": "N01043", "edad": 20, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 37, "batch": 1, "cargo_mensual": 91.94, "churn": 1, "customer_id": "N01044", "edad": 18, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 39, "batch": 1, "cargo_mensual": 50.68, "churn": 0, "customer_id": "N01045", "edad": 58, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 36, "batch": 1, "cargo_mensual": 52.01, "churn": 0, "customer_id": "N01046", "edad": 28, "plan": "estándar", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 16, "batch": 1, "cargo_mensual": 23.21, "churn": 1, "customer_id": "N01047", "edad": 55, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 38, "batch": 1, "cargo_mensual": 89.98, "churn": 0, "customer_id": "N01048", "edad": 48, "plan": "premium", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 8, "batch": 1, "cargo_mensual": 23.89, "churn": 1, "customer_id": "N01049", "edad": 69, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 12, "batch": 1, "cargo_mensual": 51.39, "churn": 1, "customer_id": "N01050", "edad": 73, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 6, "batch": 1, "cargo_mensual": 22.89, "churn": 1, "customer_id": "N01051", "edad": 56, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 46, "batch": 1, "cargo_mensual": 90.88, "churn": 0, "customer_id": "N01052", "edad": 21, "plan": "premium", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 48, "batch": 1, "cargo_mensual": 51.3, "churn": 0, "customer_id": "N01053", "edad": 23, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 33, "batch": 1, "cargo_mensual": 93.26, "churn": 0, "customer_id": "N01054", "edad": 38, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 12, "batch": 1, "cargo_mensual": 89.5, "churn": 0, "customer_id": "N01055", "edad": 55, "plan": "premium", "region": "Mendoza", "tickets_90d": 1}
-{"antiguedad_meses": 29, "batch": 1, "cargo_mensual": 93.1, "churn": 0, "customer_id": "N01056", "edad": 62, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 65, "batch": 1, "cargo_mensual": 22.94, "churn": 0, "customer_id": "N01057", "edad": 78, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 34, "batch": 1, "cargo_mensual": 22.02, "churn": 1, "customer_id": "N01058", "edad": 44, "plan": "básico", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 51, "batch": 1, "cargo_mensual": 88.24, "churn": 0, "customer_id": "N01059", "edad": 60, "plan": "premium", "region": "Mendoza", "tickets_90d": 8}
-{"antiguedad_meses": 65, "batch": 2, "cargo_mensual": 23.92, "churn": 0, "customer_id": "N02000", "edad": 27, "plan": "básico", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 68, "batch": 2, "cargo_mensual": 50.25, "churn": 0, "customer_id": "N02001", "edad": 38, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 1, "batch": 2, "cargo_mensual": 89.68, "churn": 1, "customer_id": "N02002", "edad": 34, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 3, "batch": 2, "cargo_mensual": 53.47, "churn": 1, "customer_id": "N02003", "edad": 37, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 61, "batch": 2, "cargo_mensual": 22.43, "churn": 1, "customer_id": "N02004", "edad": 56, "plan": "básico", "region": "Córdoba", "tickets_90d": 8}
-{"antiguedad_meses": 36, "batch": 2, "cargo_mensual": 91.05, "churn": 0, "customer_id": "N02005", "edad": 24, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 15, "batch": 2, "cargo_mensual": 53.3, "churn": 0, "customer_id": "N02006", "edad": 76, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 50, "batch": 2, "cargo_mensual": 92.39, "churn": 0, "customer_id": "N02007", "edad": 78, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 32, "batch": 2, "cargo_mensual": 23.77, "churn": 1, "customer_id": "N02008", "edad": 48, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 10, "batch": 2, "cargo_mensual": 50.55, "churn": 0, "customer_id": "N02009", "edad": 66, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 15, "batch": 2, "cargo_mensual": 92.01, "churn": 1, "customer_id": "N02010", "edad": 51, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 66, "batch": 2, "cargo_mensual": 88.48, "churn": 0, "customer_id": "N02011", "edad": 62, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 37, "batch": 2, "cargo_mensual": 22.94, "churn": 1, "customer_id": "N02012", "edad": 18, "plan": "básico", "region": "Córdoba", "tickets_90d": 8}
-{"antiguedad_meses": 2, "batch": 2, "cargo_mensual": 49.79, "churn": 0, "customer_id": "N02013", "edad": 27, "plan": "estándar", "region": "Córdoba", "tickets_90d": 4}
-{"antiguedad_meses": 28, "batch": 2, "cargo_mensual": 23.87, "churn": 0, "customer_id": "N02014", "edad": 36, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 22, "batch": 2, "cargo_mensual": 22.5, "churn": 1, "customer_id": "N02015", "edad": 36, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 60, "batch": 2, "cargo_mensual": 95.1, "churn": 0, "customer_id": "N02016", "edad": 56, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 37, "batch": 2, "cargo_mensual": 91.37, "churn": 0, "customer_id": "N02017", "edad": 45, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 32, "batch": 2, "cargo_mensual": 88.83, "churn": 0, "customer_id": "N02018", "edad": 33, "plan": "premium", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 2, "batch": 2, "cargo_mensual": 23.24, "churn": 1, "customer_id": "N02019", "edad": 18, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 58, "batch": 2, "cargo_mensual": 52.39, "churn": 0, "customer_id": "N02020", "edad": 55, "plan": "estándar", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 29, "batch": 2, "cargo_mensual": 22.58, "churn": 0, "customer_id": "N02021", "edad": 26, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 53, "batch": 2, "cargo_mensual": 88.75, "churn": 0, "customer_id": "N02022", "edad": 79, "plan": "premium", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 37, "batch": 2, "cargo_mensual": 23.62, "churn": 0, "customer_id": "N02023", "edad": 64, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 13, "batch": 2, "cargo_mensual": 23.33, "churn": 1, "customer_id": "N02024", "edad": 50, "plan": "básico", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 48, "batch": 2, "cargo_mensual": 94.2, "churn": 0, "customer_id": "N02025", "edad": 72, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 45, "batch": 2, "cargo_mensual": 95.85, "churn": 0, "customer_id": "N02026", "edad": 76, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
-{"antiguedad_meses": 26, "batch": 2, "cargo_mensual": 92.83, "churn": 0, "customer_id": "N02027", "edad": 66, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 32, "batch": 2, "cargo_mensual": 49.97, "churn": 0, "customer_id": "N02028", "edad": 61, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 4, "batch": 2, "cargo_mensual": 51.85, "churn": 0, "customer_id": "N02029", "edad": 56, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 49, "batch": 2, "cargo_mensual": 22.59, "churn": 0, "customer_id": "N02030", "edad": 27, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 41, "batch": 2, "cargo_mensual": 23.32, "churn": 0, "customer_id": "N02031", "edad": 24, "plan": "básico", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 60, "batch": 2, "cargo_mensual": 50.65, "churn": 0, "customer_id": "N02032", "edad": 24, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 61, "batch": 2, "cargo_mensual": 92.15, "churn": 0, "customer_id": "N02033", "edad": 26, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 61, "batch": 2, "cargo_mensual": 88.16, "churn": 0, "customer_id": "N02034", "edad": 52, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 59, "batch": 2, "cargo_mensual": 53.22, "churn": 0, "customer_id": "N02035", "edad": 74, "plan": "estándar", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 32, "batch": 2, "cargo_mensual": 23.98, "churn": 0, "customer_id": "N02036", "edad": 69, "plan": "básico", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 25, "batch": 2, "cargo_mensual": 52.02, "churn": 0, "customer_id": "N02037", "edad": 61, "plan": "estándar", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 43, "batch": 2, "cargo_mensual": 88.64, "churn": 0, "customer_id": "N02038", "edad": 52, "plan": "premium", "region": "Mendoza", "tickets_90d": 0}
-{"antiguedad_meses": 62, "batch": 2, "cargo_mensual": 53.1, "churn": 0, "customer_id": "N02039", "edad": 56, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 42, "batch": 2, "cargo_mensual": 23.21, "churn": 1, "customer_id": "N02040", "edad": 25, "plan": "básico", "region": "AMBA", "tickets_90d": 7}
-{"antiguedad_meses": 13, "batch": 2, "cargo_mensual": 50.91, "churn": 0, "customer_id": "N02041", "edad": 41, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 33, "batch": 2, "cargo_mensual": 91.74, "churn": 0, "customer_id": "N02042", "edad": 73, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 54, "batch": 2, "cargo_mensual": 53.31, "churn": 0, "customer_id": "N02043", "edad": 60, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 11, "batch": 2, "cargo_mensual": 92.33, "churn": 0, "customer_id": "N02044", "edad": 33, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 28, "batch": 2, "cargo_mensual": 23.65, "churn": 0, "customer_id": "N02045", "edad": 21, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 15, "batch": 2, "cargo_mensual": 22.01, "churn": 0, "customer_id": "N02046", "edad": 19, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 43, "batch": 2, "cargo_mensual": 22.88, "churn": 0, "customer_id": "N02047", "edad": 67, "plan": "básico", "region": "Córdoba", "tickets_90d": 2}
-{"antiguedad_meses": 29, "batch": 2, "cargo_mensual": 23.48, "churn": 0, "customer_id": "N02048", "edad": 61, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 14, "batch": 2, "cargo_mensual": 23.71, "churn": 1, "customer_id": "N02049", "edad": 53, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 14, "batch": 2, "cargo_mensual": 51.71, "churn": 0, "customer_id": "N02050", "edad": 61, "plan": "estándar", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 47, "batch": 2, "cargo_mensual": 53.98, "churn": 0, "customer_id": "N02051", "edad": 69, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 3}
-{"antiguedad_meses": 7, "batch": 2, "cargo_mensual": 51.72, "churn": 0, "customer_id": "N02052", "edad": 72, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 5, "batch": 2, "cargo_mensual": 22.28, "churn": 1, "customer_id": "N02053", "edad": 20, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 5, "batch": 2, "cargo_mensual": 51.7, "churn": 0, "customer_id": "N02054", "edad": 58, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 38, "batch": 2, "cargo_mensual": 53.21, "churn": 0, "customer_id": "N02055", "edad": 33, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 24, "batch": 2, "cargo_mensual": 23.97, "churn": 0, "customer_id": "N02056", "edad": 58, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 59, "batch": 2, "cargo_mensual": 89.46, "churn": 0, "customer_id": "N02057", "edad": 23, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 5, "batch": 2, "cargo_mensual": 22.83, "churn": 1, "customer_id": "N02058", "edad": 28, "plan": "básico", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 71, "batch": 2, "cargo_mensual": 92.64, "churn": 0, "customer_id": "N02059", "edad": 73, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 45, "batch": 3, "cargo_mensual": 90.19, "churn": 1, "customer_id": "N03000", "edad": 62, "plan": "premium", "region": "Mendoza", "tickets_90d": 8}
-{"antiguedad_meses": 12, "batch": 3, "cargo_mensual": 50.09, "churn": 0, "customer_id": "N03001", "edad": 48, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 24, "batch": 3, "cargo_mensual": 22.31, "churn": 0, "customer_id": "N03002", "edad": 78, "plan": "básico", "region": "Mendoza", "tickets_90d": 0}
-{"antiguedad_meses": 14, "batch": 3, "cargo_mensual": 92.38, "churn": 0, "customer_id": "N03003", "edad": 34, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 26, "batch": 3, "cargo_mensual": 52.1, "churn": 0, "customer_id": "N03004", "edad": 30, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 67, "batch": 3, "cargo_mensual": 89.15, "churn": 0, "customer_id": "N03005", "edad": 79, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 35, "batch": 3, "cargo_mensual": 95.26, "churn": 0, "customer_id": "N03006", "edad": 73, "plan": "premium", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 70, "batch": 3, "cargo_mensual": 51.18, "churn": 0, "customer_id": "N03007", "edad": 21, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 47, "batch": 3, "cargo_mensual": 51.66, "churn": 0, "customer_id": "N03008", "edad": 18, "plan": "estándar", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 14, "batch": 3, "cargo_mensual": 95.89, "churn": 1, "customer_id": "N03009", "edad": 40, "plan": "premium", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 66, "batch": 3, "cargo_mensual": 22.78, "churn": 0, "customer_id": "N03010", "edad": 43, "plan": "básico", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 50, "batch": 3, "cargo_mensual": 90.91, "churn": 0, "customer_id": "N03011", "edad": 55, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 24, "batch": 3, "cargo_mensual": 90.0, "churn": 1, "customer_id": "N03012", "edad": 32, "plan": "premium", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 53, "batch": 3, "cargo_mensual": 92.48, "churn": 0, "customer_id": "N03013", "edad": 33, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 29, "batch": 3, "cargo_mensual": 50.79, "churn": 1, "customer_id": "N03014", "edad": 22, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 19, "batch": 3, "cargo_mensual": 23.55, "churn": 1, "customer_id": "N03015", "edad": 59, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 15, "batch": 3, "cargo_mensual": 53.04, "churn": 0, "customer_id": "N03016", "edad": 42, "plan": "estándar", "region": "AMBA", "tickets_90d": 1}
-{"antiguedad_meses": 39, "batch": 3, "cargo_mensual": 89.37, "churn": 0, "customer_id": "N03017", "edad": 33, "plan": "premium", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 14, "batch": 3, "cargo_mensual": 88.18, "churn": 1, "customer_id": "N03018", "edad": 45, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 19, "batch": 3, "cargo_mensual": 23.7, "churn": 0, "customer_id": "N03019", "edad": 28, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 60, "batch": 3, "cargo_mensual": 22.15, "churn": 0, "customer_id": "N03020", "edad": 36, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 31, "batch": 3, "cargo_mensual": 50.52, "churn": 0, "customer_id": "N03021", "edad": 29, "plan": "estándar", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 63, "batch": 3, "cargo_mensual": 23.84, "churn": 0, "customer_id": "N03022", "edad": 24, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 10, "batch": 3, "cargo_mensual": 23.84, "churn": 0, "customer_id": "N03023", "edad": 54, "plan": "básico", "region": "Córdoba", "tickets_90d": 3}
-{"antiguedad_meses": 16, "batch": 3, "cargo_mensual": 94.49, "churn": 0, "customer_id": "N03024", "edad": 61, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 11, "batch": 3, "cargo_mensual": 88.22, "churn": 1, "customer_id": "N03025", "edad": 67, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 70, "batch": 3, "cargo_mensual": 50.11, "churn": 0, "customer_id": "N03026", "edad": 75, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 42, "batch": 3, "cargo_mensual": 94.14, "churn": 0, "customer_id": "N03027", "edad": 49, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 10, "batch": 3, "cargo_mensual": 93.25, "churn": 0, "customer_id": "N03028", "edad": 26, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 52, "batch": 3, "cargo_mensual": 49.6, "churn": 0, "customer_id": "N03029", "edad": 24, "plan": "estándar", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 43, "batch": 3, "cargo_mensual": 49.52, "churn": 0, "customer_id": "N03030", "edad": 66, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 56, "batch": 3, "cargo_mensual": 88.63, "churn": 0, "customer_id": "N03031", "edad": 52, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 39, "batch": 3, "cargo_mensual": 90.27, "churn": 0, "customer_id": "N03032", "edad": 39, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
-{"antiguedad_meses": 72, "batch": 3, "cargo_mensual": 23.25, "churn": 0, "customer_id": "N03033", "edad": 24, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 63, "batch": 3, "cargo_mensual": 91.65, "churn": 0, "customer_id": "N03034", "edad": 65, "plan": "premium", "region": "Córdoba", "tickets_90d": 2}
-{"antiguedad_meses": 55, "batch": 3, "cargo_mensual": 94.07, "churn": 0, "customer_id": "N03035", "edad": 57, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 7, "batch": 3, "cargo_mensual": 95.09, "churn": 0, "customer_id": "N03036", "edad": 57, "plan": "premium", "region": "AMBA", "tickets_90d": 1}
-{"antiguedad_meses": 13, "batch": 3, "cargo_mensual": 50.71, "churn": 0, "customer_id": "N03037", "edad": 71, "plan": "estándar", "region": "Córdoba", "tickets_90d": 4}
-{"antiguedad_meses": 45, "batch": 3, "cargo_mensual": 89.58, "churn": 0, "customer_id": "N03038", "edad": 41, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 61, "batch": 3, "cargo_mensual": 52.29, "churn": 0, "customer_id": "N03039", "edad": 60, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 9, "batch": 3, "cargo_mensual": 52.39, "churn": 1, "customer_id": "N03040", "edad": 48, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 4, "batch": 3, "cargo_mensual": 92.36, "churn": 0, "customer_id": "N03041", "edad": 74, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 26, "batch": 3, "cargo_mensual": 92.19, "churn": 1, "customer_id": "N03042", "edad": 24, "plan": "premium", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 24, "batch": 3, "cargo_mensual": 22.07, "churn": 1, "customer_id": "N03043", "edad": 49, "plan": "básico", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 42, "batch": 3, "cargo_mensual": 91.85, "churn": 0, "customer_id": "N03044", "edad": 31, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 70, "batch": 3, "cargo_mensual": 53.8, "churn": 0, "customer_id": "N03045", "edad": 41, "plan": "estándar", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 59, "batch": 3, "cargo_mensual": 95.08, "churn": 0, "customer_id": "N03046", "edad": 51, "plan": "premium", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 25, "batch": 3, "cargo_mensual": 22.02, "churn": 0, "customer_id": "N03047", "edad": 68, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 41, "batch": 3, "cargo_mensual": 90.31, "churn": 0, "customer_id": "N03048", "edad": 60, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 56, "batch": 3, "cargo_mensual": 49.97, "churn": 0, "customer_id": "N03049", "edad": 66, "plan": "estándar", "region": "AMBA", "tickets_90d": 7}
-{"antiguedad_meses": 55, "batch": 3, "cargo_mensual": 49.85, "churn": 0, "customer_id": "N03050", "edad": 29, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 3, "batch": 3, "cargo_mensual": 94.28, "churn": 0, "customer_id": "N03051", "edad": 68, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 37, "batch": 3, "cargo_mensual": 22.93, "churn": 1, "customer_id": "N03052", "edad": 63, "plan": "básico", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 6, "batch": 3, "cargo_mensual": 50.82, "churn": 1, "customer_id": "N03053", "edad": 62, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 55, "batch": 3, "cargo_mensual": 51.1, "churn": 0, "customer_id": "N03054", "edad": 19, "plan": "estándar", "region": "Mendoza", "tickets_90d": 8}
-{"antiguedad_meses": 6, "batch": 3, "cargo_mensual": 23.39, "churn": 1, "customer_id": "N03055", "edad": 34, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 58, "batch": 3, "cargo_mensual": 91.7, "churn": 0, "customer_id": "N03056", "edad": 54, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 11, "batch": 3, "cargo_mensual": 23.94, "churn": 0, "customer_id": "N03057", "edad": 33, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 10, "batch": 3, "cargo_mensual": 52.12, "churn": 0, "customer_id": "N03058", "edad": 50, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 62, "batch": 3, "cargo_mensual": 50.14, "churn": 0, "customer_id": "N03059", "edad": 61, "plan": "estándar", "region": "AMBA", "tickets_90d": 1}
-{"antiguedad_meses": 65, "batch": 4, "cargo_mensual": 50.48, "churn": 0, "customer_id": "N04000", "edad": 33, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 29, "batch": 4, "cargo_mensual": 90.92, "churn": 0, "customer_id": "N04001", "edad": 38, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 13, "batch": 4, "cargo_mensual": 23.15, "churn": 0, "customer_id": "N04002", "edad": 42, "plan": "básico", "region": "Mendoza", "tickets_90d": 0}
-{"antiguedad_meses": 2, "batch": 4, "cargo_mensual": 52.08, "churn": 1, "customer_id": "N04003", "edad": 36, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 59, "batch": 4, "cargo_mensual": 90.08, "churn": 0, "customer_id": "N04004", "edad": 31, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 35, "batch": 4, "cargo_mensual": 91.05, "churn": 0, "customer_id": "N04005", "edad": 36, "plan": "premium", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 58, "batch": 4, "cargo_mensual": 23.42, "churn": 1, "customer_id": "N04006", "edad": 75, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 20, "batch": 4, "cargo_mensual": 95.18, "churn": 0, "customer_id": "N04007", "edad": 44, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 7, "batch": 4, "cargo_mensual": 53.89, "churn": 0, "customer_id": "N04008", "edad": 38, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 23, "batch": 4, "cargo_mensual": 50.22, "churn": 0, "customer_id": "N04009", "edad": 70, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 64, "batch": 4, "cargo_mensual": 22.14, "churn": 0, "customer_id": "N04010", "edad": 40, "plan": "básico", "region": "AMBA", "tickets_90d": 1}
-{"antiguedad_meses": 29, "batch": 4, "cargo_mensual": 53.33, "churn": 0, "customer_id": "N04011", "edad": 41, "plan": "estándar", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 67, "batch": 4, "cargo_mensual": 23.44, "churn": 0, "customer_id": "N04012", "edad": 39, "plan": "básico", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 62, "batch": 4, "cargo_mensual": 91.66, "churn": 0, "customer_id": "N04013", "edad": 40, "plan": "premium", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 23, "batch": 4, "cargo_mensual": 51.23, "churn": 0, "customer_id": "N04014", "edad": 34, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 57, "batch": 4, "cargo_mensual": 52.63, "churn": 0, "customer_id": "N04015", "edad": 72, "plan": "estándar", "region": "Córdoba", "tickets_90d": 3}
-{"antiguedad_meses": 47, "batch": 4, "cargo_mensual": 22.9, "churn": 0, "customer_id": "N04016", "edad": 65, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 48, "batch": 4, "cargo_mensual": 95.82, "churn": 0, "customer_id": "N04017", "edad": 24, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
-{"antiguedad_meses": 32, "batch": 4, "cargo_mensual": 22.86, "churn": 0, "customer_id": "N04018", "edad": 57, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 19, "batch": 4, "cargo_mensual": 91.27, "churn": 0, "customer_id": "N04019", "edad": 30, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
-{"antiguedad_meses": 36, "batch": 4, "cargo_mensual": 23.73, "churn": 0, "customer_id": "N04020", "edad": 24, "plan": "básico", "region": "Mendoza", "tickets_90d": 0}
-{"antiguedad_meses": 48, "batch": 4, "cargo_mensual": 89.1, "churn": 0, "customer_id": "N04021", "edad": 25, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 24, "batch": 4, "cargo_mensual": 23.03, "churn": 0, "customer_id": "N04022", "edad": 72, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 40, "batch": 4, "cargo_mensual": 52.13, "churn": 0, "customer_id": "N04023", "edad": 34, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 38, "batch": 4, "cargo_mensual": 53.25, "churn": 0, "customer_id": "N04024", "edad": 65, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 9, "batch": 4, "cargo_mensual": 23.24, "churn": 0, "customer_id": "N04025", "edad": 26, "plan": "básico", "region": "Santa Fe", "tickets_90d": 3}
-{"antiguedad_meses": 27, "batch": 4, "cargo_mensual": 89.92, "churn": 0, "customer_id": "N04026", "edad": 50, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 22, "batch": 4, "cargo_mensual": 89.82, "churn": 0, "customer_id": "N04027", "edad": 41, "plan": "premium", "region": "Córdoba", "tickets_90d": 3}
-{"antiguedad_meses": 24, "batch": 4, "cargo_mensual": 53.12, "churn": 0, "customer_id": "N04028", "edad": 36, "plan": "estándar", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 32, "batch": 4, "cargo_mensual": 22.73, "churn": 1, "customer_id": "N04029", "edad": 22, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 16, "batch": 4, "cargo_mensual": 94.23, "churn": 0, "customer_id": "N04030", "edad": 78, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 59, "batch": 4, "cargo_mensual": 91.06, "churn": 0, "customer_id": "N04031", "edad": 41, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 66, "batch": 4, "cargo_mensual": 52.73, "churn": 0, "customer_id": "N04032", "edad": 21, "plan": "estándar", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 16, "batch": 4, "cargo_mensual": 53.02, "churn": 1, "customer_id": "N04033", "edad": 22, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 11, "batch": 4, "cargo_mensual": 50.82, "churn": 1, "customer_id": "N04034", "edad": 25, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 55, "batch": 4, "cargo_mensual": 94.22, "churn": 0, "customer_id": "N04035", "edad": 56, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 28, "batch": 4, "cargo_mensual": 90.17, "churn": 1, "customer_id": "N04036", "edad": 68, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 69, "batch": 4, "cargo_mensual": 88.99, "churn": 0, "customer_id": "N04037", "edad": 31, "plan": "premium", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 35, "batch": 4, "cargo_mensual": 52.48, "churn": 0, "customer_id": "N04038", "edad": 47, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 11, "batch": 4, "cargo_mensual": 23.3, "churn": 1, "customer_id": "N04039", "edad": 35, "plan": "básico", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 40, "batch": 4, "cargo_mensual": 51.2, "churn": 0, "customer_id": "N04040", "edad": 72, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 70, "batch": 4, "cargo_mensual": 23.01, "churn": 0, "customer_id": "N04041", "edad": 56, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 5, "batch": 4, "cargo_mensual": 52.47, "churn": 1, "customer_id": "N04042", "edad": 48, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 30, "batch": 4, "cargo_mensual": 95.47, "churn": 0, "customer_id": "N04043", "edad": 59, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
-{"antiguedad_meses": 14, "batch": 4, "cargo_mensual": 88.88, "churn": 0, "customer_id": "N04044", "edad": 46, "plan": "premium", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 39, "batch": 4, "cargo_mensual": 91.26, "churn": 0, "customer_id": "N04045", "edad": 80, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 62, "batch": 4, "cargo_mensual": 22.9, "churn": 0, "customer_id": "N04046", "edad": 73, "plan": "básico", "region": "Mendoza", "tickets_90d": 1}
-{"antiguedad_meses": 12, "batch": 4, "cargo_mensual": 50.48, "churn": 1, "customer_id": "N04047", "edad": 73, "plan": "estándar", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 3, "batch": 4, "cargo_mensual": 93.18, "churn": 1, "customer_id": "N04048", "edad": 23, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 62, "batch": 4, "cargo_mensual": 90.04, "churn": 0, "customer_id": "N04049", "edad": 63, "plan": "premium", "region": "AMBA", "tickets_90d": 1}
-{"antiguedad_meses": 32, "batch": 4, "cargo_mensual": 23.59, "churn": 0, "customer_id": "N04050", "edad": 78, "plan": "básico", "region": "Santa Fe", "tickets_90d": 3}
-{"antiguedad_meses": 17, "batch": 4, "cargo_mensual": 90.6, "churn": 1, "customer_id": "N04051", "edad": 42, "plan": "premium", "region": "Córdoba", "tickets_90d": 8}
-{"antiguedad_meses": 71, "batch": 4, "cargo_mensual": 53.48, "churn": 0, "customer_id": "N04052", "edad": 43, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 26, "batch": 4, "cargo_mensual": 93.48, "churn": 0, "customer_id": "N04053", "edad": 55, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 34, "batch": 4, "cargo_mensual": 92.05, "churn": 1, "customer_id": "N04054", "edad": 52, "plan": "premium", "region": "AMBA", "tickets_90d": 7}
-{"antiguedad_meses": 8, "batch": 4, "cargo_mensual": 51.38, "churn": 0, "customer_id": "N04055", "edad": 51, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 42, "batch": 4, "cargo_mensual": 22.73, "churn": 0, "customer_id": "N04056", "edad": 42, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 72, "batch": 4, "cargo_mensual": 93.34, "churn": 0, "customer_id": "N04057", "edad": 21, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 50, "batch": 4, "cargo_mensual": 23.11, "churn": 1, "customer_id": "N04058", "edad": 40, "plan": "básico", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 12, "batch": 4, "cargo_mensual": 22.91, "churn": 0, "customer_id": "N04059", "edad": 74, "plan": "básico", "region": "Córdoba", "tickets_90d": 2}
-{"antiguedad_meses": 49, "batch": 5, "cargo_mensual": 92.05, "churn": 0, "customer_id": "N05000", "edad": 30, "plan": "premium", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 42, "batch": 5, "cargo_mensual": 53.25, "churn": 0, "customer_id": "N05001", "edad": 80, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
-{"antiguedad_meses": 9, "batch": 5, "cargo_mensual": 90.77, "churn": 1, "customer_id": "N05002", "edad": 71, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
-{"antiguedad_meses": 20, "batch": 5, "cargo_mensual": 22.33, "churn": 1, "customer_id": "N05003", "edad": 47, "plan": "básico", "region": "Córdoba", "tickets_90d": 8}
-{"antiguedad_meses": 50, "batch": 5, "cargo_mensual": 23.98, "churn": 0, "customer_id": "N05004", "edad": 62, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 43, "batch": 5, "cargo_mensual": 90.08, "churn": 0, "customer_id": "N05005", "edad": 35, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 27, "batch": 5, "cargo_mensual": 91.37, "churn": 0, "customer_id": "N05006", "edad": 52, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 37, "batch": 5, "cargo_mensual": 51.77, "churn": 0, "customer_id": "N05007", "edad": 48, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 44, "batch": 5, "cargo_mensual": 52.98, "churn": 0, "customer_id": "N05008", "edad": 37, "plan": "estándar", "region": "AMBA", "tickets_90d": 1}
-{"antiguedad_meses": 44, "batch": 5, "cargo_mensual": 22.55, "churn": 0, "customer_id": "N05009", "edad": 55, "plan": "básico", "region": "Mendoza", "tickets_90d": 1}
-{"antiguedad_meses": 13, "batch": 5, "cargo_mensual": 93.62, "churn": 1, "customer_id": "N05010", "edad": 46, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 11, "batch": 5, "cargo_mensual": 92.79, "churn": 0, "customer_id": "N05011", "edad": 31, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 53, "batch": 5, "cargo_mensual": 22.09, "churn": 0, "customer_id": "N05012", "edad": 37, "plan": "básico", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 45, "batch": 5, "cargo_mensual": 90.48, "churn": 0, "customer_id": "N05013", "edad": 44, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 70, "batch": 5, "cargo_mensual": 23.36, "churn": 0, "customer_id": "N05014", "edad": 36, "plan": "básico", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 10, "batch": 5, "cargo_mensual": 51.74, "churn": 0, "customer_id": "N05015", "edad": 47, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 70, "batch": 5, "cargo_mensual": 22.39, "churn": 0, "customer_id": "N05016", "edad": 53, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 71, "batch": 5, "cargo_mensual": 89.41, "churn": 0, "customer_id": "N05017", "edad": 50, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 9, "batch": 5, "cargo_mensual": 22.32, "churn": 1, "customer_id": "N05018", "edad": 22, "plan": "básico", "region": "Córdoba", "tickets_90d": 6}
-{"antiguedad_meses": 49, "batch": 5, "cargo_mensual": 93.36, "churn": 0, "customer_id": "N05019", "edad": 43, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 31, "batch": 5, "cargo_mensual": 23.33, "churn": 0, "customer_id": "N05020", "edad": 64, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 22, "batch": 5, "cargo_mensual": 23.37, "churn": 0, "customer_id": "N05021", "edad": 46, "plan": "básico", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 54, "batch": 5, "cargo_mensual": 89.83, "churn": 0, "customer_id": "N05022", "edad": 63, "plan": "premium", "region": "AMBA", "tickets_90d": 1}
-{"antiguedad_meses": 72, "batch": 5, "cargo_mensual": 89.14, "churn": 0, "customer_id": "N05023", "edad": 28, "plan": "premium", "region": "AMBA", "tickets_90d": 1}
-{"antiguedad_meses": 56, "batch": 5, "cargo_mensual": 88.41, "churn": 0, "customer_id": "N05024", "edad": 63, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 36, "batch": 5, "cargo_mensual": 94.25, "churn": 0, "customer_id": "N05025", "edad": 33, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 54, "batch": 5, "cargo_mensual": 90.65, "churn": 0, "customer_id": "N05026", "edad": 25, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 52, "batch": 5, "cargo_mensual": 50.02, "churn": 0, "customer_id": "N05027", "edad": 50, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 48, "batch": 5, "cargo_mensual": 22.22, "churn": 0, "customer_id": "N05028", "edad": 77, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 6, "batch": 5, "cargo_mensual": 50.66, "churn": 1, "customer_id": "N05029", "edad": 27, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 18, "batch": 5, "cargo_mensual": 93.15, "churn": 0, "customer_id": "N05030", "edad": 57, "plan": "premium", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 66, "batch": 5, "cargo_mensual": 52.04, "churn": 0, "customer_id": "N05031", "edad": 68, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 39, "batch": 5, "cargo_mensual": 94.9, "churn": 0, "customer_id": "N05032", "edad": 73, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 33, "batch": 5, "cargo_mensual": 23.46, "churn": 0, "customer_id": "N05033", "edad": 42, "plan": "básico", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 34, "batch": 5, "cargo_mensual": 50.15, "churn": 0, "customer_id": "N05034", "edad": 54, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 31, "batch": 5, "cargo_mensual": 88.74, "churn": 0, "customer_id": "N05035", "edad": 43, "plan": "premium", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 61, "batch": 5, "cargo_mensual": 52.02, "churn": 0, "customer_id": "N05036", "edad": 70, "plan": "estándar", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 30, "batch": 5, "cargo_mensual": 88.39, "churn": 0, "customer_id": "N05037", "edad": 41, "plan": "premium", "region": "Córdoba", "tickets_90d": 4}
-{"antiguedad_meses": 54, "batch": 5, "cargo_mensual": 50.17, "churn": 0, "customer_id": "N05038", "edad": 80, "plan": "estándar", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 16, "batch": 5, "cargo_mensual": 50.88, "churn": 0, "customer_id": "N05039", "edad": 40, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 22, "batch": 5, "cargo_mensual": 51.47, "churn": 0, "customer_id": "N05040", "edad": 40, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
-{"antiguedad_meses": 31, "batch": 5, "cargo_mensual": 92.61, "churn": 0, "customer_id": "N05041", "edad": 68, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
-{"antiguedad_meses": 49, "batch": 5, "cargo_mensual": 53.95, "churn": 0, "customer_id": "N05042", "edad": 80, "plan": "estándar", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 19, "batch": 5, "cargo_mensual": 91.12, "churn": 0, "customer_id": "N05043", "edad": 69, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 37, "batch": 5, "cargo_mensual": 52.88, "churn": 0, "customer_id": "N05044", "edad": 77, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 58, "batch": 5, "cargo_mensual": 52.43, "churn": 0, "customer_id": "N05045", "edad": 50, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
-{"antiguedad_meses": 24, "batch": 5, "cargo_mensual": 52.65, "churn": 0, "customer_id": "N05046", "edad": 31, "plan": "estándar", "region": "Córdoba", "tickets_90d": 3}
-{"antiguedad_meses": 41, "batch": 5, "cargo_mensual": 92.03, "churn": 0, "customer_id": "N05047", "edad": 27, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
-{"antiguedad_meses": 34, "batch": 5, "cargo_mensual": 22.07, "churn": 0, "customer_id": "N05048", "edad": 30, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 51, "batch": 5, "cargo_mensual": 51.45, "churn": 0, "customer_id": "N05049", "edad": 61, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 60, "batch": 5, "cargo_mensual": 50.21, "churn": 0, "customer_id": "N05050", "edad": 69, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 19, "batch": 5, "cargo_mensual": 23.08, "churn": 1, "customer_id": "N05051", "edad": 73, "plan": "básico", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 12, "batch": 5, "cargo_mensual": 23.09, "churn": 1, "customer_id": "N05052", "edad": 74, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
-{"antiguedad_meses": 55, "batch": 5, "cargo_mensual": 22.08, "churn": 0, "customer_id": "N05053", "edad": 38, "plan": "básico", "region": "Mendoza", "tickets_90d": 5}
-{"antiguedad_meses": 57, "batch": 5, "cargo_mensual": 23.98, "churn": 0, "customer_id": "N05054", "edad": 68, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 26, "batch": 5, "cargo_mensual": 95.4, "churn": 0, "customer_id": "N05055", "edad": 66, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 71, "batch": 5, "cargo_mensual": 52.33, "churn": 0, "customer_id": "N05056", "edad": 33, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 33, "batch": 5, "cargo_mensual": 23.6, "churn": 1, "customer_id": "N05057", "edad": 39, "plan": "básico", "region": "Mendoza", "tickets_90d": 8}
-{"antiguedad_meses": 42, "batch": 5, "cargo_mensual": 53.67, "churn": 0, "customer_id": "N05058", "edad": 51, "plan": "estándar", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 56, "batch": 5, "cargo_mensual": 23.83, "churn": 0, "customer_id": "N05059", "edad": 26, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 32, "batch": 6, "cargo_mensual": 51.57, "churn": 0, "customer_id": "N06000", "edad": 61, "plan": "estándar", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 26, "batch": 6, "cargo_mensual": 22.86, "churn": 0, "customer_id": "N06001", "edad": 31, "plan": "básico", "region": "Santa Fe", "tickets_90d": 1}
-{"antiguedad_meses": 70, "batch": 6, "cargo_mensual": 22.24, "churn": 0, "customer_id": "N06002", "edad": 31, "plan": "básico", "region": "Mendoza", "tickets_90d": 0}
-{"antiguedad_meses": 35, "batch": 6, "cargo_mensual": 52.41, "churn": 1, "customer_id": "N06003", "edad": 36, "plan": "estándar", "region": "Mendoza", "tickets_90d": 8}
-{"antiguedad_meses": 69, "batch": 6, "cargo_mensual": 52.2, "churn": 0, "customer_id": "N06004", "edad": 59, "plan": "estándar", "region": "Córdoba", "tickets_90d": 4}
-{"antiguedad_meses": 18, "batch": 6, "cargo_mensual": 23.61, "churn": 0, "customer_id": "N06005", "edad": 23, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 23.94, "churn": 0, "customer_id": "N06006", "edad": 57, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
-{"antiguedad_meses": 6, "batch": 6, "cargo_mensual": 22.35, "churn": 1, "customer_id": "N06007", "edad": 59, "plan": "básico", "region": "Córdoba", "tickets_90d": 4}
-{"antiguedad_meses": 38, "batch": 6, "cargo_mensual": 53.2, "churn": 0, "customer_id": "N06008", "edad": 56, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 40, "batch": 6, "cargo_mensual": 23.82, "churn": 0, "customer_id": "N06009", "edad": 30, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 51, "batch": 6, "cargo_mensual": 23.79, "churn": 1, "customer_id": "N06010", "edad": 33, "plan": "básico", "region": "Mendoza", "tickets_90d": 8}
-{"antiguedad_meses": 14, "batch": 6, "cargo_mensual": 95.6, "churn": 1, "customer_id": "N06011", "edad": 66, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
-{"antiguedad_meses": 36, "batch": 6, "cargo_mensual": 88.14, "churn": 0, "customer_id": "N06012", "edad": 18, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 37, "batch": 6, "cargo_mensual": 22.71, "churn": 0, "customer_id": "N06013", "edad": 54, "plan": "básico", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 37, "batch": 6, "cargo_mensual": 94.88, "churn": 0, "customer_id": "N06014", "edad": 72, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 24, "batch": 6, "cargo_mensual": 23.5, "churn": 1, "customer_id": "N06015", "edad": 42, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 31, "batch": 6, "cargo_mensual": 52.94, "churn": 0, "customer_id": "N06016", "edad": 69, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 23.35, "churn": 0, "customer_id": "N06017", "edad": 58, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 44, "batch": 6, "cargo_mensual": 94.87, "churn": 0, "customer_id": "N06018", "edad": 65, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
-{"antiguedad_meses": 45, "batch": 6, "cargo_mensual": 53.36, "churn": 0, "customer_id": "N06019", "edad": 50, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 25, "batch": 6, "cargo_mensual": 23.48, "churn": 1, "customer_id": "N06020", "edad": 42, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 14, "batch": 6, "cargo_mensual": 95.88, "churn": 0, "customer_id": "N06021", "edad": 38, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
-{"antiguedad_meses": 8, "batch": 6, "cargo_mensual": 22.33, "churn": 1, "customer_id": "N06022", "edad": 50, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
-{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 91.18, "churn": 0, "customer_id": "N06023", "edad": 58, "plan": "premium", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 2, "batch": 6, "cargo_mensual": 92.72, "churn": 0, "customer_id": "N06024", "edad": 68, "plan": "premium", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 52.8, "churn": 0, "customer_id": "N06025", "edad": 74, "plan": "estándar", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 63, "batch": 6, "cargo_mensual": 91.37, "churn": 0, "customer_id": "N06026", "edad": 41, "plan": "premium", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 32, "batch": 6, "cargo_mensual": 22.51, "churn": 0, "customer_id": "N06027", "edad": 25, "plan": "básico", "region": "AMBA", "tickets_90d": 1}
-{"antiguedad_meses": 62, "batch": 6, "cargo_mensual": 22.13, "churn": 0, "customer_id": "N06028", "edad": 29, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 64, "batch": 6, "cargo_mensual": 23.24, "churn": 0, "customer_id": "N06029", "edad": 53, "plan": "básico", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 7, "batch": 6, "cargo_mensual": 23.21, "churn": 0, "customer_id": "N06030", "edad": 46, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
-{"antiguedad_meses": 6, "batch": 6, "cargo_mensual": 91.83, "churn": 0, "customer_id": "N06031", "edad": 19, "plan": "premium", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 69, "batch": 6, "cargo_mensual": 23.0, "churn": 0, "customer_id": "N06032", "edad": 55, "plan": "básico", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 24, "batch": 6, "cargo_mensual": 94.96, "churn": 1, "customer_id": "N06033", "edad": 62, "plan": "premium", "region": "Mendoza", "tickets_90d": 8}
-{"antiguedad_meses": 33, "batch": 6, "cargo_mensual": 22.33, "churn": 0, "customer_id": "N06034", "edad": 19, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
-{"antiguedad_meses": 27, "batch": 6, "cargo_mensual": 50.13, "churn": 0, "customer_id": "N06035", "edad": 74, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
-{"antiguedad_meses": 1, "batch": 6, "cargo_mensual": 22.05, "churn": 1, "customer_id": "N06036", "edad": 79, "plan": "básico", "region": "Córdoba", "tickets_90d": 8}
-{"antiguedad_meses": 24, "batch": 6, "cargo_mensual": 91.1, "churn": 0, "customer_id": "N06037", "edad": 27, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
-{"antiguedad_meses": 19, "batch": 6, "cargo_mensual": 93.78, "churn": 0, "customer_id": "N06038", "edad": 70, "plan": "premium", "region": "Mendoza", "tickets_90d": 0}
-{"antiguedad_meses": 67, "batch": 6, "cargo_mensual": 89.32, "churn": 0, "customer_id": "N06039", "edad": 80, "plan": "premium", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 51.52, "churn": 0, "customer_id": "N06040", "edad": 66, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 60, "batch": 6, "cargo_mensual": 23.28, "churn": 0, "customer_id": "N06041", "edad": 26, "plan": "básico", "region": "AMBA", "tickets_90d": 7}
-{"antiguedad_meses": 59, "batch": 6, "cargo_mensual": 23.91, "churn": 0, "customer_id": "N06042", "edad": 36, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 56, "batch": 6, "cargo_mensual": 94.9, "churn": 0, "customer_id": "N06043", "edad": 28, "plan": "premium", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 57, "batch": 6, "cargo_mensual": 90.86, "churn": 0, "customer_id": "N06044", "edad": 18, "plan": "premium", "region": "Mendoza", "tickets_90d": 1}
-{"antiguedad_meses": 46, "batch": 6, "cargo_mensual": 53.15, "churn": 0, "customer_id": "N06045", "edad": 53, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
-{"antiguedad_meses": 61, "batch": 6, "cargo_mensual": 22.16, "churn": 0, "customer_id": "N06046", "edad": 30, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
-{"antiguedad_meses": 40, "batch": 6, "cargo_mensual": 50.11, "churn": 0, "customer_id": "N06047", "edad": 55, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
-{"antiguedad_meses": 42, "batch": 6, "cargo_mensual": 90.26, "churn": 0, "customer_id": "N06048", "edad": 68, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
-{"antiguedad_meses": 16, "batch": 6, "cargo_mensual": 53.92, "churn": 0, "customer_id": "N06049", "edad": 20, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
-{"antiguedad_meses": 49, "batch": 6, "cargo_mensual": 51.54, "churn": 0, "customer_id": "N06050", "edad": 35, "plan": "estándar", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 40, "batch": 6, "cargo_mensual": 95.47, "churn": 0, "customer_id": "N06051", "edad": 49, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
-{"antiguedad_meses": 56, "batch": 6, "cargo_mensual": 94.63, "churn": 0, "customer_id": "N06052", "edad": 75, "plan": "premium", "region": "Mendoza", "tickets_90d": 2}
-{"antiguedad_meses": 52, "batch": 6, "cargo_mensual": 22.82, "churn": 0, "customer_id": "N06053", "edad": 22, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
-{"antiguedad_meses": 30, "batch": 6, "cargo_mensual": 22.68, "churn": 0, "customer_id": "N06054", "edad": 55, "plan": "básico", "region": "Mendoza", "tickets_90d": 1}
-{"antiguedad_meses": 21, "batch": 6, "cargo_mensual": 23.88, "churn": 1, "customer_id": "N06055", "edad": 61, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
-{"antiguedad_meses": 7, "batch": 6, "cargo_mensual": 22.97, "churn": 1, "customer_id": "N06056", "edad": 50, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
-{"antiguedad_meses": 15, "batch": 6, "cargo_mensual": 50.6, "churn": 0, "customer_id": "N06057", "edad": 49, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
-{"antiguedad_meses": 55, "batch": 6, "cargo_mensual": 92.2, "churn": 0, "customer_id": "N06058", "edad": 80, "plan": "premium", "region": "AMBA", "tickets_90d": 3}
-{"antiguedad_meses": 60, "batch": 6, "cargo_mensual": 93.87, "churn": 0, "customer_id": "N06059", "edad": 77, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 46, "batch": 0, "cargo_mensual": 52.07, "churn": 0, "customer_id": "N00000", "edad": 76, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 24, "batch": 0, "cargo_mensual": 51.73, "churn": 0, "customer_id": "N00001", "edad": 53, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
+{"antiguedad_meses": 44, "batch": 0, "cargo_mensual": 20.22, "churn": 1, "customer_id": "N00002", "edad": 68, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 58, "batch": 0, "cargo_mensual": 65.49, "churn": 0, "customer_id": "N00003", "edad": 32, "plan": "premium", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 45, "batch": 0, "cargo_mensual": 45.9, "churn": 0, "customer_id": "N00004", "edad": 65, "plan": "estándar", "region": "Córdoba", "tickets_90d": 8}
+{"antiguedad_meses": 58, "batch": 0, "cargo_mensual": 23.96, "churn": 0, "customer_id": "N00005", "edad": 58, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 65, "batch": 0, "cargo_mensual": 71.93, "churn": 0, "customer_id": "N00006", "edad": 18, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 58, "batch": 0, "cargo_mensual": 41.24, "churn": 0, "customer_id": "N00007", "edad": 36, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 18, "batch": 0, "cargo_mensual": 48.0, "churn": 1, "customer_id": "N00008", "edad": 41, "plan": "estándar", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 20, "batch": 0, "cargo_mensual": 19.3, "churn": 1, "customer_id": "N00009", "edad": 29, "plan": "básico", "region": "Santa Fe", "tickets_90d": 4}
+{"antiguedad_meses": 48, "batch": 0, "cargo_mensual": 79.71, "churn": 0, "customer_id": "N00010", "edad": 38, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 35, "batch": 0, "cargo_mensual": 37.6, "churn": 0, "customer_id": "N00011", "edad": 42, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 70, "batch": 0, "cargo_mensual": 65.03, "churn": 0, "customer_id": "N00012", "edad": 45, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 2, "batch": 0, "cargo_mensual": 18.52, "churn": 1, "customer_id": "N00013", "edad": 78, "plan": "básico", "region": "Santa Fe", "tickets_90d": 4}
+{"antiguedad_meses": 33, "batch": 0, "cargo_mensual": 21.96, "churn": 0, "customer_id": "N00014", "edad": 35, "plan": "básico", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 62, "batch": 0, "cargo_mensual": 37.22, "churn": 0, "customer_id": "N00015", "edad": 57, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 71, "batch": 0, "cargo_mensual": 18.04, "churn": 0, "customer_id": "N00016", "edad": 37, "plan": "básico", "region": "Santa Fe", "tickets_90d": 4}
+{"antiguedad_meses": 49, "batch": 0, "cargo_mensual": 74.15, "churn": 0, "customer_id": "N00017", "edad": 52, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 44, "batch": 0, "cargo_mensual": 18.56, "churn": 0, "customer_id": "N00018", "edad": 77, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 9, "batch": 0, "cargo_mensual": 94.86, "churn": 0, "customer_id": "N00019", "edad": 35, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 69, "batch": 0, "cargo_mensual": 50.8, "churn": 0, "customer_id": "N00020", "edad": 71, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 47, "batch": 0, "cargo_mensual": 38.21, "churn": 0, "customer_id": "N00021", "edad": 54, "plan": "estándar", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 49, "batch": 0, "cargo_mensual": 64.65, "churn": 0, "customer_id": "N00022", "edad": 34, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 32, "batch": 0, "cargo_mensual": 20.2, "churn": 1, "customer_id": "N00023", "edad": 27, "plan": "básico", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 38, "batch": 0, "cargo_mensual": 23.63, "churn": 0, "customer_id": "N00024", "edad": 20, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 11, "batch": 0, "cargo_mensual": 64.1, "churn": 0, "customer_id": "N00025", "edad": 68, "plan": "premium", "region": "Córdoba", "tickets_90d": 3}
+{"antiguedad_meses": 14, "batch": 0, "cargo_mensual": 20.27, "churn": 1, "customer_id": "N00026", "edad": 79, "plan": "básico", "region": "AMBA", "tickets_90d": 7}
+{"antiguedad_meses": 17, "batch": 0, "cargo_mensual": 40.02, "churn": 0, "customer_id": "N00027", "edad": 75, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 66, "batch": 0, "cargo_mensual": 95.7, "churn": 0, "customer_id": "N00028", "edad": 45, "plan": "premium", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 68, "batch": 0, "cargo_mensual": 19.06, "churn": 0, "customer_id": "N00029", "edad": 18, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 39, "batch": 0, "cargo_mensual": 46.0, "churn": 0, "customer_id": "N00030", "edad": 36, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
+{"antiguedad_meses": 43, "batch": 0, "cargo_mensual": 22.28, "churn": 0, "customer_id": "N00031", "edad": 40, "plan": "básico", "region": "Córdoba", "tickets_90d": 4}
+{"antiguedad_meses": 70, "batch": 0, "cargo_mensual": 88.4, "churn": 0, "customer_id": "N00032", "edad": 70, "plan": "premium", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 64, "batch": 0, "cargo_mensual": 39.5, "churn": 0, "customer_id": "N00033", "edad": 50, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 14, "batch": 0, "cargo_mensual": 53.75, "churn": 0, "customer_id": "N00034", "edad": 28, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 51, "batch": 0, "cargo_mensual": 41.56, "churn": 0, "customer_id": "N00035", "edad": 61, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 47, "batch": 0, "cargo_mensual": 52.85, "churn": 0, "customer_id": "N00036", "edad": 25, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 70, "batch": 0, "cargo_mensual": 37.21, "churn": 0, "customer_id": "N00037", "edad": 61, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 40, "batch": 0, "cargo_mensual": 22.77, "churn": 0, "customer_id": "N00038", "edad": 72, "plan": "básico", "region": "Santa Fe", "tickets_90d": 3}
+{"antiguedad_meses": 58, "batch": 0, "cargo_mensual": 43.22, "churn": 0, "customer_id": "N00039", "edad": 44, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 21, "batch": 0, "cargo_mensual": 76.06, "churn": 0, "customer_id": "N00040", "edad": 22, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
+{"antiguedad_meses": 62, "batch": 0, "cargo_mensual": 74.44, "churn": 0, "customer_id": "N00041", "edad": 78, "plan": "premium", "region": "Córdoba", "tickets_90d": 8}
+{"antiguedad_meses": 65, "batch": 0, "cargo_mensual": 85.37, "churn": 0, "customer_id": "N00042", "edad": 50, "plan": "premium", "region": "Mendoza", "tickets_90d": 0}
+{"antiguedad_meses": 2, "batch": 0, "cargo_mensual": 64.02, "churn": 1, "customer_id": "N00043", "edad": 23, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 70, "batch": 0, "cargo_mensual": 71.86, "churn": 0, "customer_id": "N00044", "edad": 26, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 12, "batch": 0, "cargo_mensual": 22.54, "churn": 1, "customer_id": "N00045", "edad": 53, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 47, "batch": 0, "cargo_mensual": 20.99, "churn": 0, "customer_id": "N00046", "edad": 75, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 37, "batch": 0, "cargo_mensual": 93.62, "churn": 0, "customer_id": "N00047", "edad": 25, "plan": "premium", "region": "Mendoza", "tickets_90d": 8}
+{"antiguedad_meses": 43, "batch": 0, "cargo_mensual": 50.96, "churn": 0, "customer_id": "N00048", "edad": 54, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 8, "batch": 0, "cargo_mensual": 46.55, "churn": 1, "customer_id": "N00049", "edad": 55, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 13, "batch": 0, "cargo_mensual": 83.54, "churn": 0, "customer_id": "N00050", "edad": 25, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 44, "batch": 0, "cargo_mensual": 41.73, "churn": 0, "customer_id": "N00051", "edad": 33, "plan": "estándar", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 1, "batch": 0, "cargo_mensual": 69.92, "churn": 1, "customer_id": "N00052", "edad": 80, "plan": "premium", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 4, "batch": 0, "cargo_mensual": 22.17, "churn": 1, "customer_id": "N00053", "edad": 50, "plan": "básico", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 2, "batch": 0, "cargo_mensual": 19.76, "churn": 0, "customer_id": "N00054", "edad": 62, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 53, "batch": 0, "cargo_mensual": 85.89, "churn": 0, "customer_id": "N00055", "edad": 80, "plan": "premium", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 62, "batch": 0, "cargo_mensual": 84.9, "churn": 0, "customer_id": "N00056", "edad": 76, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 3, "batch": 0, "cargo_mensual": 83.41, "churn": 1, "customer_id": "N00057", "edad": 75, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 63, "batch": 0, "cargo_mensual": 17.53, "churn": 0, "customer_id": "N00058", "edad": 22, "plan": "básico", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 22, "batch": 0, "cargo_mensual": 53.35, "churn": 1, "customer_id": "N00059", "edad": 38, "plan": "estándar", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 66, "batch": 1, "cargo_mensual": 17.77, "churn": 0, "customer_id": "N01000", "edad": 50, "plan": "básico", "region": "Córdoba", "tickets_90d": 3}
+{"antiguedad_meses": 61, "batch": 1, "cargo_mensual": 20.63, "churn": 0, "customer_id": "N01001", "edad": 49, "plan": "básico", "region": "Córdoba", "tickets_90d": 4}
+{"antiguedad_meses": 62, "batch": 1, "cargo_mensual": 87.1, "churn": 0, "customer_id": "N01002", "edad": 35, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 69, "batch": 1, "cargo_mensual": 19.57, "churn": 0, "customer_id": "N01003", "edad": 64, "plan": "básico", "region": "AMBA", "tickets_90d": 7}
+{"antiguedad_meses": 16, "batch": 1, "cargo_mensual": 72.07, "churn": 1, "customer_id": "N01004", "edad": 80, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 6, "batch": 1, "cargo_mensual": 40.53, "churn": 1, "customer_id": "N01005", "edad": 69, "plan": "estándar", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 7, "batch": 1, "cargo_mensual": 84.58, "churn": 0, "customer_id": "N01006", "edad": 49, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 12, "batch": 1, "cargo_mensual": 23.11, "churn": 0, "customer_id": "N01007", "edad": 23, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 53, "batch": 1, "cargo_mensual": 18.92, "churn": 0, "customer_id": "N01008", "edad": 19, "plan": "básico", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 28, "batch": 1, "cargo_mensual": 41.47, "churn": 0, "customer_id": "N01009", "edad": 60, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 66, "batch": 1, "cargo_mensual": 86.07, "churn": 0, "customer_id": "N01010", "edad": 56, "plan": "premium", "region": "Córdoba", "tickets_90d": 3}
+{"antiguedad_meses": 44, "batch": 1, "cargo_mensual": 17.64, "churn": 1, "customer_id": "N01011", "edad": 71, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 38, "batch": 1, "cargo_mensual": 17.78, "churn": 0, "customer_id": "N01012", "edad": 66, "plan": "básico", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 51, "batch": 1, "cargo_mensual": 48.38, "churn": 0, "customer_id": "N01013", "edad": 41, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 8, "batch": 1, "cargo_mensual": 86.22, "churn": 1, "customer_id": "N01014", "edad": 31, "plan": "premium", "region": "Córdoba", "tickets_90d": 8}
+{"antiguedad_meses": 66, "batch": 1, "cargo_mensual": 65.71, "churn": 0, "customer_id": "N01015", "edad": 22, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
+{"antiguedad_meses": 31, "batch": 1, "cargo_mensual": 80.65, "churn": 0, "customer_id": "N01016", "edad": 26, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 7, "batch": 1, "cargo_mensual": 17.01, "churn": 1, "customer_id": "N01017", "edad": 70, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 58, "batch": 1, "cargo_mensual": 49.6, "churn": 0, "customer_id": "N01018", "edad": 60, "plan": "estándar", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 38, "batch": 1, "cargo_mensual": 22.04, "churn": 0, "customer_id": "N01019", "edad": 53, "plan": "básico", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 3, "batch": 1, "cargo_mensual": 71.86, "churn": 1, "customer_id": "N01020", "edad": 37, "plan": "premium", "region": "Córdoba", "tickets_90d": 4}
+{"antiguedad_meses": 63, "batch": 1, "cargo_mensual": 48.15, "churn": 0, "customer_id": "N01021", "edad": 32, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 28, "batch": 1, "cargo_mensual": 92.02, "churn": 0, "customer_id": "N01022", "edad": 79, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 69, "batch": 1, "cargo_mensual": 68.12, "churn": 0, "customer_id": "N01023", "edad": 37, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 40, "batch": 1, "cargo_mensual": 91.86, "churn": 0, "customer_id": "N01024", "edad": 72, "plan": "premium", "region": "Córdoba", "tickets_90d": 8}
+{"antiguedad_meses": 13, "batch": 1, "cargo_mensual": 83.26, "churn": 0, "customer_id": "N01025", "edad": 33, "plan": "premium", "region": "Mendoza", "tickets_90d": 0}
+{"antiguedad_meses": 19, "batch": 1, "cargo_mensual": 21.78, "churn": 1, "customer_id": "N01026", "edad": 18, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 44, "batch": 1, "cargo_mensual": 17.93, "churn": 0, "customer_id": "N01027", "edad": 56, "plan": "básico", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 70, "batch": 1, "cargo_mensual": 37.36, "churn": 0, "customer_id": "N01028", "edad": 31, "plan": "estándar", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 69, "batch": 1, "cargo_mensual": 18.31, "churn": 0, "customer_id": "N01029", "edad": 68, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 28, "batch": 1, "cargo_mensual": 39.91, "churn": 0, "customer_id": "N01030", "edad": 69, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 8, "batch": 1, "cargo_mensual": 94.03, "churn": 0, "customer_id": "N01031", "edad": 56, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
+{"antiguedad_meses": 1, "batch": 1, "cargo_mensual": 20.44, "churn": 1, "customer_id": "N01032", "edad": 36, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 13, "batch": 1, "cargo_mensual": 21.46, "churn": 0, "customer_id": "N01033", "edad": 50, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 6, "batch": 1, "cargo_mensual": 16.85, "churn": 1, "customer_id": "N01034", "edad": 20, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 67, "batch": 1, "cargo_mensual": 46.77, "churn": 0, "customer_id": "N01035", "edad": 35, "plan": "estándar", "region": "Mendoza", "tickets_90d": 1}
+{"antiguedad_meses": 62, "batch": 1, "cargo_mensual": 22.66, "churn": 0, "customer_id": "N01036", "edad": 44, "plan": "básico", "region": "Córdoba", "tickets_90d": 2}
+{"antiguedad_meses": 38, "batch": 1, "cargo_mensual": 18.63, "churn": 0, "customer_id": "N01037", "edad": 50, "plan": "básico", "region": "Córdoba", "tickets_90d": 4}
+{"antiguedad_meses": 13, "batch": 1, "cargo_mensual": 85.16, "churn": 1, "customer_id": "N01038", "edad": 51, "plan": "premium", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 45, "batch": 1, "cargo_mensual": 21.75, "churn": 1, "customer_id": "N01039", "edad": 37, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 27, "batch": 1, "cargo_mensual": 72.82, "churn": 1, "customer_id": "N01040", "edad": 58, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 13, "batch": 1, "cargo_mensual": 45.87, "churn": 0, "customer_id": "N01041", "edad": 29, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 4, "batch": 1, "cargo_mensual": 22.33, "churn": 0, "customer_id": "N01042", "edad": 39, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 40, "batch": 1, "cargo_mensual": 51.46, "churn": 0, "customer_id": "N01043", "edad": 20, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 37, "batch": 1, "cargo_mensual": 79.77, "churn": 1, "customer_id": "N01044", "edad": 18, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 39, "batch": 1, "cargo_mensual": 40.72, "churn": 0, "customer_id": "N01045", "edad": 58, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 36, "batch": 1, "cargo_mensual": 46.05, "churn": 0, "customer_id": "N01046", "edad": 28, "plan": "estándar", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 16, "batch": 1, "cargo_mensual": 20.84, "churn": 1, "customer_id": "N01047", "edad": 55, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 38, "batch": 1, "cargo_mensual": 71.93, "churn": 0, "customer_id": "N01048", "edad": 48, "plan": "premium", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 8, "batch": 1, "cargo_mensual": 23.57, "churn": 1, "customer_id": "N01049", "edad": 69, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 12, "batch": 1, "cargo_mensual": 43.55, "churn": 1, "customer_id": "N01050", "edad": 73, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 6, "batch": 1, "cargo_mensual": 19.54, "churn": 1, "customer_id": "N01051", "edad": 56, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 46, "batch": 1, "cargo_mensual": 75.51, "churn": 0, "customer_id": "N01052", "edad": 21, "plan": "premium", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 48, "batch": 1, "cargo_mensual": 43.19, "churn": 0, "customer_id": "N01053", "edad": 23, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 33, "batch": 1, "cargo_mensual": 85.05, "churn": 0, "customer_id": "N01054", "edad": 38, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 12, "batch": 1, "cargo_mensual": 69.99, "churn": 0, "customer_id": "N01055", "edad": 55, "plan": "premium", "region": "Mendoza", "tickets_90d": 1}
+{"antiguedad_meses": 29, "batch": 1, "cargo_mensual": 84.4, "churn": 0, "customer_id": "N01056", "edad": 62, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 65, "batch": 1, "cargo_mensual": 19.76, "churn": 0, "customer_id": "N01057", "edad": 78, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 34, "batch": 1, "cargo_mensual": 16.08, "churn": 1, "customer_id": "N01058", "edad": 44, "plan": "básico", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 51, "batch": 1, "cargo_mensual": 64.98, "churn": 0, "customer_id": "N01059", "edad": 60, "plan": "premium", "region": "Mendoza", "tickets_90d": 8}
+{"antiguedad_meses": 65, "batch": 2, "cargo_mensual": 23.69, "churn": 0, "customer_id": "N02000", "edad": 27, "plan": "básico", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 68, "batch": 2, "cargo_mensual": 39.0, "churn": 0, "customer_id": "N02001", "edad": 38, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 1, "batch": 2, "cargo_mensual": 70.7, "churn": 1, "customer_id": "N02002", "edad": 34, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 3, "batch": 2, "cargo_mensual": 51.87, "churn": 1, "customer_id": "N02003", "edad": 37, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 61, "batch": 2, "cargo_mensual": 17.71, "churn": 1, "customer_id": "N02004", "edad": 56, "plan": "básico", "region": "Córdoba", "tickets_90d": 8}
+{"antiguedad_meses": 36, "batch": 2, "cargo_mensual": 76.2, "churn": 0, "customer_id": "N02005", "edad": 24, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 15, "batch": 2, "cargo_mensual": 51.22, "churn": 0, "customer_id": "N02006", "edad": 76, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 50, "batch": 2, "cargo_mensual": 81.57, "churn": 0, "customer_id": "N02007", "edad": 78, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 32, "batch": 2, "cargo_mensual": 23.1, "churn": 1, "customer_id": "N02008", "edad": 48, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 10, "batch": 2, "cargo_mensual": 40.21, "churn": 0, "customer_id": "N02009", "edad": 66, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 15, "batch": 2, "cargo_mensual": 80.04, "churn": 1, "customer_id": "N02010", "edad": 51, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 66, "batch": 2, "cargo_mensual": 65.93, "churn": 0, "customer_id": "N02011", "edad": 62, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 37, "batch": 2, "cargo_mensual": 19.76, "churn": 1, "customer_id": "N02012", "edad": 18, "plan": "básico", "region": "Córdoba", "tickets_90d": 8}
+{"antiguedad_meses": 2, "batch": 2, "cargo_mensual": 37.18, "churn": 0, "customer_id": "N02013", "edad": 27, "plan": "estándar", "region": "Córdoba", "tickets_90d": 4}
+{"antiguedad_meses": 28, "batch": 2, "cargo_mensual": 23.5, "churn": 0, "customer_id": "N02014", "edad": 36, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 22, "batch": 2, "cargo_mensual": 17.98, "churn": 1, "customer_id": "N02015", "edad": 36, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 60, "batch": 2, "cargo_mensual": 92.39, "churn": 0, "customer_id": "N02016", "edad": 56, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 37, "batch": 2, "cargo_mensual": 77.48, "churn": 0, "customer_id": "N02017", "edad": 45, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 32, "batch": 2, "cargo_mensual": 67.32, "churn": 0, "customer_id": "N02018", "edad": 33, "plan": "premium", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 2, "batch": 2, "cargo_mensual": 20.96, "churn": 1, "customer_id": "N02019", "edad": 18, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 58, "batch": 2, "cargo_mensual": 47.56, "churn": 0, "customer_id": "N02020", "edad": 55, "plan": "estándar", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 29, "batch": 2, "cargo_mensual": 18.32, "churn": 0, "customer_id": "N02021", "edad": 26, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 53, "batch": 2, "cargo_mensual": 67.01, "churn": 0, "customer_id": "N02022", "edad": 79, "plan": "premium", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 37, "batch": 2, "cargo_mensual": 22.49, "churn": 0, "customer_id": "N02023", "edad": 64, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 13, "batch": 2, "cargo_mensual": 21.34, "churn": 1, "customer_id": "N02024", "edad": 50, "plan": "básico", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 48, "batch": 2, "cargo_mensual": 88.82, "churn": 0, "customer_id": "N02025", "edad": 72, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 45, "batch": 2, "cargo_mensual": 95.4, "churn": 0, "customer_id": "N02026", "edad": 76, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
+{"antiguedad_meses": 26, "batch": 2, "cargo_mensual": 83.33, "churn": 0, "customer_id": "N02027", "edad": 66, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 32, "batch": 2, "cargo_mensual": 37.88, "churn": 0, "customer_id": "N02028", "edad": 61, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 4, "batch": 2, "cargo_mensual": 45.39, "churn": 0, "customer_id": "N02029", "edad": 56, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 49, "batch": 2, "cargo_mensual": 18.37, "churn": 0, "customer_id": "N02030", "edad": 27, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 41, "batch": 2, "cargo_mensual": 21.28, "churn": 0, "customer_id": "N02031", "edad": 24, "plan": "básico", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 60, "batch": 2, "cargo_mensual": 40.6, "churn": 0, "customer_id": "N02032", "edad": 24, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 61, "batch": 2, "cargo_mensual": 80.61, "churn": 0, "customer_id": "N02033", "edad": 26, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 61, "batch": 2, "cargo_mensual": 64.64, "churn": 0, "customer_id": "N02034", "edad": 52, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 59, "batch": 2, "cargo_mensual": 50.9, "churn": 0, "customer_id": "N02035", "edad": 74, "plan": "estándar", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 32, "batch": 2, "cargo_mensual": 23.92, "churn": 0, "customer_id": "N02036", "edad": 69, "plan": "básico", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 25, "batch": 2, "cargo_mensual": 46.06, "churn": 0, "customer_id": "N02037", "edad": 61, "plan": "estándar", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 43, "batch": 2, "cargo_mensual": 66.57, "churn": 0, "customer_id": "N02038", "edad": 52, "plan": "premium", "region": "Mendoza", "tickets_90d": 0}
+{"antiguedad_meses": 62, "batch": 2, "cargo_mensual": 50.4, "churn": 0, "customer_id": "N02039", "edad": 56, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 42, "batch": 2, "cargo_mensual": 20.83, "churn": 1, "customer_id": "N02040", "edad": 25, "plan": "básico", "region": "AMBA", "tickets_90d": 7}
+{"antiguedad_meses": 13, "batch": 2, "cargo_mensual": 41.63, "churn": 0, "customer_id": "N02041", "edad": 41, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 33, "batch": 2, "cargo_mensual": 78.97, "churn": 0, "customer_id": "N02042", "edad": 73, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 54, "batch": 2, "cargo_mensual": 51.24, "churn": 0, "customer_id": "N02043", "edad": 60, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 11, "batch": 2, "cargo_mensual": 81.32, "churn": 0, "customer_id": "N02044", "edad": 33, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 28, "batch": 2, "cargo_mensual": 22.6, "churn": 0, "customer_id": "N02045", "edad": 21, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 15, "batch": 2, "cargo_mensual": 16.03, "churn": 0, "customer_id": "N02046", "edad": 19, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 43, "batch": 2, "cargo_mensual": 19.51, "churn": 0, "customer_id": "N02047", "edad": 67, "plan": "básico", "region": "Córdoba", "tickets_90d": 2}
+{"antiguedad_meses": 29, "batch": 2, "cargo_mensual": 21.93, "churn": 0, "customer_id": "N02048", "edad": 61, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 14, "batch": 2, "cargo_mensual": 22.83, "churn": 1, "customer_id": "N02049", "edad": 53, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 14, "batch": 2, "cargo_mensual": 44.82, "churn": 0, "customer_id": "N02050", "edad": 61, "plan": "estándar", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 47, "batch": 2, "cargo_mensual": 53.93, "churn": 0, "customer_id": "N02051", "edad": 69, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 3}
+{"antiguedad_meses": 7, "batch": 2, "cargo_mensual": 44.87, "churn": 0, "customer_id": "N02052", "edad": 72, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 5, "batch": 2, "cargo_mensual": 17.1, "churn": 1, "customer_id": "N02053", "edad": 20, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 5, "batch": 2, "cargo_mensual": 44.8, "churn": 0, "customer_id": "N02054", "edad": 58, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 38, "batch": 2, "cargo_mensual": 50.83, "churn": 0, "customer_id": "N02055", "edad": 33, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 24, "batch": 2, "cargo_mensual": 23.88, "churn": 0, "customer_id": "N02056", "edad": 58, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 59, "batch": 2, "cargo_mensual": 69.84, "churn": 0, "customer_id": "N02057", "edad": 23, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 5, "batch": 2, "cargo_mensual": 19.32, "churn": 1, "customer_id": "N02058", "edad": 28, "plan": "básico", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 71, "batch": 2, "cargo_mensual": 82.57, "churn": 0, "customer_id": "N02059", "edad": 73, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 45, "batch": 3, "cargo_mensual": 72.74, "churn": 1, "customer_id": "N03000", "edad": 62, "plan": "premium", "region": "Mendoza", "tickets_90d": 8}
+{"antiguedad_meses": 12, "batch": 3, "cargo_mensual": 38.36, "churn": 0, "customer_id": "N03001", "edad": 48, "plan": "estándar", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 24, "batch": 3, "cargo_mensual": 17.23, "churn": 0, "customer_id": "N03002", "edad": 78, "plan": "básico", "region": "Mendoza", "tickets_90d": 0}
+{"antiguedad_meses": 14, "batch": 3, "cargo_mensual": 81.53, "churn": 0, "customer_id": "N03003", "edad": 34, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 26, "batch": 3, "cargo_mensual": 46.42, "churn": 0, "customer_id": "N03004", "edad": 30, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 67, "batch": 3, "cargo_mensual": 68.6, "churn": 0, "customer_id": "N03005", "edad": 79, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 35, "batch": 3, "cargo_mensual": 93.05, "churn": 0, "customer_id": "N03006", "edad": 73, "plan": "premium", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 70, "batch": 3, "cargo_mensual": 42.71, "churn": 0, "customer_id": "N03007", "edad": 21, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 47, "batch": 3, "cargo_mensual": 44.63, "churn": 0, "customer_id": "N03008", "edad": 18, "plan": "estándar", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 14, "batch": 3, "cargo_mensual": 95.54, "churn": 1, "customer_id": "N03009", "edad": 40, "plan": "premium", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 66, "batch": 3, "cargo_mensual": 19.13, "churn": 0, "customer_id": "N03010", "edad": 43, "plan": "básico", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 50, "batch": 3, "cargo_mensual": 75.62, "churn": 0, "customer_id": "N03011", "edad": 55, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 24, "batch": 3, "cargo_mensual": 71.99, "churn": 1, "customer_id": "N03012", "edad": 32, "plan": "premium", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 53, "batch": 3, "cargo_mensual": 81.9, "churn": 0, "customer_id": "N03013", "edad": 33, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 29, "batch": 3, "cargo_mensual": 41.14, "churn": 1, "customer_id": "N03014", "edad": 22, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 19, "batch": 3, "cargo_mensual": 22.19, "churn": 1, "customer_id": "N03015", "edad": 59, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 15, "batch": 3, "cargo_mensual": 50.16, "churn": 0, "customer_id": "N03016", "edad": 42, "plan": "estándar", "region": "AMBA", "tickets_90d": 1}
+{"antiguedad_meses": 39, "batch": 3, "cargo_mensual": 69.49, "churn": 0, "customer_id": "N03017", "edad": 33, "plan": "premium", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 14, "batch": 3, "cargo_mensual": 64.71, "churn": 1, "customer_id": "N03018", "edad": 45, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 19, "batch": 3, "cargo_mensual": 22.79, "churn": 0, "customer_id": "N03019", "edad": 28, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 60, "batch": 3, "cargo_mensual": 16.59, "churn": 0, "customer_id": "N03020", "edad": 36, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 31, "batch": 3, "cargo_mensual": 40.09, "churn": 0, "customer_id": "N03021", "edad": 29, "plan": "estándar", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 63, "batch": 3, "cargo_mensual": 23.38, "churn": 0, "customer_id": "N03022", "edad": 24, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 10, "batch": 3, "cargo_mensual": 23.35, "churn": 0, "customer_id": "N03023", "edad": 54, "plan": "básico", "region": "Córdoba", "tickets_90d": 3}
+{"antiguedad_meses": 16, "batch": 3, "cargo_mensual": 89.96, "churn": 0, "customer_id": "N03024", "edad": 61, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 11, "batch": 3, "cargo_mensual": 64.9, "churn": 1, "customer_id": "N03025", "edad": 67, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 70, "batch": 3, "cargo_mensual": 38.42, "churn": 0, "customer_id": "N03026", "edad": 75, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 42, "batch": 3, "cargo_mensual": 88.56, "churn": 0, "customer_id": "N03027", "edad": 49, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 10, "batch": 3, "cargo_mensual": 85.01, "churn": 0, "customer_id": "N03028", "edad": 26, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 52, "batch": 3, "cargo_mensual": 36.39, "churn": 0, "customer_id": "N03029", "edad": 24, "plan": "estándar", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 43, "batch": 3, "cargo_mensual": 36.07, "churn": 0, "customer_id": "N03030", "edad": 66, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 56, "batch": 3, "cargo_mensual": 66.53, "churn": 0, "customer_id": "N03031", "edad": 52, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 39, "batch": 3, "cargo_mensual": 73.07, "churn": 0, "customer_id": "N03032", "edad": 39, "plan": "premium", "region": "AMBA", "tickets_90d": 5}
+{"antiguedad_meses": 72, "batch": 3, "cargo_mensual": 21.01, "churn": 0, "customer_id": "N03033", "edad": 24, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 63, "batch": 3, "cargo_mensual": 78.61, "churn": 0, "customer_id": "N03034", "edad": 65, "plan": "premium", "region": "Córdoba", "tickets_90d": 2}
+{"antiguedad_meses": 55, "batch": 3, "cargo_mensual": 88.29, "churn": 0, "customer_id": "N03035", "edad": 57, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 7, "batch": 3, "cargo_mensual": 92.37, "churn": 0, "customer_id": "N03036", "edad": 57, "plan": "premium", "region": "AMBA", "tickets_90d": 1}
+{"antiguedad_meses": 13, "batch": 3, "cargo_mensual": 40.85, "churn": 0, "customer_id": "N03037", "edad": 71, "plan": "estándar", "region": "Córdoba", "tickets_90d": 4}
+{"antiguedad_meses": 45, "batch": 3, "cargo_mensual": 70.31, "churn": 0, "customer_id": "N03038", "edad": 41, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 61, "batch": 3, "cargo_mensual": 47.16, "churn": 0, "customer_id": "N03039", "edad": 60, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 9, "batch": 3, "cargo_mensual": 47.55, "churn": 1, "customer_id": "N03040", "edad": 48, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 4, "batch": 3, "cargo_mensual": 81.43, "churn": 0, "customer_id": "N03041", "edad": 74, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 26, "batch": 3, "cargo_mensual": 80.77, "churn": 1, "customer_id": "N03042", "edad": 24, "plan": "premium", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 24, "batch": 3, "cargo_mensual": 16.26, "churn": 1, "customer_id": "N03043", "edad": 49, "plan": "básico", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 42, "batch": 3, "cargo_mensual": 79.42, "churn": 0, "customer_id": "N03044", "edad": 31, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 70, "batch": 3, "cargo_mensual": 53.19, "churn": 0, "customer_id": "N03045", "edad": 41, "plan": "estándar", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 59, "batch": 3, "cargo_mensual": 92.31, "churn": 0, "customer_id": "N03046", "edad": 51, "plan": "premium", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 25, "batch": 3, "cargo_mensual": 16.08, "churn": 0, "customer_id": "N03047", "edad": 68, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 41, "batch": 3, "cargo_mensual": 73.25, "churn": 0, "customer_id": "N03048", "edad": 60, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 56, "batch": 3, "cargo_mensual": 37.88, "churn": 0, "customer_id": "N03049", "edad": 66, "plan": "estándar", "region": "AMBA", "tickets_90d": 7}
+{"antiguedad_meses": 55, "batch": 3, "cargo_mensual": 37.38, "churn": 0, "customer_id": "N03050", "edad": 29, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 3, "batch": 3, "cargo_mensual": 89.11, "churn": 0, "customer_id": "N03051", "edad": 68, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 37, "batch": 3, "cargo_mensual": 19.7, "churn": 1, "customer_id": "N03052", "edad": 63, "plan": "básico", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 6, "batch": 3, "cargo_mensual": 41.27, "churn": 1, "customer_id": "N03053", "edad": 62, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 55, "batch": 3, "cargo_mensual": 42.39, "churn": 0, "customer_id": "N03054", "edad": 19, "plan": "estándar", "region": "Mendoza", "tickets_90d": 8}
+{"antiguedad_meses": 6, "batch": 3, "cargo_mensual": 21.56, "churn": 1, "customer_id": "N03055", "edad": 34, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 58, "batch": 3, "cargo_mensual": 78.82, "churn": 0, "customer_id": "N03056", "edad": 54, "plan": "premium", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 11, "batch": 3, "cargo_mensual": 23.76, "churn": 0, "customer_id": "N03057", "edad": 33, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 10, "batch": 3, "cargo_mensual": 46.47, "churn": 0, "customer_id": "N03058", "edad": 50, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 62, "batch": 3, "cargo_mensual": 38.56, "churn": 0, "customer_id": "N03059", "edad": 61, "plan": "estándar", "region": "AMBA", "tickets_90d": 1}
+{"antiguedad_meses": 65, "batch": 4, "cargo_mensual": 39.91, "churn": 0, "customer_id": "N04000", "edad": 33, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 29, "batch": 4, "cargo_mensual": 75.67, "churn": 0, "customer_id": "N04001", "edad": 38, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 13, "batch": 4, "cargo_mensual": 20.59, "churn": 0, "customer_id": "N04002", "edad": 42, "plan": "básico", "region": "Mendoza", "tickets_90d": 0}
+{"antiguedad_meses": 2, "batch": 4, "cargo_mensual": 46.31, "churn": 1, "customer_id": "N04003", "edad": 36, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 59, "batch": 4, "cargo_mensual": 72.34, "churn": 0, "customer_id": "N04004", "edad": 31, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 35, "batch": 4, "cargo_mensual": 76.21, "churn": 0, "customer_id": "N04005", "edad": 36, "plan": "premium", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 58, "batch": 4, "cargo_mensual": 21.67, "churn": 1, "customer_id": "N04006", "edad": 75, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 20, "batch": 4, "cargo_mensual": 92.72, "churn": 0, "customer_id": "N04007", "edad": 44, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 7, "batch": 4, "cargo_mensual": 53.56, "churn": 0, "customer_id": "N04008", "edad": 38, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 23, "batch": 4, "cargo_mensual": 38.9, "churn": 0, "customer_id": "N04009", "edad": 70, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 64, "batch": 4, "cargo_mensual": 16.57, "churn": 0, "customer_id": "N04010", "edad": 40, "plan": "básico", "region": "AMBA", "tickets_90d": 1}
+{"antiguedad_meses": 29, "batch": 4, "cargo_mensual": 51.31, "churn": 0, "customer_id": "N04011", "edad": 41, "plan": "estándar", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 67, "batch": 4, "cargo_mensual": 21.77, "churn": 0, "customer_id": "N04012", "edad": 39, "plan": "básico", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 62, "batch": 4, "cargo_mensual": 78.66, "churn": 0, "customer_id": "N04013", "edad": 40, "plan": "premium", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 23, "batch": 4, "cargo_mensual": 42.91, "churn": 0, "customer_id": "N04014", "edad": 34, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 57, "batch": 4, "cargo_mensual": 48.53, "churn": 0, "customer_id": "N04015", "edad": 72, "plan": "estándar", "region": "Córdoba", "tickets_90d": 3}
+{"antiguedad_meses": 47, "batch": 4, "cargo_mensual": 19.59, "churn": 0, "customer_id": "N04016", "edad": 65, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 48, "batch": 4, "cargo_mensual": 95.26, "churn": 0, "customer_id": "N04017", "edad": 24, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
+{"antiguedad_meses": 32, "batch": 4, "cargo_mensual": 19.45, "churn": 0, "customer_id": "N04018", "edad": 57, "plan": "básico", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 19, "batch": 4, "cargo_mensual": 77.06, "churn": 0, "customer_id": "N04019", "edad": 30, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
+{"antiguedad_meses": 36, "batch": 4, "cargo_mensual": 22.92, "churn": 0, "customer_id": "N04020", "edad": 24, "plan": "básico", "region": "Mendoza", "tickets_90d": 0}
+{"antiguedad_meses": 48, "batch": 4, "cargo_mensual": 68.38, "churn": 0, "customer_id": "N04021", "edad": 25, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 24, "batch": 4, "cargo_mensual": 20.14, "churn": 0, "customer_id": "N04022", "edad": 72, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 40, "batch": 4, "cargo_mensual": 46.53, "churn": 0, "customer_id": "N04023", "edad": 34, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 38, "batch": 4, "cargo_mensual": 50.98, "churn": 0, "customer_id": "N04024", "edad": 65, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 9, "batch": 4, "cargo_mensual": 20.94, "churn": 0, "customer_id": "N04025", "edad": 26, "plan": "básico", "region": "Santa Fe", "tickets_90d": 3}
+{"antiguedad_meses": 27, "batch": 4, "cargo_mensual": 71.66, "churn": 0, "customer_id": "N04026", "edad": 50, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 22, "batch": 4, "cargo_mensual": 71.3, "churn": 0, "customer_id": "N04027", "edad": 41, "plan": "premium", "region": "Córdoba", "tickets_90d": 3}
+{"antiguedad_meses": 24, "batch": 4, "cargo_mensual": 50.47, "churn": 0, "customer_id": "N04028", "edad": 36, "plan": "estándar", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 32, "batch": 4, "cargo_mensual": 18.92, "churn": 1, "customer_id": "N04029", "edad": 22, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 16, "batch": 4, "cargo_mensual": 88.91, "churn": 0, "customer_id": "N04030", "edad": 78, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 59, "batch": 4, "cargo_mensual": 76.22, "churn": 0, "customer_id": "N04031", "edad": 41, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 66, "batch": 4, "cargo_mensual": 48.91, "churn": 0, "customer_id": "N04032", "edad": 21, "plan": "estándar", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 16, "batch": 4, "cargo_mensual": 50.06, "churn": 1, "customer_id": "N04033", "edad": 22, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 11, "batch": 4, "cargo_mensual": 41.27, "churn": 1, "customer_id": "N04034", "edad": 25, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 55, "batch": 4, "cargo_mensual": 88.9, "churn": 0, "customer_id": "N04035", "edad": 56, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 28, "batch": 4, "cargo_mensual": 72.66, "churn": 1, "customer_id": "N04036", "edad": 68, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 69, "batch": 4, "cargo_mensual": 67.98, "churn": 0, "customer_id": "N04037", "edad": 31, "plan": "premium", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 35, "batch": 4, "cargo_mensual": 47.93, "churn": 0, "customer_id": "N04038", "edad": 47, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 11, "batch": 4, "cargo_mensual": 21.22, "churn": 1, "customer_id": "N04039", "edad": 35, "plan": "básico", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 40, "batch": 4, "cargo_mensual": 42.8, "churn": 0, "customer_id": "N04040", "edad": 72, "plan": "estándar", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 70, "batch": 4, "cargo_mensual": 20.03, "churn": 0, "customer_id": "N04041", "edad": 56, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 5, "batch": 4, "cargo_mensual": 47.87, "churn": 1, "customer_id": "N04042", "edad": 48, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 30, "batch": 4, "cargo_mensual": 93.9, "churn": 0, "customer_id": "N04043", "edad": 59, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
+{"antiguedad_meses": 14, "batch": 4, "cargo_mensual": 67.54, "churn": 0, "customer_id": "N04044", "edad": 46, "plan": "premium", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 39, "batch": 4, "cargo_mensual": 77.03, "churn": 0, "customer_id": "N04045", "edad": 80, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 62, "batch": 4, "cargo_mensual": 19.62, "churn": 0, "customer_id": "N04046", "edad": 73, "plan": "básico", "region": "Mendoza", "tickets_90d": 1}
+{"antiguedad_meses": 12, "batch": 4, "cargo_mensual": 39.91, "churn": 1, "customer_id": "N04047", "edad": 73, "plan": "estándar", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 3, "batch": 4, "cargo_mensual": 84.72, "churn": 1, "customer_id": "N04048", "edad": 23, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 62, "batch": 4, "cargo_mensual": 72.18, "churn": 0, "customer_id": "N04049", "edad": 63, "plan": "premium", "region": "AMBA", "tickets_90d": 1}
+{"antiguedad_meses": 32, "batch": 4, "cargo_mensual": 22.36, "churn": 0, "customer_id": "N04050", "edad": 78, "plan": "básico", "region": "Santa Fe", "tickets_90d": 3}
+{"antiguedad_meses": 17, "batch": 4, "cargo_mensual": 74.41, "churn": 1, "customer_id": "N04051", "edad": 42, "plan": "premium", "region": "Córdoba", "tickets_90d": 8}
+{"antiguedad_meses": 71, "batch": 4, "cargo_mensual": 51.9, "churn": 0, "customer_id": "N04052", "edad": 43, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 26, "batch": 4, "cargo_mensual": 85.94, "churn": 0, "customer_id": "N04053", "edad": 55, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 34, "batch": 4, "cargo_mensual": 80.19, "churn": 1, "customer_id": "N04054", "edad": 52, "plan": "premium", "region": "AMBA", "tickets_90d": 7}
+{"antiguedad_meses": 8, "batch": 4, "cargo_mensual": 43.52, "churn": 0, "customer_id": "N04055", "edad": 51, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 42, "batch": 4, "cargo_mensual": 18.91, "churn": 0, "customer_id": "N04056", "edad": 42, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 72, "batch": 4, "cargo_mensual": 85.36, "churn": 0, "customer_id": "N04057", "edad": 21, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 50, "batch": 4, "cargo_mensual": 20.44, "churn": 1, "customer_id": "N04058", "edad": 40, "plan": "básico", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 12, "batch": 4, "cargo_mensual": 19.64, "churn": 0, "customer_id": "N04059", "edad": 74, "plan": "básico", "region": "Córdoba", "tickets_90d": 2}
+{"antiguedad_meses": 49, "batch": 5, "cargo_mensual": 80.19, "churn": 0, "customer_id": "N05000", "edad": 30, "plan": "premium", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 42, "batch": 5, "cargo_mensual": 51.0, "churn": 0, "customer_id": "N05001", "edad": 80, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
+{"antiguedad_meses": 9, "batch": 5, "cargo_mensual": 75.07, "churn": 1, "customer_id": "N05002", "edad": 71, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
+{"antiguedad_meses": 20, "batch": 5, "cargo_mensual": 17.31, "churn": 1, "customer_id": "N05003", "edad": 47, "plan": "básico", "region": "Córdoba", "tickets_90d": 8}
+{"antiguedad_meses": 50, "batch": 5, "cargo_mensual": 23.91, "churn": 0, "customer_id": "N05004", "edad": 62, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 43, "batch": 5, "cargo_mensual": 72.3, "churn": 0, "customer_id": "N05005", "edad": 35, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 27, "batch": 5, "cargo_mensual": 77.48, "churn": 0, "customer_id": "N05006", "edad": 52, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 37, "batch": 5, "cargo_mensual": 45.08, "churn": 0, "customer_id": "N05007", "edad": 48, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 44, "batch": 5, "cargo_mensual": 49.91, "churn": 0, "customer_id": "N05008", "edad": 37, "plan": "estándar", "region": "AMBA", "tickets_90d": 1}
+{"antiguedad_meses": 44, "batch": 5, "cargo_mensual": 18.2, "churn": 0, "customer_id": "N05009", "edad": 55, "plan": "básico", "region": "Mendoza", "tickets_90d": 1}
+{"antiguedad_meses": 13, "batch": 5, "cargo_mensual": 86.48, "churn": 1, "customer_id": "N05010", "edad": 46, "plan": "premium", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 11, "batch": 5, "cargo_mensual": 83.17, "churn": 0, "customer_id": "N05011", "edad": 31, "plan": "premium", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 53, "batch": 5, "cargo_mensual": 16.35, "churn": 0, "customer_id": "N05012", "edad": 37, "plan": "básico", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 45, "batch": 5, "cargo_mensual": 73.93, "churn": 0, "customer_id": "N05013", "edad": 44, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 70, "batch": 5, "cargo_mensual": 21.45, "churn": 0, "customer_id": "N05014", "edad": 36, "plan": "básico", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 10, "batch": 5, "cargo_mensual": 44.98, "churn": 0, "customer_id": "N05015", "edad": 47, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 70, "batch": 5, "cargo_mensual": 17.54, "churn": 0, "customer_id": "N05016", "edad": 53, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 71, "batch": 5, "cargo_mensual": 69.64, "churn": 0, "customer_id": "N05017", "edad": 50, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 9, "batch": 5, "cargo_mensual": 17.28, "churn": 1, "customer_id": "N05018", "edad": 22, "plan": "básico", "region": "Córdoba", "tickets_90d": 6}
+{"antiguedad_meses": 49, "batch": 5, "cargo_mensual": 85.45, "churn": 0, "customer_id": "N05019", "edad": 43, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 31, "batch": 5, "cargo_mensual": 21.32, "churn": 0, "customer_id": "N05020", "edad": 64, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 22, "batch": 5, "cargo_mensual": 21.47, "churn": 0, "customer_id": "N05021", "edad": 46, "plan": "básico", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 54, "batch": 5, "cargo_mensual": 71.32, "churn": 0, "customer_id": "N05022", "edad": 63, "plan": "premium", "region": "AMBA", "tickets_90d": 1}
+{"antiguedad_meses": 72, "batch": 5, "cargo_mensual": 68.56, "churn": 0, "customer_id": "N05023", "edad": 28, "plan": "premium", "region": "AMBA", "tickets_90d": 1}
+{"antiguedad_meses": 56, "batch": 5, "cargo_mensual": 65.63, "churn": 0, "customer_id": "N05024", "edad": 63, "plan": "premium", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 36, "batch": 5, "cargo_mensual": 89.0, "churn": 0, "customer_id": "N05025", "edad": 33, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 54, "batch": 5, "cargo_mensual": 74.61, "churn": 0, "customer_id": "N05026", "edad": 25, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 52, "batch": 5, "cargo_mensual": 38.1, "churn": 0, "customer_id": "N05027", "edad": 50, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 48, "batch": 5, "cargo_mensual": 16.88, "churn": 0, "customer_id": "N05028", "edad": 77, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 6, "batch": 5, "cargo_mensual": 40.65, "churn": 1, "customer_id": "N05029", "edad": 27, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 18, "batch": 5, "cargo_mensual": 84.62, "churn": 0, "customer_id": "N05030", "edad": 57, "plan": "premium", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 66, "batch": 5, "cargo_mensual": 46.17, "churn": 0, "customer_id": "N05031", "edad": 68, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 39, "batch": 5, "cargo_mensual": 91.59, "churn": 0, "customer_id": "N05032", "edad": 73, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 33, "batch": 5, "cargo_mensual": 21.86, "churn": 0, "customer_id": "N05033", "edad": 42, "plan": "básico", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 34, "batch": 5, "cargo_mensual": 38.61, "churn": 0, "customer_id": "N05034", "edad": 54, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 31, "batch": 5, "cargo_mensual": 66.96, "churn": 0, "customer_id": "N05035", "edad": 43, "plan": "premium", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 61, "batch": 5, "cargo_mensual": 46.08, "churn": 0, "customer_id": "N05036", "edad": 70, "plan": "estándar", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 30, "batch": 5, "cargo_mensual": 65.57, "churn": 0, "customer_id": "N05037", "edad": 41, "plan": "premium", "region": "Córdoba", "tickets_90d": 4}
+{"antiguedad_meses": 54, "batch": 5, "cargo_mensual": 38.66, "churn": 0, "customer_id": "N05038", "edad": 80, "plan": "estándar", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 16, "batch": 5, "cargo_mensual": 41.52, "churn": 0, "customer_id": "N05039", "edad": 40, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 22, "batch": 5, "cargo_mensual": 43.9, "churn": 0, "customer_id": "N05040", "edad": 40, "plan": "estándar", "region": "AMBA", "tickets_90d": 0}
+{"antiguedad_meses": 31, "batch": 5, "cargo_mensual": 82.43, "churn": 0, "customer_id": "N05041", "edad": 68, "plan": "premium", "region": "Santa Fe", "tickets_90d": 3}
+{"antiguedad_meses": 49, "batch": 5, "cargo_mensual": 53.79, "churn": 0, "customer_id": "N05042", "edad": 80, "plan": "estándar", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 19, "batch": 5, "cargo_mensual": 76.48, "churn": 0, "customer_id": "N05043", "edad": 69, "plan": "premium", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 37, "batch": 5, "cargo_mensual": 49.52, "churn": 0, "customer_id": "N05044", "edad": 77, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 58, "batch": 5, "cargo_mensual": 47.74, "churn": 0, "customer_id": "N05045", "edad": 50, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
+{"antiguedad_meses": 24, "batch": 5, "cargo_mensual": 48.58, "churn": 0, "customer_id": "N05046", "edad": 31, "plan": "estándar", "region": "Córdoba", "tickets_90d": 3}
+{"antiguedad_meses": 41, "batch": 5, "cargo_mensual": 80.11, "churn": 0, "customer_id": "N05047", "edad": 27, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
+{"antiguedad_meses": 34, "batch": 5, "cargo_mensual": 16.28, "churn": 0, "customer_id": "N05048", "edad": 30, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 51, "batch": 5, "cargo_mensual": 43.78, "churn": 0, "customer_id": "N05049", "edad": 61, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 60, "batch": 5, "cargo_mensual": 38.85, "churn": 0, "customer_id": "N05050", "edad": 69, "plan": "estándar", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 19, "batch": 5, "cargo_mensual": 20.31, "churn": 1, "customer_id": "N05051", "edad": 73, "plan": "básico", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 12, "batch": 5, "cargo_mensual": 20.34, "churn": 1, "customer_id": "N05052", "edad": 74, "plan": "básico", "region": "Santa Fe", "tickets_90d": 8}
+{"antiguedad_meses": 55, "batch": 5, "cargo_mensual": 16.32, "churn": 0, "customer_id": "N05053", "edad": 38, "plan": "básico", "region": "Mendoza", "tickets_90d": 5}
+{"antiguedad_meses": 57, "batch": 5, "cargo_mensual": 23.93, "churn": 0, "customer_id": "N05054", "edad": 68, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 26, "batch": 5, "cargo_mensual": 93.6, "churn": 0, "customer_id": "N05055", "edad": 66, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 71, "batch": 5, "cargo_mensual": 47.32, "churn": 0, "customer_id": "N05056", "edad": 33, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 33, "batch": 5, "cargo_mensual": 22.39, "churn": 1, "customer_id": "N05057", "edad": 39, "plan": "básico", "region": "Mendoza", "tickets_90d": 8}
+{"antiguedad_meses": 42, "batch": 5, "cargo_mensual": 52.66, "churn": 0, "customer_id": "N05058", "edad": 51, "plan": "estándar", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 56, "batch": 5, "cargo_mensual": 23.31, "churn": 0, "customer_id": "N05059", "edad": 26, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 32, "batch": 6, "cargo_mensual": 44.27, "churn": 0, "customer_id": "N06000", "edad": 61, "plan": "estándar", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 26, "batch": 6, "cargo_mensual": 19.46, "churn": 0, "customer_id": "N06001", "edad": 31, "plan": "básico", "region": "Santa Fe", "tickets_90d": 1}
+{"antiguedad_meses": 70, "batch": 6, "cargo_mensual": 16.97, "churn": 0, "customer_id": "N06002", "edad": 31, "plan": "básico", "region": "Mendoza", "tickets_90d": 0}
+{"antiguedad_meses": 35, "batch": 6, "cargo_mensual": 47.66, "churn": 1, "customer_id": "N06003", "edad": 36, "plan": "estándar", "region": "Mendoza", "tickets_90d": 8}
+{"antiguedad_meses": 69, "batch": 6, "cargo_mensual": 46.79, "churn": 0, "customer_id": "N06004", "edad": 59, "plan": "estándar", "region": "Córdoba", "tickets_90d": 4}
+{"antiguedad_meses": 18, "batch": 6, "cargo_mensual": 22.45, "churn": 0, "customer_id": "N06005", "edad": 23, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 23.75, "churn": 0, "customer_id": "N06006", "edad": 57, "plan": "básico", "region": "AMBA", "tickets_90d": 4}
+{"antiguedad_meses": 6, "batch": 6, "cargo_mensual": 17.38, "churn": 1, "customer_id": "N06007", "edad": 59, "plan": "básico", "region": "Córdoba", "tickets_90d": 4}
+{"antiguedad_meses": 38, "batch": 6, "cargo_mensual": 50.81, "churn": 0, "customer_id": "N06008", "edad": 56, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 40, "batch": 6, "cargo_mensual": 23.28, "churn": 0, "customer_id": "N06009", "edad": 30, "plan": "básico", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 51, "batch": 6, "cargo_mensual": 23.15, "churn": 1, "customer_id": "N06010", "edad": 33, "plan": "básico", "region": "Mendoza", "tickets_90d": 8}
+{"antiguedad_meses": 14, "batch": 6, "cargo_mensual": 94.42, "churn": 1, "customer_id": "N06011", "edad": 66, "plan": "premium", "region": "AMBA", "tickets_90d": 8}
+{"antiguedad_meses": 36, "batch": 6, "cargo_mensual": 64.54, "churn": 0, "customer_id": "N06012", "edad": 18, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 37, "batch": 6, "cargo_mensual": 18.83, "churn": 0, "customer_id": "N06013", "edad": 54, "plan": "básico", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 37, "batch": 6, "cargo_mensual": 91.51, "churn": 0, "customer_id": "N06014", "edad": 72, "plan": "premium", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 24, "batch": 6, "cargo_mensual": 21.99, "churn": 1, "customer_id": "N06015", "edad": 42, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 31, "batch": 6, "cargo_mensual": 49.78, "churn": 0, "customer_id": "N06016", "edad": 69, "plan": "estándar", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 21.4, "churn": 0, "customer_id": "N06017", "edad": 58, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 44, "batch": 6, "cargo_mensual": 91.47, "churn": 0, "customer_id": "N06018", "edad": 65, "plan": "premium", "region": "Santa Fe", "tickets_90d": 4}
+{"antiguedad_meses": 45, "batch": 6, "cargo_mensual": 51.42, "churn": 0, "customer_id": "N06019", "edad": 50, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 25, "batch": 6, "cargo_mensual": 21.91, "churn": 1, "customer_id": "N06020", "edad": 42, "plan": "básico", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 14, "batch": 6, "cargo_mensual": 95.52, "churn": 0, "customer_id": "N06021", "edad": 38, "plan": "premium", "region": "AMBA", "tickets_90d": 6}
+{"antiguedad_meses": 8, "batch": 6, "cargo_mensual": 17.34, "churn": 1, "customer_id": "N06022", "edad": 50, "plan": "básico", "region": "Mendoza", "tickets_90d": 7}
+{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 76.71, "churn": 0, "customer_id": "N06023", "edad": 58, "plan": "premium", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 2, "batch": 6, "cargo_mensual": 82.9, "churn": 0, "customer_id": "N06024", "edad": 68, "plan": "premium", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 49.22, "churn": 0, "customer_id": "N06025", "edad": 74, "plan": "estándar", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 63, "batch": 6, "cargo_mensual": 77.48, "churn": 0, "customer_id": "N06026", "edad": 41, "plan": "premium", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 32, "batch": 6, "cargo_mensual": 18.04, "churn": 0, "customer_id": "N06027", "edad": 25, "plan": "básico", "region": "AMBA", "tickets_90d": 1}
+{"antiguedad_meses": 62, "batch": 6, "cargo_mensual": 16.54, "churn": 0, "customer_id": "N06028", "edad": 29, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 64, "batch": 6, "cargo_mensual": 20.96, "churn": 0, "customer_id": "N06029", "edad": 53, "plan": "básico", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 7, "batch": 6, "cargo_mensual": 20.86, "churn": 0, "customer_id": "N06030", "edad": 46, "plan": "básico", "region": "Santa Fe", "tickets_90d": 0}
+{"antiguedad_meses": 6, "batch": 6, "cargo_mensual": 79.32, "churn": 0, "customer_id": "N06031", "edad": 19, "plan": "premium", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 69, "batch": 6, "cargo_mensual": 19.99, "churn": 0, "customer_id": "N06032", "edad": 55, "plan": "básico", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 24, "batch": 6, "cargo_mensual": 91.86, "churn": 1, "customer_id": "N06033", "edad": 62, "plan": "premium", "region": "Mendoza", "tickets_90d": 8}
+{"antiguedad_meses": 33, "batch": 6, "cargo_mensual": 17.33, "churn": 0, "customer_id": "N06034", "edad": 19, "plan": "básico", "region": "Santa Fe", "tickets_90d": 2}
+{"antiguedad_meses": 27, "batch": 6, "cargo_mensual": 38.52, "churn": 0, "customer_id": "N06035", "edad": 74, "plan": "estándar", "region": "Córdoba", "tickets_90d": 2}
+{"antiguedad_meses": 1, "batch": 6, "cargo_mensual": 16.21, "churn": 1, "customer_id": "N06036", "edad": 79, "plan": "básico", "region": "Córdoba", "tickets_90d": 8}
+{"antiguedad_meses": 24, "batch": 6, "cargo_mensual": 76.4, "churn": 0, "customer_id": "N06037", "edad": 27, "plan": "premium", "region": "Mendoza", "tickets_90d": 4}
+{"antiguedad_meses": 19, "batch": 6, "cargo_mensual": 87.11, "churn": 0, "customer_id": "N06038", "edad": 70, "plan": "premium", "region": "Mendoza", "tickets_90d": 0}
+{"antiguedad_meses": 67, "batch": 6, "cargo_mensual": 69.27, "churn": 0, "customer_id": "N06039", "edad": 80, "plan": "premium", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 48, "batch": 6, "cargo_mensual": 44.08, "churn": 0, "customer_id": "N06040", "edad": 66, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 60, "batch": 6, "cargo_mensual": 21.11, "churn": 0, "customer_id": "N06041", "edad": 26, "plan": "básico", "region": "AMBA", "tickets_90d": 7}
+{"antiguedad_meses": 59, "batch": 6, "cargo_mensual": 23.64, "churn": 0, "customer_id": "N06042", "edad": 36, "plan": "básico", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 56, "batch": 6, "cargo_mensual": 91.6, "churn": 0, "customer_id": "N06043", "edad": 28, "plan": "premium", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 57, "batch": 6, "cargo_mensual": 75.45, "churn": 0, "customer_id": "N06044", "edad": 18, "plan": "premium", "region": "Mendoza", "tickets_90d": 1}
+{"antiguedad_meses": 46, "batch": 6, "cargo_mensual": 50.58, "churn": 0, "customer_id": "N06045", "edad": 53, "plan": "estándar", "region": "Mendoza", "tickets_90d": 6}
+{"antiguedad_meses": 61, "batch": 6, "cargo_mensual": 16.66, "churn": 0, "customer_id": "N06046", "edad": 30, "plan": "básico", "region": "AMBA", "tickets_90d": 2}
+{"antiguedad_meses": 40, "batch": 6, "cargo_mensual": 38.46, "churn": 0, "customer_id": "N06047", "edad": 55, "plan": "estándar", "region": "Mendoza", "tickets_90d": 3}
+{"antiguedad_meses": 42, "batch": 6, "cargo_mensual": 73.06, "churn": 0, "customer_id": "N06048", "edad": 68, "plan": "premium", "region": "Córdoba", "tickets_90d": 1}
+{"antiguedad_meses": 16, "batch": 6, "cargo_mensual": 53.69, "churn": 0, "customer_id": "N06049", "edad": 20, "plan": "estándar", "region": "Córdoba", "tickets_90d": 0}
+{"antiguedad_meses": 49, "batch": 6, "cargo_mensual": 44.16, "churn": 0, "customer_id": "N06050", "edad": 35, "plan": "estándar", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 40, "batch": 6, "cargo_mensual": 93.89, "churn": 0, "customer_id": "N06051", "edad": 49, "plan": "premium", "region": "Santa Fe", "tickets_90d": 7}
+{"antiguedad_meses": 56, "batch": 6, "cargo_mensual": 90.53, "churn": 0, "customer_id": "N06052", "edad": 75, "plan": "premium", "region": "Mendoza", "tickets_90d": 2}
+{"antiguedad_meses": 52, "batch": 6, "cargo_mensual": 19.29, "churn": 0, "customer_id": "N06053", "edad": 22, "plan": "básico", "region": "Córdoba", "tickets_90d": 7}
+{"antiguedad_meses": 30, "batch": 6, "cargo_mensual": 18.71, "churn": 0, "customer_id": "N06054", "edad": 55, "plan": "básico", "region": "Mendoza", "tickets_90d": 1}
+{"antiguedad_meses": 21, "batch": 6, "cargo_mensual": 23.52, "churn": 1, "customer_id": "N06055", "edad": 61, "plan": "básico", "region": "Santa Fe", "tickets_90d": 6}
+{"antiguedad_meses": 7, "batch": 6, "cargo_mensual": 19.87, "churn": 1, "customer_id": "N06056", "edad": 50, "plan": "básico", "region": "Santa Fe", "tickets_90d": 5}
+{"antiguedad_meses": 15, "batch": 6, "cargo_mensual": 40.41, "churn": 0, "customer_id": "N06057", "edad": 49, "plan": "estándar", "region": "Córdoba", "tickets_90d": 5}
+{"antiguedad_meses": 55, "batch": 6, "cargo_mensual": 80.8, "churn": 0, "customer_id": "N06058", "edad": 80, "plan": "premium", "region": "AMBA", "tickets_90d": 3}
+{"antiguedad_meses": 60, "batch": 6, "cargo_mensual": 87.47, "churn": 0, "customer_id": "N06059", "edad": 77, "plan": "premium", "region": "Córdoba", "tickets_90d": 5}
 {"antiguedad_meses": 8, "batch": 7, "cargo_mensual": 29.68, "churn": 1, "customer_id": "N07000", "edad": 69, "plan": "básico", "region": "Patagonia", "tickets_90d": 10}
 {"antiguedad_meses": 3, "batch": 7, "cargo_mensual": 114.18, "churn": 1, "customer_id": "N07001", "edad": 30, "plan": "premium", "region": "Santa Fe", "tickets_90d": 6}
 {"antiguedad_meses": 17, "batch": 7, "cargo_mensual": 67.03, "churn": 1, "customer_id": "N07002", "edad": 27, "plan": "estándar", "region": "AMBA", "tickets_90d": 9}
