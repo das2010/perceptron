@@ -27,6 +27,9 @@ class SplitRequest(BaseModel):
     folds: int | None = Field(default=None, ge=2, le=20)
     group_column: str | None = None
     time_column: str | None = None
+    split_column: str | None = Field(
+        default=None, description="predefined: columna con train/val/test (se quita después)"
+    )
 
     @model_validator(mode="after")
     def _check(self) -> SplitRequest:
@@ -38,6 +41,8 @@ class SplitRequest(BaseModel):
             raise ValueError("el split temporal requiere time_column")
         if self.strategy is SplitStrategy.KFOLD and not self.folds:
             raise ValueError("k-fold requiere folds")
+        if self.strategy is SplitStrategy.PREDEFINED and not self.split_column:
+            raise ValueError("el split predefinido requiere split_column")
         return self
 
 
@@ -95,6 +100,16 @@ def assign_splits(df: pl.DataFrame, req: SplitRequest, target: str | None) -> pl
             gss = GroupShuffleSplit(n_splits=1, test_size=val_rel, random_state=req.seed + 1)
             r, v = next(gss.split(rest, groups=groups[rest]))
             val = rest[v]
+    elif req.strategy is SplitStrategy.PREDEFINED and req.split_column:
+        if req.split_column not in df.columns:
+            raise ValidationError(f"no existe la columna de split {req.split_column}")
+        labels = df[req.split_column].cast(pl.String).to_list()
+        bad = sorted({v for v in labels if v not in (TRAIN, VAL, TEST)}, key=str)
+        if bad:
+            raise ValidationError(f"valores de split inválidos: {bad[:5]}")
+        return df.drop(req.split_column).with_columns(
+            pl.Series(SPLIT_COLUMN, labels, dtype=pl.String)
+        )
     elif req.strategy is SplitStrategy.TEMPORAL and req.time_column:
         order = df[req.time_column].arg_sort().to_numpy()
         n_test = round(n * req.test_fraction)

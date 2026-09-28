@@ -70,6 +70,8 @@ class SplitStrategy(StrEnum):
     GROUP = "group"
     TEMPORAL = "temporal"
     KFOLD = "kfold"
+    # La partición viene en una columna (reentrenamiento: el test del champion no se mueve).
+    PREDEFINED = "predefined"
 
 
 class LabelKind(StrEnum):
