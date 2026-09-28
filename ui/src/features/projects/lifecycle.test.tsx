@@ -61,7 +61,7 @@ describe("ciclo de vida del proyecto (RF-PRJ-01)", () => {
   });
 
   it("exporta el paquete .perceptron con los datos si se piden (RF-PRJ-03)", async () => {
-    const pkg = vi.fn((_req: Request) => new Response(new Blob(["zip"]), { status: 200 }));
+    const pkg = vi.fn((_req: Request) => new Response("zip", { status: 200 }));
     engine({ "GET /api/v1/projects/prj_1/package": pkg });
     const created = vi.fn(() => "blob:paquete");
     vi.stubGlobal(
