@@ -90,10 +90,12 @@ PROJECT_TEMPLATES: tuple[ProjectTemplate, ...] = (
 )
 
 _BY_ID = {t.id: t for t in PROJECT_TEMPLATES}
+_BY_USE_CASE = {t.use_case.lower(): t for t in PROJECT_TEMPLATES}
 
 
 def get_template(template_id: str) -> ProjectTemplate:
-    template = _BY_ID.get(template_id)
+    """Por id (`churn`) o por caso de uso (`UC-01`)."""
+    template = _BY_ID.get(template_id) or _BY_USE_CASE.get(template_id.lower())
     if template is None:
         raise ValidationError(
             f"plantilla desconocida: {template_id}", details={"templates": sorted(_BY_ID)}
