@@ -43,7 +43,7 @@ def _is_public(ip: IPAddress) -> bool:
 def _resolve(host: str, port: int) -> Iterable[IPAddress]:
     try:
         return {
-            ipaddress.ip_address(info[4][0].split("%", 1)[0])
+            ipaddress.ip_address(str(info[4][0]).split("%", 1)[0])
             for info in socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
         }
     except (socket.gaierror, UnicodeError, ValueError):
