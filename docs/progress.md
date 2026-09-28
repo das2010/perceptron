@@ -235,6 +235,21 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Firma Authenticode de los instaladores | ⬜ (certificado de Preteco, postergado) |
 | Documentación de usuario es/en (MkDocs, compilada en CI) | ✅ |
 
+## Capa 7c — hardening de seguridad (OWASP ASVS nivel 2, ADR-0038)
+
+| Entregable | Estado |
+|---|---|
+| Rutas de cliente seguras en Windows y Linux (`safe_parts`, `ensure_within`, ids en sync) | ✅ |
+| SSRF: destinos internos bloqueados en el servidor (fuentes API/WS, webhooks, DB), sin redirects | ✅ |
+| Servidor sin rutas propias como fuente si no se configuran `SOURCE_ROOTS` | ✅ |
+| Errores sin tracebacks ni eco de datos; logs sin tokens | ✅ |
+| Cabeceras de seguridad y `no-store` en la API; Swagger apagado en el servidor | ✅ |
+| Límites de uploads y ZIPs (zip bomb) | ✅ |
+| Sesiones con vida absoluta, `Origin` en WebSockets, SSO con email verificado (nOAuth) | ✅ |
+| Desktop: token fuera de los logs, keychain acotado a `ui.*`, CSP más estricta | ✅ |
+| CI: `contents: read`, cargo audit, CodeQL, Dependabot; `torch>=2.6` | ✅ |
+| Verificación ASVS L2 control por control (`docs/security/asvs-l2.md`) | ✅ (riesgos aceptados documentados) |
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
