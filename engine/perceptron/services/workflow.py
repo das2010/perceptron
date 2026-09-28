@@ -62,13 +62,26 @@ from perceptron.evaluation.evaluate import (
     build_model_version,
     evaluate_run,
 )
+from perceptron.export.formats import (
+    EXPORT_DIR,
+    REPORT_FILE,
+    ExportReport,
+    ExportRequest,
+    export_run,
+)
 from perceptron.hpo.recommend import recommend_strategy
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.hpo.study import StudyControl, StudyResult, TrialRecord, run_study
 from perceptron.llm.schemas import Report
 from perceptron.sandbox.code import CODE_FILE
 from perceptron.sandbox.expert import build_code_spec, is_code_spec
-from perceptron.sandbox.process import CodeCheck, check_code, default_limits, evaluate_in_sandbox
+from perceptron.sandbox.process import (
+    CodeCheck,
+    check_code,
+    default_limits,
+    evaluate_in_sandbox,
+    export_in_sandbox,
+)
 from perceptron.sandbox.static import check_source
 from perceptron.tracking.tracker import MlflowTracker, RunRecorder, Tracker
 from perceptron.training.config import RunConfig, RunEvent, RunResult
@@ -555,6 +568,40 @@ class Workflow:
                 "evaluation",
             )
         return evaluation, report
+
+    # ------------------------------------------------------------------ export (RF-EXP-01)
+
+    def export(self, run_id: str, request: ExportRequest) -> ExportReport:
+        """Exporta el modelo del run y verifica cada formato (ADR-0027)."""
+        run = self.ctx.repo(Run).get(run_id)
+        if run.status is not RunStatus.SUCCEEDED:
+            raise ValidationError(f"el run {run_id} no terminó bien ({run.status.value})")
+        run_dir = self._run_dir(run)
+        dataset_dir = self.view(self.dataset(run.dataset_version_id)).root
+        if (run_dir / CODE_FILE).is_file():
+            # Código experto: exportar ejecuta el modelo, así que va al sandbox.
+            export_in_sandbox(run_dir, dataset_dir, request.model_dump(mode="json"))
+            return self.export_report(run_id)
+        return export_run(run_dir, dataset_dir, request)
+
+    def export_report(self, run_id: str) -> ExportReport:
+        run = self.ctx.repo(Run).get(run_id)
+        path = self._run_dir(run) / EXPORT_DIR / REPORT_FILE
+        if not path.is_file():
+            raise NotFoundError(f"el run {run_id} no fue exportado")
+        return ExportReport.model_validate_json(path.read_text(encoding="utf-8"))
+
+    def export_file(self, run_id: str, name: str) -> Path:
+        """Ruta de un artefacto exportado (solo los del reporte, la firma o el pipeline)."""
+        report = self.export_report(run_id)
+        allowed = {a.file for a in report.artifacts if a.file} | {
+            "signature.json",
+            "pipeline.json",
+            REPORT_FILE,
+        }
+        if name not in allowed:
+            raise NotFoundError(f"el export del run {run_id} no tiene {name!r}")
+        return self._run_dir(self.ctx.repo(Run).get(run_id)) / EXPORT_DIR / name
 
     def evaluation_report(self, run_id: str) -> EvaluationReport:
         run = self.ctx.repo(Run).get(run_id)

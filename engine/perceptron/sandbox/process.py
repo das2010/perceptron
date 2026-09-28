@@ -134,3 +134,20 @@ def evaluate_in_sandbox(run_dir: Path, dataset_dir: Path, *, timeout: float = 18
             f"la evaluación en el sandbox falló: {out.get('error')}",
             details={"violations": out.get("violations", [])},
         )
+
+
+def export_in_sandbox(
+    run_dir: Path, dataset_dir: Path, request: dict[str, Any], *, timeout: float = 1800.0
+) -> None:
+    """Exporta un run de código experto en el sandbox (ADR-0027): el export ejecuta el modelo."""
+    out = run_json(
+        "perceptron.sandbox.export",
+        {"run_dir": str(run_dir), "dataset_dir": str(dataset_dir), "request": request},
+        run_dir / "sandbox-export",
+        timeout=timeout,
+    )
+    if not out.get("ok"):
+        raise ValidationError(
+            f"el export en el sandbox falló: {out.get('error')}",
+            details={"violations": out.get("violations", [])},
+        )

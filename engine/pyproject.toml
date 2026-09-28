@@ -56,6 +56,14 @@ llm = [
   "keyring>=25",
   "cryptography>=43",
 ]
+# Capa 4a (ADR-0027): export a ONNX (con verificación en ONNX Runtime), fp16 e INT8. Licencias
+# MIT. Separado de `ml` para que el paquete de inferencia pueda instalar solo el runtime.
+export = [
+  "onnx>=1.17",
+  "onnxscript>=0.2",
+  "onnxruntime>=1.20",
+  "onnxconverter-common>=1.14",
+]
 # NER para PII en texto libre (L2, ADR-0022): `presidio-analyzer` y `presidio-anonymizer` se
 # instalan aparte junto con un modelo NER de licencia compatible. No es un extra: spaCy
 # restringe numpy y el lock resuelve todos los extras juntos.
