@@ -77,15 +77,24 @@ def materialize_db(cfg: DbConfig, password: str | None, dest: Path) -> int:
     try:
         # Solo lectura por intención: la transacción se descarta al terminar.
         with engine.connect() as conn, conn.begin() as tx:
-            batches = pl.read_database(
-                text(cfg.query), conn, iter_batches=True, batch_size=BATCH_ROWS
-            )
-            for k, batch in enumerate(batches):
-                take = batch.head(cfg.max_rows - rows)
-                take.write_parquet(parts_dir / f"part-{k:05d}.parquet")
-                rows += take.height
-                if rows >= cfg.max_rows:
+            # Cursor de SQLAlchemy por lotes (sin el camino asyncio de polars.read_database).
+            result = conn.execution_options(stream_results=True).execute(text(cfg.query))
+            columns = list(result.keys())
+            k = 0
+            while rows < cfg.max_rows:
+                chunk = result.fetchmany(min(BATCH_ROWS, cfg.max_rows - rows))
+                if not chunk:
                     break
+                batch = pl.DataFrame(
+                    [tuple(r) for r in chunk],
+                    schema=columns,
+                    orient="row",
+                    infer_schema_length=None,
+                )
+                batch.write_parquet(parts_dir / f"part-{k:05d}.parquet")
+                rows += batch.height
+                k += 1
+            result.close()
             tx.rollback()
     except ValidationError:
         raise
@@ -98,7 +107,8 @@ def materialize_db(cfg: DbConfig, password: str | None, dest: Path) -> int:
     parts = sorted(parts_dir.glob("*.parquet"))
     if not parts:
         raise ValidationError("la consulta no devolvió filas")
-    pl.scan_parquet(parts).sink_parquet(dest)
+    # Los tipos pueden diferir entre lotes (p. ej. nulos al principio): unión flexible.
+    pl.concat([pl.scan_parquet(p) for p in parts], how="diagonal_relaxed").sink_parquet(dest)
     shutil.rmtree(parts_dir, ignore_errors=True)
     return rows
 
