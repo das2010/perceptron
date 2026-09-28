@@ -931,6 +931,20 @@ export function usePredictRows(runId: string) {
   });
 }
 
+export function usePredictTexts(runId: string) {
+  return useMutation({
+    mutationFn: async (texts: string[]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/predict/text", {
+          params: { path: { run_id: runId } },
+          body: { texts },
+        }),
+      ),
+  });
+}
+
 export function usePredictFile(runId: string) {
   return useMutation({
     mutationFn: async (file: File) => {

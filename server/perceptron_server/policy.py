@@ -54,6 +54,7 @@ VIEW_WRITES = frozenset(
         "compareRuns",
         "predictRows",
         "predictFile",
+        "predictTexts",
         "explainRow",
         "explainImage",
         "validateArchitecture",

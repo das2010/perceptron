@@ -1,12 +1,12 @@
 /**
- * Playground (RF-EXP-02): probar el modelo exportado con una fila (tabular) o una imagen y ver
- * la predicción, la confianza y las probabilidades por clase.
+ * Playground (RF-EXP-02): probar el modelo exportado con una fila (tabular), una imagen, un
+ * texto o un audio y ver la predicción, la confianza y las probabilidades por clase.
  */
 import { FlaskConical } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button, Card, CardTitle, ErrorNote, Field, Input } from "@/components/ui";
+import { Button, Card, CardTitle, ErrorNote, Field, Input, Textarea } from "@/components/ui";
 import {
   type ExportReport,
   type PlaygroundResult,
@@ -15,6 +15,7 @@ import {
   useExplainRow,
   usePredictFile,
   usePredictRows,
+  usePredictTexts,
 } from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
 
@@ -75,8 +76,19 @@ export function PlaygroundPanel({
   const file = usePredictFile(runId);
   const explainRow = useExplainRow(runId);
   const explainImage = useExplainImage(runId);
+  const texts = usePredictTexts(runId);
+  const [text, setText] = useState("");
   const [lastFile, setLastFile] = useState<File | null>(null);
-  const result = rows.data ?? file.data;
+  const result = rows.data ?? file.data ?? texts.data;
+  const explainable = inputs.kind === "tabular" || inputs.kind === "image";
+  const upload = (f: File | undefined) => {
+    if (!f) return;
+    rows.reset();
+    texts.reset();
+    explainImage.reset();
+    setLastFile(f);
+    file.mutate(f);
+  };
   const currentRow = () => Object.fromEntries(columns.map((c) => [c, values[c] ?? ""]));
 
   const fillExample = () => {
@@ -118,26 +130,56 @@ export function PlaygroundPanel({
             </Button>
           </div>
         </form>
+      ) : inputs.kind === "tokens" ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            file.reset();
+            texts.mutate([text]);
+          }}
+        >
+          <Field label={t("playground.text")} hint={t("playground.textHint")}>
+            <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} />
+          </Field>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button type="submit" loading={texts.isPending} disabled={!text.trim()}>
+              {t("playground.predict")}
+            </Button>
+            <label className="text-sm text-muted">
+              {t("playground.textFile")}{" "}
+              <input
+                type="file"
+                accept=".txt,text/plain"
+                aria-label={t("playground.textFile")}
+                onChange={(e) => upload(e.target.files?.[0])}
+              />
+            </label>
+          </div>
+        </form>
+      ) : inputs.kind === "spectrogram" ? (
+        <Field label={t("playground.audio")} hint={t("playground.audioHint")}>
+          <input
+            type="file"
+            accept=".wav,.flac,.ogg,.mp3,audio/*"
+            aria-label={t("playground.audio")}
+            onChange={(e) => upload(e.target.files?.[0])}
+          />
+        </Field>
       ) : (
         <Field label={t("playground.image")}>
           <input
             type="file"
             accept="image/*"
             aria-label={t("playground.image")}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              rows.reset();
-              explainImage.reset();
-              setLastFile(f);
-              file.mutate(f);
-            }}
+            onChange={(e) => upload(e.target.files?.[0])}
           />
         </Field>
       )}
-      <ErrorNote error={rows.error ?? file.error ?? explainRow.error ?? explainImage.error} />
+      <ErrorNote
+        error={rows.error ?? file.error ?? texts.error ?? explainRow.error ?? explainImage.error}
+      />
       {result && <Result result={result} />}
-      {result && (
+      {result && explainable && (
         <Button
           className="mt-3"
           variant="ai"

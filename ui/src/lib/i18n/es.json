@@ -624,7 +624,12 @@
     "image": "Imagen a clasificar",
     "explain": "Explicar esta predicción",
     "contributions": "Contribución de cada variable",
-    "heatmap": "Mapa de calor de la explicación"
+    "heatmap": "Mapa de calor de la explicación",
+    "text": "Texto a clasificar",
+    "textHint": "Se normaliza y tokeniza igual que en el entrenamiento.",
+    "textFile": "o un .txt (una muestra por línea):",
+    "audio": "Audio a clasificar",
+    "audioHint": "WAV, FLAC, OGG o MP3; se remuestrea como en el entrenamiento."
   },
   "analysis": {
     "title": "Evaluación avanzada",
