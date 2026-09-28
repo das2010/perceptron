@@ -25,6 +25,7 @@
     - El holdout va al azar y no solo a lo más reciente, para que el challenger vea en train la parte con drift.
     - Linaje: `parent_id` = versión del champion y `transformation = append:<n>`.
   - **Challenger:**
+    - reutiliza el preprocesamiento ya ajustado del champion (vocabularios y escalas): así la arquitectura sigue siendo compatible y las categorías nuevas se tratan como desconocidas;
     - misma arquitectura y pipeline que el champion, con la estrategia de su estudio y el presupuesto de la política;
     - se lanza con `ctx.launch_study`, así que en el Team Server va a la cola de workers (ADR-0031);
     - después: evaluación, export ONNX y registro.

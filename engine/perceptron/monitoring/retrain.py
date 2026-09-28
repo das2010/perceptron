@@ -17,6 +17,7 @@ Una ejecución:
 from __future__ import annotations
 
 import logging
+import shutil
 import tempfile
 import time
 from pathlib import Path
@@ -33,6 +34,7 @@ from perceptron.domain.enums import AlertKind, RetrainStatus, Severity, SplitStr
 from perceptron.domain.models import (
     DatasetVersion,
     Deployment,
+    Pipeline,
     RetrainPolicy,
     RetrainRun,
     Run,
@@ -161,12 +163,9 @@ class Retrainer:
         labels = np.full(n, "train", dtype=object)
         labels[order[:n_hold]] = "test"
         rest = order[n_hold:]
-        val = (
-            rng.choice(rest, size=max(1, round(len(rest) * 0.15)), replace=False)
-            if len(rest) > 6
-            else []
-        )
-        labels[list(val)] = "val"
+        if len(rest) > 6:
+            val = rng.choice(rest, size=max(1, round(len(rest) * 0.15)), replace=False)
+            labels[val] = "val"
         added = new.drop("__at", strict=False).with_columns(pl.Series(SPLIT_TMP, labels.tolist()))
         # Tipos de la versión vieja: las fuentes pueden traer números como texto.
         casted = added.with_columns(
@@ -251,6 +250,15 @@ class Retrainer:
             base = self.mon.wf.hpo_strategy(champ_run.archspec_id, Budget())
         budget = base.budget.model_copy(update={"max_trials": 3, **policy.budget})
         strategy = base.model_copy(update={"budget": budget})
+        # Mismo preprocesamiento ajustado que el champion: la arquitectura (vocabularios,
+        # dimensiones de entrada) sigue siendo compatible; categorías nuevas → desconocidas.
+        pipeline = self.ctx.repo(Pipeline).get(champ_run.pipeline_id)
+        fitted_old = self.mon.wf._fitted_path(pipeline, dv0)
+        if not fitted_old.is_file():
+            self.mon.wf.fitted_pipeline(pipeline.id, dv0.id)
+        fitted_new = self.mon.wf._fitted_path(pipeline, dv1)
+        fitted_new.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(fitted_old, fitted_new)
         study = new_study(
             self.ctx,
             policy.project_id,
@@ -269,7 +277,9 @@ class Retrainer:
             raise ValidationError(f"el entrenamiento del challenger no terminó bien ({state})")
         best = (current.result.get("best_trial") or {}).get("run_id")
         if not best:
-            raise ValidationError("el estudio no produjo un modelo")
+            errors = [t.get("error") for t in current.result.get("trials") or [] if t.get("error")]
+            detail = "; ".join(str(e)[:300] for e in errors[:3]) or "sin trials completos"
+            raise ValidationError(f"el estudio no produjo un modelo: {detail}")
         from perceptron.export.formats import ExportRequest
 
         self.mon.wf.evaluate(best)
