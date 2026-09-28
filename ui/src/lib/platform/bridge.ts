@@ -32,9 +32,33 @@ export interface DesktopRuntime {
   restart(): Promise<void>;
 }
 
+/** Versión nueva publicada (`latest.json`, firmada; ADR-0037). */
+export interface UpdateInfo {
+  version: string;
+  current_version: string;
+  notes: string | null;
+  date: string | null;
+}
+
+/** Progreso de la descarga (evento `updater://progress`). */
+export interface UpdateProgress {
+  downloaded: number;
+  total: number | null;
+}
+
+/** Actualización automática del desktop. */
+export interface DesktopUpdater {
+  /** Consulta el endpoint de releases; null si ya está en la última versión. */
+  check(): Promise<UpdateInfo | null>;
+  onProgress(cb: (p: UpdateProgress) => void): Promise<() => void>;
+  /** Descarga, verifica la firma, instala y reinicia la app (no vuelve si sale bien). */
+  install(): Promise<void>;
+}
+
 export interface PlatformBridge {
   readonly kind: "desktop" | "web";
   readonly runtime?: DesktopRuntime;
+  readonly updater?: DesktopUpdater;
   engine(): Promise<EngineConnection>;
   /** Selector nativo de carpeta; en web devuelve null (se usa subida de archivos). */
   pickDirectory(): Promise<string | null>;

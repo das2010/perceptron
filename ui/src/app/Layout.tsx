@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui";
 import { canAdminister, useLogout, useSession } from "@/features/auth/session";
 import { CopilotPanel } from "@/features/copilot/CopilotPanel";
+import { UpdateNotice } from "@/features/settings/Updates";
 import { useProjects } from "@/lib/api/hooks";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 
@@ -130,6 +131,7 @@ export function Layout() {
           <UserMenu />
         </div>
       </header>
+      <UpdateNotice />
       <div className="flex min-h-0 flex-1">
         <nav
           aria-label={t("nav.main")}

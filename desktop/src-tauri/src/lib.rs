@@ -4,10 +4,12 @@
 //! Engine como sidecar y le entrega a la UI la conexión (`engine_connection`). Con
 //! `--provision-only [--report <archivo>]` no abre ventana: aprovisiona, levanta el Engine,
 //! verifica `/system/health`, escribe el reporte y sale (smoke test del instalador en CI).
+//! Con `--update-only` busca e instala la actualización firmada y sale (`updater.rs`).
 
 mod engine;
 mod runtime;
 mod secrets;
+mod updater;
 
 use engine::{Connection, EngineProcess, Launcher};
 use runtime::{Progress, Runtime, RuntimeState};
@@ -15,6 +17,8 @@ use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::{Arc, Condvar, Mutex};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_updater::Update;
+use updater::UpdateInfo;
 
 const PROGRESS_EVENT: &str = "runtime://progress";
 
@@ -123,6 +127,14 @@ struct Report {
     error: Option<String>,
 }
 
+fn write_report<T: Serialize>(report: &T) {
+    let json = serde_json::to_string_pretty(report).unwrap_or_default();
+    println!("{json}");
+    if let Some(path) = arg_value("--report") {
+        let _ = std::fs::write(path, &json);
+    }
+}
+
 fn provision_only(app: &AppHandle) -> i32 {
     let outcome = start(app, None).and_then(|conn| engine::health(&conn));
     let state = app.state::<AppState>();
@@ -136,12 +148,58 @@ fn provision_only(app: &AppHandle) -> i32 {
         },
         Err(e) => Report { ok: false, runtime, health: None, error: Some(e) },
     };
-    let json = serde_json::to_string_pretty(&report).unwrap_or_default();
-    println!("{json}");
-    if let Some(path) = arg_value("--report") {
-        let _ = std::fs::write(path, &json);
-    }
+    write_report(&report);
     state.stop_engine();
+    if report.ok {
+        0
+    } else {
+        1
+    }
+}
+
+#[derive(Serialize)]
+struct UpdateReport {
+    ok: bool,
+    current_version: String,
+    available: Option<UpdateInfo>,
+    error: Option<String>,
+}
+
+/// `--update-only`: busca, descarga (verificando la firma) e instala. En Windows `install`
+/// lanza el instalador y cierra la app, por eso el reporte se escribe antes.
+fn update_only(app: &AppHandle) -> i32 {
+    let mut report = UpdateReport {
+        ok: false,
+        current_version: app.package_info().version.to_string(),
+        available: None,
+        error: None,
+    };
+    let found: Result<Option<(Update, Vec<u8>)>, String> =
+        tauri::async_runtime::block_on(async {
+            match updater::check(app, || {}).await? {
+                None => Ok(None),
+                Some(update) => {
+                    let bytes = updater::download(app, &update).await?;
+                    Ok(Some((update, bytes)))
+                }
+            }
+        });
+    match found {
+        Err(e) => report.error = Some(e),
+        Ok(None) => report.ok = true,
+        Ok(Some((update, bytes))) => {
+            // sin relanzar la app: el CI verifica la versión nueva con `--provision-only`
+            let update = update.restart_after_install(false);
+            report.available = Some(UpdateInfo::from(&update));
+            report.ok = true;
+            write_report(&report);
+            if let Err(e) = update.install(&bytes) {
+                report.ok = false;
+                report.error = Some(e.to_string());
+            }
+        }
+    }
+    write_report(&report);
     if report.ok {
         0
     } else {
@@ -180,16 +238,45 @@ async fn restart_engine(app: AppHandle) -> Result<Connection, String> {
         .map_err(|e| e.to_string())?
 }
 
+/// Busca una versión nueva en el endpoint configurado; la deja pendiente para `install_update`.
+#[tauri::command]
+async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
+    let state = app.state::<AppState>().inner().clone();
+    let update = updater::check(&app, move || state.stop_engine()).await?;
+    Ok(updater::store(&app, update))
+}
+
+/// Descarga e instala la actualización pendiente y reinicia la app (en Windows la cierra el
+/// instalador). Si la instalación falla, vuelve a levantar el Engine.
+#[tauri::command]
+async fn install_update(app: AppHandle) -> Result<(), String> {
+    let update = updater::take(&app).ok_or("no hay una actualización pendiente")?;
+    let bytes = updater::download(&app, &update).await?;
+    app.state::<AppState>().stop_engine();
+    if let Err(e) = update.install(&bytes) {
+        let handle = app.clone();
+        let _ = tauri::async_runtime::spawn_blocking(move || start(&handle, None)).await;
+        return Err(e.to_string());
+    }
+    app.restart()
+}
+
 pub fn run() {
-    let headless = std::env::args().any(|a| a == "--provision-only");
+    let provision = std::env::args().any(|a| a == "--provision-only");
+    let update = std::env::args().any(|a| a == "--update-only");
+    let headless = provision || update;
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(AppState::default())
+        .manage(updater::Pending::default())
         .invoke_handler(tauri::generate_handler![
             engine_connection,
             runtime_state,
             set_torch_variant,
             restart_engine,
+            check_update,
+            install_update,
             secrets::get_secret,
             secrets::set_secret,
             secrets::delete_secret,
@@ -198,7 +285,7 @@ pub fn run() {
             let handle = app.handle().clone();
             if headless {
                 std::thread::spawn(move || {
-                    let code = provision_only(&handle);
+                    let code = if update { update_only(&handle) } else { provision_only(&handle) };
                     handle.exit(code);
                 });
                 return Ok(());
