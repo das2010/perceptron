@@ -515,6 +515,11 @@ class Workflow:
                 )
             )
 
+        gpus: list[int] | None = None
+        if base.device in (Device.CUDA, Device.ROCM):
+            # Varias GPUs del mismo tipo: un trial en paralelo por GPU (RF-HPO-04).
+            hardware = detect_hardware(self.ctx.settings.workspace_dir)
+            gpus = [g.index for g in hardware.gpus if g.backend == base.device] or None
         with log_context(project_id=project.id, job_id=st.id):
             result = run_study(
                 strategy,
@@ -525,6 +530,7 @@ class Workflow:
                 bus=self.ctx.events,
                 on_run_event=on_run_event,
                 on_trial_end=on_trial_end,
+                gpus=gpus if gpus and len(gpus) > 1 else None,
             )
         summary = result.model_dump(mode="json")
         current = self.ctx.repo(Study).get(st.id)

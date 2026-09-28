@@ -69,18 +69,28 @@ class StudyResult(BaseModel):
 
 
 @dataclass
+class _Pending:
+    trial: optuna.trial.Trial
+    cfg: RunConfig
+    monitor: _TrialMonitor
+    overrides: dict[str, Any]
+    handle: Handle
+    slot: int | None
+
+
+@dataclass
 class StudyControl:
-    """Cancelación desde afuera (API / UI): corta el trial en curso y no lanza más."""
+    """Cancelación desde afuera (API / UI): corta los trials en curso y no lanza más."""
 
     cancelled: bool = False
-    current: Handle | None = None
+    active: set[Handle] = field(default_factory=set)
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def cancel(self) -> None:
         with self._lock:
             self.cancelled = True
-            if self.current is not None:
-                self.current.stop()
+            for handle in list(self.active):
+                handle.stop()
 
 
 def _sampler(s: HPOStrategy) -> optuna.samplers.BaseSampler:
@@ -223,8 +233,10 @@ def run_study(
     control: StudyControl | None = None,
     on_trial_end: Callable[[TrialRecord, RunConfig, RunResult], None] | None = None,
     on_run_event: Callable[[RunConfig], Callable[[RunEvent], None] | None] | None = None,
+    gpus: list[int] | None = None,
 ) -> StudyResult:
-    """Ejecuta (o reanuda) el estudio. `launcher` permite inyectar runs simulados en tests."""
+    """Ejecuta (o reanuda) el estudio. `launcher` permite inyectar runs simulados en tests;
+    `gpus`: índices disponibles, un trial en paralelo por cada una (RF-HPO-04)."""
     launch: Launcher = launcher or (lambda cfg: start_run(cfg, bus))
     control = control or StudyControl()
     storage.parent.mkdir(parents=True, exist_ok=True)
@@ -253,29 +265,30 @@ def run_study(
     elif strategy.strategy != "single":
         _enqueue_defaults(study, strategy.search_space)
 
-    while True:
+    # Un trial por GPU por defecto; `parallelism` > 1 lo fija a mano (p. ej. varios en CPU).
+    workers = strategy.parallelism if strategy.parallelism > 1 else max(len(gpus or []), 1)
+    free: list[int | None] = [gpus[k % len(gpus)] if gpus else None for k in range(workers)]
+
+    def should_stop(launched: int) -> StopReason | None:
         done = [t for t in study.get_trials(deepcopy=False) if t.state in finished_states]
-        if len(done) >= budget.max_trials:
-            stop_reason = "max_trials"
-            break
-        if grid_total is not None and len(done) >= grid_total:
-            stop_reason = "exhausted"
-            break
+        if len(done) + launched >= budget.max_trials:
+            return "max_trials"
+        if grid_total is not None and len(done) + launched >= grid_total:
+            return "exhausted"
         if budget.max_time_s and time.time() - start >= budget.max_time_s:
-            stop_reason = "max_time"
-            break
+            return "max_time"
         if control.cancelled:
-            stop_reason = "cancelled"
-            break
+            return "cancelled"
         best_done = [t for t in done if t.state == optuna.trial.TrialState.COMPLETE]
         if (
             not strategy.multi_objective
             and best_done
             and _reached(study.best_value, budget.target_value, directions[0])
         ):
-            stop_reason = "target_reached"
-            break
+            return "target_reached"
+        return None
 
+    def launch_trial(slot: int | None) -> _Pending:
         trial = study.ask()
         overrides = _suggest(trial, strategy.search_space) if strategy.strategy != "single" else {}
         run_id = f"{base.run_id}-t{trial.number:03d}"
@@ -285,6 +298,7 @@ def run_study(
                 "run_dir": base.run_dir.parent / run_id,
                 "overrides": {**base.overrides, **overrides},
                 "max_epochs": budget.max_epochs_per_trial or base.max_epochs,
+                "gpu_index": slot,
             }
         )
         trial.set_user_attr("run_id", run_id)
@@ -293,13 +307,14 @@ def run_study(
         )
         with control._lock:
             handle = launch(cfg)
-            control.current = handle
+            control.active.add(handle)
             monitor.handle = handle
-        result = handle.wait(monitor, timeout=budget.trial_timeout_s)
-        control.current = None
-        pruned = {"flag": monitor.pruned}
-        num_params = monitor.extra
+        return _Pending(trial, cfg, monitor, overrides, handle, slot)
 
+    def finish(p: _Pending, result: RunResult) -> None:
+        with control._lock:
+            control.active.discard(p.handle)
+        trial, overrides, run_id = p.trial, p.overrides, p.cfg.run_id
         record = TrialRecord(
             number=trial.number,
             run_id=run_id,
@@ -309,7 +324,8 @@ def run_study(
             epochs=result.epochs,
             best_checkpoint=result.best_checkpoint,
         )
-        if result.status == "pruned" or pruned["flag"]:
+        num_params = p.monitor.extra
+        if result.status == "pruned" or p.monitor.pruned:
             study.tell(trial, state=optuna.trial.TrialState.PRUNED)
             record.state = "pruned"
         elif result.status == "succeeded":
@@ -337,7 +353,36 @@ def run_study(
         if bus is not None:
             bus.publish(STUDY_TOPIC, study=study_name, trial=record.model_dump(mode="json"))
         if on_trial_end is not None:
-            on_trial_end(record, cfg, result)
+            on_trial_end(record, p.cfg, result)
+
+    if workers <= 1:
+        # Un trial a la vez, en este hilo (el camino de siempre).
+        while (reason := should_stop(0)) is None:
+            pending = launch_trial(free[0])
+            finish(pending, pending.handle.wait(pending.monitor, timeout=budget.trial_timeout_s))
+        stop_reason = reason
+    else:
+        # RF-HPO-04: hasta `workers` trials a la vez (uno por GPU); ask/tell en este hilo.
+        from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
+
+        running: dict[Future[RunResult], _Pending] = {}
+        reason = None
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="perceptron-trial") as pool:
+            while True:
+                while free and (reason := should_stop(len(running))) is None:
+                    pending = launch_trial(free.pop(0))
+                    future = pool.submit(
+                        pending.handle.wait, pending.monitor, timeout=budget.trial_timeout_s
+                    )
+                    running[future] = pending
+                if not running:
+                    break
+                finished, _ = wait(list(running), return_when=FIRST_COMPLETED)
+                for future in finished:
+                    pending = running.pop(future)
+                    free.append(pending.slot)
+                    finish(pending, future.result())
+        stop_reason = reason or "max_trials"
 
     return _summarize(study, strategy, study_name, stop_reason, records, time.time() - start)
 

@@ -301,3 +301,57 @@ def test_balanced_sampler_equalizes_classes() -> None:
     drawn = torch.tensor(list(iter(sampler)))
     minority_share = (DS.y[drawn] == 1).float().mean().item()
     assert 0.35 < minority_share < 0.65  # ≈ 50 % en vez de 10 %
+
+
+def test_parallel_trials_one_per_gpu(tmp_path: Path) -> None:
+    """RF-HPO-04: con varias GPUs corre un trial por GPU a la vez, cada uno en la suya."""
+    import threading
+
+    lock = threading.Lock()
+    state = {"now": 0, "peak": 0}
+    seen_gpus: list[int | None] = []
+
+    class Counting(FakeHandle):
+        def wait(self, on_event=None, timeout=None):  # type: ignore[no-untyped-def]
+            with lock:
+                state["now"] += 1
+                state["peak"] = max(state["peak"], state["now"])
+                seen_gpus.append(self.cfg.gpu_index)
+            try:
+                return super().wait(on_event, timeout)
+            finally:
+                with lock:
+                    state["now"] -= 1
+
+    s = HPOStrategy(
+        strategy="random", pruner="none", search_space=SPACE, budget=Budget(max_trials=6)
+    )
+    res = _run(tmp_path, s, launcher=lambda cfg: Counting(cfg, sleep=0.05), gpus=[0, 1])
+    assert len(res.trials) == 6 and res.stop_reason == "max_trials"
+    assert state["peak"] == 2  # nunca más trials que GPUs
+    assert set(seen_gpus) == {0, 1} and seen_gpus.count(0) == seen_gpus.count(1)
+    assert res.best_trial is not None
+
+
+def test_parallel_cancel_stops_every_running_trial(tmp_path: Path) -> None:
+    import threading
+
+    control = StudyControl()
+    started: list[str] = []
+
+    def launcher(cfg: RunConfig) -> FakeHandle:
+        started.append(cfg.run_id)
+        return FakeHandle(cfg, sleep=0.1)
+
+    s = HPOStrategy(
+        strategy="random",
+        pruner="none",
+        search_space=SPACE,
+        budget=Budget(max_trials=10),
+        parallelism=3,
+    )
+    threading.Timer(0.15, control.cancel).start()  # con los tres primeros en curso
+    res = _run(tmp_path, s, launcher=launcher, control=control)
+    assert res.stop_reason == "cancelled"
+    assert len(started) == 3  # no se lanzaron más
+    assert all(t.state == "fail" and t.error == "cancelado" for t in res.trials)
