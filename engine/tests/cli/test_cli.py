@@ -61,8 +61,7 @@ def test_legacy_windows_console_does_not_abort_on_unicode(monkeypatch: pytest.Mo
     from perceptron.cli.main import _tolerant_console
 
     raw = io.BytesIO()
-    console = io.TextIOWrapper(raw, encoding="cp1252", newline="
-")
+    console = io.TextIOWrapper(raw, encoding="cp1252", newline="\n")
     monkeypatch.setattr(sys, "stdout", console)
     _tolerant_console()
     print("sobrevivir N → N+1 con acentos: ñ")
