@@ -732,7 +732,23 @@
     "boxClass": "Clase de la caja",
     "boxes_one": "{{count}} caja",
     "boxes_other": "{{count}} cajas",
-    "undo": "Deshacer"
+    "undo": "Deshacer",
+    "shapeClass": "Clase de la forma",
+    "shapes": {
+      "box_one": "{{count}} caja",
+      "box_other": "{{count}} cajas",
+      "mask_one": "{{count}} polígono",
+      "mask_other": "{{count}} polígonos",
+      "temporal_event_one": "{{count}} segmento",
+      "temporal_event_other": "{{count}} segmentos"
+    },
+    "polygonHint": "Clic para agregar vértices; clic en el primero para cerrar.",
+    "closePolygon": "Cerrar polígono",
+    "discard": "Descartar",
+    "markStart": "Marcar inicio",
+    "markEnd": "Marcar fin",
+    "segmentHint": "Reproducí y marcá inicio y fin del evento.",
+    "segmentFrom": "Desde {{s}} s…"
   },
   "sources": {
     "fromDb": "Desde una base de datos",

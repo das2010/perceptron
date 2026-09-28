@@ -24,7 +24,7 @@ from typing import Any, Literal
 
 import numpy as np
 import polars as pl
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from perceptron.core.errors import NotFoundError, ValidationError
 from perceptron.data.splits import FOLD_COLUMN, SPLIT_COLUMN
@@ -47,10 +47,40 @@ class Box(BaseModel):
     label: str
 
 
+class Polygon(BaseModel):
+    """Polígono normalizado a [0, 1] (máscaras de segmentación, RF-LBL-01)."""
+
+    points: list[list[float]] = Field(min_length=3, max_length=2000, description="[[x, y], ...]")
+    label: str
+
+    @field_validator("points")
+    @classmethod
+    def _in_unit(cls, pts: list[list[float]]) -> list[list[float]]:
+        if any(len(p) != 2 or not all(0 <= v <= 1 for v in p) for p in pts):
+            raise ValueError("cada punto es [x, y] normalizado a [0, 1]")
+        return pts
+
+
+class Segment(BaseModel):
+    """Segmento temporal en segundos (eventos de audio, RF-LBL-01)."""
+
+    start_s: float = Field(ge=0)
+    end_s: float = Field(gt=0)
+    label: str
+
+    @model_validator(mode="after")
+    def _ordered(self) -> Segment:
+        if self.end_s <= self.start_s:
+            raise ValueError("el segmento termina antes de empezar")
+        return self
+
+
 class LabelItem(BaseModel):
     sample_id: str
     label: str | list[str] | None = None
     boxes: list[Box] = Field(default_factory=list)
+    polygons: list[Polygon] = Field(default_factory=list)
+    segments: list[Segment] = Field(default_factory=list)
     origin: LabelOrigin = LabelOrigin.HUMAN
     confidence: float | None = None
     status: Status = "accepted"
@@ -61,6 +91,11 @@ class LabelUpdate(BaseModel):
     sample_id: str
     label: str | list[str] | None = None
     boxes: list[Box] = Field(default_factory=list)
+    polygons: list[Polygon] = Field(default_factory=list)
+    segments: list[Segment] = Field(default_factory=list)
+
+    def empty(self) -> bool:
+        return self.label is None and not (self.boxes or self.polygons or self.segments)
 
 
 class Sample(BaseModel):
@@ -211,8 +246,8 @@ class Labeling:
             for lab in i.label if isinstance(i.label, list) else [i.label]:
                 if lab is not None:
                     by_class[lab] = by_class.get(lab, 0) + 1
-            for b in i.boxes:
-                by_class[b.label] = by_class.get(b.label, 0) + 1
+            for shape in [*i.boxes, *i.polygons, *i.segments]:
+                by_class[shape.label] = by_class.get(shape.label, 0) + 1
         suggested = sum(1 for i in items if i.status == "suggested")
         return LabelingSummary(
             labelset=ls,
@@ -305,12 +340,13 @@ class Labeling:
         if ls.kind is LabelKind.MULTILABEL and not isinstance(update.label, list):
             raise ValidationError("en multi-etiqueta, label es una lista")
         unknown = [lab for lab in labels if lab is not None and lab not in ls.classes]
-        unknown += [b.label for b in update.boxes if b.label not in ls.classes]
+        shapes = [*update.boxes, *update.polygons, *update.segments]
+        unknown += [sh.label for sh in shapes if sh.label not in ls.classes]
         if unknown:
             raise ValidationError(f"clases desconocidas: {sorted(set(unknown))}")
 
     def set_labels(self, labelset_id: str, updates: list[LabelUpdate]) -> int:
-        """Etiquetas de la persona (aceptadas). `label` y `boxes` vacíos borran la muestra."""
+        """Etiquetas de la persona (aceptadas). Sin etiqueta ni formas, se borra la muestra."""
         ls = self._labelset(labelset_id)
         total = self.frame(self._dataset(ls)).height
         items = self.items(labelset_id)
@@ -318,10 +354,16 @@ class Labeling:
             if _row_index(u.sample_id) >= total:
                 raise ValidationError(f"{u.sample_id} no existe en el dataset")
             self._check_label(ls, u)
-            if u.label is None and not u.boxes:
+            if u.empty():
                 items.pop(u.sample_id, None)
                 continue
-            items[u.sample_id] = LabelItem(sample_id=u.sample_id, label=u.label, boxes=u.boxes)
+            items[u.sample_id] = LabelItem(
+                sample_id=u.sample_id,
+                label=u.label,
+                boxes=u.boxes,
+                polygons=u.polygons,
+                segments=u.segments,
+            )
         self._save(ls, items)
         return len(updates)
 
@@ -540,6 +582,12 @@ class Labeling:
         if ls.kind is LabelKind.BOX:
             source = self._apply_boxes(view, labeled, items, work)
             task = "object_detection"
+        elif ls.kind is LabelKind.MASK:
+            source = self._apply_masks(ls, view, labeled, items, work)
+            task = "segmentation"
+        elif ls.kind is LabelKind.TEMPORAL_EVENT:
+            source = self._apply_segments(view, labeled, items, work)
+            task = None
         elif "path" in df.columns and view.modality in (Modality.IMAGE, Modality.AUDIO):
             source = work / "dataset"
             for r in labeled.iter_rows(named=True):
@@ -616,4 +664,83 @@ class Labeling:
                 )
         coco["categories"] = [{"id": i, "name": n} for n, i in categories.items()]
         (folder / "annotations_coco.json").write_text(json.dumps(coco), encoding="utf-8")
+        return folder
+
+    def _apply_masks(
+        self,
+        ls: LabelSet,
+        view: DatasetView,
+        labeled: pl.DataFrame,
+        items: dict[str, LabelItem],
+        work: Path,
+    ) -> Path:
+        """Polígonos → `images/` + `masks/` (PNG, valor = índice de clase + 1; 0 = fondo)."""
+        from PIL import Image, ImageDraw
+
+        folder = work / "dataset"
+        images_dir, masks_dir = folder / "images", folder / "masks"
+        images_dir.mkdir(parents=True)
+        masks_dir.mkdir(parents=True)
+        for k, r in enumerate(labeled.iter_rows(named=True)):
+            it = items[_row_id(r["__i__"])]
+            if not it.polygons:
+                continue
+            src = view.files_dir / str(r["path"])
+            name = f"{k:06d}_{Path(str(r['path'])).name}"
+            shutil.copy2(src, images_dir / name)
+            with Image.open(src) as im:
+                w, h = im.size
+            mask = Image.new("L", (w, h), 0)
+            draw = ImageDraw.Draw(mask)
+            # En orden: el último polígono queda arriba donde se superponen.
+            for poly in it.polygons:
+                pts = [(x * (w - 1), y * (h - 1)) for x, y in poly.points]
+                draw.polygon(pts, fill=ls.classes.index(poly.label) + 1)
+            mask.save(masks_dir / Path(name).with_suffix(".png"))
+        if not any(masks_dir.iterdir()):
+            raise ValidationError("no hay polígonos aceptados para generar máscaras")
+        (folder / "classes.txt").write_text("\n".join(ls.classes) + "\n", encoding="utf-8")
+        return folder
+
+    def _apply_segments(
+        self, view: DatasetView, labeled: pl.DataFrame, items: dict[str, LabelItem], work: Path
+    ) -> Path:
+        """Segmentos → un clip por evento en `<clase>/` (clasificación de audio) + `eventos.csv`."""
+        import csv
+
+        import soundfile as sf
+
+        folder = work / "dataset"
+        folder.mkdir(parents=True)
+        rows: list[dict[str, Any]] = []
+        for r in labeled.iter_rows(named=True):
+            it = items[_row_id(r["__i__"])]
+            if not it.segments:
+                continue
+            src = view.files_dir / str(r["path"])
+            data, sr = sf.read(str(src), dtype="float32", always_2d=True)
+            stem = Path(str(r["path"])).stem
+            for n, seg in enumerate(it.segments):
+                a, b = int(seg.start_s * sr), min(int(seg.end_s * sr), data.shape[0])
+                if b - a < 1:
+                    continue  # el segmento cae fuera del audio
+                rel = Path(seg.label) / f"{stem}_{n:03d}.wav"
+                (folder / rel).parent.mkdir(parents=True, exist_ok=True)
+                sf.write(str(folder / rel), data[a:b], sr)
+                rows.append(
+                    {
+                        "file_name": str(r["path"]),
+                        "inicio_s": seg.start_s,
+                        "fin_s": seg.end_s,
+                        "etiqueta": seg.label,
+                        "clip": rel.as_posix(),
+                    }
+                )
+        if not rows:
+            raise ValidationError("no hay segmentos aceptados dentro de los audios")
+        # Las anotaciones de eventos quedan junto al dataset (no son audio).
+        with (work / "eventos.csv").open("w", encoding="utf-8", newline="") as fh:
+            writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(rows)
         return folder

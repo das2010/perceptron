@@ -732,7 +732,23 @@
     "boxClass": "Box class",
     "boxes_one": "{{count}} box",
     "boxes_other": "{{count}} boxes",
-    "undo": "Undo"
+    "undo": "Undo",
+    "shapeClass": "Shape class",
+    "shapes": {
+      "box_one": "{{count}} box",
+      "box_other": "{{count}} boxes",
+      "mask_one": "{{count}} polygon",
+      "mask_other": "{{count}} polygons",
+      "temporal_event_one": "{{count}} segment",
+      "temporal_event_other": "{{count}} segments"
+    },
+    "polygonHint": "Click to add vertices; click the first one to close.",
+    "closePolygon": "Close polygon",
+    "discard": "Discard",
+    "markStart": "Mark start",
+    "markEnd": "Mark end",
+    "segmentHint": "Play and mark the start and end of the event.",
+    "segmentFrom": "From {{s}} s…"
   },
   "sources": {
     "fromDb": "From a database",

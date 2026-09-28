@@ -233,3 +233,100 @@ def test_boxes_export_import(client: TestClient, fixtures_dir: Path) -> None:
         files={"file": ("evil.zip", evil.getvalue(), "application/zip")},
     )
     assert r.status_code == 422
+
+
+def test_polygons_become_segmentation_masks(client: TestClient, fixtures_dir: Path) -> None:
+    """RF-LBL-01: polígonos → máscaras PNG → versión de segmentación con los nombres de clase."""
+    _, dv0 = _defects(client, fixtures_dir)
+    ls = _ok(
+        client.post(
+            f"{API}/datasets/{dv0['id']}/labelsets",
+            json={"kind": "mask", "classes": ["rayón", "mancha"]},
+        ),
+        201,
+    )
+    tri = {"points": [[0.1, 0.1], [0.9, 0.1], [0.5, 0.9]], "label": "rayón"}
+    sq = {"points": [[0.0, 0.0], [0.3, 0.0], [0.3, 0.3], [0.0, 0.3]], "label": "mancha"}
+    bad = client.put(
+        f"{API}/labelsets/{ls['id']}/labels",
+        json={"updates": [{"sample_id": "row:0", "polygons": [{**tri, "points": [[2, 0]] * 3}]}]},
+    )
+    assert bad.status_code == 422
+    unknown = client.put(
+        f"{API}/labelsets/{ls['id']}/labels",
+        json={"updates": [{"sample_id": "row:0", "polygons": [{**tri, "label": "otra"}]}]},
+    )
+    assert unknown.status_code == 422
+    updates = [{"sample_id": f"row:{i}", "polygons": [tri, sq]} for i in range(6)]
+    _ok(client.put(f"{API}/labelsets/{ls['id']}/labels", json={"updates": updates}))
+    summary = _ok(client.get(f"{API}/labelsets/{ls['id']}"))
+    assert summary["by_class"] == {"rayón": 6, "mancha": 6}
+
+    # JSONL conserva los polígonos en el ida y vuelta.
+    data = client.get(f"{API}/labelsets/{ls['id']}/export?format=jsonl").content
+    first = json.loads(data.decode("utf-8").splitlines()[0])
+    assert len(first["polygons"]) == 2 and "label" not in first
+    other = _ok(
+        client.post(
+            f"{API}/datasets/{dv0['id']}/labelsets",
+            json={"kind": "mask", "classes": ["rayón", "mancha"]},
+        ),
+        201,
+    )
+    count = _ok(
+        client.post(
+            f"{API}/labelsets/{other['id']}/import?format=jsonl",
+            files={"file": ("labels.jsonl", data, "application/x-ndjson")},
+        )
+    )["count"]
+    assert count == 6
+
+    dv1 = _ok(client.post(f"{API}/labelsets/{ls['id']}/apply"), 201)
+    assert dv1["parent_id"] == dv0["id"] and dv1["num_samples"] == 6
+    assert dv1["modality"] == "image" and dv1["target"] == "mask_path"
+    profile = _ok(client.post(f"{API}/datasets/{dv1['id']}/profile"))
+    assert "rayón" in json.dumps(profile, ensure_ascii=False)
+
+
+def test_segments_become_audio_clips(client: TestClient, fixtures_dir: Path) -> None:
+    """RF-LBL-01: segmentos temporales → un clip por evento en la carpeta de su clase."""
+    pid = _ok(client.post(f"{API}/projects", json={"name": "Eventos UC-09"}), 201)["id"]
+    src = _ok(
+        client.post(
+            f"{API}/projects/{pid}/sources", json={"path": str(fixtures_dir / "uc09_motor_audio")}
+        ),
+        201,
+    )
+    dv0 = _ok(client.post(f"{API}/sources/{src['id']}/ingest", json={}), 201)
+    assert dv0["modality"] == "audio"
+    ls = _ok(
+        client.post(
+            f"{API}/datasets/{dv0['id']}/labelsets",
+            json={"kind": "temporal_event", "classes": ["golpe", "silbido"]},
+        ),
+        201,
+    )
+    backwards = client.put(
+        f"{API}/labelsets/{ls['id']}/labels",
+        json={
+            "updates": [
+                {
+                    "sample_id": "row:0",
+                    "segments": [{"start_s": 0.5, "end_s": 0.2, "label": "golpe"}],
+                }
+            ]
+        },
+    )
+    assert backwards.status_code == 422
+    segments = [
+        {"start_s": 0.0, "end_s": 0.4, "label": "golpe"},
+        {"start_s": 0.5, "end_s": 0.9, "label": "silbido"},
+        {"start_s": 50.0, "end_s": 51.0, "label": "golpe"},  # fuera del audio: se ignora
+    ]
+    updates = [{"sample_id": f"row:{i}", "segments": segments} for i in range(10)]
+    _ok(client.put(f"{API}/labelsets/{ls['id']}/labels", json={"updates": updates}))
+    queue = _ok(client.get(f"{API}/labelsets/{ls['id']}/queue?limit=1"))
+    assert queue and queue[0]["sample_id"] not in {u["sample_id"] for u in updates}
+    dv1 = _ok(client.post(f"{API}/labelsets/{ls['id']}/apply"), 201)
+    assert dv1["modality"] == "audio" and dv1["parent_id"] == dv0["id"]
+    assert dv1["num_samples"] == 20

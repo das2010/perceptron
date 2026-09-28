@@ -48,15 +48,26 @@ def export_labels(
 ) -> tuple[bytes, str]:
     key = _key_column(df)
     keys = {_sid(i): (str(df[key][i]) if key else _sid(i)) for i in df["__i__"].to_list()}
-    if fmt in ("csv", "jsonl"):
+    if fmt == "jsonl":
+        # JSONL lleva todo: etiqueta y formas (cajas, polígonos, segmentos; RF-LBL-01).
+        lines = []
+        for sid, it in items.items():
+            row: dict[str, Any] = {"sample_id": sid, **({key: keys[sid]} if key else {})}
+            if it.label is not None:
+                row["label"] = _label_str(it.label)
+            for field in ("boxes", "polygons", "segments"):
+                shapes = getattr(it, field)
+                if shapes:
+                    row[field] = [sh.model_dump() for sh in shapes]
+            if len(row) > (2 if key else 1):
+                lines.append(json.dumps(row, ensure_ascii=False) + "\n")
+        return "".join(lines).encode("utf-8"), "application/x-ndjson"
+    if fmt == "csv":
         rows = [
             {"sample_id": sid, **({key: keys[sid]} if key else {}), "label": _label_str(it.label)}
             for sid, it in items.items()
             if it.label is not None
         ]
-        if fmt == "jsonl":
-            body = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows)
-            return body.encode("utf-8"), "application/x-ndjson"
         buf = io.StringIO()
         writer = csv.DictWriter(buf, fieldnames=["sample_id", *([key] if key else []), "label"])
         writer.writeheader()
@@ -153,8 +164,14 @@ def import_labels(ls: LabelSet, df: pl.DataFrame, data: bytes, fmt: Format) -> l
         )
         for r in rows:
             sid = resolve(r)
-            if sid is not None and r.get("label") not in (None, ""):
-                updates.append(LabelUpdate(sample_id=sid, label=label_of(r["label"])))
+            if sid is None:
+                continue
+            label = label_of(r["label"]) if r.get("label") not in (None, "") else None
+            shapes = {f: r[f] for f in ("boxes", "polygons", "segments") if r.get(f)}
+            if label is not None or shapes:
+                updates.append(
+                    LabelUpdate.model_validate({"sample_id": sid, "label": label, **shapes})
+                )
         return updates
     if fmt == "coco":
         coco = json.loads(data.decode("utf-8"))

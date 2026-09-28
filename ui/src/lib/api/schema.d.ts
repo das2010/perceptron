@@ -3627,6 +3627,22 @@ export interface components {
             /** Y2 */
             y2: number;
         };
+        /** Polygon */
+        Polygon: {
+            /** Label */
+            label: string;
+            /** Points */
+            points: number[][];
+        };
+        /** Segment */
+        Segment: {
+            /** End S */
+            end_s: number;
+            /** Label */
+            label: string;
+            /** Start S */
+            start_s: number;
+        };
         /** Budget */
         Budget: {
             /** Max Epochs Per Trial */
@@ -5312,6 +5328,10 @@ export interface components {
         LabelItem: {
             /** Boxes */
             boxes?: components["schemas"]["Box"][];
+            /** Polygons */
+            polygons?: components["schemas"]["Polygon"][];
+            /** Segments */
+            segments?: components["schemas"]["Segment"][];
             /** Confidence */
             confidence?: number | null;
             /** Label */
@@ -5422,6 +5442,10 @@ export interface components {
         LabelUpdate: {
             /** Boxes */
             boxes?: components["schemas"]["Box"][];
+            /** Polygons */
+            polygons?: components["schemas"]["Polygon"][];
+            /** Segments */
+            segments?: components["schemas"]["Segment"][];
             /** Label */
             label?: string | string[] | null;
             /** Sample Id */

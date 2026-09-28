@@ -1163,6 +1163,8 @@ export type LabelingSummary = Schemas["LabelingSummary"];
 export type LabelSample = Schemas["Sample"];
 export type LabelUpdate = Schemas["LabelUpdate"];
 export type Box = Schemas["Box"];
+export type Polygon = Schemas["Polygon"];
+export type Segment = Schemas["Segment"];
 
 const lsKey = (id: string) => ["labelsets", id] as const;
 

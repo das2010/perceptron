@@ -195,6 +195,12 @@ def segmentation_index(root: Path, files_dir: Path) -> tuple[pl.DataFrame, list[
     ids = sorted(1 if v == 255 else int(v) for v in values)
     k = max(ids) + 1 if ids else 2
     classes = ["fondo"] + [f"clase_{i}" for i in range(1, k)] if k > 2 else ["fondo", "objeto"]
+    names_file = root / "classes.txt"
+    if names_file.is_file():
+        # Nombres de clase opcionales (una por línea, sin el fondo): p. ej. del etiquetado.
+        names = [n.strip() for n in names_file.read_text("utf-8").splitlines() if n.strip()]
+        if len(names) >= k - 1:
+            classes = ["fondo", *names]
     schema: dict[str, Any] = {
         "path": pl.String,
         "mask_path": pl.String,

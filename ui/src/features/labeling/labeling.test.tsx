@@ -89,12 +89,16 @@ describe("etiquetado asistido (Capa 4c)", () => {
 
     await userEvent.keyboard("1"); // primera clase: «bueno» (corrige la sugerencia)
     await waitFor(() => expect(puts).toHaveLength(1));
-    expect(puts[0]).toEqual({ updates: [{ sample_id: "row:5", label: "bueno", boxes: [] }] });
+    expect(puts[0]).toEqual({
+      updates: [{ sample_id: "row:5", label: "bueno", boxes: [], polygons: [], segments: [] }],
+    });
     expect(await screen.findByText("texto 6")).toBeInTheDocument();
 
     await userEvent.keyboard("{Enter}"); // acepta la sugerencia «bueno»
     await waitFor(() => expect(puts).toHaveLength(2));
-    expect(puts[1]).toEqual({ updates: [{ sample_id: "row:6", label: "bueno", boxes: [] }] });
+    expect(puts[1]).toEqual({
+      updates: [{ sample_id: "row:6", label: "bueno", boxes: [], polygons: [], segments: [] }],
+    });
 
     await userEvent.click(screen.getByRole("button", { name: /Aceptar sugerencias confiables/ }));
     await waitFor(() => expect(accepts).toEqual([{ min_confidence: 0.9 }]));
