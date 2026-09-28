@@ -7,6 +7,7 @@ requires-python = ">=3.12,<3.14"
 license = { text = "Proprietary" }
 authors = [{ name = "Preteco" }]
 dependencies = [
+  "cryptography>=43",  # Apache-2.0/BSD: licencia firmada Ed25519 (Capa 7) y secretos
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",
   "pydantic>=2.9",
@@ -55,7 +56,6 @@ llm = [
   "anthropic>=0.40",
   "openai>=1.50",
   "keyring>=25",
-  "cryptography>=43",
 ]
 # Capa 4a (ADR-0027): export a ONNX (con verificación en ONNX Runtime), fp16 e INT8. Licencias
 # MIT. Separado de `ml` para que el paquete de inferencia pueda instalar solo el runtime.

@@ -26,6 +26,7 @@ import {
 } from "@/lib/api/hooks";
 
 import { DesktopSettings } from "./DesktopSettings";
+import { LicenseCard, TelemetryCard } from "./LicenseSettings";
 import { RemoteServers } from "./RemoteServers";
 
 /** La clave es write-only: se envía una vez y el Engine la guarda en el keychain (RF-LLM-08). */
@@ -165,6 +166,8 @@ export function SettingsPage() {
       <PageHeader title={t("nav.settings")} description={t("settings.description")} />
       <LlmSettings />
       <DesktopSettings />
+      <LicenseCard />
+      <TelemetryCard />
       <RemoteServers />
     </>
   );

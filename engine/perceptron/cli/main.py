@@ -189,3 +189,82 @@ def project_create(
 
 if __name__ == "__main__":  # pragma: no cover
     app()
+
+
+# ------------------------------------------------------------------ licencias (ADR-0035)
+
+license_app = typer.Typer(help="Licencias firmadas (Ed25519, offline)", no_args_is_help=True)
+app.add_typer(license_app, name="license")
+
+
+@license_app.command("keygen")
+def license_keygen(
+    out: Annotated[Path, typer.Option(help="Carpeta segura donde guardar el par")],
+    key_id: Annotated[str, typer.Option(help="Identificador de la clave")] = "preteco",
+) -> None:
+    """Genera el par de claves de Preteco (la privada no se comparte nunca)."""
+    from perceptron.licensing.signed import keygen
+
+    private, public = keygen()
+    out.mkdir(parents=True, exist_ok=True)
+    key_file, pub_file = out / f"{key_id}.key", out / f"{key_id}.pub"
+    if key_file.exists():
+        raise typer.BadParameter(f"ya existe {key_file}: no se sobrescribe")
+    key_file.write_bytes(private)
+    pub_file.write_text(public, encoding="utf-8")
+    typer.echo(f"privada: {key_file}\npública: {pub_file} (copiala a perceptron/licensing/keys/)")
+
+
+@license_app.command("issue")
+def license_issue(
+    key: Annotated[Path, typer.Option(help="Clave privada PEM")],
+    key_id: Annotated[str, typer.Option(help="Identificador de la clave")],
+    licensee: Annotated[str, typer.Option(help="Cliente")],
+    out: Annotated[Path, typer.Option(help="Archivo license.json a generar")],
+    edition: Annotated[str, typer.Option()] = "team",
+    seats: Annotated[int | None, typer.Option(help="Usuarios del Team Server")] = None,
+    servers: Annotated[int | None, typer.Option(help="Instalaciones del Team Server")] = None,
+    gpus: Annotated[int | None, typer.Option(help="Workers GPU")] = None,
+    features: Annotated[str, typer.Option(help="Claves separadas por coma o *")] = "*",
+    days: Annotated[int | None, typer.Option(help="Vigencia en días (sin = perpetua)")] = None,
+) -> None:
+    """Emite una licencia firmada."""
+    import uuid
+    from datetime import UTC, datetime, timedelta
+
+    from perceptron.licensing.signed import sign
+
+    now = datetime.now(UTC).replace(microsecond=0)
+    terms = {
+        "id": str(uuid.uuid4()),
+        "licensee": licensee,
+        "edition": edition,
+        "seats": seats,
+        "servers": servers,
+        "gpus": gpus,
+        "features": [f.strip() for f in features.split(",") if f.strip()],
+        "issued_at": now.isoformat(),
+        "not_before": now.isoformat(),
+        "expires_at": (now + timedelta(days=days)).isoformat() if days else None,
+    }
+    out.write_text(sign(terms, key.read_bytes(), key_id), encoding="utf-8")
+    typer.echo(f"licencia {terms['id']} para {licensee} → {out}")
+
+
+@license_app.command("verify")
+def license_verify(
+    file: Annotated[Path, typer.Argument(help="license.json")],
+    workspace: WorkspaceOpt = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Verifica firma y vigencia con las claves públicas configuradas."""
+    from perceptron.licensing.signed import bundled_keys, verify
+
+    settings = _settings(workspace)
+    check = verify(file.read_bytes(), {**bundled_keys(), **settings.license.public_keys})
+    if as_json:
+        typer.echo(json.dumps({"status": check.status.value, "message": check.message}))
+    else:
+        who = check.terms.licensee if check.terms else ""
+        typer.echo(f"{check.status.value}: {check.message or who}")
+    raise typer.Exit(0 if check.valid else 1)

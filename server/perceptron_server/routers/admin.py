@@ -275,3 +275,52 @@ def audit(
         limit=limit,
         offset=offset,
     )
+
+
+# ------------------------------------------------------------------ licencia (ADR-0035)
+
+
+class LicenseUsage(BaseModel):
+    status: str
+    message: str = ""
+    licensee: str | None = None
+    edition: str | None = None
+    expires_at: datetime | None = None
+    seats: int | None = None
+    seats_used: int
+    gpus: int | None = None
+    gpus_used: int
+    servers: int | None = None
+    servers_used: int = 1
+    over_limit: list[str] = Field(default_factory=list, description="Solo se informa (v1)")
+
+
+@router.get("/license", operation_id="getLicenseUsage")
+def license_usage(_: Admin, state: State) -> LicenseUsage:
+    """Uso real contra los topes de la licencia. Sin enforcement en v1 (RF-LIC-03)."""
+    from perceptron.licensing.signed import license_provider
+
+    check = license_provider(state.settings).check()
+    t = check.terms
+    seats_used = sum(1 for u, _ in state.accounts.list_users() if u.is_active)
+    gpus_used = sum(len(w.get("gpus") or []) for w in state.workers.list())
+    usage = LicenseUsage(
+        status=check.status.value,
+        message=check.message,
+        licensee=t.licensee if t else None,
+        edition=t.edition if t else None,
+        expires_at=t.expires_at if t else None,
+        seats=t.seats if t else None,
+        seats_used=seats_used,
+        gpus=t.gpus if t else None,
+        gpus_used=gpus_used,
+        servers=t.servers if t else None,
+    )
+    for name, used, cap in (
+        ("seats", seats_used, usage.seats),
+        ("gpus", gpus_used, usage.gpus),
+        ("servers", usage.servers_used, usage.servers),
+    ):
+        if cap is not None and used > cap:
+            usage.over_limit.append(name)
+    return usage

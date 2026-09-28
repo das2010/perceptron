@@ -1,0 +1,55 @@
+# Política de licencias para distribuir Perceptron comercialmente (Capa 7, ADR-0036).
+# Se aplica al runtime que se entrega (Python sin dev, JS de producción, crates del desktop)
+# y a los pesos preentrenados del catálogo.
+
+# Permisivas: se pueden redistribuir dentro de un producto propietario con atribución.
+allowed:
+  - MIT
+  - MIT-0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - 0BSD
+  - Apache-2.0
+  - ISC
+  - Zlib
+  - PSF-2.0
+  - Python-2.0
+  - HPND
+  - Unlicense
+  - CC0-1.0
+  - BSL-1.0
+  - Unicode-3.0
+  - Unicode-DFS-2016
+  - CC-BY-4.0
+  - OFL-1.1
+  - BlueOak-1.0.0
+  - NCSA
+  - EDL-1.0
+
+# Copyleft débil o por archivo: aceptables con condiciones (sin modificar el componente,
+# enlazado dinámico / módulos separados, código fuente del componente disponible).
+review:
+  - MPL-2.0
+  - LGPL-2.1-only
+  - LGPL-2.1-or-later
+  - LGPL-3.0-only
+  - LGPL-3.0-or-later
+  - EPL-2.0
+  - CDDL-1.0
+
+# Incompatibles con un producto cerrado distribuido: bloquean el CI.
+forbidden_patterns:
+  - "AGPL"
+  - "SSPL"
+  - "BUSL"
+  - "Commons-Clause"
+  - "CC-BY-NC"
+  - "GPL-2.0"
+  - "GPL-3.0"
+
+# Decisiones caso por caso (paquete → motivo). Cada una revisada por una persona.
+exceptions:
+  certifi: "MPL-2.0: se distribuye sin modificar (bundle de CAs)."
+  tqdm: "MPL-2.0 AND MIT: sin modificar."
+  pathspec: "MPL-2.0: sin modificar."
+  pyphen: "LGPL/MPL: la usa reportlab para guiones; se elige MPL-2.0, sin modificar."

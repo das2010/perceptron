@@ -42,7 +42,9 @@ class Perm(StrEnum):
 
 
 PUBLIC_OPS = frozenset({"getHealth", "getVersion"})
-SERVER_ADMIN_OPS = frozenset({"putLlmProfiles", "putLlmProvider", "testLlm"})
+SERVER_ADMIN_OPS = frozenset(
+    {"putLlmProfiles", "putLlmProvider", "testLlm", "putLicense", "putTelemetry"}
+)
 PROJECT_ADMIN_OPS = frozenset({"deleteProject"})
 # Escrituras que un Viewer puede hacer: no modifican nada (previsualizar, comparar, playground).
 VIEW_WRITES = frozenset(
