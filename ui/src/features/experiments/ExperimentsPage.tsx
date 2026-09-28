@@ -52,7 +52,13 @@ function LiveStudy({ jobId, metric }: { jobId: string; metric: string }) {
       if (value === undefined) return;
       const runId = d.run_id;
       const point = { epoch: d.epoch, value };
-      setCurves((prev) => ({ ...prev, [runId]: [...(prev[runId] ?? []), point] }));
+      // Idempotente: al reconectar, el WS reenvía el historial del job.
+      setCurves((prev) => ({
+        ...prev,
+        [runId]: [...(prev[runId] ?? []).filter((p) => p.epoch !== point.epoch), point].sort(
+          (a, b) => a.epoch - b.epoch,
+        ),
+      }));
     },
     [metric],
   );

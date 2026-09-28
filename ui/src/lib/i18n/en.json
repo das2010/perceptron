@@ -808,5 +808,21 @@
     "onServer": "On {{name}}",
     "useGpu": "Use the server GPU",
     "syncing": "Uploading to the server…"
+  },
+  "policies": {
+    "title": "Policies",
+    "restricted": "Restricted providers",
+    "anyProvider": "Any provider",
+    "maxPrivacy": "Maximum LLM privacy level",
+    "maxPrivacyHint": "No project in the workspace sends more than this level (L0 = nothing).",
+    "localMax": "Maximum with a local LLM",
+    "localMaxHint": "Can be higher when the model runs on your own network (RF-PRV-02).",
+    "sameAsGeneral": "Same as general",
+    "providers": "Allowed providers",
+    "providersHint": "Comma separated (e.g. ollama, anthropic). Empty = all.",
+    "save": "Save",
+    "sso": "SSO",
+    "noSso": "No SSO providers configured.",
+    "ssoHint": "Configured on the server (PERCEPTRON_SERVER__OIDC); see docs/ops/sso.md."
   }
 }

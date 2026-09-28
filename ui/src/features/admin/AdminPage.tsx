@@ -42,6 +42,7 @@ import {
   useUsers,
   useWorkspaces,
 } from "./hooks";
+import { PoliciesTab } from "./PoliciesTab";
 
 const ROLES: Role[] = ["viewer", "editor", "admin"];
 
@@ -411,6 +412,7 @@ export function AdminPage() {
         me.memberships.some((m) => m.workspace_id === w.id && !m.project_id && m.role === "admin"),
       );
   const list = adminOf.map((w) => ({ id: w.id ?? "", name: w.name }));
+  const adminOfFull = adminOf.map((w) => ({ ...w, id: w.id ?? "" }));
   return (
     <div>
       <PageHeader title={t("admin.title")} description={t("admin.description")} />
@@ -418,6 +420,7 @@ export function AdminPage() {
         <TabsList>
           {serverAdmin && <TabsTrigger value="users">{t("admin.users")}</TabsTrigger>}
           <TabsTrigger value="roles">{t("admin.roles")}</TabsTrigger>
+          <TabsTrigger value="policies">{t("policies.title")}</TabsTrigger>
           {serverAdmin && <TabsTrigger value="audit">{t("admin.audit")}</TabsTrigger>}
         </TabsList>
         {serverAdmin && (
@@ -427,6 +430,9 @@ export function AdminPage() {
         )}
         <TabsContent value="roles">
           {serverAdmin && workspaces.isPending ? <Spinner /> : <RolesTab workspaces={list} />}
+        </TabsContent>
+        <TabsContent value="policies">
+          <PoliciesTab workspaces={serverAdmin ? (workspaces.data ?? []) : adminOfFull} />
         </TabsContent>
         {serverAdmin && (
           <TabsContent value="audit">
