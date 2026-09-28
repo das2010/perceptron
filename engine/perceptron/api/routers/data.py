@@ -109,7 +109,11 @@ async def upload_source(
         written.append(rel)
     single = len(written) == 1 and len(written[0].parts) == 1
     path = root / written[0] if single else root
-    if not single and len({r.parts[0] for r in written}) == 1 and all(len(r.parts) > 2 for r in written):
+    if (
+        not single
+        and len({r.parts[0] for r in written}) == 1
+        and all(len(r.parts) > 2 for r in written)
+    ):
         path = root / written[0].parts[0]  # carpeta raíz elegida en el navegador
     src = DataSource(
         project_id=project_id,
