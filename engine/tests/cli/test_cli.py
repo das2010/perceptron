@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from perceptron import __version__
@@ -50,3 +51,19 @@ def test_openapi_export(tmp_path: Path) -> None:
     schema = json.loads(out.read_text(encoding="utf-8"))
     assert schema["info"]["title"] == "Perceptron Engine API"
     assert "/api/v1/system/health" in schema["paths"]
+
+
+def test_legacy_windows_console_does_not_abort_on_unicode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """cp1252 (consola clásica de Windows): «→» no entra y antes abortaba el comando."""
+    import io
+    import sys
+
+    from perceptron.cli.main import _tolerant_console
+
+    raw = io.BytesIO()
+    console = io.TextIOWrapper(raw, encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", console)
+    _tolerant_console()
+    print("sobrevivir N → N+1 con acentos: ñ")
+    console.flush()
+    assert raw.getvalue().decode("cp1252") == "sobrevivir N ? N+1 con acentos: ñ\n"

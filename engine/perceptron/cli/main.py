@@ -54,6 +54,16 @@ def main(
     ] = False,
 ) -> None:
     """Perceptron: entrenar redes neuronales localmente, guiado por un LLM."""
+    _tolerant_console()
+
+
+def _tolerant_console() -> None:
+    """Consola de Windows en cp1252: un carácter que no entra (→, emojis) se reemplaza en vez de
+    abortar el comando. Para scripts, `PYTHONUTF8=1` da UTF-8 exacto."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(errors="replace")
 
 
 def _free_port(host: str) -> int:

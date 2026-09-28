@@ -166,6 +166,8 @@ jobs:
       - name: Instalar N y crear un proyecto
         shell: pwsh
         run: |
+          # CLI y PowerShell en UTF-8: el nombre del proyecto lleva acentos.
+          $env:PYTHONUTF8 = "1"; [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
           $setup = Get-ChildItem "$env:RUNNER_TEMP/n/*-setup.exe" | Select-Object -First 1
           Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait
           $exe = Get-ChildItem (Join-Path $env:LOCALAPPDATA "Perceptron") -Filter *.exe |
@@ -205,6 +207,7 @@ jobs:
       - name: Verificar N+1 sin pérdida de proyectos
         shell: pwsh
         run: |
+          $env:PYTHONUTF8 = "1"; [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
           $report = Join-Path $env:RUNNER_TEMP "p-n1.json"
           $p = Start-Process -FilePath $env:APP_EXE -ArgumentList "--provision-only","--report",$report -Wait -PassThru
           Get-Content $report
