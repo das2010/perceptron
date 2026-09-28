@@ -63,7 +63,7 @@ def _distribution(p: SearchParam) -> Any:
 
 
 def _importance(
-    strategy: HPOStrategy, trials: list[TrialPoint], direction: str
+    strategy: HPOStrategy, trials: list[TrialPoint], direction: Literal["minimize", "maximize"]
 ) -> dict[str, float]:
     import optuna
     from optuna.importance import get_param_importances

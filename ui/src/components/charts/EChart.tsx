@@ -2,10 +2,11 @@
  * Gráficos con Apache ECharts (SPEC §5.2): curvas en vivo, matrices y ROC.
  * Los colores salen de los tokens del tema (Oscuro/Lima/Violeta + neutros, §11.2).
  */
-import { BarChart, HeatmapChart, LineChart } from "echarts/charts";
+import { BarChart, HeatmapChart, LineChart, ParallelChart, ScatterChart } from "echarts/charts";
 import {
   GridComponent,
   LegendComponent,
+  ParallelComponent,
   TooltipComponent,
   VisualMapComponent,
 } from "echarts/components";
@@ -17,6 +18,9 @@ echarts.use([
   LineChart,
   BarChart,
   HeatmapChart,
+  ScatterChart, // historia del HPO y Pareto (RF-HPO-06)
+  ParallelChart, // coordenadas paralelas (RF-HPO-06)
+  ParallelComponent,
   GridComponent,
   TooltipComponent,
   LegendComponent,
