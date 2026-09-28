@@ -25,7 +25,14 @@ from perceptron.catalog.rules import recommend
 from perceptron.core.errors import NotFoundError, ValidationError
 from perceptron.data.profiling.card import ProfileCard
 from perceptron.domain.enums import LabelKind, LLMPurpose, Modality, Origin, PrivacyLevel
-from perceptron.domain.models import ArchSpecRecord, LabelSet, ModelVersion, Project, Run
+from perceptron.domain.models import (
+    ArchSpecRecord,
+    DatasetVersion,
+    LabelSet,
+    ModelVersion,
+    Project,
+    Run,
+)
 from perceptron.hpo.recommend import recommend_strategy
 from perceptron.hpo.strategy import (
     NOT_TUNED,
@@ -552,13 +559,9 @@ class LLMRoles:
         frame = view.read(split).head(limit)
         texts = [str(t) for t in frame.get_column(column).to_list()]
         classes = [c.name for c in guide.classes]
-        labels: list[dict[str, Any]] = []
-        for start in range(0, len(texts), PRELABEL_BATCH):
-            batch = {
-                f"{split}:{i}": texts[i]
-                for i in range(start, min(start + PRELABEL_BATCH, len(texts)))
-            }
-            labels += self._prelabel_batch(project, guide, classes, batch, column, level)
+        labels = self._prelabel_all(
+            project, guide, classes, {f"{split}:{i}": t for i, t in enumerate(texts)}, column, level
+        )
         labelset = LabelSet(dataset_version_id=dv.id, kind=LabelKind.CLASS, classes=classes)
         rel = Path("labels") / f"{labelset.id}.jsonl"
         path = self.ctx.settings.paths.project(project.id).root / rel
@@ -568,6 +571,46 @@ class LLMRoles:
         )
         labelset.path = rel.as_posix()
         return self.ctx.repo(LabelSet).add(labelset)
+
+    def prelabel_texts(
+        self,
+        dv: DatasetVersion,
+        guide: LabelingGuide,
+        texts: dict[str, str],
+        column: str,
+    ) -> list[dict[str, Any]]:
+        """Sugerencias del LLM para textos ya identificados (herramienta de etiquetado)."""
+        project = self.wf.project(dv.project_id)
+        res = self.gateway.resolve(LLMPurpose.LABELER, project)
+        level = self.gateway.effective_level(project, local=res.provider.is_local)
+        if level.rank < PrivacyLevel.L2.rank:
+            raise LLMUnavailableError(
+                "El pre-etiquetado envía muestras: requiere privacidad L2 o L3",
+                details={"reason": "privacy", "level": level.value},
+            )
+        if level is PrivacyLevel.L2 and not self.gateway.policy.pii.handles_free_text:
+            raise LLMUnavailableError(
+                "En L2 el texto libre solo sale con un motor NER de PII configurado",
+                details={"reason": "no_ner", "level": level.value},
+            )
+        classes = [c.name for c in guide.classes]
+        return self._prelabel_all(project, guide, classes, texts, column, level)
+
+    def _prelabel_all(
+        self,
+        project: Project,
+        guide: LabelingGuide,
+        classes: list[str],
+        texts: dict[str, str],
+        column: str,
+        level: PrivacyLevel,
+    ) -> list[dict[str, Any]]:
+        keys = list(texts)
+        labels: list[dict[str, Any]] = []
+        for start in range(0, len(keys), PRELABEL_BATCH):
+            batch = {k: texts[k] for k in keys[start : start + PRELABEL_BATCH]}
+            labels += self._prelabel_batch(project, guide, classes, batch, column, level)
+        return labels
 
     def _prelabel_batch(
         self,
