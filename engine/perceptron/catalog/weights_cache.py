@@ -117,16 +117,30 @@ def list_cached(cache_dir: Path) -> CacheReport:
     )
 
 
+def _entries() -> dict[str, Path]:
+    """Id → ruta de lo que hay en la caché. Las rutas salen del listado del disco, nunca del
+    id que manda el cliente (no hay forma de armar una ruta fuera de la caché)."""
+    found: dict[str, Path] = {}
+    hub = _hub_dir()
+    if hub.is_dir():
+        for repo in hub.glob("models--*"):
+            if repo.is_dir() and not repo.is_symlink():
+                found[repo.name.removeprefix("models--").replace("--", "/")] = repo
+    ckpts = _torch_dir()
+    if ckpts.is_dir():
+        for f in ckpts.iterdir():
+            if f.is_file() and not f.is_symlink():
+                found[f.name] = f
+    return found
+
+
 def _entry(model_id: str) -> Path:
     if not model_id or any(part in ("", ".", "..") for part in model_id.split("/")):
         raise ValidationError(f"modelo inválido: {model_id!r}")
-    repo = _hub_dir() / f"models--{model_id.replace('/', '--')}"
-    if repo.is_dir():
-        return repo
-    ckpt = _torch_dir() / model_id
-    if "/" not in model_id and ckpt.is_file():
-        return ckpt
-    raise NotFoundError(f"{model_id} no está en la caché")
+    path = _entries().get(model_id)
+    if path is None:
+        raise NotFoundError(f"{model_id} no está en la caché")
+    return path
 
 
 def delete_cached(model_id: str) -> int:
