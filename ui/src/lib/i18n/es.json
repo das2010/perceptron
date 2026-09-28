@@ -1052,5 +1052,17 @@
     "prefetchHint": "Solo modelos del catálogo curado, con licencia comercial revisada.",
     "download": "Descargar",
     "downloading": "Descargando en segundo plano; aparece en la lista al terminar."
+  },
+  "cost": {
+    "estimate": "Estimar costo por dispositivo",
+    "title": "Costo estimado",
+    "size": "Tamaño efectivo: {{train}} ejemplos de train de {{total}} ({{disk}} MB en disco).",
+    "tensors": "Como tensores de entrada, train ocupa {{mb}} MB.",
+    "model": "{{params}} parámetros · memoria estimada por batch de {{batch}}: {{memory}} MB.",
+    "device": "Dispositivo",
+    "memory": "Memoria disponible",
+    "epoch": "Tiempo por época",
+    "fits": "entra",
+    "doesNotFit": "no entra"
   }
 }

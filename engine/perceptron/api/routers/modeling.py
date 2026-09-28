@@ -21,7 +21,15 @@ from perceptron.catalog.registry import blocks_for, public_blocks
 from perceptron.core.errors import ConflictError, NotFoundError, ValidationError
 from perceptron.data.pipeline.pipeline import PipelineSpec, preview_steps, transform_tabular
 from perceptron.domain.enums import Device, Modality, Origin, TaskType
-from perceptron.domain.models import ArchSpecRecord, Evaluation, ModelVersion, Pipeline, Run, Study
+from perceptron.domain.models import (
+    ArchSpecRecord,
+    DatasetVersion,
+    Evaluation,
+    ModelVersion,
+    Pipeline,
+    Run,
+    Study,
+)
 from perceptron.evaluation.evaluate import EvaluationReport
 from perceptron.hpo.analysis import StudyAnalysis, analyze
 from perceptron.hpo.strategy import Budget, HPOStrategy
@@ -29,6 +37,7 @@ from perceptron.sandbox.expert import starter_code
 from perceptron.sandbox.process import CodeCheck
 from perceptron.sandbox.static import StaticReport, check_source
 from perceptron.services.compare import ConfigDiff, config_diff
+from perceptron.services.estimate import CostEstimate
 from perceptron.services.workflow import Workflow
 
 router = APIRouter()
@@ -549,6 +558,38 @@ def get_run_history(run_id: str, ctx: Ctx) -> list[dict[str, float]]:
     if not path.is_file():
         return []
     return RunResult.model_validate_json(path.read_text(encoding="utf-8")).history
+
+
+class EstimateBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    archspec_id: str
+    dataset_version_id: str
+
+
+@router.post(
+    "/projects/{project_id}/arch/estimate", tags=["arch"], operation_id="estimateArchitecture"
+)
+def estimate_architecture(project_id: str, body: EstimateBody, ctx: Ctx) -> CostEstimate:
+    """Tamaño efectivo, memoria por batch y tiempo por época por dispositivo (RF-PRF-08)."""
+    from perceptron.archspec.schema import resolve
+    from perceptron.services.estimate import estimate_cost
+    from perceptron.training.data import auto_batch_size
+    from perceptron.training.hardware import detect_hardware
+
+    ctx.projects.get(project_id)
+    record = ctx.repo(ArchSpecRecord).get(body.archspec_id)
+    if record.spec is None:
+        raise ValidationError("la estimación está disponible para arquitecturas declarativas")
+    spec = ArchSpec.model_validate(record.spec)
+    dv = ctx.repo(DatasetVersion).get(body.dataset_version_id)
+    n_train = int(dv.split.train) if dv.split is not None else dv.num_samples
+    requested = resolve(spec.training.batch_size, {})
+    batch = (
+        int(requested)
+        if isinstance(requested, int | float) and not isinstance(requested, bool)
+        else auto_batch_size(dv.modality or Modality.TABULAR, n_train)
+    )
+    return estimate_cost(spec, dv, detect_hardware(), batch_size=batch)
 
 
 @router.post("/runs/compare", tags=["runs"], operation_id="compareRuns")

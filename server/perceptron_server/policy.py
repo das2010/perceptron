@@ -72,6 +72,7 @@ VIEW_WRITES = frozenset(
         "validateArchitecture",
         "lintArchCode",
         "archToCode",
+        "estimateArchitecture",
         "predictDeployment",  # usar el modelo en uso (como el playground)
         "openRunInMlflow",  # solo arma el enlace (en el servidor, la URL configurada)
     }

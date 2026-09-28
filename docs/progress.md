@@ -275,7 +275,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-PRF-05 |  | 1 | Audio: duración, sample rate, canales, silencio, clipping, SNR estimado. | ✅ `profiling.audio` (duración, sample rate, canales, silencio, clipping, SNR) |
 | RF-PRF-06 | sí | 1 | Alertas: desbalance, target con fuga (feature casi idéntica al target, ids, fechas… | ✅ `profiling.alerts` |
 | RF-PRF-07 | sí | 1 | Genera un Dataset Profile Card (JSON + vista) que es la entrada principal del LLM en… | ✅ `ProfileCard` sin valores individuales (test de propiedad) |
-| RF-PRF-08 |  | 1 | Estimación de complejidad y costo: tamaño efectivo, memoria estimada por batch, tiempo… | 🟡 parámetros, memoria por batch y tiempo por época medido para la arquitectura propuesta; falta tamaño efectivo y comparación por dispositivo |
+| RF-PRF-08 |  | 1 | Estimación de complejidad y costo: tamaño efectivo, memoria estimada por batch, tiempo… | ✅ tamaño efectivo (train, total, disco y tensores de entrada), parámetros, memoria por batch y tiempo por época medido en cada dispositivo disponible, con aviso si no entra en memoria |
 | RF-PIP-01 | sí | 1/3 | El sistema propone automáticamente un pipeline según profiling (imputación, encoding,… | ✅ `pipeline.propose` con justificación por paso |
 | RF-PIP-02 |  | 1/3 | Editor visual (React Flow) de un DAG de pasos: agregar, quitar, reordenar,… | ✅ editor React Flow (agregar, quitar, reordenar, parametrizar, guardar con versión) con vista previa por paso del grafo sin guardar (`POST /projects/{id}/pipelines/preview-steps`) |
 | RF-PIP-03 |  | 1/3 | Catálogo de pasos por modalidad (extensible por plugins): | ✅ tabular, imagen, texto, series, audio (augmentations incluidas) |

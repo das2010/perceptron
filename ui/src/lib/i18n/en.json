@@ -1052,5 +1052,17 @@
     "prefetchHint": "Only models from the curated catalog, with reviewed commercial licenses.",
     "download": "Download",
     "downloading": "Downloading in the background; it shows up in the list when done."
+  },
+  "cost": {
+    "estimate": "Estimate cost per device",
+    "title": "Estimated cost",
+    "size": "Effective size: {{train}} training examples out of {{total}} ({{disk}} MB on disk).",
+    "tensors": "As input tensors, train takes {{mb}} MB.",
+    "model": "{{params}} parameters · estimated memory per batch of {{batch}}: {{memory}} MB.",
+    "device": "Device",
+    "memory": "Available memory",
+    "epoch": "Time per epoch",
+    "fits": "fits",
+    "doesNotFit": "does not fit"
   }
 }

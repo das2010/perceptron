@@ -30,6 +30,7 @@ import {
   type Schemas,
 } from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
+import { CostEstimate } from "./CostEstimate";
 
 type Proposal = ArchProposals["proposals"][number];
 
@@ -239,6 +240,9 @@ export function TrainPage() {
               />
             ))}
           </div>
+          {archspecId && dvId && (
+            <CostEstimate projectId={projectId} archspecId={archspecId} datasetVersionId={dvId} />
+          )}
         </Step>
       )}
 
