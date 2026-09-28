@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
@@ -27,6 +28,7 @@ from perceptron.api.routers import (
     system,
     wizard,
 )
+from perceptron.api.security import SecurityHeaders, validation_error_handler
 from perceptron.core.config import Settings, get_settings
 from perceptron.core.errors import AuthError, PerceptronError
 
@@ -60,8 +62,8 @@ def create_app(
     app = FastAPI(
         title="Perceptron Engine API",
         version=__version__,
-        openapi_url=f"{API_PREFIX}/openapi.json",
-        docs_url=f"{API_PREFIX}/docs",
+        openapi_url=f"{API_PREFIX}/openapi.json" if settings.api.docs else None,
+        docs_url=f"{API_PREFIX}/docs" if settings.api.docs else None,
         redoc_url=None,
         lifespan=lifespan,
     )
@@ -71,9 +73,11 @@ def create_app(
         CORSMiddleware,
         allow_origins=settings.api.cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["*"],
     )
+    app.add_middleware(SecurityHeaders, api_prefix=API_PREFIX)
+    app.add_exception_handler(RequestValidationError, validation_error_handler)
 
     expected = settings.api.token.get_secret_value() if settings.api.token else None
 

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import logging
 import threading
-import traceback
 from collections import deque
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -97,11 +96,8 @@ class JobManager:
         except Exception as e:
             logger.exception("job falló", extra={"job_id": job.id})
             job.status = "failed"
-            job.error = {
-                "type": type(e).__name__,
-                "message": str(e),
-                "traceback": traceback.format_exc()[-3000:],
-            }
+            # El traceback queda en el log (con job_id), no en la respuesta de la API (ASVS V7.4).
+            job.error = {"type": type(e).__name__, "message": str(e)[:2000]}
         finally:
             job.finished_at = utcnow()
             ctx.emit("finished", status=job.status)

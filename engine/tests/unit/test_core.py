@@ -158,3 +158,22 @@ def test_workspace_dir_is_absolute(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     s = Settings(workspace_dir=Path("rel") / "ws")
     assert s.workspace_dir.is_absolute()
     assert s.workspace_dir == Path.cwd() / "rel" / "ws"
+
+
+def test_logs_scrub_secrets_inside_messages_and_nested_extras() -> None:
+    from perceptron.core.logging import scrub
+
+    assert scrub("GET /api/v1/runs/r/stream?token=abc123&x=1") == (
+        "GET /api/v1/runs/r/stream?token=***&x=1"
+    )
+    assert scrub("Authorization: Bearer sk-live.123") == "Authorization: Bearer ***"
+    assert scrub("tokens=5 procesados") == "tokens=5 procesados"
+
+    def emit(logger: logging.Logger) -> None:
+        logger.info(
+            "ws %s", "/api/v1/jobs/j/ws?token=s3cr3t", extra={"request": {"password": "p4ss"}}
+        )
+
+    data = _capture(emit)
+    assert "s3cr3t" not in data["msg"]
+    assert data["request"] == {"password": "***"}
