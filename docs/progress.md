@@ -88,7 +88,7 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 |---|---|
 | 5. Mini-torneo de arquitecturas (RF-ARC-03) | ✅ `services.tournament`, `POST /projects/{id}/arch/tournament`, en `quickstart --llm` |
 | 6. Agente autónomo (RF-AGT-01..05, ADR-0021) | ✅ `agent/` (acciones con schema, límites, aprobaciones, bitácora, fallback); API `/agent/runs`, CLI `perceptron agent` |
-| 7. Aceptación con OpenAI (ADR-0023) y Ollama + golden tests | 🟡 OpenAI ✅ (tabla abajo); Ollama en CPU completa los UC solo vía fallback → modo compacto en curso |
+| 7. Aceptación con OpenAI (ADR-0023) y Ollama + golden tests | ✅ OpenAI y Ollama completan UC-01/04/09 sin fallback y sin fugas; golden OpenAI 5/5, Ollama 4/5 (estratega: fix de parámetros incompletos) |
 | 8. Benchmark O2 (3 datasets públicos) | ✅ O2 cumplido con OpenAI: brecha −0,8 % / 0 % / 0 % ([reporte](benchmarks/2026-09-27.md)) |
 
 **Aceptación real con OpenAI (`llm.yml`, 2026-09-27, perfil `openai`, L1):**
@@ -99,7 +99,7 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 | UC-04 defectos | accuracy 1,0 | > 0,8 | 2 / 7 | 8 | $0,11 | 0 |
 | UC-09 motores | accuracy 1,0 | > 0,8 | 1 / 4 | 6 | $0,06 | 0 |
 
-Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arquitecto con timeout del SDK (120 s) → subido a 600 s. Con Ollama (qwen3:4b, CPU del runner): los tres UC terminan dentro del presupuesto y sin fugas, pero cerrando por fallback tras la primera decisión (timeouts de 30 min por llamada); golden: informe y guía ✅.
+Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arquitecto con timeout del SDK (120 s) → subido a 600 s. Con Ollama (qwen3:4b en la CPU del runner, modo compacto): el agente completa los tres UC sin fallback, dentro del presupuesto y sin fugas — UC-01 ROC-AUC 0,929, UC-04 accuracy 1,0, UC-09 accuracy 1,0 (cierra solo con `finish`). Golden con Ollama: arquitecto, diagnosticador (detecta el sobreajuste), informe y guía ✅; el estratega omitía límites de rango, ahora completados con el catálogo antes de validar.
 
 **Aceptación 2b en cada PR (FakeLLMProvider):** guiones del agente sobre UC-01 que cubren camino feliz, feedback del validador, límites, aprobación, fallback a reglas, detención, que el agente nunca ve el test y la auditoría sin fugas en L1. **Aceptación real (§14):** `gh workflow run llm.yml` → matriz Claude/Ollama × UC-01/04/09, golden tests y (opcional) benchmark.
 

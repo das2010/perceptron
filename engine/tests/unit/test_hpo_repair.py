@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from perceptron.catalog.templates import tabular_template
 from perceptron.domain.enums import TaskType
-from perceptron.hpo.strategy import Budget, Objective, SearchParam
-from perceptron.llm.schemas import HPOProposal
+from perceptron.hpo.strategy import Budget, Objective
+from perceptron.llm.schemas import HPOProposal, ProposedParam
 from perceptron.services.llm_roles import HPOSpace
 
 
@@ -23,8 +23,9 @@ def test_repair_clamps_drops_and_bounds() -> None:
         strategy="tpe",
         pruner="median",
         search_space=[
-            SearchParam(name="lr", type="float", low=1e-9, high=10.0, log=True),
-            SearchParam(name="inventado", type="int", low=1, high=3),
+            ProposedParam(name="lr", type="float", low=1e-9, high=10.0, log=True),
+            ProposedParam(name="inventado", type="int", low=1, high=3),
+            ProposedParam(name="weight_decay", low=1.0),  # sin high ni tipo: se completa
         ],
         objectives=[Objective(metric="val_f1_inventada", direction="maximize")],
         max_trials=500,
@@ -34,10 +35,13 @@ def test_repair_clamps_drops_and_bounds() -> None:
     assert space.errors(proposal, budget)  # sin reparar: inválida
     fixed, notes = space.repair(proposal, budget)
     assert not space.errors(fixed, budget)
-    [p] = fixed.search_space
+    p = fixed.search_space[0]
     assert p.name == "lr" and p.low == lr.low and p.high == lr.high
     assert fixed.max_trials == 10 and fixed.objectives[0].metric == "val_loss"
-    assert len(notes) == 4 and "[Sistema:" in fixed.rationale
+    assert len(notes) == 5 and "[Sistema:" in fixed.rationale
+    wd = next(p for p in fixed.search_space if p.name == "weight_decay")
+    ref = space.tunable["weight_decay"]
+    assert wd.type == ref.type and wd.high == ref.high and wd.low == ref.high
 
 
 def test_repair_keeps_valid_proposals_untouched() -> None:
@@ -46,7 +50,7 @@ def test_repair_keeps_valid_proposals_untouched() -> None:
     proposal = HPOProposal(
         strategy="random",
         pruner="none",
-        search_space=[lr.model_copy(update={"default": None})],
+        search_space=[ProposedParam.model_validate({**lr.model_dump(), "default": None})],
         objectives=[Objective()],
         max_trials=5,
         rationale="ok",
