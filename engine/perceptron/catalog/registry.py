@@ -357,7 +357,12 @@ def _build_hf_text(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContex
     if ctx.meta:
         return m.FeatureStub(info.hidden_size)
     return m.HFTextEncoder(
-        info.model, bool(p["pretrained"]) and ctx.pretrained_allowed, t.pad_id, p["pooling"]
+        info.model,
+        bool(p["pretrained"]) and ctx.pretrained_allowed,
+        t.pad_id,
+        p["pooling"],
+        lora_r=int(p.get("lora_r") or 0),
+        lora_alpha=int(p.get("lora_alpha") or 16),
     )
 
 
@@ -710,6 +715,10 @@ BLOCKS: dict[str, BlockSpec] = {
                 "pretrained": _p("bool", True),
                 "pooling": _p("str", "cls", choices=["cls", "mean"]),
                 "freeze": _p("str", "none", description="none | until_epoch:N"),
+                "lora_r": _p(
+                    "int", 0, low=0, high=64, description="LoRA: rango (0 = fine-tuning completo)"
+                ),
+                "lora_alpha": _p("int", 16, low=1, high=128, description="LoRA: escala"),
             },
             modalities=_TXT,
             is_backbone=True,

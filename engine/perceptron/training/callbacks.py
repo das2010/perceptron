@@ -144,12 +144,21 @@ class ControlCallback(L.Callback):
 
 
 class FreezeBackboneCallback(L.Callback):
-    """Congela el backbone las primeras N épocas y luego lo descongela (RF-TRN-09)."""
+    """Congela el backbone las primeras N épocas y luego lo descongela (RF-TRN-09): todo junto
+    o, con `progressive`, un grupo de capas más por época empezando por las de salida."""
 
-    def __init__(self, epochs: int) -> None:
+    def __init__(self, epochs: int, *, progressive: bool = False) -> None:
         self.epochs = epochs
+        self.progressive = progressive
 
     def on_train_epoch_start(self, trainer: L.Trainer, pl_module: L.LightningModule) -> None:
         set_trainable = getattr(pl_module, "set_backbone_trainable", None)
-        if set_trainable is not None:
-            set_trainable(trainer.current_epoch >= self.epochs)
+        if set_trainable is None:
+            return
+        epoch = trainer.current_epoch
+        if epoch < self.epochs:
+            set_trainable(False)
+        elif self.progressive:
+            set_trainable(True, top_groups=epoch - self.epochs + 1)
+        else:
+            set_trainable(True)

@@ -284,7 +284,15 @@ class SequencePool(nn.Module):
 class HFTextEncoder(nn.Module):
     """Encoder de Hugging Face (lista curada) con pooling [CLS] o media enmascarada."""
 
-    def __init__(self, model: str, pretrained: bool, pad_id: int, pooling: str = "cls") -> None:
+    def __init__(
+        self,
+        model: str,
+        pretrained: bool,
+        pad_id: int,
+        pooling: str = "cls",
+        lora_r: int = 0,
+        lora_alpha: int = 16,
+    ) -> None:
         super().__init__()
         import transformers
 
@@ -295,6 +303,13 @@ class HFTextEncoder(nn.Module):
             if pretrained
             else auto.from_config(config.from_pretrained(model))
         )
+        self.uses_lora = lora_r > 0
+        if self.uses_lora:
+            # LoRA (RF-TRN-09): el encoder queda congelado y se entrenan matrices de rango bajo.
+            from peft import LoraConfig, get_peft_model
+
+            cfg = LoraConfig(r=lora_r, lora_alpha=lora_alpha, target_modules="all-linear")
+            body = get_peft_model(body, cfg)
         self.body: Any = body
         self.pad_id = pad_id
         self.pooling = pooling

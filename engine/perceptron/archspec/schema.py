@@ -113,6 +113,13 @@ class TrainingSpec(BaseModel):
         default=None, ge=1, description="Épocas mínimas antes de early stopping (None = 1/3)"
     )
     freeze_backbone_epochs: int = Field(default=0, ge=0)
+    unfreeze: Literal["all", "progressive"] = Field(
+        default="all",
+        description="Tras el congelado: todo junto o de a un grupo de capas por época (RF-TRN-09)",
+    )
+    backbone_lr_mult: float = Field(
+        default=1.0, gt=0, le=1, description="LR discriminativo: LR del backbone = LR × esto"
+    )
     oversample: bool = Field(default=False, description="Muestreo balanceado por clase (RF-TRN-10)")
     lr_finder: bool = Field(
         default=False, description="Barrido de LR antes de entrenar; usa el sugerido (RF-TRN-04)"
