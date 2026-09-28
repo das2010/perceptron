@@ -227,7 +227,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 
 | Entregable | Estado |
 |---|---|
-| Licencia firmada Ed25519 offline con topes y uso real (ADR-0035) | ✅ (falta el par de claves de Preteco) |
+| Licencia firmada Ed25519 offline con topes y uso real (ADR-0035) | ✅ (clave pública preteco-2026 empaquetada) |
 | Auditoría de licencias del runtime Python/JS/Rust y de los pesos en CI (ADR-0036) | ✅ |
 | Telemetría opt-in con vista previa, sin endpoint de fábrica | ✅ (D7: destino a definir) |
 | Actualización N → N+1 sin pérdida de proyectos (CI) | ✅ |

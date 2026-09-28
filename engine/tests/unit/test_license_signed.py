@@ -144,3 +144,11 @@ def test_license_api_and_cli(tmp_path: Path) -> None:
             assert (settings.workspace_dir / "license.json").is_file()
     finally:
         ctx.close()
+
+
+def test_bundled_preteco_key_loads() -> None:
+    from perceptron.licensing.signed import _load_public, bundled_keys
+
+    keys = bundled_keys()
+    assert "preteco-2026" in keys
+    _load_public(keys["preteco-2026"])  # PEM Ed25519 válida

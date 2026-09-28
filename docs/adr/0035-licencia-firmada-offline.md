@@ -18,5 +18,5 @@
     instalación) y marca los excedidos (`/admin/license`), sin bloquear en v1.
   - Instalación por la UI (Configuración → Licencia) o `PUT /system/license` (Admin del
     servidor en el Team Server); se rechaza si la firma o la vigencia no son válidas.
-- Consecuencias: pendiente de Preteco generar su par de claves (`perceptron license keygen`) y
-  agregar la pública al paquete antes del primer release comercial.
+- Consecuencias: clave pública de Preteco `preteco-2026` empaquetada (2026-09-28); la privada
+  la custodia Preteco fuera del repositorio.
