@@ -300,7 +300,10 @@
     "clearCompare": "Quitar selección",
     "compareMetric": "Métrica de las curvas",
     "compareHint": "Las filas resaltadas son hiperparámetros que difieren entre los runs.",
-    "compareSelect": "Marcá dos o más runs para compararlos."
+    "compareSelect": "Marcá dos o más runs para compararlos.",
+    "archDiff": "Diferencias de arquitectura",
+    "pipelineDiff": "Diferencias de pipeline",
+    "sameConfig": "Los runs comparten arquitectura y pipeline: solo cambian los hiperparámetros."
   },
   "status": {
     "queued": "En cola",

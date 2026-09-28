@@ -819,6 +819,22 @@ export function useRunHistory(runId: string) {
   return useQuery({ queryKey: ["runs", runId, "history"], queryFn: () => fetchRunHistory(runId) });
 }
 
+export type ConfigDiff = Schemas["ConfigDiff"];
+
+/** Qué cambia entre runs en ArchSpec y pipeline (RF-TRK-04). */
+export function useCompareConfigs(runIds: string[]) {
+  return useQuery({
+    queryKey: ["runs", "compare", "config", ...runIds] as const,
+    enabled: runIds.length > 1,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/compare/config", { body: { run_ids: runIds } }),
+      ) as ConfigDiff,
+  });
+}
+
 /** Historias por época de varios runs (comparación, SPEC §11.2). */
 export function useRunHistories(runIds: string[]) {
   return useQueries({

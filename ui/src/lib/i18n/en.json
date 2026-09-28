@@ -300,7 +300,10 @@
     "clearCompare": "Clear selection",
     "compareMetric": "Curve metric",
     "compareHint": "Highlighted rows are hyperparameters that differ between runs.",
-    "compareSelect": "Select two or more runs to compare them."
+    "compareSelect": "Select two or more runs to compare them.",
+    "archDiff": "Architecture differences",
+    "pipelineDiff": "Pipeline differences",
+    "sameConfig": "The runs share architecture and pipeline: only hyperparameters change."
   },
   "status": {
     "queued": "Queued",

@@ -27,6 +27,7 @@ from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.sandbox.expert import starter_code
 from perceptron.sandbox.process import CodeCheck
 from perceptron.sandbox.static import StaticReport, check_source
+from perceptron.services.compare import ConfigDiff, config_diff
 from perceptron.services.workflow import Workflow
 
 router = APIRouter()
@@ -551,6 +552,15 @@ def compare_runs(body: CompareBody, ctx: Ctx) -> list[dict[str, Any]]:
         }
         for r in runs
     ]
+
+
+@router.post("/runs/compare/config", tags=["runs"], operation_id="compareRunConfigs")
+def compare_run_configs(body: CompareBody, ctx: Ctx) -> ConfigDiff:
+    """Qué cambia entre los runs en su ArchSpec y en su pipeline (RF-TRK-04)."""
+    runs = [ctx.repo(Run).get(r) for r in body.run_ids]
+    archspecs = [ctx.repo(ArchSpecRecord).get(r.archspec_id).spec for r in runs]
+    pipelines = [ctx.repo(Pipeline).get(r.pipeline_id).graph for r in runs]
+    return config_diff([r.id for r in runs], archspecs, pipelines)
 
 
 @router.websocket("/runs/{run_id}/live")

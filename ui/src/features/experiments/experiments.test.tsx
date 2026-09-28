@@ -33,6 +33,13 @@ describe("comparación de runs", () => {
       "GET /api/v1/projects/prj_1/runs": () => [run(1, 0.001), run(2, 0.01)],
       "GET /api/v1/runs/run-t001/history": () => [{ epoch: 0, val_loss: 0.7 }],
       "GET /api/v1/runs/run-t002/history": () => [{ epoch: 0, val_loss: 0.6 }],
+      "POST /api/v1/runs/compare/config": () => ({
+        run_ids: ["run-t001", "run-t002"],
+        same_archspec: false,
+        same_pipeline: true,
+        archspec: [{ path: "nodes[enc].params.hidden", values: [64, 128] }],
+        pipeline: [],
+      }),
     });
     render(
       <Providers client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -47,6 +54,12 @@ describe("comparación de runs", () => {
     const lrRow = within(card).getByText("lr").closest("tr");
     expect(lrRow).toHaveClass("bg-canvas"); // difiere entre runs
     expect(within(card).getByText("dropout").closest("tr")).not.toHaveClass("bg-canvas");
+    // RF-TRK-04: diff de la arquitectura (el pipeline es igual y no se muestra).
+    expect(await within(card).findByText("Diferencias de arquitectura")).toBeInTheDocument();
+    const hidden = within(card).getByText("nodes[enc].params.hidden").closest("tr");
+    expect(hidden).toHaveTextContent("64");
+    expect(hidden).toHaveTextContent("128");
+    expect(within(card).queryByText("Diferencias de pipeline")).not.toBeInTheDocument();
     await userEvent.click(within(card).getByRole("button", { name: "Quitar selección" }));
     expect(screen.queryByText("Comparación de 2 runs")).not.toBeInTheDocument();
   });
