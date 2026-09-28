@@ -189,6 +189,18 @@ jobs:
         env:
           PERCEPTRON_ADMIN_EMAIL: admin@preteco.test
           PERCEPTRON_ADMIN_PASSWORD: clave-admin-de-compose
+      - name: Backup, borrado total y restauración (RF-SRV-08)
+        run: |
+          sh server/deploy/backup.sh "$RUNNER_TEMP/backups"
+          bk=$(ls -d "$RUNNER_TEMP"/backups/perceptron-*)
+          ls -la "$bk"
+          docker compose -f server/deploy/compose.yaml down -v
+          docker compose -f server/deploy/compose.yaml up -d --wait --wait-timeout 300
+          sh server/deploy/restore.sh "$bk"
+          python3 server/deploy/smoke_study.py http://localhost:8080 --expect-project "Smoke cola"
+        env:
+          PERCEPTRON_ADMIN_EMAIL: admin@preteco.test
+          PERCEPTRON_ADMIN_PASSWORD: clave-admin-de-compose
       - name: Logs
         if: failure()
         run: docker compose -f server/deploy/compose.yaml logs --no-color | tail -200
@@ -238,6 +250,22 @@ jobs:
             ui/playwright-report
             ui/test-results
           if-no-files-found: ignore
+
+  helm:
+    name: helm (chart del Team Server)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Lint, render y validación de esquemas (kubeconform)
+        run: |
+          chart=server/deploy/helm/perceptron
+          helm lint "$chart" -f server/deploy/helm/ci-values.yaml --strict
+          helm template ci "$chart" -f server/deploy/helm/ci-values.yaml > rendered.yaml
+          helm template min "$chart" --set secrets.databaseUrl=x,secrets.secretKey=x,secrets.masterKey=x > minimal.yaml
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+          ./kubeconform -strict -summary rendered.yaml minimal.yaml
+          grep -q "nvidia.com/gpu" rendered.yaml
 
   contract:
     name: OpenAPI ↔ TypeScript

@@ -22,6 +22,7 @@ from perceptron.core.ids import IdPrefix, new_id
 from perceptron.domain.enums import Role
 from perceptron.domain.models import Membership, Project, User, Workspace, utcnow
 from perceptron_server.db import AccountRow, RefreshTokenRow
+from perceptron_server.oidc import Identity
 from perceptron_server.security import (
     hash_password,
     issue_access,
@@ -30,7 +31,7 @@ from perceptron_server.security import (
     token_hash,
     verify_password,
 )
-from perceptron_server.settings import ServerSettings
+from perceptron_server.settings import OIDCProvider, ServerSettings
 
 ROLE_RANK: dict[Role, int] = {Role.VIEWER: 1, Role.EDITOR: 2, Role.ADMIN: 3}
 _EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -387,6 +388,10 @@ class Accounts:
             return existing[0]
         return self.workspaces.add(Workspace(name=self.settings.default_workspace))
 
+    def workspace_named(self, name: str) -> Workspace:
+        found = self.workspaces.list(filters={"name": name}, limit=1)
+        return found[0] if found else self.workspaces.add(Workspace(name=name))
+
     def create_workspace(self, name: str) -> Workspace:
         if self.workspaces.list(filters={"name": name}, limit=1):
             raise ConflictError(f"ya existe el workspace {name}")
@@ -440,3 +445,41 @@ class Accounts:
         )
         self.grant(user.id, workspace.id, Role.ADMIN)
         return user
+
+
+def sso_login(
+    accounts: Accounts, provider_name: str, provider: OIDCProvider, identity: Identity
+) -> User:
+    """Usuario del SSO: se vincula por email (verificado por el IdP) o se crea.
+
+    Los grupos del token dan roles según `role_mapping` en cada login (no se quitan roles
+    asignados a mano). Si ningún grupo aplica, un usuario nuevo recibe `default_role` en el
+    workspace por defecto.
+    """
+    account = accounts.account_by_email(identity.email)
+    if account is None:
+        if not provider.auto_create:
+            raise AuthError("tu usuario no está habilitado en Perceptron; pedíselo al Admin")
+        user = accounts.create_user(identity.email, identity.name, None)
+        user = accounts.users.update(
+            user.model_copy(update={"auth_provider": f"oidc:{provider_name}"})
+        )
+        is_new = True
+    else:
+        user = accounts.users.get(account.user_id)
+        if not user.is_active:
+            raise AuthError("tu usuario está desactivado")
+        is_new = False
+    granted = False
+    for rule in provider.role_mapping:
+        if rule.group in identity.groups:
+            ws = accounts.workspace_named(rule.workspace)
+            accounts.grant(user.id, ws.id, rule.role, rule.project_id)
+            granted = True
+    if is_new and not granted and provider.default_role is not None:
+        ws = accounts.ensure_default_workspace()
+        accounts.grant(user.id, ws.id, provider.default_role)
+    with accounts.ctx.db.session() as s:
+        row = _required(s.get(AccountRow, user.id))
+        row.last_login_at = utcnow()
+    return user

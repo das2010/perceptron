@@ -192,7 +192,15 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Progreso en vivo de jobs remotos por relay pub/sub (mismos WS que los jobs locales) | ✅ |
 | Cuotas de estudios en curso por usuario y workspace; vista de la cola con hardware de los workers | ✅ |
 | MLflow server (PostgreSQL + artefactos) e imagen GPU (`TORCH_VARIANT`) en Compose | ✅ |
-| Sync desktop ↔ servidor y envío de runs desde el desktop, S3, OIDC/Entra ID, Helm, backups (5c) | ⬜ |
+
+## Capa 5c — SSO, Helm, backups y sync
+
+| Entregable | Estado |
+|---|---|
+| SSO OIDC (Entra ID, Google Workspace, genérico) con PKCE, mapeo de grupos a roles y botones en el login (ADR-0032) | ✅ (CI con IdP simulado; falta Entra ID real) |
+| Helm chart v1 (servidor, workers CPU/GPU, Valkey, MLflow) validado con kubeconform | ✅ |
+| Backups y restauración (PostgreSQL + volúmenes) probados de punta a punta en CI | ✅ |
+| Sync desktop ↔ servidor y envío de runs desde el desktop | ⬜ |
 
 ## Requisitos funcionales
 
@@ -298,14 +306,14 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-MON-05 |  | 6 | Políticas de reentrenamiento (RetrainPolicy): disparadores por drift, calendario… | ⬜ pendiente |
 | RF-MON-06 |  | 6 | Champion/challenger: el nuevo modelo se evalúa contra el productivo en un holdout… | ⬜ pendiente |
 | RF-MON-07 |  | 6 | Versionado de datasets: snapshots inmutables por manifiesto de hashes… | ⬜ pendiente |
-| RF-SRV-01 |  | 5 | Autenticación: usuarios locales (hash Argon2) y SSO OIDC (Entra ID, Google Workspace,… | 🟡 usuarios locales con Argon2id, sesiones JWT con refresco rotativo, CSRF y bloqueo; OIDC en la 5c |
+| RF-SRV-01 |  | 5 | Autenticación: usuarios locales (hash Argon2) y SSO OIDC (Entra ID, Google Workspace,… | ✅ locales (Argon2id, JWT con refresco rotativo, CSRF, bloqueo) y SSO OIDC con grupos → roles; validación con Entra ID real pendiente de tenant |
 | RF-SRV-02 |  | 5 | RBAC por workspace y proyecto (§3.2). | ✅ Admin/Editor/Viewer por workspace y proyecto sobre todas las operaciones (HTTP y WS) |
 | RF-SRV-03 |  | 5 | Sincronización desktop ↔ servidor para proyectos de equipo: metadata (PostgreSQL),… | ⬜ pendiente |
 | RF-SRV-04 |  | 5 | Cola de jobs con prioridades y cuotas por usuario/workspace; los desktops pueden… | 🟡 cola Celery/Valkey con colas gpu/cpu, cuotas y vista de la cola; envío desde el desktop en la 5c |
 | RF-SRV-05 |  | 5 | Modo estación de trabajo: la UI web del servidor ofrece la misma funcionalidad que el… | ✅ UI web en el mismo origen con login; subida de archivos y fuentes del servidor confinadas |
 | RF-SRV-06 |  | 5 | Consola de administración: usuarios, grupos, SSO, proveedores LLM y claves, políticas… | 🟡 usuarios, roles y auditoría; SSO, cuotas, almacenamiento y workers en 5b/5c |
 | RF-SRV-07 |  | 5 | Auditoría: login, acceso a datasets, exportaciones, llamadas LLM, cambios de permisos. | ✅ login, escrituras, denegaciones, lecturas de datos, descargas y cambios de roles; LLM en LLMCall |
-| RF-SRV-08 |  | 5 | Backups: guía y scripts para PostgreSQL y object storage. | ⬜ pendiente |
+| RF-SRV-08 |  | 5 | Backups: guía y scripts para PostgreSQL y object storage. | ✅ backup.sh/restore.sh (PostgreSQL + volúmenes) verificados en CI; guía para Kubernetes |
 | RF-LIC-01 |  | 0 | Módulo licensing con interfaz LicenseProvider y una implementación DevLicenseProvider… | ✅ `LicenseProvider` + `DevLicenseProvider` |
 | RF-LIC-02 |  | 0 | Todas las funciones premium consultan features.is_enabled("<feature_key>"); claves de… | ✅ `features.yaml` + `features.is_enabled()` |
 | RF-LIC-03 |  | 7 | La arquitectura debe permitir más adelante: licencia por asiento, por servidor, por… | 🟡 arquitectura lista; sin enforcement en v1 (por diseño) |

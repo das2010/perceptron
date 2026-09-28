@@ -713,7 +713,10 @@
     "login": "Ingresar",
     "logout": "Cerrar sesión",
     "invalid": "Email o contraseña incorrectos.",
-    "locked": "La cuenta quedó bloqueada unos minutos por intentos fallidos."
+    "locked": "La cuenta quedó bloqueada unos minutos por intentos fallidos.",
+    "ssoWith": "Ingresar con {{provider}}",
+    "or": "o con tu usuario del servidor",
+    "ssoFailed": "No se pudo iniciar sesión con el SSO. Probá de nuevo o consultá al Admin."
   },
   "roles": {
     "viewer": "Viewer",

@@ -713,7 +713,10 @@
     "login": "Sign in",
     "logout": "Sign out",
     "invalid": "Wrong email or password.",
-    "locked": "The account is locked for a few minutes after failed attempts."
+    "locked": "The account is locked for a few minutes after failed attempts.",
+    "ssoWith": "Sign in with {{provider}}",
+    "or": "or with your server account",
+    "ssoFailed": "Single sign-on failed. Try again or ask your Admin."
   },
   "roles": {
     "viewer": "Viewer",

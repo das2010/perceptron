@@ -1,0 +1,17 @@
+{{- if not .Values.workspace.existingClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "perceptron.fullname" . }}-workspace
+  labels: {{- include "perceptron.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: [{{ .Values.workspace.accessMode }}]
+  {{- with .Values.workspace.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.workspace.size }}
+{{- end }}
