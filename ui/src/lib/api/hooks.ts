@@ -52,7 +52,11 @@ interface ApiResult<T> {
 
 export function unwrap<T>({ data, error, response }: ApiResult<T>): T {
   if (error !== undefined || data === undefined) {
-    const body = (error ?? {}) as { code?: string; message?: string; details?: Record<string, unknown> };
+    const body = (error ?? {}) as {
+      code?: string;
+      message?: string;
+      details?: Record<string, unknown>;
+    };
     throw new ApiError(
       body.message ?? `HTTP ${response.status}`,
       body.code ?? "http_error",
@@ -84,8 +88,7 @@ export const keys = {
 export function useProjects() {
   return useQuery({
     queryKey: keys.projects,
-    queryFn: async () =>
-      unwrap(await (await getApiClient()).GET("/api/v1/projects")) as Project[],
+    queryFn: async () => unwrap(await (await getApiClient()).GET("/api/v1/projects")) as Project[],
   });
 }
 
@@ -94,7 +97,9 @@ export function useProject(projectId: string) {
     queryKey: keys.project(projectId),
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/projects/{project_id}", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}", {
           params: { path: { project_id: projectId } },
         }),
       ) as Project,
@@ -117,7 +122,9 @@ export function useDatasets(projectId: string) {
     queryKey: keys.datasets(projectId),
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/projects/{project_id}/datasets", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/datasets", {
           params: { path: { project_id: projectId } },
         }),
       ) as DatasetVersion[],
@@ -175,7 +182,9 @@ export function useIngest(projectId: string) {
   return useMutation({
     mutationFn: async ({ sourceId, target }: { sourceId: string; target?: string | null }) =>
       unwrap(
-        await (await getApiClient()).POST("/api/v1/sources/{source_id}/ingest", {
+        await (
+          await getApiClient()
+        ).POST("/api/v1/sources/{source_id}/ingest", {
           params: { path: { source_id: sourceId } },
           body: { target: target || null },
         }),
@@ -190,7 +199,9 @@ export function useProposePipeline(projectId: string) {
   return useMutation({
     mutationFn: async (datasetVersionId: string) =>
       unwrap(
-        await (await getApiClient()).POST("/api/v1/projects/{project_id}/pipelines/propose", {
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/pipelines/propose", {
           params: { path: { project_id: projectId } },
           body: { dataset_version_id: datasetVersionId },
         }),
@@ -202,7 +213,9 @@ export function useProposeArchitecture(projectId: string) {
   return useMutation({
     mutationFn: async (body: Schemas["ProposeArchBody"]) =>
       unwrap(
-        await (await getApiClient()).POST("/api/v1/projects/{project_id}/arch/propose", {
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/arch/propose", {
           params: { path: { project_id: projectId } },
           body,
         }),
@@ -214,7 +227,9 @@ export function useHpoStrategy(projectId: string) {
   return useMutation({
     mutationFn: async (body: Schemas["StrategyBody"]) =>
       unwrap(
-        await (await getApiClient()).POST("/api/v1/projects/{project_id}/hpo/strategy", {
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/hpo/strategy", {
           params: { path: { project_id: projectId } },
           body,
         }),
@@ -227,7 +242,9 @@ export function useCreateStudy(projectId: string) {
   return useMutation({
     mutationFn: async (body: Schemas["StudyCreate"]) =>
       unwrap(
-        await (await getApiClient()).POST("/api/v1/projects/{project_id}/studies", {
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/studies", {
           params: { path: { project_id: projectId } },
           body,
         }),
@@ -246,7 +263,9 @@ export function useJob(jobId: string | undefined) {
     },
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/jobs/{job_id}", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/jobs/{job_id}", {
           params: { path: { job_id: jobId ?? "" } },
         }),
       ),
@@ -259,7 +278,9 @@ export function useRuns(projectId: string, refetchMs?: number) {
     refetchInterval: refetchMs ?? false,
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/projects/{project_id}/runs", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/runs", {
           params: { path: { project_id: projectId } },
         }),
       ) as Run[],
@@ -271,7 +292,9 @@ export function useRun(runId: string) {
     queryKey: keys.run(runId),
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/runs/{run_id}", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/runs/{run_id}", {
           params: { path: { run_id: runId } },
         }),
       ) as Run,
@@ -284,7 +307,9 @@ export function useEvaluation(runId: string) {
     retry: false,
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/runs/{run_id}/evaluation", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/runs/{run_id}/evaluation", {
           params: { path: { run_id: runId } },
         }),
       ),
@@ -296,7 +321,9 @@ export function useEvaluate(runId: string) {
   return useMutation({
     mutationFn: async () =>
       unwrap(
-        await (await getApiClient()).POST("/api/v1/runs/{run_id}/evaluate", {
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/evaluate", {
           params: { path: { run_id: runId } },
         }),
       ),
@@ -309,7 +336,9 @@ export function useRegister(runId: string, projectId: string) {
   return useMutation({
     mutationFn: async () =>
       unwrap(
-        await (await getApiClient()).POST("/api/v1/runs/{run_id}/register", {
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/register", {
           params: { path: { run_id: runId } },
         }),
       ) as ModelVersion,
@@ -324,7 +353,9 @@ export function useDiagnosis(runId: string, enabled: boolean) {
     retry: false,
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/runs/{run_id}/diagnosis", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/runs/{run_id}/diagnosis", {
           params: { path: { run_id: runId } },
         }),
       ),
@@ -335,7 +366,9 @@ export function useReport(runId: string) {
   return useMutation({
     mutationFn: async () =>
       unwrap(
-        await (await getApiClient()).POST("/api/v1/runs/{run_id}/report", {
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/report", {
           params: { path: { run_id: runId } },
           body: { mode: "auto", language: "español" },
         }),
@@ -348,7 +381,9 @@ export function useModels(projectId: string) {
     queryKey: keys.models(projectId),
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/projects/{project_id}/models", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/models", {
           params: { path: { project_id: projectId } },
         }),
       ) as ModelVersion[],
@@ -377,7 +412,9 @@ export function useSaveProvider() {
   return useMutation({
     mutationFn: async ({ name, body }: { name: string; body: Schemas["ProviderUpdate"] }) =>
       unwrap(
-        await (await getApiClient()).PUT("/api/v1/llm/providers/{name}", {
+        await (
+          await getApiClient()
+        ).PUT("/api/v1/llm/providers/{name}", {
           params: { path: { name } },
           body,
         }),
@@ -398,7 +435,9 @@ export function useSetActiveProfile() {
   return useMutation({
     mutationFn: async (active: string) =>
       unwrap(
-        await (await getApiClient()).PUT("/api/v1/llm/profiles", { body: { active, profiles: {} } }),
+        await (
+          await getApiClient()
+        ).PUT("/api/v1/llm/profiles", { body: { active, profiles: {} } }),
       ),
     onSuccess: (data) => qc.setQueryData(keys.llmProfiles, data),
   });
@@ -408,7 +447,9 @@ export function useTestLlm() {
   return useMutation({
     mutationFn: async (projectId?: string) =>
       unwrap(
-        await (await getApiClient()).POST("/api/v1/llm/test", {
+        await (
+          await getApiClient()
+        ).POST("/api/v1/llm/test", {
           body: { project_id: projectId ?? null, purpose: "copilot" },
         }),
       ),
@@ -420,7 +461,9 @@ export function useAudit(projectId: string) {
     queryKey: keys.audit(projectId),
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/llm/audit", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/llm/audit", {
           params: { query: { project: projectId, limit: 200 } },
         }),
       ) as LLMCall[],

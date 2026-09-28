@@ -1,5 +1,12 @@
 import { Link, Outlet } from "@tanstack/react-router";
-import { FolderKanban, Home, PanelRightClose, PanelRightOpen, Settings, Sparkles } from "lucide-react";
+import {
+  FolderKanban,
+  Home,
+  PanelRightClose,
+  PanelRightOpen,
+  Settings,
+  Sparkles,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui";
@@ -60,7 +67,10 @@ export function Layout() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-line bg-card px-4 py-2">
-        <Link to="/" className="rounded-full bg-pt-dark px-4 py-1 text-lg font-semibold text-pt-lime">
+        <Link
+          to="/"
+          className="rounded-full bg-pt-dark px-4 py-1 text-lg font-semibold text-pt-lime"
+        >
           {t("app.name")}
         </Link>
         <div className="flex items-center gap-3 text-sm">
@@ -99,12 +109,19 @@ export function Layout() {
             aria-pressed={copilotOpen}
             aria-label={t("copilot.toggle")}
           >
-            {copilotOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+            {copilotOpen ? (
+              <PanelRightClose className="h-4 w-4" />
+            ) : (
+              <PanelRightOpen className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
-        <nav aria-label={t("nav.main")} className="w-60 shrink-0 overflow-y-auto border-r border-line bg-card p-3">
+        <nav
+          aria-label={t("nav.main")}
+          className="w-60 shrink-0 overflow-y-auto border-r border-line bg-card p-3"
+        >
           <ul className="space-y-1">
             <li>
               <Link to="/" className={navLink} activeOptions={{ exact: true }}>

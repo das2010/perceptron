@@ -25,5 +25,6 @@
 | [0021](0021-salidas-estructuradas-y-reintentos.md) | Salidas estructuradas validadas con reintento y fallback | aceptado |
 | [0022](0022-pii-sin-modelos-gpl.md) | Enmascarado de PII en L2 sin modelos GPL | aceptado |
 | [0023](0023-aceptacion-con-openai.md) | Aceptación de la Capa 2 también con OpenAI | aceptado |
+| [0024](0024-stack-ui.md) | Stack de la UI (Capa 3) | aceptado |
 
 Plantilla: SPEC §18.3.

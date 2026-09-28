@@ -37,7 +37,11 @@ const overviewRoute = createRoute({
   path: "/",
   component: OverviewPage,
 });
-const dataRoute = createRoute({ getParentRoute: () => projectRoute, path: "data", component: DataPage });
+const dataRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "data",
+  component: DataPage,
+});
 const trainRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "train",

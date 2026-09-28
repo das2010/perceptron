@@ -24,7 +24,13 @@ import { formatDate } from "@/lib/format";
 
 const PRIVACY = ["L0", "L1", "L2", "L3"] as const;
 
-function NewProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+function NewProjectDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const create = useCreateProject();
@@ -55,7 +61,10 @@ function NewProjectDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
           <Textarea value={goal} onChange={(e) => setGoal(e.target.value)} />
         </Field>
         <Field label={t("project.privacy")} hint={t(`privacy.${privacy}`)}>
-          <Select value={privacy} onChange={(e) => setPrivacy(e.target.value as (typeof PRIVACY)[number])}>
+          <Select
+            value={privacy}
+            onChange={(e) => setPrivacy(e.target.value as (typeof PRIVACY)[number])}
+          >
             {PRIVACY.map((p) => (
               <option key={p} value={p}>
                 {p}
@@ -138,7 +147,9 @@ export function HomePage() {
                 {p.modalities?.map((m) => (
                   <Badge key={m}>{t(`modality.${m}`)}</Badge>
                 ))}
-                <span className="text-xs text-muted">{formatDate(p.updated_at, i18n.language)}</span>
+                <span className="text-xs text-muted">
+                  {formatDate(p.updated_at, i18n.language)}
+                </span>
               </div>
             </Link>
           </li>

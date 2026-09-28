@@ -1,0 +1,13 @@
+# ADR-0024: Stack de la UI (Capa 3)
+- Estado: aceptado
+- Fecha: 2026-09-28
+- Contexto: SPEC §5.2 fija React 19 + TS + Vite, TanStack Router/Query, Zustand, shadcn/ui (Radix) + Tailwind con tokens Preteco, React Flow, ECharts, Monaco, React Hook Form + Zod, i18next y Playwright. La Capa 0 dejó la UI con CSS Modules y sin router.
+- Decisión:
+  - Tailwind v4 (`@tailwindcss/vite`) sobre los tokens existentes de `tokens.css`, con alias semánticos en `@theme inline` (`bg-card`, `text-ink`, `border-line`, `bg-primary`, familia `copilot` para todo lo que viene del LLM) para no pisar las variables que cambian con el tema.
+  - Componentes estilo shadcn/ui escritos en el repo (`components/ui`) sobre Radix (`dialog`, `tabs`, `tooltip`, `slot`) + `class-variance-authority` + `tailwind-merge`; íconos `lucide-react`.
+  - TanStack Router con rutas en código (sin generador); Zustand solo para estado de UI; datos del Engine siempre por TanStack Query sobre el cliente generado de OpenAPI.
+  - Apache ECharts modular (`echarts/core`) para curvas en vivo, matrices y barras.
+  - E2E con Playwright contra el Engine real (`perceptron serve`) y Vite, en un job de CI Linux.
+  - Licencias: MIT (React, TanStack, Zustand, Radix, cva, clsx, tailwind-merge, Tailwind, RHF, Zod), ISC (lucide), Apache-2.0 (ECharts, Playwright).
+- Consecuencias: el frontend se valida también localmente (node/pnpm), a diferencia del Engine. React Flow y Monaco se agregan en la 3b, con los editores. El bundle inicial supera 1 MB por ECharts: se dividirá por ruta cuando entren los editores.
+- Alternativas consideradas: mantener CSS Modules (contradice §5.2); chart.js/recharts (el SPEC elige ECharts por rendimiento en vivo).

@@ -38,9 +38,7 @@ const button = cva(
   },
 );
 
-export interface ButtonProps
-  extends ComponentProps<"button">,
-    VariantProps<typeof button> {
+export interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof button> {
   asChild?: boolean;
   loading?: boolean;
 }
@@ -72,7 +70,10 @@ export function Button({
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("rounded-pt border border-line bg-card p-5 shadow-sm", className)} {...props} />
+    <div
+      className={cn("rounded-pt border border-line bg-card p-5 shadow-sm", className)}
+      {...props}
+    />
   );
 }
 
@@ -152,7 +153,13 @@ export function Spinner({ label }: { label?: string }) {
 export function ErrorNote({ error }: { error: unknown }) {
   const { t } = useTranslation();
   if (!error) return null;
-  const message = error instanceof Error ? error.message : t("common.error");
+  const status = (error as { status?: number }).status;
+  const offline = error instanceof TypeError || status === 502 || status === 503 || status === 504;
+  const message = offline
+    ? t("engine.error")
+    : error instanceof Error
+      ? error.message
+      : t("common.error");
   return (
     <p role="alert" className="rounded-pt border border-bad p-3 text-sm text-bad">
       {message}
@@ -161,7 +168,11 @@ export function ErrorNote({ error }: { error: unknown }) {
 }
 
 export function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="rounded-pt border border-dashed border-line p-6 text-center text-sm text-muted">{children}</p>;
+  return (
+    <p className="rounded-pt border border-dashed border-line p-6 text-center text-sm text-muted">
+      {children}
+    </p>
+  );
 }
 
 // ---------------------------------------------------------------- formularios
@@ -212,7 +223,10 @@ export function Table({ className, ...props }: ComponentProps<"table">) {
 export function Th({ className, ...props }: ComponentProps<"th">) {
   return (
     <th
-      className={cn("border-b border-line px-3 py-2 text-left text-xs font-semibold uppercase text-muted", className)}
+      className={cn(
+        "border-b border-line px-3 py-2 text-left text-xs font-semibold uppercase text-muted",
+        className,
+      )}
       {...props}
     />
   );
@@ -227,7 +241,12 @@ export function Td({ className, ...props }: ComponentProps<"td">) {
 export const Tabs = TabsPrimitive.Root;
 
 export function TabsList({ className, ...props }: ComponentProps<typeof TabsPrimitive.List>) {
-  return <TabsPrimitive.List className={cn("mb-4 flex gap-1 border-b border-line", className)} {...props} />;
+  return (
+    <TabsPrimitive.List
+      className={cn("mb-4 flex gap-1 border-b border-line", className)}
+      {...props}
+    />
+  );
 }
 
 export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsPrimitive.Trigger>) {

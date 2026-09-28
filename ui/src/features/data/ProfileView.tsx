@@ -15,7 +15,7 @@ export function ProfileView({ datasetVersionId }: { datasetVersionId: string }) 
   const { t, i18n } = useTranslation();
   const { data: card, isPending, error } = useProfile(datasetVersionId);
 
-  const classes = card?.target?.classes ?? [];
+  const classes = useMemo(() => card?.target?.classes ?? [], [card]);
   const option = useMemo(
     () => ({
       xAxis: { type: "category", data: classes.map((c) => c.value) },
@@ -94,7 +94,9 @@ export function ProfileView({ datasetVersionId }: { datasetVersionId: string }) 
           <EChart option={option} height={220} label={t("profile.classes")} />
           {card.target?.imbalance_ratio != null && (
             <p className="text-xs text-muted">
-              {t("profile.imbalance", { ratio: formatNumber(card.target.imbalance_ratio, i18n.language, 2) })}
+              {t("profile.imbalance", {
+                ratio: formatNumber(card.target.imbalance_ratio, i18n.language, 2),
+              })}
             </p>
           )}
         </Card>
@@ -127,7 +129,10 @@ export function ProfileView({ datasetVersionId }: { datasetVersionId: string }) 
                           std: formatNumber(c.numeric.std, i18n.language, 3),
                         })
                       : c.categorical
-                        ? c.categorical.top.map((x) => x.value).slice(0, 4).join(", ")
+                        ? c.categorical.top
+                            .map((x) => x.value)
+                            .slice(0, 4)
+                            .join(", ")
                         : ""}
                   </Td>
                 </tr>

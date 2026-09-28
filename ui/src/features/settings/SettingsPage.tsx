@@ -38,7 +38,12 @@ function KeyForm({ provider }: { provider: ProviderView }) {
         save.mutate(
           {
             name: provider.name,
-            body: { kind: provider.kind, base_url: provider.base_url, api_key_ref: provider.api_key_ref, api_key: key },
+            body: {
+              kind: provider.kind,
+              base_url: provider.base_url,
+              api_key_ref: provider.api_key_ref,
+              api_key: key,
+            },
           },
           { onSuccess: () => setKey("") },
         );
@@ -76,7 +81,10 @@ function LlmSettings() {
         {profiles.data && (
           <div className="flex flex-wrap items-end gap-3">
             <Field label={t("settings.llm.active")} hint={t("settings.llm.activeHint")}>
-              <Select value={profiles.data.active} onChange={(e) => setActive.mutate(e.target.value)}>
+              <Select
+                value={profiles.data.active}
+                onChange={(e) => setActive.mutate(e.target.value)}
+              >
                 {Object.keys(profiles.data.profiles).map((name) => (
                   <option key={name} value={name}>
                     {name}
@@ -92,7 +100,11 @@ function LlmSettings() {
         {test.data && (
           <p className="mt-3 text-sm" role="status">
             {test.data.ok
-              ? t("settings.llm.testOk", { provider: test.data.provider, model: test.data.model, seconds: test.data.latency_s })
+              ? t("settings.llm.testOk", {
+                  provider: test.data.provider,
+                  model: test.data.model,
+                  seconds: test.data.latency_s,
+                })
               : t("settings.llm.testFail", { error: test.data.error })}
           </p>
         )}

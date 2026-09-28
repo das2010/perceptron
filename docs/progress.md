@@ -103,6 +103,16 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 
 **Aceptación 2b en cada PR (FakeLLMProvider):** guiones del agente sobre UC-01 que cubren camino feliz, feedback del validador, límites, aprobación, fallback a reglas, detención, que el agente nunca ve el test y la auditoría sin fugas en L1. **Aceptación real (§14):** `gh workflow run llm.yml` → matriz Claude/Ollama × UC-01/04/09, golden tests y (opcional) benchmark.
 
+## Capa 3a — shell de la UI, sistema de diseño y recorrido mínimo
+
+| Entregable | Estado |
+|---|---|
+| Stack §5.2 (Router, Query, Zustand, Tailwind + Radix, ECharts; ADR-0024) | ✅ |
+| Layout §11.2 (sidebar, área principal, panel de copiloto plegable), tema claro/oscuro, i18n es/en | ✅ |
+| Inicio (Engine, hardware, proyectos), Proyecto (Resumen, Datos, Entrenar, Experimentos, Run, Modelos, Auditoría LLM), Configuración LLM | ✅ |
+| Subida de archivos/carpetas desde el navegador (`POST /projects/{id}/uploads`), historia por época (`GET /runs/{rid}/history`) | ✅ |
+| E2E Playwright UC-01 guiado contra el Engine real (job `e2e-ui`) | 🟡 en CI |
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |

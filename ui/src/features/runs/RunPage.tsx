@@ -34,7 +34,9 @@ function useHistory(runId: string) {
     queryKey: ["runs", runId, "history"],
     queryFn: async () =>
       unwrap(
-        await (await getApiClient()).GET("/api/v1/runs/{run_id}/history", {
+        await (
+          await getApiClient()
+        ).GET("/api/v1/runs/{run_id}/history", {
           params: { path: { run_id: runId } },
         }),
       ),
@@ -44,7 +46,7 @@ function useHistory(runId: string) {
 function Curves({ runId }: { runId: string }) {
   const { t } = useTranslation();
   const { data } = useHistory(runId);
-  const history = data ?? [];
+  const history = useMemo(() => data ?? [], [data]);
   const option = useMemo(() => {
     const keys = ["train_loss", "val_loss"].filter((k) => history.some((h) => k in h));
     return {
@@ -79,7 +81,15 @@ function Confusion({ report }: { report: EvaluationReport }) {
       tooltip: { position: "top" },
       xAxis: { type: "category", data: cls.labels, name: t("run.predicted") },
       yAxis: { type: "category", data: cls.labels, name: t("run.actual"), inverse: true },
-      visualMap: { min: 0, max, calculable: false, orient: "horizontal", left: "center", bottom: 0, show: false },
+      visualMap: {
+        min: 0,
+        max,
+        calculable: false,
+        orient: "horizontal",
+        left: "center",
+        bottom: 0,
+        show: false,
+      },
       series: [{ type: "heatmap", data, label: { show: true } }],
     };
   }, [cls, t]);

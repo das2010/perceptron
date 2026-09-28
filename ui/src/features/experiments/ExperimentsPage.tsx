@@ -3,7 +3,17 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { EChart } from "@/components/charts/EChart";
-import { Badge, Card, CardTitle, EmptyState, ErrorNote, Spinner, Table, Td, Th } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  CardTitle,
+  EmptyState,
+  ErrorNote,
+  Spinner,
+  Table,
+  Td,
+  Th,
+} from "@/components/ui";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import { useJob, useRuns, type Run } from "@/lib/api/hooks";
 import { useEngineSocket } from "@/lib/api/ws";
@@ -32,15 +42,18 @@ function LiveStudy({ jobId, metric }: { jobId: string; metric: string }) {
   const job = useJob(jobId);
   const [curves, setCurves] = useState<Curves>({});
 
-  const onMessage = useCallback((msg: JobMessage) => {
-    const d = msg.data;
-    if (msg.kind !== "epoch" || !d?.run_id || d.epoch === undefined || !d.metrics) return;
-    const value = d.metrics[metric];
-    if (value === undefined) return;
-    const runId = d.run_id;
-    const point = { epoch: d.epoch, value };
-    setCurves((prev) => ({ ...prev, [runId]: [...(prev[runId] ?? []), point] }));
-  }, [metric]);
+  const onMessage = useCallback(
+    (msg: JobMessage) => {
+      const d = msg.data;
+      if (msg.kind !== "epoch" || !d?.run_id || d.epoch === undefined || !d.metrics) return;
+      const value = d.metrics[metric];
+      if (value === undefined) return;
+      const runId = d.run_id;
+      const point = { epoch: d.epoch, value };
+      setCurves((prev) => ({ ...prev, [runId]: [...(prev[runId] ?? []), point] }));
+    },
+    [metric],
+  );
 
   const connected = useEngineSocket<JobMessage>(`/api/v1/jobs/${jobId}`, onMessage);
 
@@ -72,15 +85,24 @@ function LiveStudy({ jobId, metric }: { jobId: string; metric: string }) {
       ) : (
         <EChart option={option} label={t("experiments.curves")} />
       )}
-      <ErrorNote error={job.data?.error ? new Error(String((job.data.error as { message?: string }).message ?? "")) : null} />
+      <ErrorNote
+        error={
+          job.data?.error
+            ? new Error(String((job.data.error as { message?: string }).message ?? ""))
+            : null
+        }
+      />
     </Card>
   );
 }
 
 function metricCols(runs: Run[]): string[] {
   const all = new Set<string>();
-  for (const r of runs) for (const k of Object.keys(r.metrics ?? {})) if (k.startsWith("val_")) all.add(k);
-  return [...all].sort((a, b) => (a === "val_loss" ? -1 : b === "val_loss" ? 1 : a.localeCompare(b))).slice(0, 4);
+  for (const r of runs)
+    for (const k of Object.keys(r.metrics ?? {})) if (k.startsWith("val_")) all.add(k);
+  return [...all]
+    .sort((a, b) => (a === "val_loss" ? -1 : b === "val_loss" ? 1 : a.localeCompare(b)))
+    .slice(0, 4);
 }
 
 export function ExperimentsPage() {
@@ -88,7 +110,8 @@ export function ExperimentsPage() {
   const projectId = useProjectId();
   const { job } = useSearch({ from: "/projects/$projectId/experiments" });
   const jobState = useJob(job);
-  const running = jobState.data && !["succeeded", "failed", "cancelled"].includes(jobState.data.status);
+  const running =
+    jobState.data && !["succeeded", "failed", "cancelled"].includes(jobState.data.status);
   const { data, isPending, error } = useRuns(projectId, running ? 4000 : undefined);
   const runs = useMemo(() => [...(data ?? [])].reverse(), [data]);
   const cols = metricCols(runs);
@@ -107,7 +130,9 @@ export function ExperimentsPage() {
               <tr>
                 <Th>{t("experiments.run")}</Th>
                 <Th>{t("experiments.status")}</Th>
-                {cols.map((c) => <Th key={c}>{c}</Th>)}
+                {cols.map((c) => (
+                  <Th key={c}>{c}</Th>
+                ))}
                 <Th>{t("experiments.started")}</Th>
               </tr>
             </thead>

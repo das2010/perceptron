@@ -1,9 +1,9 @@
-/// <reference types="vitest/config" />
 import { fileURLToPath, URL } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { configDefaults } from "vitest/config";
 
 // El mismo build sirve para Tauri (desktop) y para el Team Server (web), SPEC §4.2.
 export default defineConfig({
@@ -22,5 +22,6 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     css: true,
+    exclude: [...configDefaults.exclude, "e2e/**"],
   },
 });

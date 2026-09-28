@@ -78,7 +78,10 @@ export function EChart({
         grid: { left: 48, right: 16, top: 32, bottom: 40 },
         tooltip: { trigger: "axis" },
         ...option,
-        xAxis: option.xAxis && { axisLine: { lineStyle: { color: line } }, ...(option.xAxis as object) },
+        xAxis: option.xAxis && {
+          axisLine: { lineStyle: { color: line } },
+          ...(option.xAxis as object),
+        },
         yAxis: option.yAxis && {
           splitLine: { lineStyle: { color: line } },
           ...(option.yAxis as object),

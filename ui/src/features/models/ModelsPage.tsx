@@ -1,7 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
-import { Badge, Card, CardTitle, EmptyState, ErrorNote, Spinner, Table, Td, Th } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  CardTitle,
+  EmptyState,
+  ErrorNote,
+  Spinner,
+  Table,
+  Td,
+  Th,
+} from "@/components/ui";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import { useModels } from "@/lib/api/hooks";
 import { formatDate, formatNumber } from "@/lib/format";
@@ -31,7 +41,8 @@ export function ModelsPage() {
           </thead>
           <tbody>
             {models.map((m) => {
-              const metrics = ((m.model_card ?? {}) as { metrics?: Record<string, number> }).metrics ?? {};
+              const metrics =
+                ((m.model_card ?? {}) as { metrics?: Record<string, number> }).metrics ?? {};
               return (
                 <tr key={m.id}>
                   <Td className="font-mono text-xs">{m.id}</Td>

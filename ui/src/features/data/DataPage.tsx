@@ -56,11 +56,19 @@ function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) => void 
       <CardTitle>{t("data.addTitle")}</CardTitle>
       <p className="mb-4 text-sm text-muted">{t("data.addHint")}</p>
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={() => fileRef.current?.click()} loading={upload.isPending}>
+        <Button
+          variant="secondary"
+          onClick={() => fileRef.current?.click()}
+          loading={upload.isPending}
+        >
           <Upload className="h-4 w-4" aria-hidden="true" />
           {t("data.uploadFile")}
         </Button>
-        <Button variant="secondary" onClick={() => folderRef.current?.click()} disabled={upload.isPending}>
+        <Button
+          variant="secondary"
+          onClick={() => folderRef.current?.click()}
+          disabled={upload.isPending}
+        >
           {t("data.uploadFolder")}
         </Button>
         <input
@@ -112,7 +120,11 @@ function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) => void 
           )}
           {state.preview.kind === "table" && (
             <Field label={t("data.target")} hint={t("data.targetHint")}>
-              <Select value={target} onChange={(e) => setTarget(e.target.value)} aria-label={t("data.target")}>
+              <Select
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+                aria-label={t("data.target")}
+              >
                 <option value="">{t("data.targetAuto")}</option>
                 {state.preview.columns.map((c) => (
                   <option key={c} value={c}>

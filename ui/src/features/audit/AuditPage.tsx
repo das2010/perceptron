@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Badge, Card, CardTitle, EmptyState, ErrorNote, Spinner, Table, Td, Th } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  CardTitle,
+  EmptyState,
+  ErrorNote,
+  Spinner,
+  Table,
+  Td,
+  Th,
+} from "@/components/ui";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import { useAudit, type LLMCall } from "@/lib/api/hooks";
 import { formatDate, formatNumber } from "@/lib/format";

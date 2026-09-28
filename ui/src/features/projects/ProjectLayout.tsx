@@ -35,7 +35,10 @@ export function ProjectLayout() {
           </div>
         )}
       </div>
-      <nav aria-label={t("project.sections")} className="mb-6 flex flex-wrap gap-1 border-b border-line">
+      <nav
+        aria-label={t("project.sections")}
+        className="mb-6 flex flex-wrap gap-1 border-b border-line"
+      >
         {TABS.map((tab) => (
           <Link
             key={tab.key}
