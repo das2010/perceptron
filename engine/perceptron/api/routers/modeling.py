@@ -23,6 +23,7 @@ from perceptron.data.pipeline.pipeline import PipelineSpec, preview_steps, trans
 from perceptron.domain.enums import Device, Modality, Origin, TaskType
 from perceptron.domain.models import ArchSpecRecord, Evaluation, ModelVersion, Pipeline, Run, Study
 from perceptron.evaluation.evaluate import EvaluationReport
+from perceptron.hpo.analysis import StudyAnalysis, analyze
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.sandbox.expert import starter_code
 from perceptron.sandbox.process import CodeCheck
@@ -451,6 +452,16 @@ def create_study(project_id: str, body: StudyCreate, ctx: Ctx) -> StudyLaunch:
 @router.get("/studies/{study_id}", tags=["hpo"], operation_id="getStudy")
 def get_study(study_id: str, ctx: Ctx) -> Study:
     return ctx.repo(Study).get(study_id)
+
+
+@router.get("/studies/{study_id}/analysis", tags=["hpo"], operation_id="getStudyAnalysis")
+def get_study_analysis(study_id: str, ctx: Ctx) -> StudyAnalysis:
+    """Historia, importancia de hiperparámetros, coordenadas paralelas y Pareto (RF-HPO-06)."""
+    study = ctx.repo(Study).get(study_id)
+    strategy = HPOStrategy.model_validate(study.strategy)
+    runs = ctx.repo(Run).list(filters={"study_id": study.id}, limit=10_000)
+    ordered = sorted(runs, key=lambda r: (r.created_at, r.id))
+    return analyze(strategy, ordered)
 
 
 def _study_job(ctx: EngineContext, study_id: str) -> Job | None:

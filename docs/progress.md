@@ -315,7 +315,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-HPO-03 | sí | 1 | Presupuesto configurable en el wizard: tiempo total, n.º de trials, preset, métrica… | ✅ corte por trials, tiempo y métrica objetivo |
 | RF-HPO-04 |  | 1 | Paralelismo de trials según recursos: varias GPUs → un trial por GPU; en servidor,… | ⬜ pendiente |
 | RF-HPO-05 |  | 1 | Reanudación de estudios interrumpidos (almacenamiento Optuna en SQLite/PostgreSQL). | ✅ reanudación desde SQLite |
-| RF-HPO-06 |  | 1 | Visualizaciones: historia de optimización, importancia de hiperparámetros, coordenadas… | ⬜ pendiente |
+| RF-HPO-06 |  | 1 | Visualizaciones: historia de optimización, importancia de hiperparámetros, coordenadas… | ✅ historia con mejor acumulado, importancia de hiperparámetros (PED-ANOVA de Optuna), coordenadas paralelas y frente de Pareto en Experimentos |
 | RF-TRN-01 | sí | 1 | Detección de hardware al inicio y bajo demanda: GPUs (modelo, VRAM, capacidad de… | ✅ `training.hardware` + `GET /system/hardware` |
 | RF-TRN-02 | sí | 1/3 | Instalación de PyTorch acorde al hardware: en el primer arranque (y desde… | 🟡 detección y recomendación en el Engine; instalación de la variante en el runtime embebido del desktop y cambio desde Configuración (ADR-0026, validación en CI) |
 | RF-TRN-03 | sí | 1 | Construcción del LightningModule desde ArchSpec + configuración de optimizador,… | ✅ `training.module` |
@@ -335,7 +335,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-TRK-01 | sí | 1 | Todo run se registra en MLflow: parámetros, métricas por paso, artefactos… | ✅ MLflow embebido (SQLite + artefactos) |
 | RF-TRK-02 | sí | 1 | La UI de Perceptron muestra runs y comparaciones de forma nativa (no depende de la UI… | ✅ runs, curvas y comparación en la UI; enlace opcional a la UI de MLflow (el desktop la levanta a pedido) |
 | RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | 🟡 registro nativo (ModelVersion con stages, promover, rollback, challenger); falta reflejarlo en el Model Registry de MLflow |
-| RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | 🟡 tabla de métricas, curvas superpuestas y diff de hiperparámetros; falta el diff de ArchSpec y de pipeline |
+| RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | ✅ tabla de métricas, curvas superpuestas, diff de hiperparámetros y diff de ArchSpec y pipeline (listas por id) |
 | RF-EVL-01 | sí | 1 | Métricas por tarea: | ✅ clasificación, regresión, forecasting (MASE, backtesting, naive), anomalías, detección (mAP), segmentación (IoU/Dice), OCR (CER/WER); SED pendiente |
 | RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | 🟡 Captum: Shapley global/local (tabular), Integrated Gradients (imagen y espectrograma de audio) y oclusión por token (texto) locales; global para texto/audio y series pendientes (ADR-0028) |
 | RF-EVL-03 |  | 1/4 | Análisis de errores: explorador de muestras mal predichas con filtros, slices… | ✅ slices de bajo rendimiento, confusiones, posibles errores de etiqueta (confident learning) y explorador de mal predichos |

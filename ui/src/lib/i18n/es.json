@@ -1017,5 +1017,19 @@
       "title": "Fallas de motor por sonido",
       "goal": "Detectar fallas de motor a partir de grabaciones de audio."
     }
+  },
+  "hpo": {
+    "title": "Análisis del estudio",
+    "study": "Estudio",
+    "empty": "El estudio todavía no tiene intentos.",
+    "history": "Historia de la optimización",
+    "trial": "Intento",
+    "trialValue": "Valor del intento",
+    "bestSoFar": "Mejor hasta el momento",
+    "importance": "Importancia de hiperparámetros",
+    "noImportance": "Se estima con al menos 4 intentos terminados.",
+    "parallel": "Coordenadas paralelas",
+    "pareto": "Frente de Pareto",
+    "dominated": "Dominados"
   }
 }

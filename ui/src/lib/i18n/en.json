@@ -1017,5 +1017,19 @@
       "title": "Engine faults by sound",
       "goal": "Detect engine faults from audio recordings."
     }
+  },
+  "hpo": {
+    "title": "Study analysis",
+    "study": "Study",
+    "empty": "The study has no trials yet.",
+    "history": "Optimization history",
+    "trial": "Trial",
+    "trialValue": "Trial value",
+    "bestSoFar": "Best so far",
+    "importance": "Hyperparameter importance",
+    "noImportance": "Estimated with at least 4 finished trials.",
+    "parallel": "Parallel coordinates",
+    "pareto": "Pareto front",
+    "dominated": "Dominated"
   }
 }

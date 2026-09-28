@@ -820,6 +820,23 @@ export function useRunHistory(runId: string) {
 }
 
 export type ConfigDiff = Schemas["ConfigDiff"];
+export type StudyAnalysis = Schemas["StudyAnalysis"];
+
+/** Visualizaciones de un estudio de HPO (RF-HPO-06). */
+export function useStudyAnalysis(studyId: string | null) {
+  return useQuery({
+    queryKey: ["studies", studyId, "analysis"] as const,
+    enabled: Boolean(studyId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/studies/{study_id}/analysis", {
+          params: { path: { study_id: studyId ?? "" } },
+        }),
+      ) as StudyAnalysis,
+  });
+}
 
 /** Qué cambia entre runs en ArchSpec y pipeline (RF-TRK-04). */
 export function useCompareConfigs(runIds: string[]) {
