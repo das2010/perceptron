@@ -29,6 +29,15 @@ import {
 } from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
 
+/** Error del worker guardado en `Run.diagnosis.error` (tipo, mensaje, pista). */
+function formatRunError(diagnosis: unknown): string {
+  const error = (diagnosis as { error?: unknown } | null | undefined)?.error;
+  if (!error) return "";
+  if (typeof error === "string") return error;
+  const e = error as { type?: string; message?: string; hint?: string };
+  return [e.type, e.message, e.hint].filter(Boolean).join("\n") || JSON.stringify(error, null, 2);
+}
+
 function useHistory(runId: string) {
   return useQuery({
     queryKey: ["runs", runId, "history"],
@@ -166,6 +175,15 @@ export function RunPage() {
           </p>
         )}
       </Card>
+
+      {r.status === "failed" && (
+        <Card className="border-bad">
+          <CardTitle className="text-bad">{t("run.failed")}</CardTitle>
+          <pre className="whitespace-pre-wrap text-xs" data-testid="run-error">
+            {formatRunError(r.diagnosis)}
+          </pre>
+        </Card>
+      )}
 
       <Curves runId={runId} />
 

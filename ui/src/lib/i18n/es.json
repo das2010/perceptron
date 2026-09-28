@@ -231,6 +231,7 @@
   },
   "run": {
     "title": "Run",
+    "failed": "El entrenamiento falló",
     "curves": "Curvas de entrenamiento",
     "diagnosis": "Diagnóstico del entrenamiento",
     "byRules": "Diagnóstico por reglas (sin LLM).",

@@ -231,6 +231,7 @@
   },
   "run": {
     "title": "Run",
+    "failed": "Training failed",
     "curves": "Training curves",
     "diagnosis": "Training diagnosis",
     "byRules": "Rule-based diagnosis (no LLM).",
