@@ -1,0 +1,35 @@
+[project]
+name = "{{ slug }}"
+version = "0.1.0"
+description = "{{ name }}: modelo exportado desde Perceptron {{ version }} (run {{ run_id }})"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+{% for req in requirements %}  "{{ req }}",
+{% endfor %}]
+
+[project.scripts]
+{{ package }}-train = "{{ package }}.train:main"
+{{ package }}-infer = "{{ package }}.infer:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# El código mínimo del pipeline de Perceptron viaja en vendor/ (se instala como `perceptron`).
+packages = ["src/{{ package }}", "vendor/perceptron"]
+
+# PyTorch CPU por defecto: reproducible en cualquier máquina. Para GPU, cambiá el índice
+# (p. ej. https://download.pytorch.org/whl/cu128) y corré `uv lock` de nuevo.
+[tool.uv.sources]
+torch = [{ index = "pytorch" }]
+{% if image %}torchvision = [{ index = "pytorch" }]
+{% endif %}
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

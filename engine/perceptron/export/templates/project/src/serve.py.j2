@@ -1,0 +1,27 @@
+"""API REST mínima de «{{ name }}» (PyTorch). Para producción, el servidor ONNX de Perceptron."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import polars as pl
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+from {{ package }}.infer import predict
+
+app = FastAPI(title="{{ name }}")
+
+
+class Rows(BaseModel):
+    rows: list[dict[str, Any]]
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.post("/predict")
+def predict_rows(body: Rows) -> dict[str, Any]:
+    return {"predictions": predict(pl.DataFrame(body.rows)).to_dicts()}

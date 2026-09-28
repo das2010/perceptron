@@ -1,0 +1,118 @@
+"""Entrena «{{ name }}» desde cero: pipeline ajustado con train, early stopping con val."""
+
+from __future__ import annotations
+
+import json
+import random
+from typing import Any
+
+import numpy as np
+import torch
+import yaml
+from torch import nn
+from torch.utils.data import DataLoader
+
+from perceptron.data.pipeline.pipeline import PipelineSpec, fit_pipeline
+from {{ package }}.data import ARTIFACTS, FILES, ROOT, make_dataset, read_split
+from {{ package }}.model import Model
+
+REGRESSION_LOSSES = {"mse": nn.MSELoss, "mae": nn.L1Loss, "huber": nn.HuberLoss}
+
+
+def _seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, weight: torch.Tensor | None, gamma: float = 2.0) -> None:
+        super().__init__()
+        self.weight, self.gamma = weight, gamma
+
+    def forward(self, logits: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        ce = nn.functional.cross_entropy(logits, y, weight=self.weight, reduction="none")
+        return ((1 - torch.exp(-ce)) ** self.gamma * ce).mean()
+
+
+def make_loss(cfg: dict[str, Any], y: torch.Tensor) -> nn.Module:
+    loss = cfg["loss"]
+    kind = loss["type"]
+    if kind in REGRESSION_LOSSES:
+        return REGRESSION_LOSSES[kind]()
+    if kind == "bce":
+        return nn.BCEWithLogitsLoss()
+    weight = None
+    if loss.get("class_weights") == "auto":
+        counts = torch.bincount(y[y >= 0], minlength=cfg["num_classes"]).float().clamp(min=1)
+        weight = counts.sum() / (len(counts) * counts)
+    if kind == "focal":
+        return FocalLoss(weight)
+    smoothing = float(loss.get("label_smoothing") or 0.0)
+    return nn.CrossEntropyLoss(weight=weight, label_smoothing=smoothing)
+
+
+def _loss(fn: nn.Module, out: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    if isinstance(fn, (nn.BCEWithLogitsLoss, *REGRESSION_LOSSES.values())):
+        return fn(out.squeeze(-1), y.float())
+    return fn(out, y)
+
+
+def main() -> None:
+    cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
+    seed = int(cfg["seed"])
+    _seed(seed)
+    spec_json = (ARTIFACTS / "pipeline_spec.json").read_text(encoding="utf-8")
+    spec = PipelineSpec.model_validate_json(spec_json)
+    train_df, val_df = read_split("train"), read_split("val")
+    fitted = fit_pipeline(spec, train_df, FILES if FILES.is_dir() else None)
+    train_ds = make_dataset(fitted, train_df, train=True)
+    val_ds = make_dataset(fitted, val_df, train=False)
+    bs = int(cfg["batch_size"])
+    gen = torch.Generator().manual_seed(seed)
+    train_dl = DataLoader(train_ds, batch_size=bs, shuffle=True, generator=gen)
+    val_dl = DataLoader(val_ds, batch_size=bs * 2)
+
+    model = Model()
+    loss_fn = make_loss(cfg, train_ds.y)  # type: ignore[attr-defined]
+    lr = float(cfg["learning_rate"])
+    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=float(cfg["weight_decay"]))
+    epochs = int(cfg["epochs"])
+    steps = epochs * max(1, len(train_dl))
+    sched = (
+        torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=lr, total_steps=steps)
+        if cfg.get("scheduler") == "one_cycle"
+        else None
+    )
+    best, best_state, waited = float("inf"), None, 0
+    for epoch in range(epochs):
+        model.train()
+        for *x, y in train_dl:
+            opt.zero_grad()
+            loss = _loss(loss_fn, model(*x), y)
+            loss.backward()
+            if cfg.get("gradient_clip"):
+                nn.utils.clip_grad_norm_(model.parameters(), float(cfg["gradient_clip"]))
+            opt.step()
+            if sched is not None:
+                sched.step()
+        model.eval()
+        with torch.no_grad():
+            total = sum(_loss(loss_fn, model(*x), y).item() * len(y) for *x, y in val_dl)
+        val_loss = total / max(1, len(val_ds))  # type: ignore[arg-type]
+        print(json.dumps({"epoch": epoch + 1, "val_loss": round(val_loss, 6)}))
+        if val_loss < best - 1e-6:
+            best, waited = val_loss, 0
+            best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
+        else:
+            waited += 1
+            if waited >= int(cfg["patience"]):
+                break
+    ARTIFACTS.mkdir(exist_ok=True)
+    torch.save(best_state or model.state_dict(), ARTIFACTS / "model.pt")
+    (ARTIFACTS / "pipeline.json").write_text(fitted.model_dump_json(indent=2), encoding="utf-8")
+    print(json.dumps({"best_val_loss": round(best, 6), "artifacts": str(ARTIFACTS)}))
+
+
+if __name__ == "__main__":
+    main()

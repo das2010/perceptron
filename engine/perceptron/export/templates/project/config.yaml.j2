@@ -1,0 +1,17 @@
+# Configuración del entrenamiento (del mejor intento de Perceptron). Editable.
+task: {{ task }}
+target: {{ target }}
+input_kind: {{ kind }}
+num_classes: {{ num_classes if num_classes is not none else "null" }}
+seed: {{ seed }}
+epochs: {{ epochs }}
+batch_size: {{ batch_size }}
+learning_rate: {{ lr }}
+weight_decay: {{ weight_decay }}
+scheduler: {{ scheduler }}
+patience: {{ patience }}
+loss:
+  type: {{ loss_type }}
+  class_weights: {{ class_weights }}
+  label_smoothing: {{ label_smoothing }}
+gradient_clip: {{ gradient_clip if gradient_clip is not none else "null" }}

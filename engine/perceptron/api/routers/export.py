@@ -57,6 +57,13 @@ def download_serving_bundle(run_id: str, ctx: Ctx) -> FileResponse:
     return FileResponse(path, filename=f"{run_id}-serving.zip", media_type="application/zip")
 
 
+@router.get("/runs/{run_id}/export/project.zip", operation_id="downloadExportProject")
+def download_export_project(run_id: str, ctx: Ctx) -> FileResponse:
+    """Proyecto de código autónomo (RF-EXP-04): uv, modelo generado, train/infer/serve y datos."""
+    path = Workflow(ctx).project_zip(run_id)
+    return FileResponse(path, filename=f"{run_id}-proyecto.zip", media_type="application/zip")
+
+
 class PlaygroundRows(BaseModel):
     rows: list[dict[str, Any]] = Field(min_length=1, max_length=1000)
 

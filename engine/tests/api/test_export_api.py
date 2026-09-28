@@ -196,3 +196,86 @@ def test_playground_and_serving_bundle(
         p["prediction"] for p in res["predictions"]
     ]
     assert "predictions_total" in served.get("/metrics").text
+
+
+def test_exportable_project_reproduces_and_infers(
+    client: TestClient, fixtures_dir: Path, tmp_path: Path
+) -> None:
+    import json
+    import subprocess
+    import sys
+    import zipfile
+
+    run_id = _trained_run(client, fixtures_dir)
+    launch = _ok(client.post(f"{API}/runs/{run_id}/export", json={"formats": ["onnx"]}), 202)
+    assert _wait_job(client, launch["job"]["id"])["status"] == "succeeded"
+    rows = _churn_rows(fixtures_dir, 5)
+    onnx_preds = _ok(client.post(f"{API}/runs/{run_id}/predict", json={"rows": rows}))
+
+    resp = client.get(f"{API}/runs/{run_id}/export/project.zip")
+    assert resp.status_code == 200
+    archive = tmp_path / "proyecto.zip"
+    archive.write_bytes(resp.content)
+    dest = tmp_path / "exportado ñ"
+    with zipfile.ZipFile(archive) as z:
+        z.extractall(dest)
+    (root,) = [p for p in dest.iterdir() if p.is_dir()]
+    package = next(p.name for p in (root / "src").iterdir() if p.is_dir())
+    for rel in (
+        "pyproject.toml",
+        "config.yaml",
+        "README.md",
+        "LICENSES.md",
+        "artifacts/model.pt",
+        "data/train.parquet",
+        "data/val.parquet",
+        f"src/{package}/model.py",
+        "vendor/perceptron/data/pipeline/pipeline.py",
+        "tests/test_smoke.py",
+    ):
+        assert (root / rel).is_file(), rel
+    assert "torch==" in (root / "pyproject.toml").read_text(encoding="utf-8")
+
+    def run(code: str) -> str:
+        prelude = (
+            "import sys; "
+            f"sys.path[:0] = [{str(root / 'src')!r}, {str(root / 'vendor')!r}]; "
+            "import perceptron; from pathlib import Path; "
+            f"assert Path(perceptron.__file__).is_relative_to({str(root / 'vendor')!r}); "
+        )
+        out = subprocess.run(  # noqa: S603
+            [sys.executable, "-I", "-c", prelude + code],
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+            cwd=root,
+        )
+        assert out.returncode == 0, out.stderr[-3000:]
+        return out.stdout
+
+    predict = (
+        "import json, polars as pl; "
+        f"from {package}.infer import predict; "
+        f"print(json.dumps(predict(pl.DataFrame({rows!r})).to_dicts()))"
+    )
+    # Con los pesos que entrenó Perceptron, el código generado predice lo mismo que ONNX.
+    exported = json.loads(run(predict).strip().splitlines()[-1])
+    assert [p["prediction"] for p in exported] == [
+        str(p["prediction"]) for p in onnx_preds["predictions"]
+    ]
+
+    # Reentrena desde cero (una época para el test) y vuelve a predecir (O5 en local).
+    cfg = root / "config.yaml"
+    cfg.write_text(
+        "\n".join(
+            "epochs: 1" if line.startswith("epochs:") else line
+            for line in cfg.read_text(encoding="utf-8").splitlines()
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    trained = run(f"from {package}.train import main; main()")
+    assert "best_val_loss" in trained
+    again = json.loads(run(predict).strip().splitlines()[-1])
+    assert len(again) == len(rows) and all("confidence" in p for p in again)

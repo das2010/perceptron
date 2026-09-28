@@ -1,0 +1,11 @@
+"""Prueba de humo: el modelo carga los pesos exportados y predice sobre validación."""
+
+from {{ package }}.data import read_split
+from {{ package }}.infer import predict
+
+
+def test_predicts_on_validation() -> None:
+    df = read_split("val").head(8)
+    preds = predict(df)
+    assert preds.height == df.height
+    assert "prediction" in preds.columns

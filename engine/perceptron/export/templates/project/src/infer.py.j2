@@ -1,0 +1,74 @@
+"""Predice con «{{ name }}»: `{{ package }}-infer <entrada> [--out predicciones.csv]`.
+
+La entrada es un CSV/Parquet con las columnas originales (tabular) o una carpeta de imágenes.
+"""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+import numpy as np
+import polars as pl
+import torch
+from torch.utils.data import DataLoader
+
+from perceptron.data.pipeline.pipeline import FittedPipeline, decode_regression
+from {{ package }}.data import ARTIFACTS, make_dataset
+from {{ package }}.model import Model
+
+TASK = "{{ task }}"
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
+
+
+def load() -> tuple[Model, FittedPipeline]:
+    raw = (ARTIFACTS / "pipeline.json").read_text(encoding="utf-8")
+    fitted = FittedPipeline.model_validate_json(raw)
+    model = Model()
+    state = torch.load(ARTIFACTS / "model.pt", map_location="cpu", weights_only=True)
+    model.load_state_dict(state)
+    return model.eval(), fitted
+
+
+def read_input(path: Path) -> pl.DataFrame:
+    if path.is_dir():
+        files = sorted(p for p in path.rglob("*") if p.suffix.lower() in IMAGE_SUFFIXES)
+        return pl.DataFrame({"path": [str(p.resolve()) for p in files]})
+    return pl.read_parquet(path) if path.suffix == ".parquet" else pl.read_csv(path)
+
+
+@torch.no_grad()
+def predict(df: pl.DataFrame) -> pl.DataFrame:
+    model, fitted = load()
+    ds = make_dataset(fitted, df, train=False)
+    outs = torch.cat([model(*x) for *x, _ in DataLoader(ds, batch_size=256)]).numpy()
+    if TASK == "regression":
+        y = decode_regression(fitted, outs.reshape(len(outs), -1)[:, 0])
+        return pl.DataFrame({"prediction": y})
+    classes = fitted.classes or [str(i) for i in range(max(outs.shape[1], 2))]
+    if outs.shape[1] == 1:
+        p1 = 1 / (1 + np.exp(-outs[:, 0]))
+        proba = np.stack([1 - p1, p1], axis=1)
+    else:
+        e = np.exp(outs - outs.max(1, keepdims=True))
+        proba = e / e.sum(1, keepdims=True)
+    cols: dict[str, object] = {
+        "prediction": [classes[i] for i in proba.argmax(1)],
+        "confidence": proba.max(1),
+    }
+    cols.update({f"p_{c}": proba[:, i] for i, c in enumerate(classes)})
+    return pl.DataFrame(cols)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("input", type=Path)
+    parser.add_argument("--out", type=Path, default=Path("predicciones.csv"))
+    args = parser.parse_args()
+    preds = predict(read_input(args.input))
+    preds.write_csv(args.out)
+    print(f"{preds.height} predicciones en {args.out}")
+
+
+if __name__ == "__main__":
+    main()

@@ -615,6 +615,15 @@ class Workflow:
         name = record.name if record else run_id
         return build_bundle(self._run_dir(run), name)
 
+    def project_zip(self, run_id: str) -> Path:
+        """Proyecto de código autónomo del run (RF-EXP-04, O5)."""
+        from perceptron.export.project import build_project
+
+        run = self.ctx.repo(Run).get(run_id)
+        record = self.ctx.repo(ArchSpecRecord).find(run.archspec_id)
+        dataset_dir = self.view(self.dataset(run.dataset_version_id)).root
+        return build_project(self._run_dir(run), dataset_dir, record.name if record else run_id)
+
     def inference_model(self, run_id: str) -> Any:
         """Modelo ONNX exportado listo para el playground (RF-EXP-02), cacheado por archivo."""
         from perceptron.serving.runtime import MODEL_FILE, InferenceModel

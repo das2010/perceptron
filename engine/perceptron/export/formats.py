@@ -117,6 +117,41 @@ def _verify(ref: np.ndarray, got: np.ndarray, tolerance: float | None) -> Verifi
     )
 
 
+class _Tabular(torch.nn.Module):
+    """Firma explícita para los exportadores (el `forward(*inputs)` del grafo no se traza bien)."""
+
+    def __init__(self, inner: torch.nn.Module) -> None:
+        super().__init__()
+        self.inner = inner
+
+    def forward(self, x_num: torch.Tensor, x_cat: torch.Tensor) -> torch.Tensor:
+        out: torch.Tensor = self.inner(x_num, x_cat)
+        return out
+
+
+class _Single(torch.nn.Module):
+    def __init__(self, inner: torch.nn.Module) -> None:
+        super().__init__()
+        self.inner = inner
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out: torch.Tensor = self.inner(x)
+        return out
+
+
+def _explicit(model: torch.nn.Module, n_inputs: int) -> torch.nn.Module:
+    if n_inputs == 2:
+        return _Tabular(model).eval()
+    if n_inputs == 1:
+        return _Single(model).eval()
+    raise ValueError(f"export con {n_inputs} entradas no soportado")
+
+
+def _batch_dynamic(n_inputs: int) -> tuple[dict[int, Any], ...]:
+    dim = getattr(torch.export.Dim, "DYNAMIC", None) or torch.export.Dim("batch")
+    return tuple({0: dim} for _ in range(n_inputs))
+
+
 def sample_inputs(
     trained: TrainedModel, dataset_dir: Path, n: int = SAMPLE_BATCH
 ) -> tuple[torch.Tensor, ...]:
@@ -173,7 +208,7 @@ def _onnx(
         str(path),
         input_names=names,
         output_names=["output"],
-        dynamic_axes={**{n: {0: "batch"} for n in names}, "output": {0: "batch"}},
+        dynamic_shapes=_batch_dynamic(len(inputs)),
         opset_version=ONNX_OPSET,
     )
 
@@ -213,9 +248,7 @@ def _onnx(
 def _torch_export(
     model: torch.nn.Module, inputs: tuple[torch.Tensor, ...], ref: np.ndarray, out_dir: Path
 ) -> ExportArtifact:
-    batch = torch.export.Dim("batch", min=1)
-    shapes = tuple({0: batch} for _ in inputs)
-    program = torch.export.export(model, inputs, dynamic_shapes=shapes)
+    program = torch.export.export(model, inputs, dynamic_shapes=_batch_dynamic(len(inputs)))
     path = out_dir / "model.pt2"
     torch.export.save(program, path)
     got = _as_numpy(torch.export.load(path).module()(*inputs))
@@ -225,18 +258,18 @@ def _torch_export(
 def _torchscript(
     model: torch.nn.Module, inputs: tuple[torch.Tensor, ...], ref: np.ndarray, out_dir: Path
 ) -> ExportArtifact:
-    traced = torch.jit.trace(model, inputs, check_trace=False)
+    traced = torch.jit.trace(model, inputs, check_trace=False)  # type: ignore[no-untyped-call]
     path = out_dir / "model.torchscript.pt"
     traced.save(str(path))
-    got = _as_numpy(torch.jit.load(str(path))(*inputs))
+    got = _as_numpy(torch.jit.load(str(path))(*inputs))  # type: ignore[no-untyped-call]
     return _artifact(path, "torchscript", _verify(ref, got, TOL_FP32), legacy=True)
 
 
 def export_run(run_dir: Path, dataset_dir: Path, request: ExportRequest) -> ExportReport:
     """Exporta el modelo del run en los formatos pedidos y verifica cada uno."""
     trained = load_trained(run_dir)
-    model = trained.model.eval()
     inputs = sample_inputs(trained, dataset_dir)
+    model = _explicit(trained.model.eval(), len(inputs))
     names = _input_names(trained, len(inputs))
     with torch.no_grad():
         ref = _as_numpy(model(*inputs))
