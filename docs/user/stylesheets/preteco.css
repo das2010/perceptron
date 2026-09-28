@@ -1,0 +1,23 @@
+/* Colores de marca Preteco (SPEC §11.1) para MkDocs Material. */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #334000;        /* Oscuro: barra superior */
+  --md-primary-fg-color--light: #4a5c00;
+  --md-primary-fg-color--dark: #263000;  /* Negro */
+  --md-primary-bg-color: #cbff00;        /* Lima: texto sobre la barra */
+  --md-primary-bg-color--light: #cbff00b3;
+  --md-accent-fg-color: #a46dcd;         /* Violeta Oscuro */
+  --md-accent-fg-color--transparent: #a46dcd1a;
+  --md-typeset-a-color: #334000;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #334000;
+  --md-primary-fg-color--light: #4a5c00;
+  --md-primary-fg-color--dark: #263000;
+  --md-primary-bg-color: #cbff00;
+  --md-primary-bg-color--light: #cbff00b3;
+  --md-accent-fg-color: #cd87ff;         /* Violeta */
+  --md-accent-fg-color--transparent: #cd87ff1a;
+  --md-typeset-a-color: #cbff00;
+}

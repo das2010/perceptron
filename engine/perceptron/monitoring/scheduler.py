@@ -37,6 +37,7 @@ class Scheduler:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._unsubscribe = ctx.events.subscribe(DRIFT_TOPIC, self.on_drift)
+        self._last_flush: datetime | None = None
 
     # ------------------------------------------------------------------ ciclo
 
@@ -78,6 +79,10 @@ class Scheduler:
         from perceptron.services.streams import pull_source
 
         now = now or utcnow()
+        flush_every = timedelta(seconds=self.ctx.settings.telemetry.interval_s)
+        if self._last_flush is None or now - self._last_flush >= flush_every:
+            self._last_flush = now
+            self.ctx.telemetry.flush()
         for src in self.ctx.repo(DataSource).list(limit=1000):
             interval = src.config.get("poll_interval_s")
             if src.type in (DataSourceType.STREAM, DataSourceType.API) and interval:

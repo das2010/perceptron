@@ -110,6 +110,23 @@ class MonitoringSettings(BaseModel):
     interval_s: float = Field(default=30.0, gt=0)
 
 
+class LicenseSettings(BaseModel):
+    """Licencia firmada (Ed25519, offline; ADR-0035). Sin enforcement en v1 (RF-LIC-03)."""
+
+    path: Path | None = Field(default=None, description="Default: <workspace>/license.json")
+    public_keys: dict[str, str] = Field(
+        default_factory=dict, description="key_id → clave pública (además de las empaquetadas)"
+    )
+    enforce: bool = False
+
+
+class TelemetrySettings(BaseModel):
+    """Telemetría opt-in (D7): sin endpoint no se envía nada aunque se acepte."""
+
+    endpoint: str | None = Field(default=None, pattern=r"^https://")
+    interval_s: float = Field(default=6 * 3600, ge=60)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="PERCEPTRON_",
@@ -127,6 +144,8 @@ class Settings(BaseSettings):
     llm: LLMSettings = Field(default_factory=LLMSettings)
     alerts: AlertSettings = Field(default_factory=AlertSettings)
     monitoring: MonitoringSettings = Field(default_factory=MonitoringSettings)
+    license: LicenseSettings = Field(default_factory=LicenseSettings)
+    telemetry: TelemetrySettings = Field(default_factory=TelemetrySettings)
     database_url: SecretStr | None = Field(
         default=None,
         description="URL SQLAlchemy de la metadata (Team Server: PostgreSQL); None = SQLite local",

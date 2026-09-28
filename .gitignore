@@ -10,7 +10,7 @@ coverage.xml
 htmlcov/
 *.egg-info/
 dist/
-build/
+/build/
 
 # Node
 node_modules/

@@ -5548,6 +5548,224 @@
         "title": "LabelsBody",
         "type": "object"
       },
+      "LicenseUpload": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "LicenseUpload",
+        "type": "object"
+      },
+      "LicenseUsage": {
+        "properties": {
+          "edition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "gpus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gpus"
+          },
+          "gpus_used": {
+            "title": "Gpus Used",
+            "type": "integer"
+          },
+          "licensee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Licensee"
+          },
+          "message": {
+            "default": "",
+            "title": "Message",
+            "type": "string"
+          },
+          "over_limit": {
+            "description": "Solo se informa (v1)",
+            "items": {
+              "type": "string"
+            },
+            "title": "Over Limit",
+            "type": "array"
+          },
+          "seats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seats"
+          },
+          "seats_used": {
+            "title": "Seats Used",
+            "type": "integer"
+          },
+          "servers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servers"
+          },
+          "servers_used": {
+            "default": 1,
+            "title": "Servers Used",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "seats_used",
+          "gpus_used"
+        ],
+        "title": "LicenseUsage",
+        "type": "object"
+      },
+      "LicenseView": {
+        "properties": {
+          "edition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition"
+          },
+          "enforce": {
+            "title": "Enforce",
+            "type": "boolean"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "features": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "gpus": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gpus"
+          },
+          "licensee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Licensee"
+          },
+          "message": {
+            "default": "",
+            "title": "Message",
+            "type": "string"
+          },
+          "seats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seats"
+          },
+          "servers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servers"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "enforce"
+        ],
+        "title": "LicenseView",
+        "type": "object"
+      },
       "LineageNode": {
         "properties": {
           "content_hash": {
@@ -10156,6 +10374,48 @@
         "title": "TaskType",
         "type": "string"
       },
+      "TelemetryConsent": {
+        "properties": {
+          "opt_in": {
+            "title": "Opt In",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "opt_in"
+        ],
+        "title": "TelemetryConsent",
+        "type": "object"
+      },
+      "TelemetryStatus": {
+        "properties": {
+          "asked": {
+            "title": "Asked",
+            "type": "boolean"
+          },
+          "endpoint_configured": {
+            "title": "Endpoint Configured",
+            "type": "boolean"
+          },
+          "opt_in": {
+            "title": "Opt In",
+            "type": "boolean"
+          },
+          "preview": {
+            "additionalProperties": true,
+            "title": "Preview",
+            "type": "object"
+          }
+        },
+        "required": [
+          "asked",
+          "opt_in",
+          "endpoint_configured",
+          "preview"
+        ],
+        "title": "TelemetryStatus",
+        "type": "object"
+      },
       "TextProfile": {
         "description": "Texto (RF-PRF-03): solo agregados; el vocabulario no se expone.",
         "properties": {
@@ -11801,6 +12061,28 @@
           }
         },
         "summary": "Audit",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/license": {
+      "get": {
+        "description": "Uso real contra los topes de la licencia. Sin enforcement en v1 (RF-LIC-03).",
+        "operationId": "getLicenseUsage",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseUsage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "License Usage",
         "tags": [
           "admin"
         ]
@@ -19379,6 +19661,128 @@
           }
         },
         "summary": "Health",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/license": {
+      "get": {
+        "operationId": "getLicense",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get License",
+        "tags": [
+          "system"
+        ]
+      },
+      "put": {
+        "description": "Instala una licencia: solo si la firma y la vigencia son válidas.",
+        "operationId": "putLicense",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LicenseUpload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put License",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/telemetry": {
+      "get": {
+        "description": "Estado del consentimiento y exactamente lo que se enviaría.",
+        "operationId": "getTelemetry",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Telemetry Status",
+        "tags": [
+          "system"
+        ]
+      },
+      "put": {
+        "operationId": "putTelemetry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetryConsent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Telemetry Consent",
         "tags": [
           "system"
         ]

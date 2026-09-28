@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from srv_helpers import API, UserFactory, ok
 from starlette.websockets import WebSocketDisconnect
@@ -221,3 +222,31 @@ def test_workspace_privacy_policy(
     assert cleared["allowed_llm_providers"] is None and cleared["max_privacy_level"] == "L1"
     events = ok(admin.get(f"{API}/admin/audit", params={"action": "admin.workspace_policy"}))
     assert len(events) == 2
+
+
+def test_license_usage_and_install_is_admin_only(
+    admin: TestClient, make_user: UserFactory, app: FastAPI
+) -> None:
+    from perceptron.licensing.signed import keygen, sign
+
+    _, editor = make_user("lic-ed@preteco.test", "editor")
+    usage = ok(admin.get(f"{API}/admin/license"))
+    assert usage["status"] == "missing" and usage["seats_used"] == 2 and usage["over_limit"] == []
+    assert editor.get(f"{API}/admin/license").status_code == 403
+    private, public = keygen()
+    app.state.ctx.settings.license.public_keys = {"k": public}
+    doc = sign(
+        {
+            "id": "l",
+            "licensee": "Acme",
+            "seats": 1,
+            "features": ["*"],
+            "issued_at": "2026-01-01T00:00:00+00:00",
+        },
+        private,
+        "k",
+    )
+    assert editor.put(f"{API}/system/license", json={"content": doc}).status_code == 403
+    assert ok(admin.put(f"{API}/system/license", json={"content": doc}))["status"] == "valid"
+    usage = ok(admin.get(f"{API}/admin/license"))
+    assert usage["licensee"] == "Acme" and usage["over_limit"] == ["seats"]  # 2 usuarios, tope 1

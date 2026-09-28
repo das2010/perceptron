@@ -2084,6 +2084,7 @@ name = "perceptron-engine"
 version = "0.1.0"
 source = { editable = "engine" }
 dependencies = [
+    { name = "cryptography" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "jinja2" },
@@ -2113,7 +2114,6 @@ export = [
 ]
 llm = [
     { name = "anthropic" },
-    { name = "cryptography" },
     { name = "keyring" },
     { name = "openai" },
 ]
@@ -2153,7 +2153,7 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'llm'", specifier = ">=0.40" },
     { name = "captum", marker = "extra == 'eval'", specifier = ">=0.7" },
     { name = "cmaes", marker = "extra == 'ml'", specifier = ">=0.11" },
-    { name = "cryptography", marker = "extra == 'llm'", specifier = ">=43" },
+    { name = "cryptography", specifier = ">=43" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "fastexcel", marker = "extra == 'ml'", specifier = ">=0.12" },
     { name = "httpx", specifier = ">=0.27" },

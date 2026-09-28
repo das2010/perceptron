@@ -374,7 +374,7 @@
     },
     "labeling": {
       "ok": "Tus datos ya traen etiquetas en «{{target}}».",
-      "none": "No se detectó una columna objetivo. El etiquetado asistido llega en la Capa 4; por ahora elegí la columna objetivo en Datos."
+      "none": "No se detectó una columna objetivo: elegila en Datos o etiquetá los datos en la pestaña Etiquetado."
     },
     "task": {
       "task": "Tarea",
@@ -901,5 +901,37 @@
       "skipped": "Sin datos nuevos",
       "failed": "Falló"
     }
+  },
+  "license": {
+    "title": "Licencia",
+    "status": "Estado",
+    "licensee": "Titular",
+    "edition": "Edición",
+    "limits": "Topes",
+    "limitsValue": "{{seats}} usuarios · {{servers}} servidores · {{gpus}} GPU",
+    "expires": "Vence",
+    "perpetual": "Perpetua",
+    "noEnforce": "En esta versión la licencia se informa pero no limita el uso.",
+    "paste": "Instalar una licencia",
+    "pasteHint": "Pegá el contenido de license.json que te envió Preteco.",
+    "install": "Instalar",
+    "st": {
+      "valid": "Válida",
+      "missing": "Sin licencia",
+      "expired": "Vencida",
+      "invalid": "Inválida",
+      "untrusted": "No reconocida",
+      "not_yet_valid": "Todavía no vigente"
+    }
+  },
+  "telemetry": {
+    "title": "Telemetría de uso",
+    "hint": "Opcional y anónima: versión, sistema operativo, hardware agregado y cuántas veces se usa cada función. Nunca tus datos, nombres de columnas, rutas ni métricas de modelos.",
+    "on": "Activada",
+    "off": "Desactivada",
+    "noEndpoint": "No hay un destino configurado: aunque la actives, no se envía nada.",
+    "preview": "Ver exactamente qué se enviaría",
+    "enable": "Activar telemetría",
+    "disable": "Desactivar telemetría"
   }
 }

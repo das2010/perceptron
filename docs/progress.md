@@ -223,6 +223,17 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Aceptación UC-10: drift → alerta → reentrenamiento → challenger → promoción si mejora → rollback | ✅ (test de API) |
 | Kafka/MQTT (extras opcionales), embeddings internos para no estructurado | ⬜ |
 
+## Capa 7a — licencia, auditoría, telemetría y actualización
+
+| Entregable | Estado |
+|---|---|
+| Licencia firmada Ed25519 offline con topes y uso real (ADR-0035) | ✅ (clave pública preteco-2026 empaquetada) |
+| Auditoría de licencias del runtime Python/JS/Rust y de los pesos en CI (ADR-0036) | ✅ |
+| Telemetría opt-in con vista previa, sin endpoint de fábrica | ✅ (D7: destino a definir) |
+| Actualización N → N+1 sin pérdida de proyectos (CI) | ✅ |
+| Firma Authenticode e instaladores firmados, updater firmado | ⬜ (certificado y claves de Preteco) |
+| Documentación de usuario es/en (MkDocs, compilada en CI) | ✅ |
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
@@ -335,6 +346,6 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-SRV-06 |  | 5 | Consola de administración: usuarios, grupos, SSO, proveedores LLM y claves, políticas… | 🟡 usuarios, roles y auditoría; SSO, cuotas, almacenamiento y workers en 5b/5c |
 | RF-SRV-07 |  | 5 | Auditoría: login, acceso a datasets, exportaciones, llamadas LLM, cambios de permisos. | ✅ login, escrituras, denegaciones, lecturas de datos, descargas y cambios de roles; LLM en LLMCall |
 | RF-SRV-08 |  | 5 | Backups: guía y scripts para PostgreSQL y object storage. | ✅ backup.sh/restore.sh (PostgreSQL + volúmenes) verificados en CI; guía para Kubernetes |
-| RF-LIC-01 |  | 0 | Módulo licensing con interfaz LicenseProvider y una implementación DevLicenseProvider… | ✅ `LicenseProvider` + `DevLicenseProvider` |
-| RF-LIC-02 |  | 0 | Todas las funciones premium consultan features.is_enabled("<feature_key>"); claves de… | ✅ `features.yaml` + `features.is_enabled()` |
-| RF-LIC-03 |  | 7 | La arquitectura debe permitir más adelante: licencia por asiento, por servidor, por… | 🟡 arquitectura lista; sin enforcement en v1 (por diseño) |
+| RF-LIC-01 |  | 0 | Módulo licensing con interfaz LicenseProvider y una implementación DevLicenseProvider… | ✅ LicenseProvider con proveedor de desarrollo y proveedor firmado Ed25519 |
+| RF-LIC-02 |  | 0 | Todas las funciones premium consultan features.is_enabled("<feature_key>"); claves de… | ✅ features.is_enabled con claves en features.yaml |
+| RF-LIC-03 |  | 7 | La arquitectura debe permitir más adelante: licencia por asiento, por servidor, por… | ✅ archivo firmado offline con topes; sin enforcement en v1 |

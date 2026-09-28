@@ -18,6 +18,7 @@ from perceptron.storage.repositories import SqlRepository
 
 if TYPE_CHECKING:
     from perceptron.api.jobs import Job
+    from perceptron.core.telemetry import Telemetry
     from perceptron.llm.gateway import Gateway
     from perceptron.remote.client import RemoteRegistry
     from perceptron.services.studies import StudyLauncher
@@ -38,6 +39,7 @@ class EngineContext:
     # Tests: cliente HTTP alternativo para hablar con un Team Server (Capa 5c).
     remote_http: Callable[[], Any] | None = field(default=None, repr=False)
     _scheduler: Any = field(default=None, repr=False)
+    _telemetry: Any = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         self.projects = SqlRepository(self.db, Project)
@@ -58,6 +60,10 @@ class EngineContext:
             else Database.for_file(settings.paths.db_file)
         )
         db.create_all()  # idempotente; en el Team Server el esquema lo migra Alembic antes
+        from perceptron.licensing import features
+        from perceptron.licensing.signed import license_provider
+
+        features.provider = license_provider(settings)
         return cls(settings=settings, db=db)
 
     @property
@@ -93,6 +99,17 @@ class EngineContext:
 
     def use_llm(self, gateway: Gateway) -> None:
         self._llm = gateway
+
+    @property
+    def telemetry(self) -> Telemetry:
+        """Telemetría opt-in (D7): apagada salvo consentimiento y endpoint configurado."""
+        if self._telemetry is None:
+            from perceptron.core.telemetry import Telemetry
+
+            self._telemetry = Telemetry(
+                self.settings.workspace_dir / "telemetry.json", self.settings.telemetry.endpoint
+            )
+        return cast("Telemetry", self._telemetry)
 
     def start_scheduler(self) -> None:
         """Disparadores de reentrenamiento y sondeo de fuentes (Capa 6), una vez por contexto."""

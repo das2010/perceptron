@@ -267,6 +267,88 @@ jobs:
           ./kubeconform -strict -summary rendered.yaml minimal.yaml
           grep -q "nvidia.com/gpu" rendered.yaml
 
+  licenses:
+    name: licencias (runtime distribuido)
+    # Aceptación de la Capa 7: sin dependencias incompatibles con la distribución comercial.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --locked
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Auditoría (Python, JS, Rust y pesos preentrenados)
+        run: uv run python scripts/license_audit.py --out build/licenses
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: informe-de-licencias
+          path: build/licenses
+
+  security:
+    name: seguridad (vulnerabilidades conocidas)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: pip-audit del runtime Python
+        run: |
+          # Versiones fijadas del lock, sin instalar (torch +cpu no está en PyPI: se audita la base).
+          uv export --no-dev --all-packages --no-hashes --no-emit-workspace --format requirements-txt \
+            | sed -E 's/\+(cpu|cu[0-9]+)//' > req.txt
+          uvx pip-audit==2.9.0 -r req.txt --no-deps --disable-pip --progress-spinner off
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: pnpm audit (producción, altas y críticas)
+        run: pnpm audit --prod --audit-level high
+
+  docs:
+    name: documentación de usuario (MkDocs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Compilar el sitio (es/en)
+        run: uvx --with mkdocs-material==9.6.* mkdocs build --strict --site-dir build/site
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guia-de-usuario
+          path: build/site
+
+  upgrade:
+    name: actualización N → N+1 (sin pérdida de proyectos)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Workspace creado con la versión anterior (main)
+        env:
+          PERCEPTRON_OFFLINE: "1"
+        run: |
+          git worktree add "$RUNNER_TEMP/prev" origin/main
+          cd "$RUNNER_TEMP/prev"
+          uv sync --all-packages --locked
+          uv run perceptron quickstart "$GITHUB_WORKSPACE/fixtures/uc01_churn/churn.csv" \
+            --target churn --trials 1 --max-epochs 2 -w "$RUNNER_TEMP/ws" --json > /dev/null
+      - run: uv sync --all-packages --locked
+      - name: Abrirlo con la versión nueva
+        run: uv run python scripts/upgrade_check.py "$RUNNER_TEMP/ws"
+
   contract:
     name: OpenAPI ↔ TypeScript
     runs-on: ubuntu-latest

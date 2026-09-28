@@ -95,8 +95,22 @@ def create_app(
         return await call_next(request)
 
     @app.exception_handler(PerceptronError)
-    async def perceptron_error_handler(_: Request, exc: PerceptronError) -> JSONResponse:
+    async def perceptron_error_handler(request: Request, exc: PerceptronError) -> JSONResponse:
+        if exc.http_status >= 500:  # solo el tipo, nunca el mensaje (telemetría opt-in)
+            request.app.state.ctx.telemetry.error(type(exc).__name__)
         return JSONResponse(exc.to_dict(), status_code=exc.http_status)
+
+    @app.middleware("http")
+    async def usage_counter(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        response = await call_next(request)
+        route = request.scope.get("route")
+        op = getattr(route, "operation_id", None)
+        ctx = getattr(request.app.state, "ctx", None)
+        if op and ctx is not None:
+            ctx.telemetry.count(op)  # contador en memoria; sale solo con consentimiento
+        return response
 
     for module in (
         system,

@@ -374,7 +374,7 @@
     },
     "labeling": {
       "ok": "Your data already has labels in “{{target}}”.",
-      "none": "No target column was detected. Assisted labeling arrives in Layer 4; for now pick the target in Data."
+      "none": "No target column was detected: pick it in Data or label your data in the Labeling tab."
     },
     "task": {
       "task": "Task",
@@ -901,5 +901,37 @@
       "skipped": "No new data",
       "failed": "Failed"
     }
+  },
+  "license": {
+    "title": "License",
+    "status": "Status",
+    "licensee": "Licensee",
+    "edition": "Edition",
+    "limits": "Limits",
+    "limitsValue": "{{seats}} users · {{servers}} servers · {{gpus}} GPUs",
+    "expires": "Expires",
+    "perpetual": "Perpetual",
+    "noEnforce": "In this version the license is reported but does not restrict usage.",
+    "paste": "Install a license",
+    "pasteHint": "Paste the content of the license.json sent by Preteco.",
+    "install": "Install",
+    "st": {
+      "valid": "Valid",
+      "missing": "No license",
+      "expired": "Expired",
+      "invalid": "Invalid",
+      "untrusted": "Not recognized",
+      "not_yet_valid": "Not yet valid"
+    }
+  },
+  "telemetry": {
+    "title": "Usage telemetry",
+    "hint": "Optional and anonymous: version, operating system, aggregated hardware and how often each feature is used. Never your data, column names, paths or model metrics.",
+    "on": "Enabled",
+    "off": "Disabled",
+    "noEndpoint": "No destination configured: nothing is sent even if enabled.",
+    "preview": "See exactly what would be sent",
+    "enable": "Enable telemetry",
+    "disable": "Disable telemetry"
   }
 }
