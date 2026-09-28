@@ -155,9 +155,13 @@ def global_explanation(run_dir: Path, dataset_dir: Path) -> GlobalExplanation:
         return _global_audio(trained, dataset_dir)
     if kind != "tabular":
         raise ValidationError(f"la explicación global todavía no cubre entradas {kind}")
-    ds = make_dataset(DatasetView(dataset_dir), trained.pipeline, "val", train=False)
-    n = min(GLOBAL_SAMPLES, len(ds))  # type: ignore[arg-type]
-    x_num, x_cat = ds.x_num[:n], ds.x_cat[:n]  # type: ignore[attr-defined]
+    # Solo las primeras filas de validación: alcanza para la importancia y no carga todo.
+    from perceptron.training.data import TabularDataset
+
+    val = DatasetView(dataset_dir).scan("val").head(GLOBAL_SAMPLES).collect()
+    ds = TabularDataset(trained.pipeline, val)
+    n = len(ds)
+    x_num, x_cat = ds.x_num[:n], ds.x_cat[:n]
     attr, names, _ = _tabular_attribute(trained, x_num, x_cat, GLOBAL_PERMUTATIONS)
     feats = [
         FeatureImportance(

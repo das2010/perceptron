@@ -267,7 +267,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-ING-06 | sí | 1 | Inferencia de esquema y tipos (numérico, categórico, fecha, texto, id, ruta de… | ✅ `data.schema`: tipos semánticos + candidatos a target, override manual |
 | RF-ING-07 | sí | 1 | Cada ingesta crea un DatasetVersion inmutable con hash de contenido. | ✅ `DatasetVersion` inmutable content-addressed (ADR-0016) |
 | RF-ING-08 | sí | 1 | Particionado: aleatorio estratificado, por grupo (evitar leakage entre entidades),… | ✅ aleatorio, estratificado, grupo, temporal (por serie), k-fold; test sellado |
-| RF-ING-09 |  | 1 | Soporte hasta ~10 GB: los datos no tabulares se leen en streaming desde disco; los… | 🟡 streaming para tabulares (Polars `sink_parquet`) e imágenes desde disco; shards en 1b |
+| RF-ING-09 |  | 1 | Soporte hasta ~10 GB: los datos no tabulares se leen en streaming desde disco; los… | ✅ tabulares materializados en Parquet; si el split supera ~2 GB en memoria se entrena por lotes (pyarrow, shuffle con buffer, pesos de clase por conteo); imágenes y audio se leen desde disco por muestra |
 | RF-PRF-01 | sí | 1 | Estadísticas por columna (tabular): tipo, nulos, cardinalidad, distribución, outliers,… | ✅ `profiling.tabular` |
 | RF-PRF-02 | sí | 1 | Imágenes: resolución, canales, formatos, corruptas, duplicados/casi-duplicados (hash… | ✅ `profiling.images` (dHash + LSH para casi duplicados) |
 | RF-PRF-03 |  | 1 | Texto: idioma, longitud en tokens, vocabulario, duplicados, balance. | ✅ `profiling.text` (idioma, largo en tokens, vocabulario, duplicados) |

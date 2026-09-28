@@ -179,3 +179,37 @@ def test_batch_size_search_grows_until_the_data_cap(
     )
     assert 8 < found <= batch_size_cap(8, n_train)
     assert batch_size_cap(32, 100) == 32  # con pocos datos no se busca más grande
+
+
+def test_streaming_tabular_dataset_reads_in_batches(
+    workspace_dir: Path, fixtures_dir: Path
+) -> None:
+    """RF-ING-09: el split grande se lee por lotes, cada fila una vez por época."""
+    from perceptron.data.pipeline.pipeline import FittedPipeline
+    from perceptron.training import data as tdata
+
+    cfg = _config(workspace_dir, fixtures_dir / "uc01_churn" / "churn.csv", "run_stream")
+    view = DatasetView(cfg.dataset_dir)
+    fitted = FittedPipeline.model_validate(cfg.pipeline)
+    in_memory = make_dataset(view, fitted, "train", train=False)
+    stream = tdata.StreamingTabularDataset(fitted, view.data_file, "train", shuffle=True, seed=3)
+    assert len(stream) == len(in_memory)  # type: ignore[arg-type]
+    first = [int(y) for *_, y in stream]
+    second = [int(y) for *_, y in stream]
+    assert len(first) == len(stream) and sorted(first) == sorted(second)
+    assert first != second  # mezcla distinta en cada época
+    assert stream.class_counts is not None and int(stream.class_counts.sum()) == len(stream)
+    loader = tdata.make_loader(stream, 32, shuffle=True, num_workers=0, seed=1)
+    x_num, _, y = next(iter(loader))
+    assert x_num.shape[0] == 32 and y.shape[0] == 32
+
+
+def test_training_uses_streaming_for_large_tabular(
+    workspace_dir: Path, fixtures_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Umbral en 0: cualquier tabular va por el camino streaming (el worker hereda el entorno).
+    monkeypatch.setenv("PERCEPTRON_STREAMING_THRESHOLD_MB", "0")
+    cfg = _config(workspace_dir, fixtures_dir / "uc01_churn" / "churn.csv", "run_big", max_epochs=2)
+    result = run_sync(cfg, EventBus(), timeout=300)
+    assert result.status == "succeeded", result.error
+    assert len(result.history) == 2 and "val_loss" in result.best_metrics

@@ -11,7 +11,7 @@ import numpy as np
 import polars as pl
 import torch
 from PIL import Image
-from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
+from torch.utils.data import DataLoader, Dataset, IterableDataset, WeightedRandomSampler
 
 from perceptron.data.pipeline.pipeline import (
     FittedPipeline,
@@ -38,6 +38,81 @@ class TabularDataset(Dataset[tuple[torch.Tensor, ...]]):
 
     def __getitem__(self, i: int) -> tuple[torch.Tensor, ...]:
         return self.x_num[i], self.x_cat[i], self.y[i]
+
+
+# Tabulares más grandes que esto (en memoria como tensores) se leen por lotes (RF-ING-09).
+STREAMING_TABULAR_BYTES = int(
+    float(os.environ.get("PERCEPTRON_STREAMING_THRESHOLD_MB", "2048")) * 2**20
+)
+STREAM_BATCH_ROWS = 65_536
+STREAM_SHUFFLE_BATCHES = 4
+
+
+class StreamingTabularDataset(IterableDataset[tuple[torch.Tensor, ...]]):
+    """Tabular grande: lee el Parquet del split por lotes (pyarrow), transforma cada lote con
+    el pipeline y mezcla con un buffer de varios lotes. Nunca tiene el split entero en memoria."""
+
+    def __init__(
+        self, fitted: FittedPipeline, data_file: Path, split: str, *, shuffle: bool, seed: int
+    ) -> None:
+        import pyarrow.compute as pc
+        import pyarrow.dataset as pads
+
+        from perceptron.data.splits import SPLIT_COLUMN
+
+        self.fitted = fitted
+        self.data_file = data_file
+        self.split = split
+        self.shuffle = shuffle
+        self.seed = seed
+        self.epoch = 0
+        self._filter = pc.field(SPLIT_COLUMN) == split
+        dataset = pads.dataset(str(data_file), format="parquet")
+        self.n = int(dataset.count_rows(filter=self._filter))
+        target = fitted.spec.target
+        self.class_counts: torch.Tensor | None = None
+        if target and fitted.classes and target.task is not TaskType.REGRESSION:
+            col = dataset.to_table(columns=[target.name], filter=self._filter)[target.name]
+            y = encode_target(fitted, pl.from_arrow(col).to_series())  # type: ignore[union-attr]
+            k = len(fitted.classes)
+            yt = torch.tensor(y)
+            self.class_counts = torch.bincount(yt[yt >= 0], minlength=k)
+
+    def __len__(self) -> int:
+        return self.n
+
+    def _batches(self) -> Any:
+        import pyarrow.dataset as pads
+
+        dataset = pads.dataset(str(self.data_file), format="parquet")
+        yield from dataset.to_batches(filter=self._filter, batch_size=STREAM_BATCH_ROWS)
+
+    def _emit(self, frames: list[pl.DataFrame], gen: torch.Generator) -> Any:
+        df = pl.concat(frames, how="vertical_relaxed")
+        arr = transform_tabular(self.fitted, df)
+        x_num, x_cat = torch.tensor(arr.x_num), torch.tensor(arr.x_cat)
+        y = torch.tensor(arr.y if arr.y is not None else np.zeros(df.height, dtype=np.int64))
+        order = torch.randperm(len(y), generator=gen) if self.shuffle else torch.arange(len(y))
+        for i in order.tolist():
+            yield x_num[i], x_cat[i], y[i]
+
+    def __iter__(self) -> Any:
+        gen = torch.Generator().manual_seed(self.seed + self.epoch)
+        self.epoch += 1
+        buffer: list[pl.DataFrame] = []
+        for batch in self._batches():
+            buffer.append(pl.from_arrow(batch))  # type: ignore[arg-type]
+            if len(buffer) >= (STREAM_SHUFFLE_BATCHES if self.shuffle else 1):
+                yield from self._emit(buffer, gen)
+                buffer = []
+        if buffer:
+            yield from self._emit(buffer, gen)
+
+
+def _tabular_bytes(view: DatasetView, split: str, fitted: FittedPipeline) -> int:
+    rows = int(view.scan(split).select(pl.len()).collect().item())
+    width = len(fitted.numeric_features) + len(fitted.categorical_features) + 1
+    return rows * width * 8
 
 
 class TextDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
@@ -342,6 +417,12 @@ def make_dataset(
                 fitted, full, split, normal_only=purpose is Purpose.TRAINING
             )
         return SeriesForecastDataset(fitted, full, split, train=train)
+    if (
+        view.modality is Modality.TABULAR
+        and purpose is Purpose.TRAINING
+        and _tabular_bytes(view, split, fitted) > STREAMING_TABULAR_BYTES
+    ):
+        return StreamingTabularDataset(fitted, view.data_file, split, shuffle=train, seed=42)
     df = view.read(split, purpose=purpose)
     if view.modality is Modality.TABULAR:
         return TabularDataset(fitted, df)
@@ -399,6 +480,11 @@ def make_loader(
     oversample: bool = False,
 ) -> DataLoader[Any]:
     generator = torch.Generator().manual_seed(seed)
+    if isinstance(ds, IterableDataset):
+        # Streaming (RF-ING-09): el dataset mezcla solo; sin sampler ni workers extra.
+        return DataLoader(
+            ds, batch_size=batch_size, num_workers=0, pin_memory=torch.cuda.is_available()
+        )
     sampler = balanced_sampler(ds, generator) if oversample and shuffle else None
     return DataLoader(
         ds,
@@ -434,9 +520,13 @@ def class_weights(fitted: FittedPipeline, ds: Dataset[Any]) -> torch.Tensor | No
     target = fitted.spec.target
     if not target or target.task is TaskType.REGRESSION or not fitted.classes:
         return None
+    k = len(fitted.classes)
+    streamed = getattr(ds, "class_counts", None)
+    if streamed is not None:
+        counts = streamed.float().clamp(min=1)
+        return counts.sum() / (k * counts)
     y = ds.y if hasattr(ds, "y") else None
     if y is None:
         return None
-    k = len(fitted.classes)
     counts = torch.bincount(y[y >= 0], minlength=k).float().clamp(min=1)
     return counts.sum() / (k * counts)
