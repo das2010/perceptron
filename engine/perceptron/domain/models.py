@@ -255,6 +255,9 @@ class ModelVersion(Entity):
     model_card: JsonDict = Field(default_factory=dict)
     promoted_at: datetime | None = Field(default=None, description="Última vez que fue champion")
     retired_at: datetime | None = Field(default=None, description="Cuándo dejó de ser champion")
+    mlflow_version: str | None = Field(
+        default=None, description="Versión espejo en el Model Registry de MLflow (RF-TRK-03)"
+    )
 
 
 class Export(Entity):

@@ -803,6 +803,11 @@ class Workflow:
         mv = build_model_version(
             run.project_id, run.id, self._run_dir(run), report, dataset_hash=dv.content_hash
         )
+        from perceptron.tracking.registry import RegistryMirror
+
+        if isinstance(self.tracker, MlflowTracker):
+            version = RegistryMirror(self.tracker.client).register(mv, run.mlflow_run_id)
+            mv = mv.model_copy(update={"mlflow_version": version})
         self.ctx.repo(ModelVersion).add(mv)
         if run.mlflow_run_id:
             self.tracker.set_tags(run.mlflow_run_id, {"perceptron.model_version": mv.id})
