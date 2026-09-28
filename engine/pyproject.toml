@@ -81,6 +81,11 @@ sources = [
   "pymysql>=1.1",
   "pyodbc>=5.1",
 ]
+# Brokers para fuentes streaming (RF-ING-05): Kafka (Apache-2.0) y MQTT (EPL-2.0 OR EDL-1.0).
+streaming = [
+  "kafka-python>=2.0.2",
+  "paho-mqtt>=2.1",
+]
 # NER para PII en texto libre (L2, ADR-0022): `presidio-analyzer` y `presidio-anonymizer` se
 # instalan aparte junto con un modelo NER de licencia compatible. No es un extra: spaCy
 # restringe numpy y el lock resuelve todos los extras juntos.

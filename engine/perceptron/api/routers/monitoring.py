@@ -246,7 +246,7 @@ def resolve(alert_id: str, ctx: Ctx) -> Alert:
 class StreamSourceCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
-    kind: Literal["rest", "websocket", "file"]
+    kind: Literal["rest", "websocket", "file", "kafka", "mqtt"]
     config: dict[str, Any]
     token: str | None = Field(default=None, description="Solo de escritura: va al keychain")
     poll_interval_s: float | None = Field(default=None, ge=10, description="Sondeo automático")
@@ -283,6 +283,7 @@ def create_stream_source(project_id: str, body: StreamSourceCreate, ctx: Ctx) ->
 
         schemes = ("http", "https") if body.kind == "rest" else ("ws", "wss")
         check_url(str(body.config.get("url", "")), ctx.settings.net_policy(), schemes=schemes)
+    # kafka/mqtt: los hosts se verifican en cada lectura (build_source recibe la política).
     src = DataSource(
         project_id=project_id,
         name=body.name,

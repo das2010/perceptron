@@ -7,7 +7,7 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-  "perceptron-engine[ml,llm,export,eval,sources]",
+  "perceptron-engine[ml,llm,export,eval,sources,streaming]",
   "perceptron-server",
   "pytest>=8",
   "pytest-cov>=5",
