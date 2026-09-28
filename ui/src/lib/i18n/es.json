@@ -972,7 +972,8 @@
       "rejected": "Rechazado",
       "skipped": "Sin datos nuevos",
       "failed": "Falló"
-    }
+    },
+    "sources": "Datos nuevos de las fuentes streaming"
   },
   "license": {
     "title": "Licencia",
@@ -1190,5 +1191,59 @@
     "inUse_other": "{{count}} más se conservan por estar en uso.",
     "apply_one": "Borrar {{count}} versión",
     "apply_other": "Borrar {{count}} versiones"
+  },
+  "streams": {
+    "title": "Fuentes streaming y API",
+    "add": "Agregar fuente",
+    "none": "Sin fuentes streaming: agregá una API, un WebSocket, un tópico de Kafka o de MQTT.",
+    "kind": "Tipo",
+    "kinds": {
+      "rest": "API REST",
+      "websocket": "WebSocket",
+      "kafka": "Kafka",
+      "mqtt": "MQTT",
+      "file": "Archivo"
+    },
+    "name": "Nombre",
+    "field": {
+      "url": "URL",
+      "method": "Método",
+      "records_path": "Ruta de los registros",
+      "pagination": "Paginación",
+      "auth": "Autenticación",
+      "max_messages": "Mensajes por lectura",
+      "bootstrap_servers": "Brokers",
+      "topic": "Tópico",
+      "group_id": "Grupo de consumo",
+      "username": "Usuario",
+      "host": "Host",
+      "port": "Puerto",
+      "qos": "QoS",
+      "client_id": "Id de cliente",
+      "path": "Ruta del archivo"
+    },
+    "hint": {
+      "records_path": "Dónde está la lista en el JSON, p. ej. data.items",
+      "bootstrap_servers": "host:puerto, separados por coma",
+      "topic": "En MQTT admite comodines + y #",
+      "path": "Dentro de una fuente habilitada del servidor"
+    },
+    "auth": {
+      "none": "Ninguna",
+      "bearer": "Token bearer",
+      "header": "Encabezado",
+      "sasl_plain": "SASL PLAIN",
+      "sasl_scram_256": "SCRAM-SHA-256",
+      "sasl_scram_512": "SCRAM-SHA-512"
+    },
+    "secret": "Token o contraseña",
+    "tls": "Conexión cifrada (TLS)",
+    "poll": "Sondeo automático (s)",
+    "pollHint": "Vacío: solo a mano. Mínimo 10 s.",
+    "create": "Crear fuente",
+    "rows": "Buffer",
+    "buffer": "{{rows}} filas en {{batches}} lotes",
+    "lastPoll": "Última lectura",
+    "pull": "Leer ahora"
   }
 }

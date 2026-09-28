@@ -1863,7 +1863,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Stream Sources */
+        get: operations["listStreamSources"];
         put?: never;
         /** Create Stream Source */
         post: operations["createStreamSource"];
@@ -7278,6 +7279,11 @@ export interface components {
             mode: "auto" | "llm" | "rules";
         };
         /** StreamSourceCreate */
+        /** StreamSourceInfo */
+        StreamSourceInfo: {
+            buffer: components["schemas"]["PullResult"];
+            source: components["schemas"]["DataSource"];
+        };
         StreamSourceCreate: {
             /** Config */
             config: {
@@ -7287,7 +7293,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "rest" | "websocket" | "file";
+            kind: "rest" | "websocket" | "file" | "kafka" | "mqtt";
             /** Name */
             name: string;
             /**
@@ -13108,6 +13114,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listStreamSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StreamSourceInfo"][];
                 };
             };
         };

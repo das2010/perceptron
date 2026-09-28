@@ -312,6 +312,28 @@ def create_stream_source(project_id: str, body: StreamSourceCreate, ctx: Ctx) ->
     return ctx.repo(DataSource).add(src)
 
 
+class StreamSourceInfo(BaseModel):
+    source: DataSource
+    buffer: PullResult
+
+
+@router.get("/projects/{project_id}/sources/stream", operation_id="listStreamSources")
+def list_stream_sources(project_id: str, ctx: Ctx) -> list[StreamSourceInfo]:
+    """Fuentes streaming/API del proyecto con el estado de su buffer (RF-ING-05)."""
+    from perceptron.services.streams import buffer_for
+
+    ctx.projects.get(project_id)
+    sources = ctx.repo(DataSource).list(filters={"project_id": project_id}, limit=500)
+    return [
+        StreamSourceInfo(
+            source=s,
+            buffer=PullResult.model_validate({"added": 0, **buffer_for(ctx, s).stats()}),
+        )
+        for s in sources
+        if s.type in (DataSourceType.STREAM, DataSourceType.API) and "stream" in s.config
+    ]
+
+
 @router.post("/sources/{source_id}/pull", operation_id="pullStreamSource")
 def pull(source_id: str, ctx: Ctx) -> PullResult:
     from perceptron.services.streams import pull_source

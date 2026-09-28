@@ -972,7 +972,8 @@
       "rejected": "Rejected",
       "skipped": "No new data",
       "failed": "Failed"
-    }
+    },
+    "sources": "New data from streaming sources"
   },
   "license": {
     "title": "License",
@@ -1190,5 +1191,59 @@
     "inUse_other": "{{count}} more are kept because they are in use.",
     "apply_one": "Delete {{count}} version",
     "apply_other": "Delete {{count}} versions"
+  },
+  "streams": {
+    "title": "Streaming and API sources",
+    "add": "Add source",
+    "none": "No streaming sources: add an API, a WebSocket, a Kafka or an MQTT topic.",
+    "kind": "Type",
+    "kinds": {
+      "rest": "REST API",
+      "websocket": "WebSocket",
+      "kafka": "Kafka",
+      "mqtt": "MQTT",
+      "file": "File"
+    },
+    "name": "Name",
+    "field": {
+      "url": "URL",
+      "method": "Method",
+      "records_path": "Records path",
+      "pagination": "Pagination",
+      "auth": "Authentication",
+      "max_messages": "Messages per read",
+      "bootstrap_servers": "Brokers",
+      "topic": "Topic",
+      "group_id": "Consumer group",
+      "username": "User",
+      "host": "Host",
+      "port": "Port",
+      "qos": "QoS",
+      "client_id": "Client id",
+      "path": "File path"
+    },
+    "hint": {
+      "records_path": "Where the list is in the JSON, e.g. data.items",
+      "bootstrap_servers": "host:port, comma separated",
+      "topic": "MQTT accepts + and # wildcards",
+      "path": "Inside an enabled server source"
+    },
+    "auth": {
+      "none": "None",
+      "bearer": "Bearer token",
+      "header": "Header",
+      "sasl_plain": "SASL PLAIN",
+      "sasl_scram_256": "SCRAM-SHA-256",
+      "sasl_scram_512": "SCRAM-SHA-512"
+    },
+    "secret": "Token or password",
+    "tls": "Encrypted connection (TLS)",
+    "poll": "Automatic polling (s)",
+    "pollHint": "Empty: manual only. Minimum 10 s.",
+    "create": "Create source",
+    "rows": "Buffer",
+    "buffer": "{{rows}} rows in {{batches}} batches",
+    "lastPoll": "Last read",
+    "pull": "Read now"
   }
 }

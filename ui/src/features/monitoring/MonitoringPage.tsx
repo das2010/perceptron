@@ -32,6 +32,7 @@ import {
   useUpdateDeployment,
 } from "./hooks";
 import { RetrainPanel } from "./RetrainPanel";
+import { StreamSources } from "./StreamSources";
 
 const TONE = { none: "ok", low: "neutral", medium: "warn", high: "bad" } as const;
 type Sev = keyof typeof TONE;
@@ -320,6 +321,7 @@ export function MonitoringPage() {
       {deployments.data && deployments.data.length > 0 && (
         <RetrainPanel projectId={projectId} deployments={deployments.data} />
       )}
+      <StreamSources projectId={projectId} />
     </div>
   );
 }
