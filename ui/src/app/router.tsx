@@ -3,10 +3,12 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   type RouterHistory,
 } from "@tanstack/react-router";
 
 import { AgentPage } from "@/features/agent/AgentPage";
+import { DesignPage } from "@/features/arch/DesignPage";
 import { AuditPage } from "@/features/audit/AuditPage";
 import { DataPage } from "@/features/data/DataPage";
 import { ExperimentsPage } from "@/features/experiments/ExperimentsPage";
@@ -78,6 +80,22 @@ const agentRoute = createRoute({
   validateSearch: (search: Record<string, unknown>): { agent?: string } =>
     typeof search.agent === "string" ? { agent: search.agent } : {},
 });
+const designRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "design",
+  component: DesignPage,
+});
+// Los editores traen React Flow (y Monaco bajo demanda): se cargan solo al abrirlos.
+const archEditorRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "archspecs/$archspecId",
+  component: lazyRouteComponent(() => import("@/features/arch/ArchEditorPage"), "ArchEditorPage"),
+});
+const pipelineEditorRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "pipelines/$pipelineId",
+  component: lazyRouteComponent(() => import("@/features/arch/PipelineEditorPage"), "PipelineEditorPage"),
+});
 export const runRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "runs/$runId",
@@ -96,6 +114,9 @@ const routeTree = rootRoute.addChildren([
     auditRoute,
     wizardRoute,
     agentRoute,
+    designRoute,
+    archEditorRoute,
+    pipelineEditorRoute,
     runRoute,
   ]),
 ]);

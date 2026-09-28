@@ -106,7 +106,8 @@
       "models": "Modelos",
       "audit": "Auditoría LLM",
       "wizard": "Wizard",
-      "agent": "Agente"
+      "agent": "Agente",
+      "design": "Diseño"
     }
   },
   "privacy": {
@@ -412,5 +413,56 @@
       "finish": "Cierre",
       "suggestion": "Sugerencia"
     }
+  },
+  "arch": {
+    "title": "Arquitecturas",
+    "empty": "Todavía no hay arquitecturas. Proponé una desde Entrenar o el asistente.",
+    "name": "Nombre",
+    "origin": "Origen",
+    "originName": {
+      "manual": "manual",
+      "llm": "LLM",
+      "agent": "agente",
+      "rules": "reglas"
+    },
+    "back": "Volver",
+    "valid": "Válida",
+    "invalid_one": "{{count}} error",
+    "invalid_other": "{{count}} errores",
+    "summary": "{{params}} parámetros · ~{{memory}} MB",
+    "code": "Ver como código",
+    "codeNeedsValid": "Corregí los errores para ver el código PyTorch.",
+    "saveAsNew": "Guardar como nueva",
+    "addBlock": "Agregar bloque",
+    "pickBlock": "Elegí un bloque del catálogo",
+    "add": "Agregar",
+    "remove": "Quitar",
+    "noParams": "Este bloque no tiene parámetros.",
+    "tunable": "Ajustable por HPO",
+    "issues": "Problemas de validación",
+    "selectHint": "Tocá un bloque del grafo para editar sus parámetros. Conectá bloques arrastrando desde un borde; Supr borra el seleccionado."
+  },
+  "pipeline": {
+    "title": "Pipelines de datos",
+    "empty": "Todavía no hay pipelines. Se proponen al preparar los datos.",
+    "kind": "Tipo de paso",
+    "columns": "Columnas",
+    "columnsHint": "Separadas por coma.",
+    "params": "Parámetros (JSON)",
+    "paramsHint": "Por ejemplo {\"method\": \"robust\"}.",
+    "paramsInvalid": "El JSON de parámetros no es válido; no se aplicó.",
+    "preview": "Vista previa sobre train",
+    "runPreview": "Ver resultado",
+    "saveFirst": "Guardá los cambios para previsualizarlos.",
+    "noTabularPreview": "La vista previa de filas está disponible para datos tabulares.",
+    "unsaved": "Sin guardar",
+    "discard": "Descartar",
+    "save": "Guardar",
+    "addStep": "Agregar paso",
+    "up": "Subir",
+    "down": "Bajar",
+    "selectHint": "Tocá un paso para editarlo, reordenarlo o quitarlo.",
+    "rationale": "Por qué estos pasos",
+    "steps": "Pasos"
   }
 }

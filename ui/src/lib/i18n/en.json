@@ -106,7 +106,8 @@
       "models": "Models",
       "audit": "LLM audit",
       "wizard": "Wizard",
-      "agent": "Agent"
+      "agent": "Agent",
+      "design": "Design"
     }
   },
   "privacy": {
@@ -412,5 +413,56 @@
       "finish": "Close",
       "suggestion": "Suggestion"
     }
+  },
+  "arch": {
+    "title": "Architectures",
+    "empty": "No architectures yet. Propose one from Train or the wizard.",
+    "name": "Name",
+    "origin": "Origin",
+    "originName": {
+      "manual": "manual",
+      "llm": "LLM",
+      "agent": "agent",
+      "rules": "rules"
+    },
+    "back": "Back",
+    "valid": "Valid",
+    "invalid_one": "{{count}} error",
+    "invalid_other": "{{count}} errors",
+    "summary": "{{params}} parameters · ~{{memory}} MB",
+    "code": "View as code",
+    "codeNeedsValid": "Fix the errors to see the PyTorch code.",
+    "saveAsNew": "Save as new",
+    "addBlock": "Add block",
+    "pickBlock": "Pick a catalog block",
+    "add": "Add",
+    "remove": "Remove",
+    "noParams": "This block has no parameters.",
+    "tunable": "Tunable by HPO",
+    "issues": "Validation issues",
+    "selectHint": "Click a block in the graph to edit its parameters. Connect blocks by dragging from a handle; Delete removes the selected one."
+  },
+  "pipeline": {
+    "title": "Data pipelines",
+    "empty": "No pipelines yet. They are proposed when preparing the data.",
+    "kind": "Step type",
+    "columns": "Columns",
+    "columnsHint": "Comma separated.",
+    "params": "Parameters (JSON)",
+    "paramsHint": "For example {\"method\": \"robust\"}.",
+    "paramsInvalid": "The parameters JSON is invalid; it was not applied.",
+    "preview": "Preview on train",
+    "runPreview": "Show result",
+    "saveFirst": "Save your changes to preview them.",
+    "noTabularPreview": "Row preview is available for tabular data.",
+    "unsaved": "Unsaved",
+    "discard": "Discard",
+    "save": "Save",
+    "addStep": "Add step",
+    "up": "Move up",
+    "down": "Move down",
+    "selectHint": "Click a step to edit, reorder or remove it.",
+    "rationale": "Why these steps",
+    "steps": "Steps"
   }
 }

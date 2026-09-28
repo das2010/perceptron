@@ -681,6 +681,19 @@
         "title": "ArchSpec",
         "type": "object"
       },
+      "ArchSpecCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "spec": {
+            "$ref": "#/components/schemas/ArchSpec"
+          }
+        },
+        "required": [
+          "spec"
+        ],
+        "title": "ArchSpecCreate",
+        "type": "object"
+      },
       "ArchSpecRecord": {
         "additionalProperties": false,
         "description": "Referencia persistida a una ArchSpec (§9) o a código experto (RF-ARC-06).",
@@ -7206,6 +7219,48 @@
         ]
       }
     },
+    "/api/v1/archspecs/{archspec_id}": {
+      "get": {
+        "operationId": "getArchSpec",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "archspec_id",
+            "required": true,
+            "schema": {
+              "title": "Archspec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchSpecRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Archspec",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
     "/api/v1/catalog/blocks": {
       "get": {
         "operationId": "listCatalogBlocks",
@@ -7859,6 +7914,46 @@
       }
     },
     "/api/v1/pipelines/{pipeline_id}": {
+      "get": {
+        "operationId": "getPipeline",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pipeline_id",
+            "required": true,
+            "schema": {
+              "title": "Pipeline Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pipeline"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Pipeline",
+        "tags": [
+          "pipelines"
+        ]
+      },
       "put": {
         "operationId": "updatePipeline",
         "parameters": [
@@ -8345,6 +8440,103 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/archspecs": {
+      "get": {
+        "operationId": "listArchSpecs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ArchSpecRecord"
+                  },
+                  "title": "Response Listarchspecs",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Archspecs",
+        "tags": [
+          "arch"
+        ]
+      },
+      "post": {
+        "description": "Guarda una ArchSpec editada por el usuario (editor visual, RF-ARC-05): valida primero.",
+        "operationId": "createArchSpec",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchSpecCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchSpecRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Archspec",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/datasets": {
       "get": {
         "operationId": "listDatasets",
@@ -8630,6 +8822,52 @@
         "summary": "List Models",
         "tags": [
           "models"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/pipelines": {
+      "get": {
+        "operationId": "listPipelines",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Pipeline"
+                  },
+                  "title": "Response Listpipelines",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Pipelines",
+        "tags": [
+          "pipelines"
         ]
       }
     },
