@@ -38,6 +38,7 @@ class IdPrefix(StrEnum):
     REFRESH_TOKEN = "rtk"  # noqa: S105 - prefijo de ID, no un secreto
     ALERT = "alr"
     PREDICTION = "prd"
+    RETRAIN_RUN = "rtr"
 
 
 _SEP = "_"

@@ -871,5 +871,35 @@
     "low": "Low",
     "medium": "Medium",
     "high": "High"
+  },
+  "retrain": {
+    "title": "Automatic retraining",
+    "hint": "With new labeled data (streaming sources or feedback) a challenger with the same architecture is trained; it is compared with the champion on data neither has seen and promoted only if it improves.",
+    "deployment": "Model in use to watch",
+    "onDrift": "On data drift",
+    "volume": "On N new rows",
+    "volumeHint": "Empty = don’t use this trigger.",
+    "cron": "On a schedule (cron, UTC)",
+    "cronHint": "minute hour day month weekday, e.g. 0 3 * * 1",
+    "approval": "Ask for approval before promoting",
+    "enabled": "Policy enabled",
+    "save": "Save policy",
+    "runNow": "Retrain now",
+    "noRuns": "No retraining yet.",
+    "when": "When",
+    "trigger": "Trigger",
+    "status": "Status",
+    "result": "Result",
+    "approve": "Approve",
+    "reject": "Reject",
+    "st": {
+      "running": "Running",
+      "awaiting_approval": "Awaiting approval",
+      "promoted": "Promoted",
+      "not_improved": "Did not improve",
+      "rejected": "Rejected",
+      "skipped": "No new data",
+      "failed": "Failed"
+    }
   }
 }

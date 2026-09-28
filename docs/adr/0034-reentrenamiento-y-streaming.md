@@ -1,0 +1,42 @@
+# ADR-0034: Reentrenamiento automático y fuentes streaming (Capa 6b)
+- Estado: propuesto
+- Fecha: 2026-09-28
+- Contexto:
+  - RF-MON-05 pide una `RetrainPolicy` con:
+    - disparadores por drift, cron, volumen de datos nuevos (también streams) y degradación;
+    - reentrenamiento con la última ArchSpec y HPO reducido;
+    - aprobación opcional antes de promover.
+  - RF-ING-05 pide APIs REST (paginación, auth por header o token, mapeo JSON → tabla) y streaming (Kafka, MQTT, WebSocket) con una interfaz `StreamSource` extensible.
+  - La aceptación UC-10 exige que el challenger se promueva **solo si mejora**.
+- Decisión:
+  - **Fuentes:** `StreamSource.fetch(state, secret) → Batch` con estado explícito (offset, página, cursor, `next_url`, offset de archivo), guardado junto al buffer. Implementaciones:
+    - REST: paginación none, offset, page, cursor o `Link: rel=next`, `records_path` y aplanado de JSON anidado;
+    - WebSocket: mensajes JSON hasta N mensajes o un tiempo sin mensajes;
+    - archivo JSON Lines que crece: lee desde el último offset, respeta la línea incompleta y detecta rotación.
+    - Kafka y MQTT quedan para cuando se necesiten, como extras opcionales detrás de la misma interfaz: paho-mqtt es EPL-2.0/EDL-1.0 y se tomaría bajo EDL, BSD-3; kafka-python es Apache-2.0.
+    - Los lotes se guardan en `projects/<id>/streams/<fuente>/batch-*.parquet`.
+    - El token va al almacén de secretos.
+    - Sondeo por `poll_interval_s`.
+  - **Versión de datos del reentrenamiento:**
+    - = versión del champion + filas nuevas etiquetadas (del buffer desde el último lote consumido y, si `use_feedback`, el feedback del deployment);
+    - split nuevo **predefinido** (`SplitStrategy.PREDEFINED` desde una columna):
+      - las filas viejas conservan su partición, así que el test del champion no se mueve;
+      - de las nuevas, una fracción al azar con semilla (`holdout_fraction`, 30 %) va a test y el resto a train/val.
+    - El holdout va al azar y no solo a lo más reciente, para que el challenger vea en train la parte con drift.
+    - Linaje: `parent_id` = versión del champion y `transformation = append:<n>`.
+  - **Challenger:**
+    - misma arquitectura y pipeline que el champion, con la estrategia de su estudio y el presupuesto de la política;
+    - se lanza con `ctx.launch_study`, así que en el Team Server va a la cola de workers (ADR-0031);
+    - después: evaluación, export ONNX y registro.
+  - **Comparación:**
+    - `challenge` sobre el test de la versión nueva (test viejo + filas nuevas reservadas; ninguno de los dos modelos las vio), con la métrica primaria y `min_improvement`;
+    - con `require_approval`, la ejecución queda en `awaiting_approval` y se aprueba o rechaza por la API o la UI;
+    - cada paso queda en la bitácora de `RetrainRun`, más una alerta de resumen o de falla.
+  - **Scheduler** en el Engine (un hilo por contexto, `interval_s`):
+    - cron propio de 5 campos (sin dependencia nueva) y volumen de filas pendientes;
+    - drift y degradación reaccionan al evento `drift.report` del deployment vigilado;
+    - `cooldown_s` evita reentrenamientos en cadena y hay una sola ejecución en curso por política;
+    - `tick()` es invocable en tests y CLI.
+- Consecuencias:
+  - Aceptación UC-10 (test de API sobre el fixture): stream en 10 lotes, sin reentrenar en los lotes estables. En los lotes con drift: alerta → reentrenamiento por el disparador → challenger evaluado → promovido solo si mejora → rollback al champion original.
+  - En el Team Server, el scheduler corre en el proceso de la API. Varias réplicas necesitarían un lock distribuido (Valkey); con una sola réplica, como hoy, no hace falta.
