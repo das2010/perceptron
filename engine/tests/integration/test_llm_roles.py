@@ -137,18 +137,23 @@ def test_hpo_strategist_diagnostician_and_reporter(
     pid, dv, pipe = _uc01(wf, fixtures_dir)
     record, _ = wf.propose_architecture(dv, pipe)
 
+    def no_objectives(request: LLMRequest) -> dict[str, Any]:
+        return {**_strategy(request), "objectives": []}  # no se puede reparar: reintento
+
     def unknown_param(request: LLMRequest) -> dict[str, Any]:
         out = _strategy(request)
         out["search_space"].append({"name": "inventado", "type": "float", "low": 0, "high": 1})
-        return out
+        return out  # se repara: el parámetro inexistente se descarta
 
-    fake_llm.script("hpo_strategist", unknown_param, _strategy)
+    fake_llm.script("hpo_strategist", no_objectives, unknown_param)
     budget = Budget(max_trials=3, max_epochs_per_trial=2)
     strategy = wf.hpo_strategy(record.id, budget, mode="auto", dataset_version_id=dv)
     assert strategy.origin is Origin.LLM and strategy.llm_call_id
     assert strategy.budget.max_trials == 2 and strategy.budget.max_epochs_per_trial == 1
     assert all(p.default is not None for p in strategy.search_space)  # trial 0 = plantilla
-    assert "inventado" in fake_llm.calls("hpo_strategist")[1].messages[-1].content
+    assert "objectives" in fake_llm.calls("hpo_strategist")[1].messages[-1].content
+    assert "inventado" not in {p.name for p in strategy.search_space}
+    assert strategy.rationale and "[Sistema:" in strategy.rationale
 
     study, result = wf.run_study(pid, dv, pipe, record.id, strategy)
     assert study.origin is Origin.LLM and result.best_trial is not None

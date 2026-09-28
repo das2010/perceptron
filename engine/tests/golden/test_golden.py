@@ -48,6 +48,12 @@ def uc01(wf: Workflow, fixtures_dir: Path) -> tuple[str, str, str]:
     return p.id, dv.id, wf.propose_pipeline(dv.id).id
 
 
+def _llm_errors(wf: Workflow, project_id: str) -> list[str]:
+    """Errores de validación o del proveedor, para entender un fallback en el log."""
+    calls = wf.ctx.repo(LLMCall).list(filters={"project_id": project_id}, limit=500)
+    return [f"{c.purpose.value}#{c.attempt}: {c.error[:300]}" for c in calls if c.error]
+
+
 def _no_leaks(wf: Workflow, project_id: str, dataset_version_id: str) -> None:
     calls = list(wf.ctx.repo(LLMCall).list(filters={"project_id": project_id}, limit=500))
     view = wf.view(wf.dataset(dataset_version_id))
@@ -57,7 +63,7 @@ def _no_leaks(wf: Workflow, project_id: str, dataset_version_id: str) -> None:
 def test_architect(wf: Workflow, uc01: tuple[str, str, str]) -> None:
     pid, dv, pipe = uc01
     out = wf.roles.propose_architectures(dv, pipe, mode="llm", n=3)
-    assert out.origin is Origin.LLM and out.fallback_reason is None
+    assert out.origin is Origin.LLM and out.fallback_reason is None, _llm_errors(wf, pid)
     assert 2 <= len(out.options) <= 4
     allowed = {b.key for b in blocks_for(wf.dataset(dv).modality or Modality.TABULAR)}
     for o in out.options:
@@ -68,12 +74,12 @@ def test_architect(wf: Workflow, uc01: tuple[str, str, str]) -> None:
 
 
 def test_hpo_strategist(wf: Workflow, uc01: tuple[str, str, str]) -> None:
-    _, dv, pipe = uc01
+    pid, dv, pipe = uc01
     record, _ = wf.propose_architecture(dv, pipe)
     spec = ArchSpec.model_validate(record.spec)
     budget = Budget(max_trials=15, max_epochs_per_trial=20)
     s = wf.hpo_strategy(record.id, budget, mode="llm", dataset_version_id=dv)
-    assert s.origin is Origin.LLM and s.llm_call_id and s.rationale
+    assert s.origin is Origin.LLM and s.llm_call_id and s.rationale, _llm_errors(wf, pid)
     tunable = {p.name for p in default_search_space(spec)}
     assert {p.name for p in s.search_space} <= tunable and s.search_space
     assert 1 <= s.budget.max_trials <= 15
@@ -108,7 +114,7 @@ def test_diagnostician_detects_seeded_overfitting(wf: Workflow, uc01: tuple[str,
     result = RunResult(run_id=run.id, status="succeeded", epochs=14, history=history)
     (run_dir / RESULT_FILE).write_text(result.model_dump_json(), encoding="utf-8")
     d = wf.roles.diagnose(run.id, mode="llm")
-    assert d.origin == "llm"
+    assert d.origin == "llm", _llm_errors(wf, pid)
     assert "overfitting" in {p.kind for p in d.problems}
     assert d.actions
 
@@ -137,7 +143,8 @@ def test_reporter_and_labeler(wf: Workflow, uc01: tuple[str, str, str]) -> None:
     )
     (folder / EVALUATION_FILE).write_text(report.model_dump_json(), encoding="utf-8")
     out = wf.roles.report(run.id, mode="llm")
-    assert out.origin == "llm" and "#" in out.markdown and out.model_card.metrics == report.metrics
+    assert out.origin == "llm", _llm_errors(wf, pid)
+    assert "#" in out.markdown and out.model_card.metrics == report.metrics
     guide = wf.roles.labeling_guide(
         pid, {"baja": "el cliente cancela en 90 días", "retenido": "sigue activo"}, mode="llm"
     )

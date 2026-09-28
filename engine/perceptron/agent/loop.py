@@ -495,11 +495,12 @@ class AgentRunner:
 
         space = HPOSpace.of(self._spec(action.archspec_id))
         budget = self._budget(ar)
-        errors = space.errors(action.strategy, budget)
+        proposal, notes = space.repair(action.strategy, budget)
+        errors = space.errors(proposal, budget)
         if errors:
             self._observe(ar, action.tool, {"valid": False, "errors": errors})
             return
-        strategy = space.build(action.strategy, budget, origin=Origin.AGENT)
+        strategy = space.build(proposal, budget, origin=Origin.AGENT)
         sid = f"s{len(ar.strategies) + 1}"
         ar.strategies = {
             **ar.strategies,
@@ -514,6 +515,7 @@ class AgentRunner:
                 "pruner": strategy.pruner,
                 "params": [p.name for p in strategy.search_space],
                 "max_trials": strategy.budget.max_trials,
+                "system_notes": notes,
             },
         )
 
