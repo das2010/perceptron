@@ -50,9 +50,10 @@ SYNC_KINDS: dict[str, type[Entity]] = {
     m.__name__: m
     for m in (DatasetVersion, Profile, Pipeline, ArchSpecRecord, Study, Run, Evaluation)
 }
-# Lo que el desktop puede subir; bajar se puede también runs/ y exports/.
-UPLOAD_PREFIXES = ("datasets", "pipelines", "archspecs", "code", "labels")
-DOWNLOAD_PREFIXES = (*UPLOAD_PREFIXES, "runs", "exports")
+# Lo que el desktop puede subir; bajar se puede también exports/.
+# `runs`: artefactos de los runs que se promueven desde el desktop (RF-PRJ-04).
+UPLOAD_PREFIXES = ("datasets", "pipelines", "archspecs", "code", "labels", "runs")
+DOWNLOAD_PREFIXES = (*UPLOAD_PREFIXES, "exports")
 MAX_CHUNK = 16 * 1024 * 1024
 MAX_FILE = 10 * 1024**3
 
@@ -136,7 +137,7 @@ def _target(state: ServerState, project: Project, rel: PurePosixPath) -> Path:
     return ensure_within(root / Path(*rel.parts), root)
 
 
-_ID = re.compile(r"[a-z]{2,4}_[0-9A-Za-z]{1,64}")
+_ID = re.compile(r"[a-z]{2,4}_[0-9A-Za-z][0-9A-Za-z-]{0,79}")  # runs de HPO: std_…-t000
 
 
 def _check_id(value: str, prefix: str | None = None) -> None:

@@ -42,6 +42,7 @@ from perceptron.domain.models import (
 from perceptron.monitoring.alerts import AlertService
 from perceptron.monitoring.drift import data_drift, embedding_drift, numeric_drift
 from perceptron.monitoring.store import PredictionStore
+from perceptron.tracking.registry import mirror_for
 
 if TYPE_CHECKING:
     from perceptron.api.context import EngineContext
@@ -389,13 +390,18 @@ class Monitoring:
         mv = self.models.get(model_version_id)
         now = utcnow()
         current = self.champion(mv.project_id)
+        mirror = mirror_for(self.ctx)
         if current is not None and current.id != mv.id:
-            self.models.update(
+            retired = self.models.update(
                 current.model_copy(update={"stage": ModelStage.ARCHIVED, "retired_at": now})
             )
+            if mirror is not None:
+                mirror.sync_stage(retired)
         mv = self.models.update(
             mv.model_copy(update={"stage": ModelStage.PRODUCTION, "promoted_at": now})
         )
+        if mirror is not None:
+            mirror.sync_stage(mv)  # el alias `champion` pasa a esta versión
         for dep in self.deployments.list(filters={"project_id": mv.project_id}, limit=500):
             if dep.follow_champion and dep.model_version_id != mv.id:
                 self.deployments.update(dep.model_copy(update={"model_version_id": mv.id}))

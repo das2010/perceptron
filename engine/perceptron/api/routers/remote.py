@@ -7,7 +7,7 @@ en el desktop.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Response, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -120,3 +120,37 @@ def create_remote_study(project_id: str, body: RemoteStudyCreate, ctx: Ctx) -> J
     return launch_remote_study(
         ctx, client_for(ctx, body.server), project_id, payload, workspace_id=body.workspace_id
     )
+
+
+class PromoteBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    server: str
+    workspace_id: str | None = Field(default=None, description="Workspace del servidor")
+    dataset_version_ids: list[str] = Field(default_factory=list, max_length=200)
+    run_ids: list[str] = Field(default_factory=list, max_length=500)
+
+
+@project_router.post(
+    "/projects/{project_id}/remote/promote",
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="promoteProject",
+    dependencies=DesktopOnly,
+)
+def promote_project(project_id: str, body: PromoteBody, ctx: Ctx) -> Job:
+    """Convierte el proyecto local en proyecto de equipo (RF-PRJ-04): sube la metadata, los
+    datasets y los runs elegidos al Team Server."""
+    from perceptron.remote.sync import ProjectSync
+
+    ctx.projects.get(project_id)
+    client = client_for(ctx, body.server)
+
+    def work(job: Any) -> dict[str, int]:
+        sync = ProjectSync(ctx, client, project_id)
+        return sync.promote(
+            workspace_id=body.workspace_id,
+            dataset_version_ids=body.dataset_version_ids,
+            run_ids=body.run_ids,
+            progress=lambda step, **d: job.emit("sync", step=step, **d),
+        )
+
+    return ctx.jobs.submit("promote", work, refs={"project_id": project_id, "server": body.server})

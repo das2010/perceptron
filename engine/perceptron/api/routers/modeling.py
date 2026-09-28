@@ -21,12 +21,23 @@ from perceptron.catalog.registry import blocks_for, public_blocks
 from perceptron.core.errors import ConflictError, NotFoundError, ValidationError
 from perceptron.data.pipeline.pipeline import PipelineSpec, preview_steps, transform_tabular
 from perceptron.domain.enums import Device, Modality, Origin, TaskType
-from perceptron.domain.models import ArchSpecRecord, Evaluation, ModelVersion, Pipeline, Run, Study
+from perceptron.domain.models import (
+    ArchSpecRecord,
+    DatasetVersion,
+    Evaluation,
+    ModelVersion,
+    Pipeline,
+    Run,
+    Study,
+)
 from perceptron.evaluation.evaluate import EvaluationReport
+from perceptron.hpo.analysis import StudyAnalysis, analyze
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.sandbox.expert import starter_code
 from perceptron.sandbox.process import CodeCheck
 from perceptron.sandbox.static import StaticReport, check_source
+from perceptron.services.compare import ConfigDiff, config_diff
+from perceptron.services.estimate import CostEstimate
 from perceptron.services.workflow import Workflow
 
 router = APIRouter()
@@ -452,6 +463,16 @@ def get_study(study_id: str, ctx: Ctx) -> Study:
     return ctx.repo(Study).get(study_id)
 
 
+@router.get("/studies/{study_id}/analysis", tags=["hpo"], operation_id="getStudyAnalysis")
+def get_study_analysis(study_id: str, ctx: Ctx) -> StudyAnalysis:
+    """Historia, importancia de hiperparámetros, coordenadas paralelas y Pareto (RF-HPO-06)."""
+    study = ctx.repo(Study).get(study_id)
+    strategy = HPOStrategy.model_validate(study.strategy)
+    runs = ctx.repo(Run).list(filters={"study_id": study.id}, limit=10_000)
+    ordered = sorted(runs, key=lambda r: (r.created_at, r.id))
+    return analyze(strategy, ordered)
+
+
 def _study_job(ctx: EngineContext, study_id: str) -> Job | None:
     return next(
         (
@@ -539,6 +560,38 @@ def get_run_history(run_id: str, ctx: Ctx) -> list[dict[str, float]]:
     return RunResult.model_validate_json(path.read_text(encoding="utf-8")).history
 
 
+class EstimateBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    archspec_id: str
+    dataset_version_id: str
+
+
+@router.post(
+    "/projects/{project_id}/arch/estimate", tags=["arch"], operation_id="estimateArchitecture"
+)
+def estimate_architecture(project_id: str, body: EstimateBody, ctx: Ctx) -> CostEstimate:
+    """Tamaño efectivo, memoria por batch y tiempo por época por dispositivo (RF-PRF-08)."""
+    from perceptron.archspec.schema import resolve
+    from perceptron.services.estimate import estimate_cost
+    from perceptron.training.data import auto_batch_size
+    from perceptron.training.hardware import detect_hardware
+
+    ctx.projects.get(project_id)
+    record = ctx.repo(ArchSpecRecord).get(body.archspec_id)
+    if record.spec is None:
+        raise ValidationError("la estimación está disponible para arquitecturas declarativas")
+    spec = ArchSpec.model_validate(record.spec)
+    dv = ctx.repo(DatasetVersion).get(body.dataset_version_id)
+    n_train = int(dv.split.train) if dv.split is not None else dv.num_samples
+    requested = resolve(spec.training.batch_size, {})
+    batch = (
+        int(requested)
+        if isinstance(requested, int | float) and not isinstance(requested, bool)
+        else auto_batch_size(dv.modality or Modality.TABULAR, n_train)
+    )
+    return estimate_cost(spec, dv, detect_hardware(), batch_size=batch)
+
+
 @router.post("/runs/compare", tags=["runs"], operation_id="compareRuns")
 def compare_runs(body: CompareBody, ctx: Ctx) -> list[dict[str, Any]]:
     runs = [ctx.repo(Run).get(r) for r in body.run_ids]
@@ -551,6 +604,15 @@ def compare_runs(body: CompareBody, ctx: Ctx) -> list[dict[str, Any]]:
         }
         for r in runs
     ]
+
+
+@router.post("/runs/compare/config", tags=["runs"], operation_id="compareRunConfigs")
+def compare_run_configs(body: CompareBody, ctx: Ctx) -> ConfigDiff:
+    """Qué cambia entre los runs en su ArchSpec y en su pipeline (RF-TRK-04)."""
+    runs = [ctx.repo(Run).get(r) for r in body.run_ids]
+    archspecs = [ctx.repo(ArchSpecRecord).get(r.archspec_id).spec for r in runs]
+    pipelines = [ctx.repo(Pipeline).get(r.pipeline_id).graph for r in runs]
+    return config_diff([r.id for r in runs], archspecs, pipelines)
 
 
 @router.websocket("/runs/{run_id}/live")

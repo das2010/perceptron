@@ -125,7 +125,8 @@
     "recent": "Recent projects",
     "empty": "No projects yet. Create one to get started.",
     "showArchived_one": "Show archived ({{count}})",
-    "showArchived_other": "Show archived ({{count}})"
+    "showArchived_other": "Show archived ({{count}})",
+    "importProject": "Import project"
   },
   "project": {
     "name": "Name",
@@ -161,7 +162,9 @@
       "deleteTitle": "Delete “{{name}}”",
       "deleteWarning": "Data, versions, runs, models and the project folder are deleted permanently. This cannot be undone; to just hide it, archive it.",
       "typeName": "Type “{{name}}” to confirm",
-      "deleteConfirm": "Delete permanently"
+      "deleteConfirm": "Delete permanently",
+      "export": "Export .perceptron",
+      "withData": "with data"
     }
   },
   "privacy": {
@@ -300,7 +303,10 @@
     "clearCompare": "Clear selection",
     "compareMetric": "Curve metric",
     "compareHint": "Highlighted rows are hyperparameters that differ between runs.",
-    "compareSelect": "Select two or more runs to compare them."
+    "compareSelect": "Select two or more runs to compare them.",
+    "archDiff": "Architecture differences",
+    "pipelineDiff": "Pipeline differences",
+    "sameConfig": "The runs share architecture and pipeline: only hyperparameters change."
   },
   "status": {
     "queued": "Queued",
@@ -1013,6 +1019,98 @@
     "machine-sound": {
       "title": "Engine faults by sound",
       "goal": "Detect engine faults from audio recordings."
+    }
+  },
+  "hpo": {
+    "title": "Study analysis",
+    "study": "Study",
+    "empty": "The study has no trials yet.",
+    "history": "Optimization history",
+    "trial": "Trial",
+    "trialValue": "Trial value",
+    "bestSoFar": "Best so far",
+    "importance": "Hyperparameter importance",
+    "noImportance": "Estimated with at least 4 finished trials.",
+    "parallel": "Parallel coordinates",
+    "pareto": "Pareto front",
+    "dominated": "Dominated"
+  },
+  "modelsCache": {
+    "title": "Pretrained models",
+    "offline": "Offline",
+    "summary": "{{size}} in {{count}} models, at",
+    "empty": "No pretrained model has been downloaded yet.",
+    "model": "Model",
+    "source": "Source",
+    "size": "Size",
+    "lastUsed": "Last used",
+    "delete": "Remove {{model}} from the cache",
+    "verify": "Verify integrity",
+    "verified": "{{count}} files verified: all good.",
+    "corrupt": "Damaged files (delete and download again): {{files}}",
+    "prefetch": "Download for offline use",
+    "prefetchHint": "Only models from the curated catalog, with reviewed commercial licenses.",
+    "download": "Download",
+    "downloading": "Downloading in the background; it shows up in the list when done."
+  },
+  "cost": {
+    "estimate": "Estimate cost per device",
+    "title": "Estimated cost",
+    "size": "Effective size: {{train}} training examples out of {{total}} ({{disk}} MB on disk).",
+    "tensors": "As input tensors, train takes {{mb}} MB.",
+    "model": "{{params}} parameters · estimated memory per batch of {{batch}}: {{memory}} MB.",
+    "device": "Device",
+    "memory": "Available memory",
+    "epoch": "Time per epoch",
+    "fits": "fits",
+    "doesNotFit": "does not fit"
+  },
+  "activity": {
+    "title": "Recent activity",
+    "empty": "No activity yet.",
+    "someone": "Someone",
+    "op": {
+      "createProject": "created the project",
+      "duplicateProject": "created it by duplicating another project",
+      "importProject": "imported it from a package",
+      "updateProject": "changed the project settings",
+      "uploadSource": "uploaded data",
+      "createSource": "added a data source",
+      "createDbSource": "added a database source",
+      "createStreamSource": "added a streaming source",
+      "ingestSource": "created a data version",
+      "proposePipeline": "built a pipeline",
+      "updatePipeline": "saved the pipeline",
+      "proposeArchitecture": "asked for architecture proposals",
+      "createArchSpec": "saved an architecture",
+      "createStudy": "started a training",
+      "cancelStudy": "cancelled a training",
+      "evaluateRun": "evaluated a run",
+      "registerModel": "registered a model",
+      "exportRun": "exported a model",
+      "promoteModel": "promoted a model to production",
+      "rollbackModel": "rolled back to the previous model",
+      "createDeployment": "deployed a model",
+      "createAgentRun": "started the agent",
+      "createLabelSet": "created a label set",
+      "setLabels": "labeled samples",
+      "createRemoteStudy": "trained on the Team Server"
+    }
+  },
+  "promote": {
+    "button": "Make it a team project",
+    "title": "Move “{{name}}” to the Team Server",
+    "description": "The project configuration is uploaded with the data and runs you pick; the rest stays on this computer.",
+    "server": "Team Server",
+    "datasets": "Data versions",
+    "runs": "Runs (with their evaluations and artifacts)",
+    "hint": "The data of the selected runs is uploaded even if you don't check it.",
+    "confirm": "Upload to the server",
+    "status": {
+      "queued": "Queued…",
+      "running": "Uploading…",
+      "succeeded": "Done: it is now a team project.",
+      "failed": "Could not complete."
     }
   }
 }

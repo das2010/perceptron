@@ -140,3 +140,16 @@ def test_hardened_defaults_without_explicit_configuration(
         src = ok(up, 201)
         assert ok(admin.post(f"{API}/sources/{src['id']}/preview"))["columns"] == ["a", "b"]
     assert app.openapi()["paths"]  # el contrato se sigue generando desde el código
+
+
+def test_project_activity_shows_who_did_what(make_user: UserFactory) -> None:
+    """RF-PRJ-05: cualquier miembro ve el historial del proyecto, con el usuario de cada acción."""
+    _, editor = make_user("historial@preteco.test", "editor")
+    pid = ok(editor.post(f"{API}/projects", json={"name": "Con historial"}), 201)["id"]
+    project = ok(editor.get(f"{API}/projects/{pid}"))
+    ok(editor.patch(f"{API}/projects/{pid}", json={"version": project["version"], "goal": "y"}))
+    entries = ok(editor.get(f"{API}/projects/{pid}/activity"))
+    assert [(e["operation"], e["actor"]) for e in entries] == [
+        ("updateProject", "historial@preteco.test"),
+        ("createProject", "historial@preteco.test"),
+    ]

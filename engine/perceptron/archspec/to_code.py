@@ -93,6 +93,8 @@ def _ctor(
         case "text.hf_encoder":
             use = bool(p["pretrained"]) and pretrained
             args = f"{p['model']!r}, pretrained={use}, pad_id={i.pad_id}, pooling={p['pooling']!r}"
+            if int(p.get("lora_r") or 0):
+                args += f", lora_r={int(p['lora_r'])}, lora_alpha={int(p.get('lora_alpha') or 16)}"
             return f"HFTextEncoder({args})", "HFTextEncoder"
         case "seq.rnn":
             args = f"{i.shape[-1]}, {p['hidden']}, {p['layers']}, {p['dropout']!r}, {p['cell']!r}"

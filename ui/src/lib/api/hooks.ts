@@ -143,6 +143,26 @@ export function useUpdateProject(projectId: string) {
   });
 }
 
+/** Importa un paquete .perceptron (RF-PRJ-03). */
+export function useImportProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      return unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/import", {
+          body: form as unknown as Schemas["Body_importProject"],
+          bodySerializer: (b) => b as unknown as FormData,
+        }),
+      ) as Project;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.projects }),
+  });
+}
+
 export function useDuplicateProject(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -817,6 +837,39 @@ async function fetchRunHistory(runId: string) {
 
 export function useRunHistory(runId: string) {
   return useQuery({ queryKey: ["runs", runId, "history"], queryFn: () => fetchRunHistory(runId) });
+}
+
+export type ConfigDiff = Schemas["ConfigDiff"];
+export type StudyAnalysis = Schemas["StudyAnalysis"];
+
+/** Visualizaciones de un estudio de HPO (RF-HPO-06). */
+export function useStudyAnalysis(studyId: string | null) {
+  return useQuery({
+    queryKey: ["studies", studyId, "analysis"] as const,
+    enabled: Boolean(studyId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/studies/{study_id}/analysis", {
+          params: { path: { study_id: studyId ?? "" } },
+        }),
+      ) as StudyAnalysis,
+  });
+}
+
+/** Qué cambia entre runs en ArchSpec y pipeline (RF-TRK-04). */
+export function useCompareConfigs(runIds: string[]) {
+  return useQuery({
+    queryKey: ["runs", "compare", "config", ...runIds] as const,
+    enabled: runIds.length > 1,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/compare/config", { body: { run_ids: runIds } }),
+      ) as ConfigDiff,
+  });
 }
 
 /** Historias por época de varios runs (comparación, SPEC §11.2). */

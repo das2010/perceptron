@@ -255,6 +255,9 @@ class ModelVersion(Entity):
     model_card: JsonDict = Field(default_factory=dict)
     promoted_at: datetime | None = Field(default=None, description="Última vez que fue champion")
     retired_at: datetime | None = Field(default=None, description="Cuándo dejó de ser champion")
+    mlflow_version: str | None = Field(
+        default=None, description="Versión espejo en el Model Registry de MLflow (RF-TRK-03)"
+    )
 
 
 class Export(Entity):
@@ -293,6 +296,18 @@ class DriftReport(Entity):
     metrics: JsonDict = Field(default_factory=dict)
     severity: Severity = Severity.NONE
     action: str | None = None
+
+
+class ActivityEntry(Entity):
+    """Qué se hizo en el proyecto, quién y cuándo (RF-PRJ-05)."""
+
+    id: str = Field(default_factory=_id_factory(IdPrefix.ACTIVITY))
+    project_id: str
+    operation: str = Field(description="operation_id de la API (p. ej. createSource)")
+    method: str
+    path: str
+    actor: str | None = Field(default=None, description="Usuario (Team Server) o local")
+    status: int
 
 
 class Alert(Entity):
@@ -463,4 +478,5 @@ ALL_ENTITIES: tuple[type[Entity], ...] = (
     RetrainRun,
     LLMSession,
     LLMCall,
+    ActivityEntry,
 )

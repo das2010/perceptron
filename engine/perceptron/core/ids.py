@@ -39,6 +39,7 @@ class IdPrefix(StrEnum):
     ALERT = "alr"
     PREDICTION = "prd"
     RETRAIN_RUN = "rtr"
+    ACTIVITY = "act"
 
 
 _SEP = "_"

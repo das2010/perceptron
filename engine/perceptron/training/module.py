@@ -94,7 +94,7 @@ class PerceptronModule(L.LightningModule):
         opt = self.spec.optimizer
         lr = self.lr_override or float(self._r(opt.lr))
         wd = float(self._r(opt.weight_decay))
-        params = [p for p in self.parameters() if p.requires_grad] or list(self.parameters())
+        params = self.param_groups(lr)
         if opt.type == "sgd":
             momentum = float(self._r(opt.momentum) or 0.9)
             optimizer: torch.optim.Optimizer = torch.optim.SGD(
@@ -113,7 +113,9 @@ class PerceptronModule(L.LightningModule):
             case "one_cycle":
                 total = int(self.trainer.estimated_stepping_batches)
                 s: Any = torch.optim.lr_scheduler.OneCycleLR(
-                    optimizer, max_lr=lr, total_steps=max(total, 1)
+                    optimizer,
+                    max_lr=[g["lr"] for g in optimizer.param_groups],
+                    total_steps=max(total, 1),
                 )
                 return {
                     "optimizer": optimizer,
@@ -140,8 +142,45 @@ class PerceptronModule(L.LightningModule):
 
     # ---------------------------------------------------------------- fine-tuning
 
-    def set_backbone_trainable(self, trainable: bool) -> None:
-        for node_id in self.backbones:
-            block = self.model.blocks[node_id]
+    def param_groups(self, lr: float) -> list[dict[str, Any]]:
+        """Un grupo con el LR base y, con LR discriminativo, otro para el backbone (RF-TRN-09).
+        Todos los parámetros entran al optimizador: el congelado solo apaga el gradiente."""
+        mult = float(self.spec.training.backbone_lr_mult)
+        backbone = {
+            id(p) for node_id in self.backbones for p in self.model.blocks[node_id].parameters()
+        }
+        if mult == 1.0 or not backbone:
+            return [{"params": list(self.parameters()), "lr": lr}]
+        rest = [p for p in self.parameters() if id(p) not in backbone]
+        base = [p for p in self.parameters() if id(p) in backbone]
+        return [{"params": rest, "lr": lr}, {"params": base, "lr": lr * mult}]
+
+    def _tunable_backbones(self) -> list[Any]:
+        """Backbones que se congelan/descongelan (con LoRA el modelo base queda congelado)."""
+        blocks = [self.model.blocks[node_id] for node_id in self.backbones]
+        return [b for b in blocks if not getattr(b, "uses_lora", False)]
+
+    def backbone_layer_groups(self) -> list[list[torch.nn.Parameter]]:
+        """Grupos de capas del backbone, de la entrada a la salida (para descongelar de a uno)."""
+        groups: list[list[torch.nn.Parameter]] = []
+        for block in self._tunable_backbones():
+            body = getattr(block, "body", block)
+            layers = getattr(getattr(body, "encoder", None), "layer", None)  # transformers
+            parts = (
+                [getattr(body, "embeddings", None), *layers]
+                if layers is not None
+                else list(body.children())
+            )
+            groups += [list(p.parameters()) for p in parts if p is not None]
+        return [g for g in groups if g]
+
+    def set_backbone_trainable(self, trainable: bool, top_groups: int | None = None) -> None:
+        """`top_groups`: con descongelado progresivo, solo los últimos N grupos se entrenan."""
+        for block in self._tunable_backbones():
             for param in block.parameters():
-                param.requires_grad = trainable
+                param.requires_grad = trainable and top_groups is None
+        if trainable and top_groups:
+            groups = self.backbone_layer_groups()
+            for group in groups[max(len(groups) - top_groups, 0) :]:
+                for param in group:
+                    param.requires_grad = True

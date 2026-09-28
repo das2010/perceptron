@@ -5,7 +5,9 @@ severidad y se informa la degradación respecto de las entradas limpias:
 
 - tabular: ruido gaussiano en numéricas (en desvíos estándar), categorías cambiadas al azar y
   valores faltantes (numéricas a la mediana, categóricas a "desconocida");
-- imagen: ruido gaussiano, desenfoque y compresión JPEG.
+- imagen: ruido gaussiano, desenfoque y compresión JPEG;
+- texto: typos (caracteres cambiados, borrados o duplicados) y palabras eliminadas;
+- audio: ruido de fondo (por relación señal/ruido en dB) y volumen bajo.
 
 Determinístico (semilla fija). Los modelos de código experto no se evalúan en el Engine.
 """
@@ -40,6 +42,16 @@ IMAGE = {
     "ruido gaussiano": (0.05, 0.1, 0.2),
     "desenfoque": (1.0, 2.0, 3.0),
     "compresión JPEG": (50.0, 20.0, 10.0),
+}
+MAX_TEXTS = 1000
+TEXT = {
+    "typos": (0.02, 0.05, 0.1),  # fracción de caracteres alterados
+    "palabras eliminadas": (0.1, 0.2, 0.3),
+}
+MAX_AUDIO = 200
+AUDIO = {
+    "ruido de fondo": (20.0, 10.0, 5.0),  # SNR en dB: menos es más ruido
+    "volumen bajo": (0.5, 0.25, 0.1),  # ganancia
 }
 
 
@@ -156,6 +168,96 @@ def _images(
     return base, results
 
 
+def _typos(text: str, rate: float, rng: np.random.Generator) -> str:
+    chars = list(text)
+    out: list[str] = []
+    for c in chars:
+        r = rng.random()
+        if c.isalpha() and r < rate / 3:
+            continue  # borrado
+        if c.isalpha() and r < 2 * rate / 3:
+            out.append(chr(ord("a") + int(rng.integers(0, 26))))  # cambiado
+            continue
+        out.append(c)
+        if c.isalpha() and r < rate:
+            out.append(c)  # duplicado
+    return "".join(out)
+
+
+def _drop_words(text: str, rate: float, rng: np.random.Generator) -> str:
+    words = text.split()
+    kept = [w for w in words if rng.random() >= rate]
+    return " ".join(kept or words[:1])
+
+
+@torch.no_grad()
+def _texts(trained: TrainedModel, df: pl.DataFrame) -> tuple[float, list[tuple[str, float, float]]]:
+    from perceptron.data.pipeline.pipeline import transform_text
+
+    spec = trained.pipeline.spec.text
+    target = trained.pipeline.spec.target
+    if spec is None or target is None:
+        raise ValueError("el dataset no tiene texto o target")
+    df = df.head(MAX_TEXTS)
+    y = torch.tensor(encode_target(trained.pipeline, df[target.name]))
+    texts = df[spec.column].cast(pl.String).fill_null("").to_list()
+
+    def score(items: list[str]) -> float:
+        ids = torch.tensor(transform_text(trained.pipeline, pl.DataFrame({spec.column: items})))
+        out = torch.cat([trained.model(ids[k : k + 128]) for k in range(0, len(ids), 128)])
+        return _metric(trained, out, y)
+
+    rng = np.random.default_rng(SEED)
+    perturb = {"typos": _typos, "palabras eliminadas": _drop_words}
+    results = [
+        (kind, level, score([perturb[kind](t, level, rng) for t in texts]))
+        for kind, levels in TEXT.items()
+        for level in levels
+    ]
+    return score(texts), results
+
+
+@torch.no_grad()
+def _audio(
+    trained: TrainedModel, df: pl.DataFrame, files_dir: Path
+) -> tuple[float, list[tuple[str, float, float]]]:
+    from perceptron.data.audio import load
+    from perceptron.data.pipeline.pipeline import audio_features
+
+    spec = trained.pipeline.spec.audio
+    target = trained.pipeline.spec.target
+    if spec is None or target is None:
+        raise ValueError("el dataset no tiene audio o target")
+    df = df.filter(~pl.col("corrupt")) if "corrupt" in df.columns else df
+    df = df.head(MAX_AUDIO)
+    y = torch.tensor(encode_target(trained.pipeline, df[target.name]))
+    waves = [load(files_dir / p, sample_rate=spec.sample_rate)[0] for p in df["path"].to_list()]
+    mean = trained.pipeline.audio_mean or 0.0
+    std = trained.pipeline.audio_std or 1.0
+
+    def score(items: list[np.ndarray]) -> float:
+        feats = torch.stack([(audio_features(spec, w) - mean) / std for w in items]).float()
+        out = torch.cat([trained.model(feats[k : k + 64]) for k in range(0, len(feats), 64)])
+        return _metric(trained, out, y)
+
+    rng = np.random.default_rng(SEED)
+
+    def noisy(w: np.ndarray, snr_db: float) -> np.ndarray:
+        power = float(np.mean(w**2)) or 1e-8
+        noise = rng.normal(0, np.sqrt(power / 10 ** (snr_db / 10)), w.shape)
+        return (w + noise).astype(np.float32)
+
+    results = [
+        (k, lvl, score([noisy(w, lvl) for w in waves]))
+        for k, lvl in [("ruido de fondo", x) for x in AUDIO["ruido de fondo"]]
+    ]
+    results += [
+        ("volumen bajo", g, score([(w * g).astype(np.float32) for w in waves]))
+        for g in AUDIO["volumen bajo"]
+    ]
+    return score(waves), results
+
+
 def robustness_report(run_dir: Path, dataset_dir: Path) -> RobustnessReport:
     trained = load_analyzable(run_dir)
     view = DatasetView(dataset_dir)
@@ -167,6 +269,12 @@ def robustness_report(run_dir: Path, dataset_dir: Path) -> RobustnessReport:
     elif kind == "image":
         base, results = _images(trained, df, view.files_dir)
         samples = min(df.height, MAX_IMAGES)
+    elif kind == "tokens":
+        base, results = _texts(trained, df)
+        samples = min(df.height, MAX_TEXTS)
+    elif kind == "spectrogram":
+        base, results = _audio(trained, df, view.files_dir)
+        samples = min(df.height, MAX_AUDIO)
     else:
         from perceptron.core.errors import ValidationError
 

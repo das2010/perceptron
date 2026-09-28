@@ -60,6 +60,23 @@ describe("ciclo de vida del proyecto (RF-PRJ-01)", () => {
     await waitFor(() => expect(body).toEqual({ version: 3, status: "archived" }));
   });
 
+  it("exporta el paquete .perceptron con los datos si se piden (RF-PRJ-03)", async () => {
+    const pkg = vi.fn((_req: Request) => new Response("zip", { status: 200 }));
+    engine({ "GET /api/v1/projects/prj_1/package": pkg });
+    const created = vi.fn(() => "blob:paquete");
+    vi.stubGlobal(
+      "URL",
+      Object.assign(URL, { createObjectURL: created, revokeObjectURL: vi.fn() }),
+    );
+    renderAt("/projects/prj_1");
+    await userEvent.click(await screen.findByLabelText("con los datos"));
+    await userEvent.click(screen.getByRole("button", { name: /Exportar .perceptron/ }));
+    await waitFor(() => expect(created).toHaveBeenCalled(), { timeout: 5000 });
+    const req = pkg.mock.calls[0]?.[0];
+    if (!req) throw new Error("no se pidió el paquete");
+    expect(new URL(req.url).searchParams.get("include_data")).toBe("true");
+  });
+
   it("eliminar exige escribir el nombre", async () => {
     const deleted = vi.fn(() => new Response(null, { status: 204 }));
     engine({ "DELETE /api/v1/projects/prj_1": deleted });

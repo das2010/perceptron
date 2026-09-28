@@ -256,9 +256,9 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 |---|---|---|---|---|
 | RF-PRJ-01 | sí | 1/3 | Crear, abrir, duplicar, archivar y eliminar proyectos. | ✅ crear, abrir, duplicar (configuración), archivar/restaurar y eliminar con datos y carpeta (API, CLI y UI) |
 | RF-PRJ-02 | sí | 1/3 | Plantillas de proyecto por caso de uso (UC-01…UC-09) que preconfiguran modalidad,… | ✅ plantillas UC-01…UC-09 (modalidad, tarea y métrica `val_*`), selector en Nuevo proyecto y `--template`; el HPO optimiza la métrica del proyecto |
-| RF-PRJ-03 |  | 3 | Exportar/importar proyecto como paquete .perceptron (zip con manifiesto; datos… | ⬜ pendiente |
-| RF-PRJ-04 |  | 5 | Promover un proyecto local a proyecto de equipo (sube metadata, datasets y runs… | 🟡 sincronización de proyecto, datos y arquitectura al lanzar en el servidor; falta la promoción explícita con selección de runs |
-| RF-PRJ-05 |  | 3 | Historial de actividad del proyecto (quién hizo qué, cuándo). | 🟡 auditoría del Team Server filtrable por proyecto (solo admins); falta el historial local y la vista por proyecto |
+| RF-PRJ-03 |  | 3 | Exportar/importar proyecto como paquete .perceptron (zip con manifiesto; datos… | ✅ paquete `.perceptron` (manifiesto con proyecto y entidades, runs y modelos; datos opcionales), import con los mismos ids y rutas reescritas; API, CLI y UI |
+| RF-PRJ-04 |  | 5 | Promover un proyecto local a proyecto de equipo (sube metadata, datasets y runs… | ✅ promoción explícita desde el desktop: metadata, datasets elegidos (y los de los runs), pipelines, arquitecturas y runs elegidos con evaluaciones y artefactos; el proyecto local queda como de equipo |
+| RF-PRJ-05 |  | 3 | Historial de actividad del proyecto (quién hizo qué, cuándo). | ✅ cada escritura exitosa queda como ActivityEntry (operación, usuario del Team Server o local, cuándo); `GET /projects/{id}/activity` para cualquier miembro y Actividad reciente en el resumen |
 | RF-ING-01 | sí | 1 | Archivos locales: CSV, TSV, XLSX, Parquet, JSON/JSONL; carpetas de imágenes… | ✅ tabular, imágenes, texto (tabla o clase/*.txt), audio (wav/flac/mp3/ogg), ZIP |
 | RF-ING-02 |  | 1/4 | Formatos de anotación: COCO, Pascal VOC, YOLO (txt), máscaras PNG, CSV de eventos de… | ✅ COCO, Pascal VOC, YOLO, máscaras PNG, CSV de OCR; eventos de audio pendiente |
 | RF-ING-03 |  | 4 | Bases de datos: SQL Server, PostgreSQL, MySQL/MariaDB, SQLite, vía query SQL con vista… | ✅ SQL Server, PostgreSQL, MySQL/MariaDB y SQLite con consulta, vista previa, límite de filas, lectura por lotes y refresco |
@@ -275,7 +275,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-PRF-05 |  | 1 | Audio: duración, sample rate, canales, silencio, clipping, SNR estimado. | ✅ `profiling.audio` (duración, sample rate, canales, silencio, clipping, SNR) |
 | RF-PRF-06 | sí | 1 | Alertas: desbalance, target con fuga (feature casi idéntica al target, ids, fechas… | ✅ `profiling.alerts` |
 | RF-PRF-07 | sí | 1 | Genera un Dataset Profile Card (JSON + vista) que es la entrada principal del LLM en… | ✅ `ProfileCard` sin valores individuales (test de propiedad) |
-| RF-PRF-08 |  | 1 | Estimación de complejidad y costo: tamaño efectivo, memoria estimada por batch, tiempo… | 🟡 parámetros, memoria por batch y tiempo por época medido para la arquitectura propuesta; falta tamaño efectivo y comparación por dispositivo |
+| RF-PRF-08 |  | 1 | Estimación de complejidad y costo: tamaño efectivo, memoria estimada por batch, tiempo… | ✅ tamaño efectivo (train, total, disco y tensores de entrada), parámetros, memoria por batch y tiempo por época medido en cada dispositivo disponible, con aviso si no entra en memoria |
 | RF-PIP-01 | sí | 1/3 | El sistema propone automáticamente un pipeline según profiling (imputación, encoding,… | ✅ `pipeline.propose` con justificación por paso |
 | RF-PIP-02 |  | 1/3 | Editor visual (React Flow) de un DAG de pasos: agregar, quitar, reordenar,… | ✅ editor React Flow (agregar, quitar, reordenar, parametrizar, guardar con versión) con vista previa por paso del grafo sin guardar (`POST /projects/{id}/pipelines/preview-steps`) |
 | RF-PIP-03 |  | 1/3 | Catálogo de pasos por modalidad (extensible por plugins): | ✅ tabular, imagen, texto, series, audio (augmentations incluidas) |
@@ -315,7 +315,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-HPO-03 | sí | 1 | Presupuesto configurable en el wizard: tiempo total, n.º de trials, preset, métrica… | ✅ corte por trials, tiempo y métrica objetivo |
 | RF-HPO-04 |  | 1 | Paralelismo de trials según recursos: varias GPUs → un trial por GPU; en servidor,… | ⬜ pendiente |
 | RF-HPO-05 |  | 1 | Reanudación de estudios interrumpidos (almacenamiento Optuna en SQLite/PostgreSQL). | ✅ reanudación desde SQLite |
-| RF-HPO-06 |  | 1 | Visualizaciones: historia de optimización, importancia de hiperparámetros, coordenadas… | ⬜ pendiente |
+| RF-HPO-06 |  | 1 | Visualizaciones: historia de optimización, importancia de hiperparámetros, coordenadas… | ✅ historia con mejor acumulado, importancia de hiperparámetros (PED-ANOVA de Optuna), coordenadas paralelas y frente de Pareto en Experimentos |
 | RF-TRN-01 | sí | 1 | Detección de hardware al inicio y bajo demanda: GPUs (modelo, VRAM, capacidad de… | ✅ `training.hardware` + `GET /system/hardware` |
 | RF-TRN-02 | sí | 1/3 | Instalación de PyTorch acorde al hardware: en el primer arranque (y desde… | 🟡 detección y recomendación en el Engine; instalación de la variante en el runtime embebido del desktop y cambio desde Configuración (ADR-0026, validación en CI) |
 | RF-TRN-03 | sí | 1 | Construcción del LightningModule desde ArchSpec + configuración de optimizador,… | ✅ `training.module` |
@@ -324,9 +324,9 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-TRN-06 | sí | 1 | Progreso en vivo por WebSocket: época, batch, loss, métricas, LR, throughput, uso de… | ✅ eventos JSONL → EventBus → `WS /runs/{rid}/live` |
 | RF-TRN-07 |  | 1 | Pausar, reanudar (desde checkpoint), cancelar. | ✅ cancelar, pausar y reanudar desde checkpoint |
 | RF-TRN-08 |  | 1 | Multi-GPU en un nodo (DDP vía Lightning) cuando hay >1 GPU. | ⬜ pendiente |
-| RF-TRN-09 |  | 1 | Técnicas de fine-tuning: congelar backbone, descongelado progresivo, LR… | 🟡 congelado del backbone (timm y encoders HF); LoRA/PEFT pendiente |
+| RF-TRN-09 |  | 1 | Técnicas de fine-tuning: congelar backbone, descongelado progresivo, LR… | ✅ congelado del backbone, descongelado progresivo (un grupo de capas por época desde la salida), LR discriminativo (`backbone_lr_mult`) y LoRA con peft para encoders de texto de HF |
 | RF-TRN-10 |  | 1 | Manejo de desbalance: pesos de clase, focal loss, sobremuestreo, umbral óptimo… | ✅ pesos de clase, focal, oversampling, umbral óptimo en el reporte |
-| RF-TRN-11 |  | 1 | Caché de modelos preentrenados: descarga única, verificación de checksum, uso offline,… | ⬜ pendiente |
+| RF-TRN-11 |  | 1 | Caché de modelos preentrenados: descarga única, verificación de checksum, uso offline,… | ✅ caché única en el workspace (HF Hub y torch hub; `PERCEPTRON_MODELS_CACHE` para una compartida; en el Team Server, el volumen compartido con los workers), modo offline, verificación de checksums, borrado y predescarga del catálogo curado desde Configuración |
 | RF-AGT-01 |  | 2 | Herramientas del agente (tool use): get_profile, get_project_goal,… | ✅ las 14 herramientas como acciones con schema (unión discriminada), ejecutadas por `agent.loop` |
 | RF-AGT-02 |  | 2 | Límites duros aplicados por el sistema (no por el LLM): tiempo, n.º de iteraciones,… | ✅ tiempo, decisiones, estudios, trials, costo de LLM (ámbito `agent:<id>`) y disco; el test solo lo abre `finish` |
 | RF-AGT-03 |  | 2 | Puntos de aprobación configurables: nunca / antes de cada iteración / solo si cambia… | ✅ nunca / cada iteración / cambio de familia / % de presupuesto; `POST /agent/runs/{id}/approve|reject` |
@@ -334,13 +334,13 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-AGT-05 |  | 2 | Si el LLM falla o no responde, el loop cae a una política por reglas o se detiene de… | ✅ fallo del LLM → una iteración por reglas o cierre con el mejor modelo |
 | RF-TRK-01 | sí | 1 | Todo run se registra en MLflow: parámetros, métricas por paso, artefactos… | ✅ MLflow embebido (SQLite + artefactos) |
 | RF-TRK-02 | sí | 1 | La UI de Perceptron muestra runs y comparaciones de forma nativa (no depende de la UI… | ✅ runs, curvas y comparación en la UI; enlace opcional a la UI de MLflow (el desktop la levanta a pedido) |
-| RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | 🟡 registro nativo (ModelVersion con stages, promover, rollback, challenger); falta reflejarlo en el Model Registry de MLflow |
-| RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | 🟡 tabla de métricas, curvas superpuestas y diff de hiperparámetros; falta el diff de ArchSpec y de pipeline |
+| RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | ✅ registro nativo (ModelVersion con stages, promover, rollback, challenger) reflejado en el Model Registry de MLflow: versión por ModelVersion, stage como tag y alias `champion` |
+| RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | ✅ tabla de métricas, curvas superpuestas, diff de hiperparámetros y diff de ArchSpec y pipeline (listas por id) |
 | RF-EVL-01 | sí | 1 | Métricas por tarea: | ✅ clasificación, regresión, forecasting (MASE, backtesting, naive), anomalías, detección (mAP), segmentación (IoU/Dice), OCR (CER/WER); SED pendiente |
 | RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | 🟡 Captum: Shapley global/local (tabular), Integrated Gradients (imagen y espectrograma de audio) y oclusión por token (texto) locales; global para texto/audio y series pendientes (ADR-0028) |
 | RF-EVL-03 |  | 1/4 | Análisis de errores: explorador de muestras mal predichas con filtros, slices… | ✅ slices de bajo rendimiento, confusiones, posibles errores de etiqueta (confident learning) y explorador de mal predichos |
 | RF-EVL-04 |  | 1/4 | Fairness: el usuario marca atributos sensibles; métricas por subgrupo (Fairlearn:… | ✅ métricas por grupo, paridad demográfica e igualdad de oportunidades (definiciones de Fairlearn), alertas por umbral |
-| RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | 🟡 ruido, categorías cambiadas y faltantes (tabular); ruido, desenfoque y JPEG (imagen); texto y audio pendientes |
+| RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | ✅ tabular (ruido, categorías cambiadas, faltantes), imagen (ruido, desenfoque, JPEG), texto (typos, palabras eliminadas) y audio (ruido de fondo por SNR, volumen bajo), a tres severidades |
 | RF-EVL-06 | sí | 2/4 | Informe final generado por el LLM (o plantilla sin LLM): resumen ejecutivo, qué se… | ✅ informe LLM o plantilla exportable a HTML (Titillium Web embebida), PDF (reportlab) y Markdown con model card |
 | RF-EXP-01 | sí | 4 | Exportar a ONNX (con verificación numérica vs. PyTorch), torch.export… | ✅ ONNX (opset 18, batch dinámico) verificado en ONNX Runtime (1e-4; fp16 1e-2; INT8 informado), torch.export y TorchScript legacy (ADR-0027) |
 | RF-EXP-02 | sí | 4 | Playground en la app: cargar un archivo/fila/imagen/audio/texto, ver predicción,… | ✅ playground tabular, imagen, texto y audio con predicción, confianza, probabilidades y explicación local (Shapley, Integrated Gradients y oclusión por token) |

@@ -33,6 +33,13 @@ describe("comparación de runs", () => {
       "GET /api/v1/projects/prj_1/runs": () => [run(1, 0.001), run(2, 0.01)],
       "GET /api/v1/runs/run-t001/history": () => [{ epoch: 0, val_loss: 0.7 }],
       "GET /api/v1/runs/run-t002/history": () => [{ epoch: 0, val_loss: 0.6 }],
+      "POST /api/v1/runs/compare/config": () => ({
+        run_ids: ["run-t001", "run-t002"],
+        same_archspec: false,
+        same_pipeline: true,
+        archspec: [{ path: "nodes[enc].params.hidden", values: [64, 128] }],
+        pipeline: [],
+      }),
     });
     render(
       <Providers client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -47,7 +54,69 @@ describe("comparación de runs", () => {
     const lrRow = within(card).getByText("lr").closest("tr");
     expect(lrRow).toHaveClass("bg-canvas"); // difiere entre runs
     expect(within(card).getByText("dropout").closest("tr")).not.toHaveClass("bg-canvas");
+    // RF-TRK-04: diff de la arquitectura (el pipeline es igual y no se muestra).
+    expect(await within(card).findByText("Diferencias de arquitectura")).toBeInTheDocument();
+    const hidden = within(card).getByText("nodes[enc].params.hidden").closest("tr");
+    expect(hidden).toHaveTextContent("64");
+    expect(hidden).toHaveTextContent("128");
+    expect(within(card).queryByText("Diferencias de pipeline")).not.toBeInTheDocument();
     await userEvent.click(within(card).getByRole("button", { name: "Quitar selección" }));
     expect(screen.queryByText("Comparación de 2 runs")).not.toBeInTheDocument();
+  });
+});
+
+describe("análisis del estudio (RF-HPO-06)", () => {
+  beforeEach(() => resetApiClient());
+
+  it("muestra historia, importancia, coordenadas y Pareto del estudio", async () => {
+    const inStudy = (n: number, lr: number) => ({ ...run(n, lr), study_id: "stu_1" });
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/runs": () => [inStudy(1, 0.001), inStudy(2, 0.01)],
+      "GET /api/v1/studies/stu_1/analysis": () => ({
+        objectives: [
+          { metric: "val_loss", direction: "minimize" },
+          { metric: "val_accuracy", direction: "maximize" },
+        ],
+        params: ["dropout", "lr"],
+        importance: { lr: 0.8, dropout: 0.2 },
+        trials: [
+          {
+            number: 0,
+            run_id: "run-t001",
+            status: "succeeded",
+            params: { lr: 0.001, dropout: 0.1 },
+            values: [0.4, 0.81],
+            best_so_far: 0.4,
+            pareto: true,
+          },
+          {
+            number: 1,
+            run_id: "run-t002",
+            status: "succeeded",
+            params: { lr: 0.01, dropout: 0.1 },
+            values: [0.3, 0.82],
+            best_so_far: 0.3,
+            pareto: true,
+          },
+        ],
+      }),
+    });
+    render(
+      <Providers client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <App router={createTestRouter("/projects/prj_1/experiments")} />
+      </Providers>,
+    );
+    const card = (await screen.findByText("Análisis del estudio")).closest("div")?.parentElement;
+    if (!card) throw new Error("sin tarjeta");
+    for (const title of [
+      "Historia de la optimización",
+      "Importancia de hiperparámetros",
+      "Coordenadas paralelas",
+      "Frente de Pareto",
+    ]) {
+      expect(await within(card).findByRole("heading", { name: title })).toBeInTheDocument();
+    }
   });
 });

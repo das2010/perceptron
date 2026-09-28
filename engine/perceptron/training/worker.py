@@ -178,8 +178,9 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         f = str(resolve(node.params.get("freeze", "none"), cfg.overrides))
         if f.startswith("until_epoch:"):
             freeze = max(freeze, int(f.split(":", 1)[1]))
-    if freeze and module.backbones:
-        callbacks.append(FreezeBackboneCallback(freeze))
+    progressive = spec.training.unfreeze == "progressive"
+    if (freeze or progressive) and module.backbones:
+        callbacks.append(FreezeBackboneCallback(freeze, progressive=progressive))
 
     precision = _precision(spec.training.precision, cfg.device.value)
     tuner_kwargs = {"accelerator": _accelerator(cfg.device.value), "precision": precision}

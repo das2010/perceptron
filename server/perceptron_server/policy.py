@@ -43,7 +43,16 @@ class Perm(StrEnum):
 
 PUBLIC_OPS = frozenset({"getHealth", "getVersion"})
 SERVER_ADMIN_OPS = frozenset(
-    {"putLlmProfiles", "putLlmProvider", "testLlm", "putLicense", "putTelemetry"}
+    {
+        "putLlmProfiles",
+        "putLlmProvider",
+        "testLlm",
+        "putLicense",
+        "putTelemetry",
+        "deleteCachedModel",
+        "prefetchModel",
+        "verifyModelsCache",
+    }
 )
 PROJECT_ADMIN_OPS = frozenset({"deleteProject"})
 # Escrituras que un Viewer puede hacer: no modifican nada (previsualizar, comparar, playground).
@@ -52,6 +61,7 @@ VIEW_WRITES = frozenset(
         "previewSource",
         "previewPipeline",
         "compareRuns",
+        "compareRunConfigs",
         "predictRows",
         "predictFile",
         "predictTexts",
@@ -62,6 +72,7 @@ VIEW_WRITES = frozenset(
         "validateArchitecture",
         "lintArchCode",
         "archToCode",
+        "estimateArchitecture",
         "predictDeployment",  # usar el modelo en uso (como el playground)
         "openRunInMlflow",  # solo arma el enlace (en el servidor, la URL configurada)
     }
@@ -73,13 +84,18 @@ EDIT_READS = frozenset(
         "downloadExportProject",
         "downloadServingBundle",
         "exportLabels",
+        "downloadProjectPackage",
         "listLlmAudit",
     }
 )
 # WebSockets (no tienen operation_id): el copiloto escribe el borrador; el resto es lectura.
 WS_EDIT_SUFFIXES = ("/copilot",)
 # Cuerpos que referencian entidades de otro proyecto (comparar runs, pre-etiquetar).
-BODY_ID_OPS = {"compareRuns": ("run_ids",), "prelabel": ("dataset_version_id",)}
+BODY_ID_OPS = {
+    "compareRuns": ("run_ids",),
+    "compareRunConfigs": ("run_ids",),
+    "prelabel": ("dataset_version_id",),
+}
 _SKIP_PARAMS = frozenset({"name", "sample_id"})
 _NEED_RANK = {Perm.VIEW: Role.VIEWER, Perm.EDIT: Role.EDITOR, Perm.ADMIN: Role.ADMIN}
 

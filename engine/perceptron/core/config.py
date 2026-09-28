@@ -175,6 +175,10 @@ class Settings(BaseSettings):
         default=None,
         description="MLflow server (Team Server: http://mlflow:5000); None = SQLite del workspace",
     )
+    models_cache: Path | None = Field(
+        default=None,
+        description="Caché de modelos preentrenados (RF-TRN-11); None = <workspace>/models_cache",
+    )
     mlflow_ui_url: str | None = Field(
         default=None,
         pattern=r"^https?://",

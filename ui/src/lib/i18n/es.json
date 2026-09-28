@@ -125,7 +125,8 @@
     "recent": "Proyectos recientes",
     "empty": "Todavía no hay proyectos. Creá uno para empezar.",
     "showArchived_one": "Mostrar el archivado ({{count}})",
-    "showArchived_other": "Mostrar archivados ({{count}})"
+    "showArchived_other": "Mostrar archivados ({{count}})",
+    "importProject": "Importar proyecto"
   },
   "project": {
     "name": "Nombre",
@@ -161,7 +162,9 @@
       "deleteTitle": "Eliminar «{{name}}»",
       "deleteWarning": "Se borran para siempre los datos, versiones, runs, modelos y la carpeta del proyecto. No se puede deshacer; si solo querés sacarlo de la vista, archivalo.",
       "typeName": "Escribí «{{name}}» para confirmar",
-      "deleteConfirm": "Eliminar definitivamente"
+      "deleteConfirm": "Eliminar definitivamente",
+      "export": "Exportar .perceptron",
+      "withData": "con los datos"
     }
   },
   "privacy": {
@@ -300,7 +303,10 @@
     "clearCompare": "Quitar selección",
     "compareMetric": "Métrica de las curvas",
     "compareHint": "Las filas resaltadas son hiperparámetros que difieren entre los runs.",
-    "compareSelect": "Marcá dos o más runs para compararlos."
+    "compareSelect": "Marcá dos o más runs para compararlos.",
+    "archDiff": "Diferencias de arquitectura",
+    "pipelineDiff": "Diferencias de pipeline",
+    "sameConfig": "Los runs comparten arquitectura y pipeline: solo cambian los hiperparámetros."
   },
   "status": {
     "queued": "En cola",
@@ -1013,6 +1019,98 @@
     "machine-sound": {
       "title": "Fallas de motor por sonido",
       "goal": "Detectar fallas de motor a partir de grabaciones de audio."
+    }
+  },
+  "hpo": {
+    "title": "Análisis del estudio",
+    "study": "Estudio",
+    "empty": "El estudio todavía no tiene intentos.",
+    "history": "Historia de la optimización",
+    "trial": "Intento",
+    "trialValue": "Valor del intento",
+    "bestSoFar": "Mejor hasta el momento",
+    "importance": "Importancia de hiperparámetros",
+    "noImportance": "Se estima con al menos 4 intentos terminados.",
+    "parallel": "Coordenadas paralelas",
+    "pareto": "Frente de Pareto",
+    "dominated": "Dominados"
+  },
+  "modelsCache": {
+    "title": "Modelos preentrenados",
+    "offline": "Sin conexión",
+    "summary": "{{size}} en {{count}} modelos, en",
+    "empty": "Todavía no se descargó ningún modelo preentrenado.",
+    "model": "Modelo",
+    "source": "Origen",
+    "size": "Tamaño",
+    "lastUsed": "Último uso",
+    "delete": "Borrar {{model}} de la caché",
+    "verify": "Verificar integridad",
+    "verified": "{{count}} archivos verificados: todo en orden.",
+    "corrupt": "Archivos dañados (conviene borrarlos y volver a descargar): {{files}}",
+    "prefetch": "Descargar para usar sin conexión",
+    "prefetchHint": "Solo modelos del catálogo curado, con licencia comercial revisada.",
+    "download": "Descargar",
+    "downloading": "Descargando en segundo plano; aparece en la lista al terminar."
+  },
+  "cost": {
+    "estimate": "Estimar costo por dispositivo",
+    "title": "Costo estimado",
+    "size": "Tamaño efectivo: {{train}} ejemplos de train de {{total}} ({{disk}} MB en disco).",
+    "tensors": "Como tensores de entrada, train ocupa {{mb}} MB.",
+    "model": "{{params}} parámetros · memoria estimada por batch de {{batch}}: {{memory}} MB.",
+    "device": "Dispositivo",
+    "memory": "Memoria disponible",
+    "epoch": "Tiempo por época",
+    "fits": "entra",
+    "doesNotFit": "no entra"
+  },
+  "activity": {
+    "title": "Actividad reciente",
+    "empty": "Todavía no hay actividad.",
+    "someone": "Alguien",
+    "op": {
+      "createProject": "creó el proyecto",
+      "duplicateProject": "lo creó duplicando otro proyecto",
+      "importProject": "lo importó desde un paquete",
+      "updateProject": "cambió la configuración del proyecto",
+      "uploadSource": "subió datos",
+      "createSource": "agregó una fuente de datos",
+      "createDbSource": "agregó una base de datos como fuente",
+      "createStreamSource": "agregó una fuente streaming",
+      "ingestSource": "creó una versión de datos",
+      "proposePipeline": "armó un pipeline",
+      "updatePipeline": "guardó el pipeline",
+      "proposeArchitecture": "pidió propuestas de arquitectura",
+      "createArchSpec": "guardó una arquitectura",
+      "createStudy": "lanzó un entrenamiento",
+      "cancelStudy": "canceló un entrenamiento",
+      "evaluateRun": "evaluó un run",
+      "registerModel": "registró un modelo",
+      "exportRun": "exportó un modelo",
+      "promoteModel": "promovió un modelo a producción",
+      "rollbackModel": "volvió al modelo anterior",
+      "createDeployment": "publicó un modelo",
+      "createAgentRun": "lanzó el agente",
+      "createLabelSet": "creó un set de etiquetas",
+      "setLabels": "etiquetó muestras",
+      "createRemoteStudy": "entrenó en el Team Server"
+    }
+  },
+  "promote": {
+    "button": "Pasar a proyecto de equipo",
+    "title": "Pasar «{{name}}» al Team Server",
+    "description": "Se sube la configuración del proyecto con los datos y runs que elijas; el resto queda solo en este equipo.",
+    "server": "Team Server",
+    "datasets": "Versiones de datos",
+    "runs": "Runs (con sus evaluaciones y artefactos)",
+    "hint": "Los datos de los runs elegidos se suben aunque no los marques.",
+    "confirm": "Subir al servidor",
+    "status": {
+      "queued": "En cola…",
+      "running": "Subiendo…",
+      "succeeded": "Listo: el proyecto ya es de equipo.",
+      "failed": "No se pudo completar."
     }
   }
 }

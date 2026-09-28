@@ -11,10 +11,21 @@ from pydantic import BaseModel
 
 from perceptron import __version__
 from perceptron.api.context import EngineContext, get_context
+from perceptron.api.jobs import Job
+from perceptron.catalog.weights_cache import (
+    CacheReport,
+    VerifyReport,
+    delete_cached,
+    list_cached,
+    prefetch,
+    verify,
+)
 from perceptron.core.config import RuntimeMode
+from perceptron.core.errors import ValidationError
 from perceptron.training.hardware import HardwareReport, detect_hardware
 
 router = APIRouter(prefix="/system", tags=["system"])
+Ctx = Annotated[EngineContext, Depends(get_context)]
 
 
 class Health(BaseModel):
@@ -140,3 +151,51 @@ def telemetry_consent(
 ) -> TelemetryStatus:
     ctx.telemetry.consent(body.opt_in)
     return TelemetryStatus.model_validate(ctx.telemetry.status())
+
+
+# ------------------------------------------------------------------ modelos preentrenados
+
+
+class PrefetchBody(BaseModel):
+    model: str
+
+
+def _cache_dir(ctx: EngineContext) -> Any:
+    return ctx.settings.models_cache or ctx.settings.paths.models_cache_dir
+
+
+def _report(ctx: EngineContext) -> CacheReport:
+    from perceptron.catalog.registry import HF_TEXT_MODELS, TIMM_WEIGHTS
+
+    report = list_cached(_cache_dir(ctx))
+    cached = {m.id for m in report.models}
+    curated = sorted({*HF_TEXT_MODELS, *TIMM_WEIGHTS})
+    return report.model_copy(update={"available": [m for m in curated if m not in cached]})
+
+
+@router.get("/models-cache", operation_id="getModelsCache")
+def models_cache(ctx: Ctx) -> CacheReport:
+    """Pesos preentrenados descargados: tamaño y último uso (RF-TRN-11)."""
+    return _report(ctx)
+
+
+@router.delete("/models-cache/{model_id:path}", operation_id="deleteCachedModel")
+def delete_cached_model(model_id: str, ctx: Ctx) -> CacheReport:
+    delete_cached(model_id)
+    return _report(ctx)
+
+
+@router.post("/models-cache/verify", operation_id="verifyModelsCache")
+def verify_models_cache() -> VerifyReport:
+    """Recalcula los checksums de los archivos descargados."""
+    return verify()
+
+
+@router.post("/models-cache/prefetch", status_code=202, operation_id="prefetchModel")
+def prefetch_model(body: PrefetchBody, ctx: Ctx) -> Job:
+    """Descarga un modelo curado ahora, para entrenar después sin conexión."""
+    from perceptron.catalog.registry import HF_TEXT_MODELS, TIMM_WEIGHTS
+
+    if body.model not in HF_TEXT_MODELS and body.model not in TIMM_WEIGHTS:
+        raise ValidationError(f"{body.model} no está en el catálogo de pesos curados")
+    return ctx.jobs.submit("prefetch", lambda _: {"model": prefetch(body.model)})
