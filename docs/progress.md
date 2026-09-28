@@ -155,7 +155,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Entregable | Estado |
 |---|---|
 | Análisis de errores (RF-EVL-03) y fairness (RF-EVL-04) sobre el test sellado | ✅ |
-| Explicabilidad con Captum (RF-EVL-02) | 🟡 tabular, imagen, texto y audio; series pendientes |
+| Explicabilidad con Captum (RF-EVL-02) | ✅ tabular, imagen, texto, audio y series |
 | Robustez ante perturbaciones (RF-EVL-05) | ✅ tabular, imagen, texto y audio |
 | Informe HTML/PDF/Markdown con marca y model card (RF-EVL-06, ADR-0028) | ✅ |
 | Explicación local en el playground | ✅ |
@@ -337,7 +337,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | ✅ registro nativo (ModelVersion con stages, promover, rollback, challenger) reflejado en el Model Registry de MLflow: versión por ModelVersion, stage como tag y alias `champion` |
 | RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | ✅ tabla de métricas, curvas superpuestas, diff de hiperparámetros y diff de ArchSpec y pipeline (listas por id) |
 | RF-EVL-01 | sí | 1 | Métricas por tarea: | ✅ clasificación, regresión, forecasting (MASE, backtesting, naive), anomalías, detección (mAP), segmentación (IoU/Dice), OCR (CER/WER); SED pendiente |
-| RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | 🟡 Captum: Shapley global/local (tabular), Integrated Gradients local (imagen) y global/local sobre el espectrograma (audio), oclusión por token global/local (texto); series pendientes (ADR-0028) |
+| RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | 🟡 Captum: Shapley global/local (tabular), Integrated Gradients local (imagen) y global/local sobre el espectrograma (audio), oclusión por token global/local (texto) e Integrated Gradients global sobre la ventana de series (importancia por variable y por rezago; forecasting y anomalías) (ADR-0028) |
 | RF-EVL-03 |  | 1/4 | Análisis de errores: explorador de muestras mal predichas con filtros, slices… | ✅ slices de bajo rendimiento, confusiones, posibles errores de etiqueta (confident learning) y explorador de mal predichos |
 | RF-EVL-04 |  | 1/4 | Fairness: el usuario marca atributos sensibles; métricas por subgrupo (Fairlearn:… | ✅ métricas por grupo, paridad demográfica e igualdad de oportunidades (definiciones de Fairlearn), alertas por umbral |
 | RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | ✅ tabular (ruido, categorías cambiadas, faltantes), imagen (ruido, desenfoque, JPEG), texto (typos, palabras eliminadas) y audio (ruido de fondo por SNR, volumen bajo), a tres severidades |

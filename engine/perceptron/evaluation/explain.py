@@ -9,6 +9,9 @@
   probabilidad de la clase predicha sin él. Sirve igual con vocabulario propio o de HF.
 - Audio: Integrated Gradients sobre el espectrograma (la entrada real del modelo), como mapa
   de calor tiempo × frecuencia.
+- Series: Integrated Gradients sobre la ventana [rezagos × variables] respecto del pronóstico
+  medio del horizonte (forecasting) o del error de reconstrucción del último punto
+  (anomalías). Global: importancia por variable y por rezago sobre validación.
 
 Los modelos de código experto no se explican en el proceso del Engine (ADR-0025).
 """
@@ -153,6 +156,8 @@ def global_explanation(run_dir: Path, dataset_dir: Path) -> GlobalExplanation:
         return _global_text(trained, dataset_dir)
     if kind == "spectrogram":
         return _global_audio(trained, dataset_dir)
+    if kind == "sequence":
+        return _global_series(trained, dataset_dir)
     if kind != "tabular":
         raise ValidationError(f"la explicación global todavía no cubre entradas {kind}")
     # Solo las primeras filas de validación: alcanza para la importancia y no carga todo.
@@ -395,4 +400,61 @@ def _global_audio(trained: TrainedModel, dataset_dir: Path) -> GlobalExplanation
     feats.sort(key=lambda f: f.importance, reverse=True)
     return GlobalExplanation(
         method="integrated_gradients", samples=n, target="clase predicha", features=feats
+    )
+
+
+GLOBAL_WINDOWS = 64
+
+
+def _global_series(trained: TrainedModel, dataset_dir: Path) -> GlobalExplanation:
+    """Importancia por variable y por rezago: |Integrated Gradients| promedio sobre validación."""
+    from captum.attr import IntegratedGradients
+
+    from perceptron.data.pipeline.series_windows import channels
+    from perceptron.domain.enums import TaskType
+
+    sspec = trained.pipeline.spec.series
+    if sspec is None:
+        raise ValidationError("el modelo no tiene pipeline de series")
+    ds = make_dataset(DatasetView(dataset_dir), trained.pipeline, "val", train=False)
+    n = min(GLOBAL_WINDOWS, len(ds))  # type: ignore[arg-type]
+    if n == 0:
+        raise ValidationError("no hay ventanas de validación")
+    x = torch.stack([ds[i][0] for i in range(n)]).float()  # [n, L, C]
+    model = trained.model
+    anomaly = trained.task is TaskType.ANOMALY_DETECTION
+
+    def forward(inp: torch.Tensor) -> torch.Tensor:
+        out: torch.Tensor = model(inp)
+        if anomaly:  # error de reconstrucción del punto evaluado (el último)
+            return ((out[:, -1] - inp[:, -1]) ** 2).mean(dim=1)
+        return out.reshape(len(inp), -1).mean(dim=1)  # pronóstico medio del horizonte
+
+    attr = IntegratedGradients(forward).attribute(
+        x, baselines=torch.zeros_like(x), n_steps=IG_STEPS
+    )
+    a = attr.detach().reshape(n, x.shape[1], x.shape[2])
+    names = channels(sspec.config, sspec.calendar)
+    lookback = a.shape[1]
+    feats = [
+        FeatureImportance(
+            feature=f"variable: {names[c] if c < len(names) else c}",
+            importance=float(a[:, :, c].abs().mean()),
+            mean_attribution=float(a[:, :, c].mean()),
+        )
+        for c in range(a.shape[2])
+    ]
+    feats.sort(key=lambda f: f.importance, reverse=True)
+    lags = [
+        FeatureImportance(
+            feature=f"rezago t-{lookback - i}",
+            importance=float(a[:, i, :].abs().mean()),
+            mean_attribution=float(a[:, i, :].mean()),
+        )
+        for i in range(lookback)
+    ]
+    lags.sort(key=lambda f: f.importance, reverse=True)
+    target = "error de reconstrucción" if anomaly else "pronóstico medio"
+    return GlobalExplanation(
+        method="integrated_gradients", samples=n, target=target, features=feats + lags
     )
