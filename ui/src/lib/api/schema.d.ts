@@ -1217,6 +1217,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Package
+         * @description Importa un `.perceptron` con sus ids; si el proyecto ya existe, 409.
+         */
+        post: operations["importProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/templates": {
         parameters: {
             query?: never;
@@ -1258,6 +1278,26 @@ export interface paths {
         head?: never;
         /** Update Project */
         patch: operations["updateProject"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Project Activity
+         * @description Quién hizo qué y cuándo en el proyecto, lo más reciente primero (RF-PRJ-05).
+         */
+        get: operations["listProjectActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/projects/{project_id}/agent/runs": {
@@ -1325,6 +1365,26 @@ export interface paths {
         put?: never;
         /** Build Arch Definition */
         post: operations["buildArchDefinition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/arch/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Estimate Architecture
+         * @description Tamaño efectivo, memoria por batch y tiempo por época por dispositivo (RF-PRF-08).
+         */
+        post: operations["estimateArchitecture"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1555,6 +1615,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Package
+         * @description Proyecto completo en un `.perceptron` (entidades, runs, modelos; datos opcionales).
+         */
+        get: operations["downloadProjectPackage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/pipelines": {
         parameters: {
             query?: never;
@@ -1603,6 +1683,27 @@ export interface paths {
         put?: never;
         /** Propose Pipeline */
         post: operations["proposePipeline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/remote/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Promote Project
+         * @description Convierte el proyecto local en proyecto de equipo (RF-PRJ-04): sube la metadata, los
+         *     datasets y los runs elegidos al Team Server.
+         */
+        post: operations["promoteProject"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1910,6 +2011,26 @@ export interface paths {
         put?: never;
         /** Compare Runs */
         post: operations["compareRuns"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/compare/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Compare Run Configs
+         * @description Qué cambia entre los runs en su ArchSpec y en su pipeline (RF-TRK-04).
+         */
+        post: operations["compareRunConfigs"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2552,6 +2673,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/studies/{study_id}/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Study Analysis
+         * @description Historia, importancia de hiperparámetros, coordenadas paralelas y Pareto (RF-HPO-06).
+         */
+        get: operations["getStudyAnalysis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}/cancel": {
         parameters: {
             query?: never;
@@ -2812,6 +2953,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/models-cache": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Models Cache
+         * @description Pesos preentrenados descargados: tamaño y último uso (RF-TRN-11).
+         */
+        get: operations["getModelsCache"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/models-cache/prefetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prefetch Model
+         * @description Descarga un modelo curado ahora, para entrenar después sin conexión.
+         */
+        post: operations["prefetchModel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/models-cache/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Models Cache
+         * @description Recalcula los checksums de los archivos descargados.
+         */
+        post: operations["verifyModelsCache"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/models-cache/{model_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Cached Model */
+        delete: operations["deleteCachedModel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/telemetry": {
         parameters: {
             query?: never;
@@ -2861,6 +3079,48 @@ export interface components {
              * @default 0.9
              */
             min_confidence: number;
+        };
+        /**
+         * ActivityEntry
+         * @description Qué se hizo en el proyecto, quién y cuándo (RF-PRJ-05).
+         */
+        ActivityEntry: {
+            /**
+             * Actor
+             * @description Usuario (Team Server) o local
+             */
+            actor?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Id */
+            id?: string;
+            /** Method */
+            method: string;
+            /**
+             * Operation
+             * @description operation_id de la API (p. ej. createSource)
+             */
+            operation: string;
+            /** Path */
+            path: string;
+            /** Project Id */
+            project_id: string;
+            /** Status */
+            status: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
         };
         /** AgentCreate */
         AgentCreate: {
@@ -3336,6 +3596,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_importProject */
+        Body_importProject: {
+            /** File */
+            file: string;
+        };
         /** Body_predictFile */
         Body_predictFile: {
             /** File */
@@ -3396,6 +3661,38 @@ export interface components {
             model: string;
             /** Physical Cores */
             physical_cores: number | null;
+        };
+        /** CacheReport */
+        CacheReport: {
+            /**
+             * Available
+             * @description Modelos curados que se pueden predescargar
+             */
+            available?: string[];
+            /** Models */
+            models: components["schemas"]["CachedModel"][];
+            /** Offline */
+            offline: boolean;
+            /** Path */
+            path: string;
+            /** Total Bytes */
+            total_bytes: number;
+        };
+        /** CachedModel */
+        CachedModel: {
+            /** Files */
+            files: number;
+            /** Id */
+            id: string;
+            /** Last Used */
+            last_used?: string | null;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "huggingface" | "torch";
         };
         /** CategoricalStats */
         CategoricalStats: {
@@ -3626,6 +3923,26 @@ export interface components {
             /** Param */
             param: string;
         };
+        /** ConfigDiff */
+        ConfigDiff: {
+            /** Archspec */
+            archspec: components["schemas"]["ConfigDiffRow"][];
+            /** Pipeline */
+            pipeline: components["schemas"]["ConfigDiffRow"][];
+            /** Run Ids */
+            run_ids: string[];
+            /** Same Archspec */
+            same_archspec: boolean;
+            /** Same Pipeline */
+            same_pipeline: boolean;
+        };
+        /** ConfigDiffRow */
+        ConfigDiffRow: {
+            /** Path */
+            path: string;
+            /** Values */
+            values: unknown[];
+        };
         /** Confusion */
         Confusion: {
             /** Actual */
@@ -3643,6 +3960,38 @@ export interface components {
             feature: string;
             /** Value */
             value?: unknown;
+        };
+        /** CostEstimate */
+        CostEstimate: {
+            /** Batch Size */
+            batch_size: number;
+            /** Devices */
+            devices: components["schemas"]["DeviceEstimate"][];
+            /** Input Shape */
+            input_shape: number[] | null;
+            /**
+             * Memory Mb
+             * @description Memoria estimada por batch
+             */
+            memory_mb?: number | null;
+            /** N Train */
+            n_train: number;
+            /** Num Params */
+            num_params: number | null;
+            /** Num Samples */
+            num_samples: number;
+            /**
+             * Sample Mb
+             * @description Tensor de entrada por ejemplo
+             */
+            sample_mb?: number | null;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Train Tensor Mb
+             * @description Tamaño efectivo de train como tensores (lo que ve el modelo)
+             */
+            train_tensor_mb?: number | null;
         };
         /** Count */
         Count: {
@@ -4010,6 +4359,19 @@ export interface components {
          * @enum {string}
          */
         Device: "cuda" | "rocm" | "xpu" | "cpu";
+        /** DeviceEstimate */
+        DeviceEstimate: {
+            /** Device */
+            device: string;
+            /** Epoch Time S */
+            epoch_time_s?: number | null;
+            /** Fits */
+            fits?: boolean | null;
+            /** Memory Gb */
+            memory_gb?: number | null;
+            /** Name */
+            name: string;
+        };
         /** Diagnosis */
         Diagnosis: {
             /** Actions */
@@ -4211,6 +4573,13 @@ export interface components {
             predicted: unknown;
             /** Row */
             row: number;
+        };
+        /** EstimateBody */
+        EstimateBody: {
+            /** Archspec Id */
+            archspec_id: string;
+            /** Dataset Version Id */
+            dataset_version_id: string;
         };
         /** Evaluation */
         Evaluation: {
@@ -5356,6 +5725,11 @@ export interface components {
             created_at?: string;
             /** Id */
             id?: string;
+            /**
+             * Mlflow Version
+             * @description Versión espejo en el Model Registry de MLflow (RF-TRK-03)
+             */
+            mlflow_version?: string | null;
             /** Model Card */
             model_card?: {
                 [key: string]: unknown;
@@ -5474,6 +5848,16 @@ export interface components {
              * Metric
              * @default val_loss
              */
+            metric: string;
+        };
+        /** ObjectiveInfo */
+        ObjectiveInfo: {
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "minimize" | "maximize";
+            /** Metric */
             metric: string;
         };
         /** OptimizerSpec */
@@ -5654,6 +6038,11 @@ export interface components {
             predictions: {
                 [key: string]: unknown;
             }[];
+        };
+        /** PrefetchBody */
+        PrefetchBody: {
+            /** Model */
+            model: string;
         };
         /**
          * PrivacyLevel
@@ -5928,6 +6317,20 @@ export interface components {
             task: components["schemas"]["TaskType"];
             /** Use Case */
             use_case: string;
+        };
+        /** PromoteBody */
+        PromoteBody: {
+            /** Dataset Version Ids */
+            dataset_version_ids?: string[];
+            /** Run Ids */
+            run_ids?: string[];
+            /** Server */
+            server: string;
+            /**
+             * Workspace Id
+             * @description Workspace del servidor
+             */
+            workspace_id?: string | null;
         };
         /** ProposeArchBody */
         ProposeArchBody: {
@@ -6914,6 +7317,19 @@ export interface components {
              */
             version: number;
         };
+        /** StudyAnalysis */
+        StudyAnalysis: {
+            /** Importance */
+            importance: {
+                [key: string]: number;
+            };
+            /** Objectives */
+            objectives: components["schemas"]["ObjectiveInfo"][];
+            /** Params */
+            params: string[];
+            /** Trials */
+            trials: components["schemas"]["TrialPoint"][];
+        };
         /** StudyCreate */
         StudyCreate: {
             /** Archspec Id */
@@ -7211,6 +7627,12 @@ export interface components {
         /** TrainingSpec */
         TrainingSpec: {
             /**
+             * Backbone Lr Mult
+             * @description LR discriminativo: LR del backbone = LR × esto
+             * @default 1
+             */
+            backbone_lr_mult: number;
+            /**
              * Batch Size
              * @default auto
              */
@@ -7254,6 +7676,35 @@ export interface components {
              * @enum {string}
              */
             precision: "auto" | "32" | "16-mixed" | "bf16-mixed";
+            /**
+             * Unfreeze
+             * @description Tras el congelado: todo junto o de a un grupo de capas por época (RF-TRN-09)
+             * @default all
+             * @enum {string}
+             */
+            unfreeze: "all" | "progressive";
+        };
+        /** TrialPoint */
+        TrialPoint: {
+            /** Best So Far */
+            best_so_far?: number | null;
+            /** Number */
+            number: number;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /**
+             * Pareto
+             * @default false
+             */
+            pareto: boolean;
+            /** Run Id */
+            run_id: string;
+            /** Status */
+            status: string;
+            /** Values */
+            values: (number | null)[];
         };
         /** Trigger */
         Trigger: {
@@ -7418,6 +7869,13 @@ export interface components {
              * @description None: solo se informa (INT8)
              */
             tolerance: number | null;
+        };
+        /** VerifyReport */
+        VerifyReport: {
+            /** Checked */
+            checked: number;
+            /** Corrupt */
+            corrupt: string[];
         };
         /** VersionInfo */
         VersionInfo: {
@@ -10060,6 +10518,39 @@ export interface operations {
             };
         };
     };
+    importProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_importProject"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listProjectTemplates: {
         parameters: {
             query?: never;
@@ -10162,6 +10653,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listProjectActivity: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityEntry"][];
                 };
             };
             /** @description Validation Error */
@@ -10300,6 +10824,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArchSpecRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    estimateArchitecture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EstimateBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostEstimate"];
                 };
             };
             /** @description Validation Error */
@@ -10779,6 +11338,39 @@ export interface operations {
             };
         };
     };
+    downloadProjectPackage: {
+        parameters: {
+            query?: {
+                include_data?: boolean;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listPipelines: {
         parameters: {
             query?: never;
@@ -10867,6 +11459,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Pipeline"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promoteProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromoteBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
                 };
             };
             /** @description Validation Error */
@@ -11483,6 +12110,39 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compareRunConfigs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompareBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigDiff"];
                 };
             };
             /** @description Validation Error */
@@ -12615,6 +13275,37 @@ export interface operations {
             };
         };
     };
+    getStudyAnalysis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                study_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyAnalysis"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     cancelStudy: {
         parameters: {
             query?: never;
@@ -13062,6 +13753,110 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LicenseView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getModelsCache: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CacheReport"];
+                };
+            };
+        };
+    };
+    prefetchModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrefetchBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verifyModelsCache: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerifyReport"];
+                };
+            };
+        };
+    };
+    deleteCachedModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CacheReport"];
                 };
             };
             /** @description Validation Error */

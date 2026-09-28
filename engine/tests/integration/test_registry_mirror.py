@@ -25,12 +25,12 @@ def test_versions_stages_and_champion_alias(tmp_path: Path) -> None:
     name = registered_name("prj_1")
     a = a.model_copy(update={"mlflow_version": va, "stage": ModelStage.PRODUCTION})
     mirror.sync_stage(a)
-    assert tracker.client.get_model_version_by_alias(name, CHAMPION_ALIAS).version == "1"
+    assert str(tracker.client.get_model_version_by_alias(name, CHAMPION_ALIAS).version) == "1"
     # Promover b: a se archiva y el alias pasa a b.
     mirror.sync_stage(a.model_copy(update={"stage": ModelStage.ARCHIVED}))
     b = b.model_copy(update={"mlflow_version": vb, "stage": ModelStage.PRODUCTION})
     mirror.sync_stage(b)
-    assert tracker.client.get_model_version_by_alias(name, CHAMPION_ALIAS).version == "2"
+    assert str(tracker.client.get_model_version_by_alias(name, CHAMPION_ALIAS).version) == "2"
     tags = tracker.client.get_model_version(name, "1").tags
     assert tags["perceptron.stage"] == "archived"
     assert tags["perceptron.model_version"] == a.id

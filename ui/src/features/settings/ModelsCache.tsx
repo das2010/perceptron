@@ -67,6 +67,7 @@ export function ModelsCacheCard() {
       ),
   });
   const data = report.data;
+  const available = data?.available ?? [];
 
   return (
     <Card className="mt-6">
@@ -122,7 +123,7 @@ export function ModelsCacheCard() {
               <ShieldCheck className="h-4 w-4" aria-hidden="true" />
               {t("modelsCache.verify")}
             </Button>
-            {data.available.length > 0 && !data.offline && (
+            {available.length > 0 && !data.offline && (
               <>
                 <Field label={t("modelsCache.prefetch")} hint={t("modelsCache.prefetchHint")}>
                   <Select
@@ -131,7 +132,7 @@ export function ModelsCacheCard() {
                     className="w-72"
                   >
                     <option value="">—</option>
-                    {data.available.map((m) => (
+                    {available.map((m) => (
                       <option key={m} value={m}>
                         {m}
                       </option>

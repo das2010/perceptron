@@ -61,7 +61,7 @@ describe("ciclo de vida del proyecto (RF-PRJ-01)", () => {
   });
 
   it("exporta el paquete .perceptron con los datos si se piden (RF-PRJ-03)", async () => {
-    const pkg = vi.fn(() => new Response(new Blob(["zip"]), { status: 200 }));
+    const pkg = vi.fn((_req: Request) => new Response(new Blob(["zip"]), { status: 200 }));
     engine({ "GET /api/v1/projects/prj_1/package": pkg });
     const created = vi.fn(() => "blob:paquete");
     vi.stubGlobal(
@@ -72,7 +72,8 @@ describe("ciclo de vida del proyecto (RF-PRJ-01)", () => {
     await userEvent.click(await screen.findByLabelText("con los datos"));
     await userEvent.click(screen.getByRole("button", { name: /Exportar .perceptron/ }));
     await waitFor(() => expect(created).toHaveBeenCalled());
-    const req = pkg.mock.calls[0]?.[0] as unknown as Request;
+    const req = pkg.mock.calls[0]?.[0];
+    if (!req) throw new Error("no se pidió el paquete");
     expect(new URL(req.url).searchParams.get("include_data")).toBe("true");
   });
 

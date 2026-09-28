@@ -28,8 +28,8 @@ def test_activity_records_writes_with_actor_and_skips_read_only_ops(
     dv = _ok(client.post(f"{API}/sources/{src['id']}/ingest", json={"target": "churn"}), 201)
     project = _ok(client.get(f"{API}/projects/{pid}"))
     _ok(client.patch(f"{API}/projects/{pid}", json={"version": project["version"], "goal": "x"}))
-    bad = client.post(f"{API}/sources/{src['id']}/ingest", json={"target": "no-existe"})
-    assert bad.status_code >= 400  # los fallos no se anotan
+    stale = client.patch(f"{API}/projects/{pid}", json={"version": 1, "goal": "viejo"})
+    assert stale.status_code == 409  # los fallos no se anotan
 
     entries = _ok(client.get(f"{API}/projects/{pid}/activity"))
     ops = [e["operation"] for e in entries]

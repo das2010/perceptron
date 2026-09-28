@@ -137,7 +137,7 @@ def _target(state: ServerState, project: Project, rel: PurePosixPath) -> Path:
     return ensure_within(root / Path(*rel.parts), root)
 
 
-_ID = re.compile(r"[a-z]{2,4}_[0-9A-Za-z]{1,64}")
+_ID = re.compile(r"[a-z]{2,4}_[0-9A-Za-z][0-9A-Za-z-]{0,79}")  # runs de HPO: std_…-t000
 
 
 def _check_id(value: str, prefix: str | None = None) -> None:

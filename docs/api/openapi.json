@@ -15,6 +15,75 @@
         "title": "AcceptBody",
         "type": "object"
       },
+      "ActivityEntry": {
+        "additionalProperties": false,
+        "description": "Qué se hizo en el proyecto, quién y cuándo (RF-PRJ-05).",
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Usuario (Team Server) o local",
+            "title": "Actor"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "operation": {
+            "description": "operation_id de la API (p. ej. createSource)",
+            "title": "Operation",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "operation",
+          "method",
+          "path",
+          "status"
+        ],
+        "title": "ActivityEntry",
+        "type": "object"
+      },
       "AgentCreate": {
         "additionalProperties": false,
         "properties": {
@@ -1089,6 +1158,20 @@
         "title": "Body_importLabels",
         "type": "object"
       },
+      "Body_importProject": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_importProject",
+        "type": "object"
+      },
       "Body_predictFile": {
         "properties": {
           "file": {
@@ -1263,6 +1346,89 @@
           "arch"
         ],
         "title": "CPUInfo",
+        "type": "object"
+      },
+      "CacheReport": {
+        "properties": {
+          "available": {
+            "description": "Modelos curados que se pueden predescargar",
+            "items": {
+              "type": "string"
+            },
+            "title": "Available",
+            "type": "array"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/CachedModel"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "offline": {
+            "title": "Offline",
+            "type": "boolean"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "total_bytes": {
+            "title": "Total Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "offline",
+          "total_bytes",
+          "models"
+        ],
+        "title": "CacheReport",
+        "type": "object"
+      },
+      "CachedModel": {
+        "properties": {
+          "files": {
+            "title": "Files",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_used": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "source": {
+            "enum": [
+              "huggingface",
+              "torch"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "size_bytes",
+          "files"
+        ],
+        "title": "CachedModel",
         "type": "object"
       },
       "CategoricalStats": {
@@ -1916,6 +2082,67 @@
         "title": "Condition",
         "type": "object"
       },
+      "ConfigDiff": {
+        "properties": {
+          "archspec": {
+            "items": {
+              "$ref": "#/components/schemas/ConfigDiffRow"
+            },
+            "title": "Archspec",
+            "type": "array"
+          },
+          "pipeline": {
+            "items": {
+              "$ref": "#/components/schemas/ConfigDiffRow"
+            },
+            "title": "Pipeline",
+            "type": "array"
+          },
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Run Ids",
+            "type": "array"
+          },
+          "same_archspec": {
+            "title": "Same Archspec",
+            "type": "boolean"
+          },
+          "same_pipeline": {
+            "title": "Same Pipeline",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "run_ids",
+          "same_archspec",
+          "same_pipeline",
+          "archspec",
+          "pipeline"
+        ],
+        "title": "ConfigDiff",
+        "type": "object"
+      },
+      "ConfigDiffRow": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "values": {
+            "items": {},
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "path",
+          "values"
+        ],
+        "title": "ConfigDiffRow",
+        "type": "object"
+      },
       "Confusion": {
         "properties": {
           "actual": {
@@ -1958,6 +2185,105 @@
           "attribution"
         ],
         "title": "Contribution",
+        "type": "object"
+      },
+      "CostEstimate": {
+        "properties": {
+          "batch_size": {
+            "title": "Batch Size",
+            "type": "integer"
+          },
+          "devices": {
+            "items": {
+              "$ref": "#/components/schemas/DeviceEstimate"
+            },
+            "title": "Devices",
+            "type": "array"
+          },
+          "input_shape": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Shape"
+          },
+          "memory_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Memoria estimada por batch",
+            "title": "Memory Mb"
+          },
+          "n_train": {
+            "title": "N Train",
+            "type": "integer"
+          },
+          "num_params": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Params"
+          },
+          "num_samples": {
+            "title": "Num Samples",
+            "type": "integer"
+          },
+          "sample_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tensor de entrada por ejemplo",
+            "title": "Sample Mb"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "train_tensor_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tamaño efectivo de train como tensores (lo que ve el modelo)",
+            "title": "Train Tensor Mb"
+          }
+        },
+        "required": [
+          "n_train",
+          "num_samples",
+          "size_bytes",
+          "input_shape",
+          "batch_size",
+          "num_params",
+          "devices"
+        ],
+        "title": "CostEstimate",
         "type": "object"
       },
       "Count": {
@@ -2787,6 +3113,57 @@
         "title": "Device",
         "type": "string"
       },
+      "DeviceEstimate": {
+        "properties": {
+          "device": {
+            "title": "Device",
+            "type": "string"
+          },
+          "epoch_time_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch Time S"
+          },
+          "fits": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fits"
+          },
+          "memory_gb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Gb"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "device",
+          "name"
+        ],
+        "title": "DeviceEstimate",
+        "type": "object"
+      },
       "Diagnosis": {
         "properties": {
           "actions": {
@@ -3319,6 +3696,25 @@
           "predicted"
         ],
         "title": "ErrorSample",
+        "type": "object"
+      },
+      "EstimateBody": {
+        "additionalProperties": false,
+        "properties": {
+          "archspec_id": {
+            "title": "Archspec Id",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "archspec_id",
+          "dataset_version_id"
+        ],
+        "title": "EstimateBody",
         "type": "object"
       },
       "Evaluation": {
@@ -6232,6 +6628,18 @@
             "title": "Id",
             "type": "string"
           },
+          "mlflow_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Versión espejo en el Model Registry de MLflow (RF-TRK-03)",
+            "title": "Mlflow Version"
+          },
           "model_card": {
             "additionalProperties": true,
             "title": "Model Card",
@@ -6489,6 +6897,28 @@
           }
         },
         "title": "Objective",
+        "type": "object"
+      },
+      "ObjectiveInfo": {
+        "properties": {
+          "direction": {
+            "enum": [
+              "minimize",
+              "maximize"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metric",
+          "direction"
+        ],
+        "title": "ObjectiveInfo",
         "type": "object"
       },
       "OptimizerSpec": {
@@ -6974,6 +7404,19 @@
           "predictions"
         ],
         "title": "Predictions",
+        "type": "object"
+      },
+      "PrefetchBody": {
+        "properties": {
+          "model": {
+            "title": "Model",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model"
+        ],
+        "title": "PrefetchBody",
         "type": "object"
       },
       "PrivacyLevel": {
@@ -7713,6 +8156,48 @@
           "target_metric"
         ],
         "title": "ProjectTemplate",
+        "type": "object"
+      },
+      "PromoteBody": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Dataset Version Ids",
+            "type": "array"
+          },
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500,
+            "title": "Run Ids",
+            "type": "array"
+          },
+          "server": {
+            "title": "Server",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Workspace del servidor",
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "server"
+        ],
+        "title": "PromoteBody",
         "type": "object"
       },
       "ProposeArchBody": {
@@ -10163,6 +10648,46 @@
         "title": "Study",
         "type": "object"
       },
+      "StudyAnalysis": {
+        "properties": {
+          "importance": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Importance",
+            "type": "object"
+          },
+          "objectives": {
+            "items": {
+              "$ref": "#/components/schemas/ObjectiveInfo"
+            },
+            "title": "Objectives",
+            "type": "array"
+          },
+          "params": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Params",
+            "type": "array"
+          },
+          "trials": {
+            "items": {
+              "$ref": "#/components/schemas/TrialPoint"
+            },
+            "title": "Trials",
+            "type": "array"
+          }
+        },
+        "required": [
+          "objectives",
+          "params",
+          "trials",
+          "importance"
+        ],
+        "title": "StudyAnalysis",
+        "type": "object"
+      },
       "StudyCreate": {
         "additionalProperties": false,
         "properties": {
@@ -10887,6 +11412,14 @@
       "TrainingSpec": {
         "additionalProperties": false,
         "properties": {
+          "backbone_lr_mult": {
+            "default": 1.0,
+            "description": "LR discriminativo: LR del backbone = LR × esto",
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Backbone Lr Mult",
+            "type": "number"
+          },
           "batch_size": {
             "anyOf": [
               {
@@ -10978,9 +11511,79 @@
             ],
             "title": "Precision",
             "type": "string"
+          },
+          "unfreeze": {
+            "default": "all",
+            "description": "Tras el congelado: todo junto o de a un grupo de capas por época (RF-TRN-09)",
+            "enum": [
+              "all",
+              "progressive"
+            ],
+            "title": "Unfreeze",
+            "type": "string"
           }
         },
         "title": "TrainingSpec",
+        "type": "object"
+      },
+      "TrialPoint": {
+        "properties": {
+          "best_so_far": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best So Far"
+          },
+          "number": {
+            "title": "Number",
+            "type": "integer"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "pareto": {
+            "default": false,
+            "title": "Pareto",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "values": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "number",
+          "run_id",
+          "status",
+          "params",
+          "values"
+        ],
+        "title": "TrialPoint",
         "type": "object"
       },
       "Trigger": {
@@ -11474,6 +12077,27 @@
           "passed"
         ],
         "title": "Verification",
+        "type": "object"
+      },
+      "VerifyReport": {
+        "properties": {
+          "checked": {
+            "title": "Checked",
+            "type": "integer"
+          },
+          "corrupt": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Corrupt",
+            "type": "array"
+          }
+        },
+        "required": [
+          "checked",
+          "corrupt"
+        ],
+        "title": "VerifyReport",
         "type": "object"
       },
       "VersionInfo": {
@@ -15695,6 +16319,48 @@
         ]
       }
     },
+    "/api/v1/projects/import": {
+      "post": {
+        "description": "Importa un `.perceptron` con sus ids; si el proyecto ya existe, 409.",
+        "operationId": "importProject",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_importProject"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Package",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
     "/api/v1/projects/templates": {
       "get": {
         "description": "Plantillas UC-01…UC-09: modalidad, tarea y métrica objetivo (RF-PRJ-02).",
@@ -15842,6 +16508,65 @@
           }
         },
         "summary": "Update Project",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/activity": {
+      "get": {
+        "description": "Quién hizo qué y cuándo en el proyecto, lo más reciente primero (RF-PRJ-05).",
+        "operationId": "listProjectActivity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ActivityEntry"
+                  },
+                  "title": "Response Listprojectactivity",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Project Activity",
         "tags": [
           "projects"
         ]
@@ -16061,6 +16786,59 @@
           }
         },
         "summary": "Build Arch Definition",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/arch/estimate": {
+      "post": {
+        "description": "Tamaño efectivo, memoria por batch y tiempo por época por dispositivo (RF-PRF-08).",
+        "operationId": "estimateArchitecture",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostEstimate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Estimate Architecture",
         "tags": [
           "arch"
         ]
@@ -16751,6 +17529,57 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/package": {
+      "get": {
+        "description": "Proyecto completo en un `.perceptron` (entidades, runs, modelos; datos opcionales).",
+        "operationId": "downloadProjectPackage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_data",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Data",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Package",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/pipelines": {
       "get": {
         "operationId": "listPipelines",
@@ -16899,6 +17728,59 @@
         "summary": "Propose Pipeline",
         "tags": [
           "pipelines"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/remote/promote": {
+      "post": {
+        "description": "Convierte el proyecto local en proyecto de equipo (RF-PRJ-04): sube la metadata, los\ndatasets y los runs elegidos al Team Server.",
+        "operationId": "promoteProject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromoteBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Promote Project",
+        "tags": [
+          "remote"
         ]
       }
     },
@@ -17787,6 +18669,48 @@
           }
         },
         "summary": "Compare Runs",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/compare/config": {
+      "post": {
+        "description": "Qué cambia entre los runs en su ArchSpec y en su pipeline (RF-TRK-04).",
+        "operationId": "compareRunConfigs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompareBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigDiff"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare Run Configs",
         "tags": [
           "runs"
         ]
@@ -19430,6 +20354,49 @@
         ]
       }
     },
+    "/api/v1/studies/{study_id}/analysis": {
+      "get": {
+        "description": "Historia, importancia de hiperparámetros, coordenadas paralelas y Pareto (RF-HPO-06).",
+        "operationId": "getStudyAnalysis",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyAnalysis"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Study Analysis",
+        "tags": [
+          "hpo"
+        ]
+      }
+    },
     "/api/v1/studies/{study_id}/cancel": {
       "post": {
         "operationId": "cancelStudy",
@@ -20127,6 +21094,134 @@
           }
         },
         "summary": "Put License",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/models-cache": {
+      "get": {
+        "description": "Pesos preentrenados descargados: tamaño y último uso (RF-TRN-11).",
+        "operationId": "getModelsCache",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Models Cache",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/models-cache/prefetch": {
+      "post": {
+        "description": "Descarga un modelo curado ahora, para entrenar después sin conexión.",
+        "operationId": "prefetchModel",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrefetchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Prefetch Model",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/models-cache/verify": {
+      "post": {
+        "description": "Recalcula los checksums de los archivos descargados.",
+        "operationId": "verifyModelsCache",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Verify Models Cache",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/models-cache/{model_id}": {
+      "delete": {
+        "operationId": "deleteCachedModel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "schema": {
+              "title": "Model Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Cached Model",
         "tags": [
           "system"
         ]
