@@ -1,7 +1,33 @@
 @import "@fontsource/titillium-web/300.css";
 @import "@fontsource/titillium-web/400.css";
 @import "@fontsource/titillium-web/600.css";
+@import "tailwindcss";
 @import "./tokens.css";
+
+/*
+ * Tailwind v4 sobre los tokens Preteco: alias semánticos (sin pisar los tokens, que cambian
+ * con el tema). bg-card, text-ink, border-line, bg-primary… y la familia "copilot" (violeta)
+ * para todo lo que viene del LLM (SPEC §11.2).
+ */
+@theme inline {
+  --font-sans: var(--pt-font);
+  --color-canvas: var(--color-bg);
+  --color-card: var(--color-surface);
+  --color-ink: var(--color-text);
+  --color-muted: var(--color-text-muted);
+  --color-line: var(--color-border);
+  --color-primary: var(--color-primary-bg);
+  --color-on-primary: var(--color-primary-text);
+  --color-brand: var(--color-accent);
+  --color-copilot: var(--color-ai);
+  --color-copilot-bg: var(--color-ai-bg);
+  --color-ok: var(--color-success);
+  --color-warn: var(--color-warning);
+  --color-bad: var(--color-danger);
+  --color-pt-dark: var(--pt-dark);
+  --color-pt-lime: var(--pt-lime);
+  --radius-pt: var(--pt-radius);
+}
 
 *,
 *::before,

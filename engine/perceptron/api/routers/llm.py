@@ -46,7 +46,7 @@ class ProviderUpdate(BaseModel):
     base_url: str | None = None
     api_key_ref: str | None = None
     local: bool | None = None
-    timeout_s: float = Field(default=120.0, gt=0)
+    timeout_s: float | None = Field(default=None, gt=0, description="None = conservar")
     models: dict[str, ModelInfo] | None = None
     api_key: SecretStr | None = Field(default=None, description="Solo escritura: va al keychain")
 
@@ -99,7 +99,7 @@ def put_provider(name: str, body: ProviderUpdate, ctx: Ctx) -> list[ProviderView
         base_url=body.base_url,
         api_key_ref=ref,
         local=body.local,
-        timeout_s=body.timeout_s,
+        timeout_s=body.timeout_s or (current.timeout_s if current else 120.0),
         models=models,
     )
     gw.config.save_workspace(cfg)

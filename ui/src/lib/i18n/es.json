@@ -16,6 +16,272 @@
     "theme": "Tema",
     "themeLight": "Claro",
     "themeDark": "Oscuro",
-    "themeSystem": "Sistema"
+    "themeSystem": "Sistema",
+    "description": "Proveedores de LLM, perfiles por propósito y claves (guardadas en el keychain).",
+    "llm": {
+      "profile": "Perfil LLM",
+      "active": "Perfil activo",
+      "activeHint": "Qué modelo atiende cada propósito (arquitecto, agente, informe…).",
+      "test": "Probar conexión",
+      "testOk": "Conexión correcta: {{provider}}/{{model}} en {{seconds}} s",
+      "testFail": "No se pudo usar el LLM: {{error}}",
+      "providers": "Proveedores",
+      "provider": "Proveedor",
+      "where": "Dónde corre",
+      "models": "Modelos del catálogo",
+      "key": "Clave",
+      "local": "Local",
+      "cloud": "Nube",
+      "noKey": "No necesita clave",
+      "hasKey": "Clave guardada",
+      "missingKey": "Sin clave",
+      "keyPlaceholder": "Pegá la clave (no se vuelve a mostrar)",
+      "keyFor": "Clave de {{name}}"
+    }
+  },
+  "nav": {
+    "main": "Navegación principal",
+    "home": "Inicio",
+    "settings": "Configuración",
+    "projects": "Proyectos"
+  },
+  "copilot": {
+    "title": "Copiloto",
+    "toggle": "Mostrar u ocultar el copiloto",
+    "soon": "El copiloto conversacional llega con el wizard. Mientras tanto, las propuestas de la IA aparecen en violeta en cada paso y siempre podés aceptarlas o rechazarlas."
+  },
+  "ai": {
+    "suggested": "Sugerido por IA",
+    "accept": "Aceptar",
+    "accepted": "Aceptada",
+    "reject": "Descartar"
+  },
+  "common": {
+    "loading": "Cargando…",
+    "error": "Ocurrió un error",
+    "close": "Cerrar",
+    "create": "Crear",
+    "save": "Guardar"
+  },
+  "home": {
+    "newProject": "Nuevo proyecto",
+    "hardware": "Hardware",
+    "device": "Dispositivo recomendado",
+    "cpu": "CPU",
+    "cores_one": "{{count}} núcleo",
+    "cores_other": "{{count}} núcleos",
+    "ram": "Memoria",
+    "gpus": "GPU",
+    "noGpu": "Sin GPU (se entrena en CPU)",
+    "recent": "Proyectos recientes",
+    "empty": "Todavía no hay proyectos. Creá uno para empezar."
+  },
+  "project": {
+    "name": "Nombre",
+    "goal": "Objetivo",
+    "goalHint": "Contá en palabras qué querés lograr; la IA lo usa para proponer.",
+    "privacy": "Privacidad frente al LLM",
+    "sections": "Secciones del proyecto",
+    "tabs": {
+      "overview": "Resumen",
+      "data": "Datos",
+      "train": "Entrenar",
+      "experiments": "Experimentos",
+      "models": "Modelos",
+      "audit": "Auditoría LLM"
+    }
+  },
+  "privacy": {
+    "L0": "L0 — Sin LLM: se usan solo reglas.",
+    "L1": "L1 — Solo metadatos agregados (nunca valores individuales).",
+    "L2": "L2 — Metadatos + algunas muestras con datos personales enmascarados.",
+    "L3": "L3 — Muestras sin anonimizar (datos no sensibles o LLM local)."
+  },
+  "modality": {
+    "tabular": "Tabular",
+    "image": "Imágenes",
+    "text": "Texto",
+    "timeseries": "Series temporales",
+    "audio": "Audio"
+  },
+  "task": {
+    "classification": "Clasificación",
+    "regression": "Regresión",
+    "forecasting": "Pronóstico",
+    "anomaly_detection": "Anomalías",
+    "object_detection": "Detección de objetos",
+    "segmentation": "Segmentación",
+    "ocr": "OCR",
+    "sound_event_detection": "Eventos de audio"
+  },
+  "overview": {
+    "noGoal": "Sin objetivo declarado.",
+    "datasets": "Versiones de datos",
+    "runs": "Entrenamientos",
+    "models": "Modelos registrados",
+    "nextData": "Cargar datos",
+    "nextTrain": "Entrenar un modelo",
+    "nextResults": "Ver resultados"
+  },
+  "data": {
+    "addTitle": "Agregar datos",
+    "addHint": "Subí un archivo (CSV, Excel, Parquet, JSONL, ZIP) o una carpeta con subcarpetas por clase (imágenes, audio, texto).",
+    "uploadFile": "Subir archivo",
+    "uploadFolder": "Subir carpeta",
+    "previewOf": "Vista previa de {{name}}",
+    "target": "Columna objetivo",
+    "targetHint": "Lo que el modelo tiene que predecir. Si no la elegís, se infiere.",
+    "targetAuto": "Detectar automáticamente",
+    "ingest": "Crear versión de datos",
+    "versions": "Versiones de datos",
+    "empty": "Todavía no hay datos en este proyecto.",
+    "version": "Versión",
+    "modality": "Modalidad",
+    "samples": "Muestras",
+    "created": "Creada",
+    "showProfile": "Ver perfil",
+    "goTrain": "Seguir: entrenar"
+  },
+  "sourceKind": {
+    "table": "Tabla",
+    "image_folder": "Carpeta de imágenes",
+    "text_folder": "Carpeta de textos",
+    "audio_folder": "Carpeta de audio",
+    "segmentation_folder": "Imágenes con máscaras",
+    "ocr_folder": "Imágenes con texto"
+  },
+  "profile": {
+    "title": "Perfil del dataset",
+    "computing": "Analizando los datos…",
+    "splits": "Particiones",
+    "alerts": "Alertas de calidad",
+    "classes": "Distribución de clases",
+    "imbalance": "Proporción minoritaria/mayoritaria: {{ratio}}",
+    "columns": "Columnas",
+    "column": "Columna",
+    "type": "Tipo",
+    "nulls": "Nulos",
+    "unique": "Distintos",
+    "summary": "Resumen",
+    "numericSummary": "media {{mean}} · desvío {{std}}"
+  },
+  "split": {
+    "train": "entrenamiento",
+    "val": "validación",
+    "test": "test"
+  },
+  "severity": {
+    "info": "Info",
+    "warning": "Atención",
+    "high": "Importante"
+  },
+  "semantic": {
+    "numeric": "Numérica",
+    "categorical": "Categórica",
+    "boolean": "Sí/No",
+    "datetime": "Fecha",
+    "text": "Texto",
+    "id": "Identificador",
+    "filepath": "Archivo"
+  },
+  "train": {
+    "noData": "Primero cargá datos en la pestaña Datos.",
+    "step": {
+      "data": "Datos y preparación",
+      "arch": "Arquitectura",
+      "hpo": "Presupuesto y búsqueda de hiperparámetros",
+      "launch": "Entrenar"
+    },
+    "dataset": "Versión de datos",
+    "proposePipeline": "Proponer preparación",
+    "proposeArch": "Proponer arquitecturas",
+    "fallback": "Se usaron reglas: {{reason}}",
+    "byRules": "Por reglas",
+    "choose": "Elegir",
+    "estimates": "{{params}} parámetros · ~{{memory}} MB · ~{{time}} s por época",
+    "trials": "Intentos (trials)",
+    "epochs": "Épocas máximas por intento",
+    "recommend": "Recomendar estrategia",
+    "strategy": "Estrategia de búsqueda",
+    "pruner": "poda",
+    "trialsN_one": "{{count}} intento",
+    "trialsN_other": "{{count}} intentos",
+    "searchSpace": "Hiperparámetros a ajustar",
+    "launch": "Entrenar ahora"
+  },
+  "experiments": {
+    "live": "Entrenamiento en vivo",
+    "connected": "conectado",
+    "waiting": "Esperando la primera época…",
+    "curves": "Curvas de validación por intento",
+    "epoch": "Época",
+    "runs": "Entrenamientos",
+    "empty": "Todavía no se entrenó ningún modelo.",
+    "run": "Run",
+    "status": "Estado",
+    "started": "Inicio"
+  },
+  "status": {
+    "queued": "En cola",
+    "running": "Entrenando",
+    "paused": "En pausa",
+    "succeeded": "Terminado",
+    "failed": "Falló",
+    "cancelled": "Cancelado"
+  },
+  "run": {
+    "title": "Run",
+    "curves": "Curvas de entrenamiento",
+    "diagnosis": "Diagnóstico del entrenamiento",
+    "byRules": "Diagnóstico por reglas (sin LLM).",
+    "evaluation": "Evaluación en el test sellado",
+    "sealedHint": "El test sellado no se usó para elegir el modelo; evaluarlo da la estimación honesta de su rendimiento.",
+    "evaluate": "Evaluar en test",
+    "register": "Registrar modelo",
+    "registered": "Modelo registrado",
+    "report": "Generar informe",
+    "confusion": "Matriz de confusión",
+    "predicted": "Predicho",
+    "actual": "Real",
+    "class": "Clase",
+    "support": "Casos"
+  },
+  "models": {
+    "title": "Modelos registrados",
+    "empty": "Todavía no hay modelos registrados.",
+    "version": "Versión",
+    "stage": "Etapa",
+    "metrics": "Métricas en test",
+    "run": "Run"
+  },
+  "stage": {
+    "candidate": "Candidato",
+    "staging": "Staging",
+    "production": "Producción",
+    "archived": "Archivado"
+  },
+  "audit": {
+    "title": "Auditoría de llamadas al LLM",
+    "summary_one": "{{count}} llamada · costo total ${{cost}}",
+    "summary_other": "{{count}} llamadas · costo total ${{cost}}",
+    "empty": "Este proyecto no hizo llamadas al LLM.",
+    "when": "Cuándo",
+    "purpose": "Propósito",
+    "model": "Proveedor/modelo",
+    "privacy": "Nivel",
+    "status": "Estado",
+    "cost": "Costo",
+    "payload": "Ver lo enviado",
+    "payloadOf": "Lo que se envió en {{id}}",
+    "redactions": "Filtrado por privacidad"
+  },
+  "purpose": {
+    "copilot": "Copiloto",
+    "architect": "Arquitecto",
+    "hpo_strategist": "Estratega de HPO",
+    "diagnostician": "Diagnóstico",
+    "agent": "Agente",
+    "reporter": "Informe",
+    "labeler": "Etiquetado"
   }
 }

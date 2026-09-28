@@ -1,0 +1,231 @@
+import { useParams } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+
+import { EChart } from "@/components/charts/EChart";
+import {
+  AiSuggestion,
+  Badge,
+  Button,
+  Card,
+  CardTitle,
+  ErrorNote,
+  Spinner,
+  Table,
+  Td,
+  Th,
+} from "@/components/ui";
+import { getApiClient } from "@/lib/api/client";
+import {
+  unwrap,
+  useDiagnosis,
+  useEvaluate,
+  useEvaluation,
+  useRegister,
+  useReport,
+  useRun,
+  type EvaluationReport,
+} from "@/lib/api/hooks";
+import { formatNumber } from "@/lib/format";
+
+function useHistory(runId: string) {
+  return useQuery({
+    queryKey: ["runs", runId, "history"],
+    queryFn: async () =>
+      unwrap(
+        await (await getApiClient()).GET("/api/v1/runs/{run_id}/history", {
+          params: { path: { run_id: runId } },
+        }),
+      ),
+  });
+}
+
+function Curves({ runId }: { runId: string }) {
+  const { t } = useTranslation();
+  const { data } = useHistory(runId);
+  const history = data ?? [];
+  const option = useMemo(() => {
+    const keys = ["train_loss", "val_loss"].filter((k) => history.some((h) => k in h));
+    return {
+      legend: { bottom: 0 },
+      xAxis: { type: "value", name: t("experiments.epoch") },
+      yAxis: { type: "value", scale: true },
+      series: keys.map((k) => ({
+        name: k,
+        type: "line",
+        showSymbol: false,
+        data: history.filter((h) => k in h).map((h) => [(h.epoch ?? 0) + 1, h[k]]),
+      })),
+    };
+  }, [history, t]);
+  if (!history.length) return null;
+  return (
+    <Card>
+      <CardTitle>{t("run.curves")}</CardTitle>
+      <EChart option={option} label={t("run.curves")} />
+    </Card>
+  );
+}
+
+function Confusion({ report }: { report: EvaluationReport }) {
+  const { t, i18n } = useTranslation();
+  const cls = report.classification;
+  const option = useMemo(() => {
+    if (!cls) return {};
+    const data = cls.confusion_matrix.flatMap((row, i) => row.map((v, j) => [j, i, v]));
+    const max = Math.max(1, ...cls.confusion_matrix.flat());
+    return {
+      tooltip: { position: "top" },
+      xAxis: { type: "category", data: cls.labels, name: t("run.predicted") },
+      yAxis: { type: "category", data: cls.labels, name: t("run.actual"), inverse: true },
+      visualMap: { min: 0, max, calculable: false, orient: "horizontal", left: "center", bottom: 0, show: false },
+      series: [{ type: "heatmap", data, label: { show: true } }],
+    };
+  }, [cls, t]);
+  if (!cls) return null;
+  return (
+    <Card>
+      <CardTitle>{t("run.confusion")}</CardTitle>
+      <EChart option={option} height={320} label={t("run.confusion")} />
+      <Table>
+        <thead>
+          <tr>
+            <Th>{t("run.class")}</Th>
+            <Th>precision</Th>
+            <Th>recall</Th>
+            <Th>f1</Th>
+            <Th>{t("run.support")}</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {cls.per_class.map((c) => (
+            <tr key={c.label}>
+              <Td className="font-semibold">{c.label}</Td>
+              <Td>{formatNumber(c.precision, i18n.language, 3)}</Td>
+              <Td>{formatNumber(c.recall, i18n.language, 3)}</Td>
+              <Td>{formatNumber(c.f1, i18n.language, 3)}</Td>
+              <Td>{c.support}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </Card>
+  );
+}
+
+export function RunPage() {
+  const { t, i18n } = useTranslation();
+  const { projectId, runId } = useParams({ from: "/projects/$projectId/runs/$runId" });
+  const run = useRun(runId);
+  const evaluation = useEvaluation(runId);
+  const evaluate = useEvaluate(runId);
+  const register = useRegister(runId, projectId);
+  const done = run.data?.status === "succeeded";
+  const diagnosis = useDiagnosis(runId, done);
+  const report = useReport(runId);
+
+  if (run.isPending) return <Spinner />;
+  if (run.error || !run.data) return <ErrorNote error={run.error} />;
+  const r = run.data;
+  const evaluated = evaluation.data;
+  const d = diagnosis.data;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardTitle className="flex items-center gap-2">
+          {t("run.title")} <span className="font-mono text-xs">{r.id}</span>
+          <Badge>{t(`status.${r.status}`)}</Badge>
+        </CardTitle>
+        <dl className="grid gap-2 text-sm sm:grid-cols-3">
+          {Object.entries(r.metrics ?? {})
+            .filter(([k]) => k.startsWith("val_"))
+            .map(([k, v]) => (
+              <div key={k}>
+                <dt className="text-muted">{k}</dt>
+                <dd className="font-semibold">{formatNumber(v, i18n.language)}</dd>
+              </div>
+            ))}
+        </dl>
+        {Object.keys(r.hyperparams ?? {}).length > 0 && (
+          <p className="mt-3 text-xs text-muted">
+            {Object.entries(r.hyperparams ?? {})
+              .map(([k, v]) => `${k}=${String(v)}`)
+              .join(" · ")}
+          </p>
+        )}
+      </Card>
+
+      <Curves runId={runId} />
+
+      {d && (
+        <AiSuggestion title={t("run.diagnosis")}>
+          <p>{d.summary}</p>
+          <ul className="mt-2 list-disc pl-5">
+            {(d.problems ?? []).map((p, i) => (
+              <li key={i}>
+                <strong>{p.kind}</strong> — {p.evidence}
+              </li>
+            ))}
+            {(d.actions ?? []).map((a, i) => (
+              <li key={`a${i}`}>→ {a.rationale}</li>
+            ))}
+          </ul>
+          {d.origin !== "llm" && <p className="mt-2 text-xs text-muted">{t("run.byRules")}</p>}
+        </AiSuggestion>
+      )}
+
+      <Card>
+        <CardTitle>{t("run.evaluation")}</CardTitle>
+        {!evaluated && done && (
+          <>
+            <p className="mb-3 text-sm text-muted">{t("run.sealedHint")}</p>
+            <Button loading={evaluate.isPending} onClick={() => evaluate.mutate()}>
+              {t("run.evaluate")}
+            </Button>
+          </>
+        )}
+        <ErrorNote error={evaluate.error} />
+        {evaluated && (
+          <>
+            <dl className="grid gap-2 text-sm sm:grid-cols-4">
+              {Object.entries(evaluated.metrics).map(([k, v]) => (
+                <div key={k}>
+                  <dt className="text-muted">{k}</dt>
+                  <dd className="font-semibold">{formatNumber(v, i18n.language)}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                loading={register.isPending}
+                disabled={register.isSuccess}
+                onClick={() => register.mutate()}
+              >
+                {register.isSuccess ? t("run.registered") : t("run.register")}
+              </Button>
+              <Button variant="ai" loading={report.isPending} onClick={() => report.mutate()}>
+                {t("run.report")}
+              </Button>
+            </div>
+            <ErrorNote error={register.error ?? report.error} />
+          </>
+        )}
+      </Card>
+
+      {evaluated && <Confusion report={evaluated} />}
+
+      {report.data && (
+        <Card>
+          <CardTitle className="flex items-center gap-2">
+            {report.data.title}
+            {report.data.origin === "llm" && <Badge tone="brand">IA</Badge>}
+          </CardTitle>
+          <pre className="whitespace-pre-wrap font-sans text-sm">{report.data.markdown}</pre>
+        </Card>
+      )}
+    </div>
+  );
+}
