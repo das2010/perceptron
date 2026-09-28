@@ -66,6 +66,10 @@ from perceptron.hpo.recommend import recommend_strategy
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.hpo.study import StudyControl, StudyResult, TrialRecord, run_study
 from perceptron.llm.schemas import Report
+from perceptron.sandbox.code import CODE_FILE
+from perceptron.sandbox.expert import build_code_spec, is_code_spec
+from perceptron.sandbox.process import CodeCheck, check_code, default_limits, evaluate_in_sandbox
+from perceptron.sandbox.static import check_source
 from perceptron.tracking.tracker import MlflowTracker, RunRecorder, Tracker
 from perceptron.training.config import RunConfig, RunEvent, RunResult
 from perceptron.training.hardware import detect_hardware
@@ -294,7 +298,12 @@ class Workflow:
         return self.save_archspec(dv.project_id, spec, origin=Origin.MANUAL)
 
     def save_archspec(
-        self, project_id: str, spec: ArchSpec, *, origin: Origin = Origin.MANUAL
+        self,
+        project_id: str,
+        spec: ArchSpec,
+        *,
+        origin: Origin = Origin.MANUAL,
+        code: str | None = None,
     ) -> ArchSpecRecord:
         report = validate_archspec(spec)
         if not report.valid:
@@ -302,6 +311,9 @@ class Workflow:
                 "ArchSpec inválida",
                 details={"issues": [i.model_dump(mode="json") for i in report.errors]},
             )
+        if is_code_spec(spec) and code is None:
+            # Solo `save_code_archspec` (confirmación + validación estática y en sandbox).
+            raise ValidationError("las ArchSpec de código se crean desde el modo experto")
         record = ArchSpecRecord(
             project_id=project_id,
             name=spec.name,
@@ -309,11 +321,58 @@ class Workflow:
             content_hash=spec.content_hash(),
             origin=origin,
         )
+        archspecs_dir = self.ctx.settings.paths.project(project_id).archspecs_dir
+        archspecs_dir.mkdir(parents=True, exist_ok=True)
+        if code is not None:
+            (archspecs_dir / f"{record.id}.py").write_text(code, encoding="utf-8")
+            record = record.model_copy(update={"code_path": f"archspecs/{record.id}.py"})
         self.ctx.repo(ArchSpecRecord).add(record)
-        path = self.ctx.settings.paths.project(project_id).archspecs_dir / f"{record.id}.json"
-        path.parent.mkdir(parents=True, exist_ok=True)
+        path = archspecs_dir / f"{record.id}.json"
         path.write_text(spec.model_dump_json(indent=2), encoding="utf-8")
         return record
+
+    def archspec_source(self, record: ArchSpecRecord) -> str:
+        """Fuente del código experto de una ArchSpec (RF-ARC-06)."""
+        if not record.code_path:
+            raise NotFoundError(f"la ArchSpec {record.id} no es de código")
+        root = self.ctx.settings.paths.project(record.project_id).root
+        return (root / record.code_path).read_text(encoding="utf-8")
+
+    def save_code_archspec(
+        self,
+        project_id: str,
+        base_archspec_id: str,
+        source: str,
+        *,
+        name: str | None = None,
+        acknowledge_risk: bool = False,
+    ) -> tuple[ArchSpecRecord, CodeCheck]:
+        """Modo experto (RF-ARC-06, ADR-0025): validación estática, prueba en sandbox y alta."""
+        if not acknowledge_risk:
+            raise ValidationError(
+                "el código experto se ejecuta en un sandbox pero no es declarativo: "
+                "confirmá el riesgo (acknowledge_risk)"
+            )
+        static = check_source(source)
+        if not static.valid:
+            raise ValidationError(
+                "el código no pasa la validación estática",
+                details={"issues": [i.model_dump() for i in static.issues]},
+            )
+        base_record = self.ctx.repo(ArchSpecRecord).get(base_archspec_id)
+        base = ArchSpec.model_validate(base_record.spec)
+        try:
+            spec = build_code_spec(base, source, name)
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+        work = self.ctx.settings.paths.project(project_id).root / "sandbox" / new_id(IdPrefix.JOB)
+        check = check_code(spec.model_dump(mode="json"), source, work)
+        if not check.ok:
+            raise ValidationError(
+                f"el modelo no se pudo construir en el sandbox: {check.error}",
+                details={"violations": check.violations},
+            )
+        return self.save_archspec(project_id, spec, origin=Origin.MANUAL, code=source), check
 
     @staticmethod
     def validate(data: dict[str, Any]) -> ValidationReport:
@@ -366,6 +425,7 @@ class Workflow:
         if self.ctx.repo(Study).find(st.id) is None:
             self.ctx.repo(Study).add(st)
         ppaths = self.ctx.settings.paths.project(project.id)
+        code = self.archspec_source(record) if record.code_path else None
         base = RunConfig(
             run_id=st.id,
             run_dir=ppaths.run(st.id),
@@ -376,6 +436,8 @@ class Workflow:
             seed=strategy.seed,
             pretrained_allowed=not offline_mode(),
             limit_train_batches=limit_train_batches,
+            code=code,
+            sandbox=default_limits(strategy.budget.trial_timeout_s),
         )
         recorders: dict[str, RunRecorder] = {}
         tags = {
@@ -383,6 +445,7 @@ class Workflow:
             "perceptron.study": st.id,
             "perceptron.dataset": dv.content_hash,
             "perceptron.origin": record.origin.value,
+            "perceptron.declarative": "false" if code is not None else "true",
         }
 
         def on_run_event(cfg: RunConfig) -> Callable[[RunEvent], None]:
@@ -466,7 +529,15 @@ class Workflow:
     def evaluate(self, run_id: str) -> tuple[Evaluation, EvaluationReport]:
         run = self.ctx.repo(Run).get(run_id)
         dv = self.dataset(run.dataset_version_id)
-        report = evaluate_run(self._run_dir(run), self.view(dv).root)
+        run_dir, dataset_dir = self._run_dir(run), self.view(dv).root
+        if (run_dir / CODE_FILE).is_file():
+            # Código experto: el modelo se construye y evalúa solo dentro del sandbox.
+            evaluate_in_sandbox(run_dir, dataset_dir)
+            report = EvaluationReport.model_validate(
+                json.loads((run_dir / EVALUATION_DIR / EVALUATION_FILE).read_text(encoding="utf-8"))
+            )
+        else:
+            report = evaluate_run(run_dir, dataset_dir)
         evaluation = Evaluation(
             run_id=run.id,
             split=report.split,

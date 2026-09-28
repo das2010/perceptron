@@ -38,7 +38,10 @@ class TrainedModel:
         return self.spec.task.type
 
 
-def load_trained(run_dir: Path, *, prefer: str = BEST_CKPT) -> TrainedModel:
+def load_run_artifacts(
+    run_dir: Path, *, prefer: str = BEST_CKPT
+) -> tuple[ArchSpec, FittedPipeline, Path]:
+    """ArchSpec, pipeline ajustado y checkpoint de un run, sin construir el modelo."""
     ckpt_dir = run_dir / CHECKPOINTS_DIR
     ckpt = ckpt_dir / prefer
     if not ckpt.is_file():
@@ -49,6 +52,12 @@ def load_trained(run_dir: Path, *, prefer: str = BEST_CKPT) -> TrainedModel:
     pipeline = FittedPipeline.model_validate_json(
         (run_dir / PIPELINE_FILE).read_text(encoding="utf-8")
     )
+    return spec, pipeline, ckpt
+
+
+def load_trained(run_dir: Path, *, prefer: str = BEST_CKPT) -> TrainedModel:
+    """Construye el modelo y carga sus pesos (el código experto, solo dentro del sandbox)."""
+    spec, pipeline, ckpt = load_run_artifacts(run_dir, prefer=prefer)
     cfg = RunConfig.model_validate_json((run_dir / RUN_CONFIG_FILE).read_text(encoding="utf-8"))
     model = build_model(spec, cfg.overrides, pretrained_allowed=False).model
     state = torch.load(ckpt, map_location="cpu", weights_only=True)["state_dict"]

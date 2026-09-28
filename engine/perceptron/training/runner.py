@@ -20,6 +20,7 @@ from collections.abc import Callable, Iterator
 from pathlib import Path
 
 from perceptron.core.events import EventBus
+from perceptron.sandbox.process import python_args, sandbox_env
 from perceptron.training.config import (
     RESULT_FILE,
     WORKER_LOG,
@@ -42,11 +43,17 @@ class RunHandle:
         self.events: list[RunEvent] = []
         self._requested: str | None = None
         path = config.save()
-        env = {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONIOENCODING": "utf-8"}
+        if config.code is not None:
+            # Código experto: proceso aislado con entorno mínimo (ADR-0025).
+            args = python_args("perceptron.training.worker", str(path))
+            env = sandbox_env(config.run_dir)
+        else:
+            args = [sys.executable, "-m", "perceptron.training.worker", str(path)]
+            env = {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONIOENCODING": "utf-8"}
         self._log = (config.run_dir / WORKER_LOG).open("a", encoding="utf-8")
         self.started_at = time.time()
         self.process = subprocess.Popen(  # noqa: S603 - intérprete actual y módulo propio
-            [sys.executable, "-m", "perceptron.training.worker", str(path)],
+            args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=self._log,
@@ -107,6 +114,9 @@ class RunHandle:
         self, on_event: Callable[[RunEvent], None] | None = None, timeout: float | None = None
     ) -> RunResult:
         """Consume eventos hasta que el worker termina y devuelve el resultado."""
+        if self.config.code is not None and self.config.sandbox.wall_seconds:
+            limit = self.config.sandbox.wall_seconds
+            timeout = min(timeout, limit) if timeout else limit
         timer = None
         if timeout:
             timer = threading.Timer(timeout, self._timeout)

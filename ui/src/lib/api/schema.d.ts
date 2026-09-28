@@ -72,6 +72,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/arch/code/lint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lint Arch Code
+         * @description Validación estática del código experto, sin ejecutarlo (RF-ARC-06).
+         */
+        post: operations["lintArchCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/arch/to-code": {
         parameters: {
             query?: never;
@@ -115,6 +135,43 @@ export interface paths {
         };
         /** Get Archspec */
         get: operations["getArchSpec"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/archspecs/{archspec_id}/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Arch Code */
+        get: operations["getArchCode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/archspecs/{archspec_id}/code/starter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Arch Code Starter
+         * @description Código inicial del modo experto para la entrada de esta ArchSpec.
+         */
+        get: operations["getArchCodeStarter"];
         put?: never;
         post?: never;
         delete?: never;
@@ -525,6 +582,26 @@ export interface paths {
          * @description Guarda una ArchSpec editada por el usuario (editor visual, RF-ARC-05): valida primero.
          */
         post: operations["createArchSpec"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/archspecs/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Code Archspec
+         * @description Modo experto (RF-ARC-06): valida el código, lo prueba en el sandbox y lo guarda.
+         */
+        post: operations["createCodeArchSpec"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1587,6 +1664,61 @@ export interface components {
             recall_macro: number;
             /** Roc Auc */
             roc_auc: number | null;
+        };
+        /** CodeArchSpecCreate */
+        CodeArchSpecCreate: {
+            /**
+             * Acknowledge Risk
+             * @description Confirmación explícita: el código no es declarativo (§13.2)
+             * @default false
+             */
+            acknowledge_risk: boolean;
+            /**
+             * Base Archspec Id
+             * @description ArchSpec de la que se toman entrada, tarea y ajuste
+             */
+            base_archspec_id: string;
+            /** Name */
+            name?: string | null;
+            /** Source */
+            source: string;
+        };
+        /** CodeArchSpecResult */
+        CodeArchSpecResult: {
+            check: components["schemas"]["CodeCheck"];
+            record: components["schemas"]["ArchSpecRecord"];
+        };
+        /**
+         * CodeCheck
+         * @description Resultado de construir el modelo de código y probarlo con un batch sintético.
+         */
+        CodeCheck: {
+            /** Error */
+            error?: string | null;
+            /** Num Params */
+            num_params?: number | null;
+            /** Ok */
+            ok: boolean;
+            /** Output Shape */
+            output_shape?: number[] | null;
+            /** Trainable Params */
+            trainable_params?: number | null;
+            /** Violations */
+            violations?: string[];
+        };
+        /** CodeIssue */
+        CodeIssue: {
+            /** Col */
+            col: number;
+            /** Line */
+            line: number;
+            /** Message */
+            message: string;
+        };
+        /** CodeLintBody */
+        CodeLintBody: {
+            /** Source */
+            source: string;
         };
         /** CodeResponse */
         CodeResponse: {
@@ -3460,6 +3592,13 @@ export interface components {
          * @enum {string}
          */
         Stage: "schema" | "blocks" | "graph" | "shapes" | "resources" | "weights";
+        /** StaticReport */
+        StaticReport: {
+            /** Issues */
+            issues?: components["schemas"]["CodeIssue"][];
+            /** Valid */
+            valid: boolean;
+        };
         /** StepSpec */
         StepSpec: {
             /** Columns */
@@ -4033,6 +4172,39 @@ export interface operations {
             };
         };
     };
+    lintArchCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeLintBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaticReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     archToCode: {
         parameters: {
             query?: never;
@@ -4119,6 +4291,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArchSpecRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getArchCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                archspec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getArchCodeStarter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                archspec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5044,6 +5278,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ArchSpecRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createCodeArchSpec: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeArchSpecCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeArchSpecResult"];
                 };
             };
             /** @description Validation Error */
