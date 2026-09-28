@@ -121,7 +121,9 @@ class InferenceModel:
         missing = sorted({c for c in self.required_columns if any(c not in r for r in rows)})
         if missing:
             raise InputError(f"faltan columnas: {', '.join(missing)}")
-        df = pl.DataFrame(rows, infer_schema_length=None)
+        # Celdas vacías (CSV, formularios) son valores faltantes, no texto: el pipeline las imputa.
+        clean = [{k: (None if v == "" else v) for k, v in r.items()} for r in rows]
+        df = pl.DataFrame(clean, infer_schema_length=None)
         arrays = transform_tabular(self.pipeline, df)
         feed = {"x_num": arrays.x_num, "x_cat": arrays.x_cat}
         return self._postprocess(

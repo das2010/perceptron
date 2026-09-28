@@ -95,7 +95,8 @@ def _bins(reference: np.ndarray) -> np.ndarray:
 
 def _shares(values: np.ndarray, edges: np.ndarray) -> np.ndarray:
     counts, _ = np.histogram(values, bins=edges)
-    return counts / max(counts.sum(), 1)
+    shares: np.ndarray = counts / max(int(counts.sum()), 1)
+    return shares
 
 
 def severity_from_psi(value: float) -> Severity:

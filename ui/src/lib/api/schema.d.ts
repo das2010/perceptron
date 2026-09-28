@@ -197,6 +197,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/alerts/{alert_id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge */
+        post: operations["acknowledgeAlert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/{alert_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve */
+        post: operations["resolveAlert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/arch/code/lint": {
         parameters: {
             query?: never;
@@ -501,6 +535,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/{dataset_version_id}/diff/{other_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Diff Datasets
+         * @description Qué cambió de la versión A a la B: filas, esquema, distribución y archivos.
+         */
+        get: operations["diffDatasets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/{dataset_version_id}/labelsets": {
         parameters: {
             query?: never;
@@ -513,6 +567,23 @@ export interface paths {
         put?: never;
         /** Create Labelset */
         post: operations["createLabelSet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/datasets/{dataset_version_id}/lineage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dataset Lineage */
+        get: operations["getLineage"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -549,6 +620,126 @@ export interface paths {
          * @description Muestras para la UI (el test sellado no se expone).
          */
         get: operations["getDatasetSamples"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployments/{deployment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Deployment */
+        get: operations["getDeployment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Deployment */
+        patch: operations["updateDeployment"];
+        trace?: never;
+    };
+    "/api/v1/deployments/{deployment_id}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check */
+        post: operations["checkDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployments/{deployment_id}/drift": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Drift */
+        get: operations["listDriftReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployments/{deployment_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Feedback */
+        post: operations["sendFeedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployments/{deployment_id}/performance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Performance */
+        get: operations["getPerformance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployments/{deployment_id}/predict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Predict */
+        post: operations["predictDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployments/{deployment_id}/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Predictions */
+        get: operations["listPredictions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -899,6 +1090,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models/{model_version_id}/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Challenge */
+        post: operations["challengeModel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{model_version_id}/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Deployment */
+        post: operations["createDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{model_version_id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Promote */
+        post: operations["promoteModel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pipelines/{pipeline_id}": {
         parameters: {
             query?: never;
@@ -985,6 +1227,23 @@ export interface paths {
         put?: never;
         /** Create Agent Run */
         post: operations["createAgentRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Alerts */
+        get: operations["listAlerts"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1129,6 +1388,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Deployments */
+        get: operations["listDeployments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/draft": {
         parameters: {
             query?: never;
@@ -1192,6 +1468,23 @@ export interface paths {
         get: operations["listModels"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/models/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rollback */
+        post: operations["rollbackModel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2406,29 +2699,26 @@ export interface components {
          * @enum {string}
          */
         AgentState: "running" | "awaiting_approval" | "stopped" | "finished" | "failed";
-        /** Alert */
-        Alert: {
-            code: components["schemas"]["AlertCode"];
-            /** Column */
-            column?: string | null;
-            /** Evidence */
-            evidence?: {
-                [key: string]: number | string | null;
-            };
-            /** Message */
-            message: string;
-            severity: components["schemas"]["AlertSeverity"];
-        };
         /**
          * AlertCode
          * @enum {string}
          */
         AlertCode: "class_imbalance" | "target_leakage" | "id_column" | "future_dates" | "constant_column" | "high_nulls" | "duplicate_rows" | "insufficient_data" | "corrupt_files" | "near_duplicates" | "mixed_resolutions" | "mixed_channels" | "missing_target" | "duplicate_texts" | "long_texts" | "clipping" | "mixed_sample_rates" | "silent_audio";
         /**
+         * AlertKind
+         * @enum {string}
+         */
+        AlertKind: "data_drift" | "performance" | "retrain" | "promotion";
+        /**
          * AlertSeverity
          * @enum {string}
          */
         AlertSeverity: "info" | "warning" | "high";
+        /**
+         * AlertStatus
+         * @enum {string}
+         */
+        AlertStatus: "open" | "acknowledged" | "resolved";
         /** ApprovalBody */
         ApprovalBody: {
             /** Comment */
@@ -2782,6 +3072,60 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** ChallengeBody */
+        ChallengeBody: {
+            /**
+             * Holdout
+             * @description `feedback` o un dataset_version_id
+             * @default feedback
+             */
+            holdout: string;
+            /** Metric */
+            metric?: string | null;
+            /**
+             * Min Improvement
+             * @default 0
+             */
+            min_improvement: number;
+            /**
+             * Promote
+             * @default true
+             */
+            promote: boolean;
+        };
+        /** ChallengeResult */
+        ChallengeResult: {
+            /** Challenger Id */
+            challenger_id: string;
+            /** Challenger Metrics */
+            challenger_metrics?: {
+                [key: string]: number;
+            };
+            /** Challenger Value */
+            challenger_value: number;
+            /** Champion Id */
+            champion_id: string | null;
+            /** Champion Metrics */
+            champion_metrics?: {
+                [key: string]: number;
+            };
+            /** Champion Value */
+            champion_value: number | null;
+            /** Higher Is Better */
+            higher_is_better: boolean;
+            /** Holdout */
+            holdout: string;
+            /** Improvement */
+            improvement: number;
+            /** Metric */
+            metric: string;
+            /** Min Improvement */
+            min_improvement: number;
+            /** N Samples */
+            n_samples: number;
+            /** Promoted */
+            promoted: boolean;
+        };
         /** ClassGuide */
         ClassGuide: {
             /** Definition */
@@ -2967,6 +3311,18 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** DataDrift */
+        DataDrift: {
+            /** Features */
+            features: components["schemas"]["FeatureDrift"][];
+            /** N Current */
+            n_current: number;
+            /** N Reference */
+            n_reference: number;
+            severity: components["schemas"]["perceptron__domain__enums__Severity"];
+            /** Share Drifted */
+            share_drifted: number;
+        };
         /** DataSource */
         DataSource: {
             /**
@@ -3013,6 +3369,38 @@ export interface components {
          * @enum {string}
          */
         DataSourceType: "file" | "folder" | "db" | "hf" | "kaggle" | "api" | "stream";
+        /** DatasetDiff */
+        DatasetDiff: {
+            /** A */
+            a: string;
+            /** B */
+            b: string;
+            distribution?: components["schemas"]["DataDrift"] | null;
+            /** Files */
+            files?: {
+                [key: string]: string[];
+            };
+            /** Rows A */
+            rows_a: number;
+            /** Rows Added */
+            rows_added: number;
+            /** Rows B */
+            rows_b: number;
+            /** Rows Common */
+            rows_common: number;
+            /** Rows Removed */
+            rows_removed: number;
+            /** Sample Added */
+            sample_added?: {
+                [key: string]: unknown;
+            }[];
+            schema_change: components["schemas"]["SchemaChange"];
+            /**
+             * Target Changed
+             * @default false
+             */
+            target_changed: boolean;
+        };
         /**
          * DatasetVersion
          * @description Snapshot inmutable identificado por el hash de su manifiesto (RF-ING-07).
@@ -3167,6 +3555,112 @@ export interface components {
             title: string;
         };
         /**
+         * Deployment
+         * @description Modelo en uso con monitoreo (RF-MON-01..04). Sigue al champion del proyecto.
+         */
+        Deployment: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Endpoint */
+            endpoint: string;
+            /**
+             * Follow Champion
+             * @description Al promover, pasa al champion
+             * @default true
+             */
+            follow_champion: boolean;
+            /** @default desktop */
+            host: components["schemas"]["DeploymentHost"];
+            /** Id */
+            id?: string;
+            /**
+             * Key Column
+             * @description Columna para asociar el feedback
+             */
+            key_column?: string | null;
+            /** Model Version Id */
+            model_version_id: string;
+            /**
+             * Monitoring
+             * @description Ventana, umbrales y canales de alerta
+             */
+            monitoring?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Name
+             * @default default
+             */
+            name: string;
+            /**
+             * Project Id
+             * @default
+             */
+            project_id: string;
+            /**
+             * Sample Rate
+             * @description Fracción de predicciones registradas
+             * @default 1
+             */
+            sample_rate: number;
+            /** @default active */
+            status: components["schemas"]["DeploymentStatus"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+        };
+        /** DeploymentCreate */
+        DeploymentCreate: {
+            /** Key Column */
+            key_column?: string | null;
+            monitoring?: components["schemas"]["MonitoringConfig"];
+            /**
+             * Name
+             * @default default
+             */
+            name: string;
+            /**
+             * Sample Rate
+             * @default 1
+             */
+            sample_rate: number;
+            /**
+             * Webhook Url
+             * @description Solo de escritura: va al keychain
+             */
+            webhook_url?: string | null;
+        };
+        /**
+         * DeploymentHost
+         * @enum {string}
+         */
+        DeploymentHost: "desktop" | "server";
+        /** DeploymentPatch */
+        DeploymentPatch: {
+            monitoring?: components["schemas"]["MonitoringConfig"] | null;
+            /** Sample Rate */
+            sample_rate?: number | null;
+            status?: components["schemas"]["DeploymentStatus"] | null;
+            /** Webhook Url */
+            webhook_url?: string | null;
+        };
+        /**
+         * DeploymentStatus
+         * @enum {string}
+         */
+        DeploymentStatus: "active" | "stopped";
+        /**
          * Device
          * @enum {string}
          */
@@ -3267,6 +3761,47 @@ export interface components {
             steps: string[];
             values: components["schemas"]["DraftValues"];
         };
+        /** DriftReport */
+        DriftReport: {
+            /** Action */
+            action?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Deployment Id */
+            deployment_id: string;
+            /** Id */
+            id?: string;
+            /** Metrics */
+            metrics?: {
+                [key: string]: unknown;
+            };
+            /** @default none */
+            severity: components["schemas"]["perceptron__domain__enums__Severity"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
+        };
         /** EarlyStopping */
         EarlyStopping: {
             /** Mode */
@@ -3343,6 +3878,11 @@ export interface components {
              * Format: date-time
              */
             created_at?: string;
+            /**
+             * Dataset Version Id
+             * @description Otra versión de datos (holdout de champion/challenger)
+             */
+            dataset_version_id?: string | null;
             /** Id */
             id?: string;
             /** Metrics */
@@ -3509,6 +4049,37 @@ export interface components {
             /** Threshold */
             threshold: number;
         };
+        /** FeatureDrift */
+        FeatureDrift: {
+            /** Chi2 Pvalue */
+            chi2_pvalue?: number | null;
+            /** Current Mean */
+            current_mean?: number | null;
+            /** Feature */
+            feature: string;
+            /** Js */
+            js?: number | null;
+            /** Kind */
+            kind: string;
+            /** Ks */
+            ks?: number | null;
+            /** Ks Pvalue */
+            ks_pvalue?: number | null;
+            /** Psi */
+            psi?: number | null;
+            /** Reference Mean */
+            reference_mean?: number | null;
+            severity: components["schemas"]["perceptron__domain__enums__Severity"];
+            /**
+             * Top Changes
+             * @description Categoría → [share referencia, share actual]
+             */
+            top_changes?: {
+                [key: string]: number[];
+            };
+            /** Unseen Fraction */
+            unseen_fraction?: number | null;
+        };
         /** FeatureImportance */
         FeatureImportance: {
             /** Feature */
@@ -3517,6 +4088,25 @@ export interface components {
             importance: number;
             /** Mean Attribution */
             mean_attribution: number;
+        };
+        /** FeedbackBody */
+        FeedbackBody: {
+            /** Items */
+            items: components["schemas"]["FeedbackItem"][];
+        };
+        /** FeedbackItem */
+        FeedbackItem: {
+            /** Key */
+            key?: string | null;
+            /** Label */
+            label: string | number;
+            /** Prediction Id */
+            prediction_id?: string | null;
+        };
+        /** FeedbackResult */
+        FeedbackResult: {
+            /** Received */
+            received: number;
         };
         /** GPUInfo */
         GPUInfo: {
@@ -3810,7 +4400,7 @@ export interface components {
             message: string;
             /** Path */
             path: string;
-            severity: components["schemas"]["Severity"];
+            severity: components["schemas"]["perceptron__archspec__validate__Severity"];
             stage: components["schemas"]["Stage"];
             /** Suggestion */
             suggestion?: string | null;
@@ -4146,6 +4736,21 @@ export interface components {
             /** Updates */
             updates: components["schemas"]["LabelUpdate"][];
         };
+        /** LineageNode */
+        LineageNode: {
+            /** Content Hash */
+            content_hash: string;
+            /** Created At */
+            created_at: string;
+            /** Id */
+            id: string;
+            /** Num Samples */
+            num_samples: number;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Transformation */
+            transformation: string | null;
+        };
         /** LocalExplanation */
         LocalExplanation: {
             /**
@@ -4332,6 +4937,16 @@ export interface components {
             };
             /** Project Id */
             project_id: string;
+            /**
+             * Promoted At
+             * @description Última vez que fue champion
+             */
+            promoted_at?: string | null;
+            /**
+             * Retired At
+             * @description Cuándo dejó de ser champion
+             */
+            retired_at?: string | null;
             /** Run Id */
             run_id: string;
             /** Signature */
@@ -4351,6 +4966,37 @@ export interface components {
              * @default 1
              */
             version: number;
+        };
+        /** MonitoringConfig */
+        MonitoringConfig: {
+            /**
+             * @description Severidad que alerta
+             * @default medium
+             */
+            drift_alert: components["schemas"]["Severity-Input"];
+            /**
+             * Email
+             * @description Destinatarios de alertas
+             */
+            email?: string[];
+            /**
+             * Min Labels
+             * @description Feedback mínimo para performance
+             * @default 30
+             */
+            min_labels: number;
+            /**
+             * Performance Drop
+             * @description Caída relativa
+             * @default 0.05
+             */
+            performance_drop: number;
+            /**
+             * Window
+             * @description Predicciones por chequeo
+             * @default 200
+             */
+            window: number;
         };
         /** Node */
         Node: {
@@ -4565,6 +5211,20 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** PredictBody */
+        PredictBody: {
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** Predictions */
+        Predictions: {
+            /** Predictions */
+            predictions: {
+                [key: string]: unknown;
+            }[];
+        };
         /**
          * PrivacyLevel
          * @description Qué puede recibir el LLM (SPEC §7.7.3).
@@ -4594,7 +5254,7 @@ export interface components {
          */
         ProfileCard: {
             /** Alerts */
-            alerts?: components["schemas"]["Alert"][];
+            alerts?: components["schemas"]["perceptron__data__profiling__card__Alert"][];
             audio?: components["schemas"]["AudioProfile"] | null;
             /**
              * Card Version
@@ -5162,6 +5822,20 @@ export interface components {
              */
             type: "none" | "one_cycle" | "cosine" | "step" | "plateau";
         };
+        /** SchemaChange */
+        SchemaChange: {
+            /** Added */
+            added?: string[];
+            /** Removed */
+            removed?: string[];
+            /**
+             * Retyped
+             * @description Columna → [tipo en A, tipo en B]
+             */
+            retyped?: {
+                [key: string]: string[];
+            };
+        };
         /** SearchParam */
         SearchParam: {
             /** Choices */
@@ -5323,7 +5997,7 @@ export interface components {
          * Severity
          * @enum {string}
          */
-        Severity: "error" | "warning";
+        "Severity-Input": "none" | "low" | "medium" | "high";
         /** Slice */
         Slice: {
             /** Column */
@@ -6149,6 +6823,77 @@ export interface components {
              */
             limit: number;
         };
+        /**
+         * Severity
+         * @enum {string}
+         */
+        perceptron__archspec__validate__Severity: "error" | "warning";
+        /** Alert */
+        perceptron__data__profiling__card__Alert: {
+            code: components["schemas"]["AlertCode"];
+            /** Column */
+            column?: string | null;
+            /** Evidence */
+            evidence?: {
+                [key: string]: number | string | null;
+            };
+            /** Message */
+            message: string;
+            severity: components["schemas"]["AlertSeverity"];
+        };
+        /**
+         * Severity
+         * @enum {string}
+         */
+        perceptron__domain__enums__Severity: "none" | "low" | "medium" | "high";
+        /**
+         * Alert
+         * @description Alerta del monitoreo (RF-MON-04): en la app y, si hay canales, por email o webhook.
+         */
+        perceptron__domain__models__Alert: {
+            /**
+             * Channels
+             * @description Por dónde salió
+             */
+            channels?: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Deployment Id */
+            deployment_id?: string | null;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            };
+            /** Id */
+            id?: string;
+            kind: components["schemas"]["AlertKind"];
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Project Id */
+            project_id: string;
+            severity: components["schemas"]["perceptron__domain__enums__Severity"];
+            /** @default open */
+            status: components["schemas"]["AlertStatus"];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -6583,6 +7328,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledgeAlert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["perceptron__domain__models__Alert"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolveAlert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["perceptron__domain__models__Alert"];
                 };
             };
             /** @description Validation Error */
@@ -7107,6 +7914,38 @@ export interface operations {
             };
         };
     };
+    diffDatasets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_version_id: string;
+                other_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetDiff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listLabelSets: {
         parameters: {
             query?: never;
@@ -7160,6 +7999,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LabelSet"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getLineage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineageNode"][];
                 };
             };
             /** @description Validation Error */
@@ -7245,6 +8115,274 @@ export interface operations {
             header?: never;
             path: {
                 dataset_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeploymentPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkDeployment: {
+        parameters: {
+            query?: {
+                last?: number | null;
+            };
+            header?: never;
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listDriftReports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftReport"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sendFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getPerformance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    } | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PredictBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Predictions"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listPredictions: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                deployment_id: string;
             };
             cookie?: never;
         };
@@ -7900,6 +9038,107 @@ export interface operations {
             };
         };
     };
+    challengeModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChallengeBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createDeployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeploymentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promoteModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelVersion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getPipeline: {
         parameters: {
             query?: never;
@@ -8196,6 +9435,39 @@ export interface operations {
             };
         };
     };
+    listAlerts: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["AlertStatus"] | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["perceptron__domain__models__Alert"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     planArchDefinition: {
         parameters: {
             query?: never;
@@ -8468,6 +9740,37 @@ export interface operations {
             };
         };
     };
+    listDeployments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deployment"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getDraft: {
         parameters: {
             query?: never;
@@ -8622,6 +9925,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelVersion"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rollbackModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelVersion"];
                 };
             };
             /** @description Validation Error */

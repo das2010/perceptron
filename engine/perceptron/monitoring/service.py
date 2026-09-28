@@ -254,8 +254,8 @@ class Monitoring:
         severity = _sev_max(data.severity, perf_sev)
         report = DriftReport(
             deployment_id=dep.id,
-            window_start=preds["ts"].min(),
-            window_end=preds["ts"].max(),
+            window_start=min(preds["ts"].to_list()),
+            window_end=max(preds["ts"].to_list()),
             metrics={
                 "model_version_id": mv.id,
                 "data": data.model_dump(mode="json"),

@@ -16,6 +16,7 @@ import { DataPage } from "@/features/data/DataPage";
 import { ExperimentsPage } from "@/features/experiments/ExperimentsPage";
 import { HomePage } from "@/features/home/HomePage";
 import { ModelsPage } from "@/features/models/ModelsPage";
+import { MonitoringPage } from "@/features/monitoring/MonitoringPage";
 import { OverviewPage } from "@/features/projects/OverviewPage";
 import { ProjectLayout } from "@/features/projects/ProjectLayout";
 import { RunPage } from "@/features/runs/RunPage";
@@ -74,6 +75,11 @@ const modelsRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "models",
   component: ModelsPage,
+});
+const monitoringRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "monitoring",
+  component: MonitoringPage,
 });
 const auditRoute = createRoute({
   getParentRoute: () => projectRoute,
@@ -140,6 +146,7 @@ const routeTree = rootRoute.addChildren([
     trainRoute,
     experimentsRoute,
     modelsRoute,
+    monitoringRoute,
     auditRoute,
     wizardRoute,
     agentRoute,
