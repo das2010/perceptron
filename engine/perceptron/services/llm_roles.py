@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+from pydantic import ValidationError as PydanticValidationError
+
 from perceptron.archspec.schema import ArchSpec, Provenance
 from perceptron.archspec.validate import ValidationReport, offline_mode, validate_archspec
 from perceptron.catalog.registry import HF_TEXT_MODELS, TIMM_WEIGHTS, blocks_for
@@ -48,6 +50,7 @@ from perceptron.llm.schemas import (
     LabelingGuide,
     ModelCard,
     PrelabelBatch,
+    ProposedParam,
     Report,
 )
 from perceptron.services.estimate import estimate_epoch_time
@@ -622,7 +625,9 @@ class HPOSpace:
     def build(self, p: HPOProposal, budget: Budget, *, origin: Origin) -> HPOStrategy:
         """Estrategia final: defaults de la plantilla (trial 0) y presupuesto acotado."""
         space = [
-            sp.model_copy(update={"default": self.tunable[sp.name].default})
+            SearchParam.model_validate(
+                {**sp.model_dump(exclude_none=True), "default": self.tunable[sp.name].default}
+            )
             for sp in p.search_space
         ]
         epochs = p.max_epochs_per_trial or budget.max_epochs_per_trial
@@ -652,16 +657,17 @@ class HPOSpace:
         desconocido pasa a `val_loss`. Lo que no se puede reparar lo informa `errors`.
         """
         notes: list[str] = []
-        space: list[SearchParam] = []
+        space: list[ProposedParam] = []
         for sp in p.search_space:
             ref = self.tunable.get(sp.name)
             if ref is None:
                 notes.append(f"se descartó '{sp.name}' (no es ajustable)")
                 continue
             fixed = _clamp_param(sp, ref)
-            if fixed != sp:
-                notes.append(f"'{sp.name}' se acotó a los límites del catálogo")
-            space.append(fixed)
+            core = ("type", "low", "high", "log", "choices")
+            if any(getattr(sp, k) != getattr(fixed, k) for k in core):
+                notes.append(f"'{sp.name}' se completó/acotó con los límites del catálogo")
+            space.append(ProposedParam.model_validate(fixed.model_dump()))
         if not space:
             space = list(p.search_space)
         objectives = [
@@ -693,7 +699,12 @@ class HPOSpace:
             if ref is None:
                 errors.append(f"'{sp.name}' no es un hiperparámetro ajustable de la ArchSpec")
                 continue
-            errors += _range_errors(sp, ref)
+            try:
+                param = SearchParam.model_validate(sp.model_dump(exclude_none=True))
+            except PydanticValidationError as e:
+                errors.append(f"'{sp.name}': {e.errors()[0]['msg']}")
+                continue
+            errors += _range_errors(param, ref)
         errors += [
             f"objetivo '{o.metric}' desconocido (válidos: {sorted(self.metrics)})"
             for o in p.objectives
@@ -709,20 +720,32 @@ class HPOSpace:
         return errors
 
 
-def _clamp_param(sp: SearchParam, ref: SearchParam) -> SearchParam:
-    """Lleva un parámetro propuesto dentro del espacio del catálogo."""
+def _clamp_param(sp: ProposedParam, ref: SearchParam) -> SearchParam:
+    """Completa y lleva un parámetro propuesto dentro del espacio del catálogo."""
     if ref.type == "categorical":
         choices = [c for c in (sp.choices or []) if c in (ref.choices or [])]
         return ref.model_copy(update={"choices": choices or ref.choices})
     if sp.type == "categorical":
         choices = [c for c in (sp.choices or []) if isinstance(c, int | float) and ref.accepts(c)]
-        return sp.model_copy(update={"choices": choices}) if choices else ref
+        if not choices:
+            return ref
+        return SearchParam(
+            name=sp.name, type="categorical", choices=choices, condition=sp.condition
+        )
     lo, hi = float(ref.low or 0), float(ref.high or 0)
     low = min(max(float(sp.low if sp.low is not None else lo), lo), hi)
     high = min(max(float(sp.high if sp.high is not None else hi), lo), hi)
     if low > high or (ref.log and low <= 0):
         low, high = lo, hi
-    return sp.model_copy(update={"type": ref.type, "low": low, "high": high, "log": ref.log})
+    return SearchParam(
+        name=sp.name,
+        type=ref.type,
+        low=low,
+        high=high,
+        log=ref.log,
+        step=sp.step,
+        condition=sp.condition,
+    )
 
 
 def _range_errors(sp: SearchParam, ref: SearchParam) -> list[str]:
