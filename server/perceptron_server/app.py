@@ -6,14 +6,14 @@ from collections.abc import Callable
 from pathlib import Path
 
 from fastapi import FastAPI
-from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
-from starlette.types import ASGIApp, Message, Receive, Scope, Send
+from starlette.types import Scope
 
 from perceptron.api.app import API_PREFIX, create_app
 from perceptron.api.context import EngineContext
+from perceptron.api.security import SecurityHeaders
 from perceptron.core.config import RuntimeMode, Settings, get_settings
 from perceptron.storage.db import sqlite_url
 from perceptron_server import __version__
@@ -55,32 +55,6 @@ def database_url(settings: Settings) -> str:
     return sqlite_url(settings.paths.db_file)
 
 
-class SecurityHeaders:
-    def __init__(self, app: ASGIApp, hsts: bool) -> None:
-        self.app = app
-        self.hsts = hsts
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
-        api = scope["path"].startswith(API_PREFIX)
-
-        async def wrapped(message: Message) -> None:
-            if message["type"] == "http.response.start":
-                headers = MutableHeaders(scope=message)
-                headers.setdefault("x-content-type-options", "nosniff")
-                headers.setdefault("referrer-policy", "same-origin")
-                headers.setdefault("x-frame-options", "DENY")
-                if not api:
-                    headers.setdefault("content-security-policy", CSP)
-                if self.hsts:
-                    headers.setdefault("strict-transport-security", "max-age=31536000")
-            await send(message)
-
-        await self.app(scope, receive, wrapped)
-
-
 class SpaFiles(StaticFiles):
     """UI compilada: rutas del cliente (TanStack Router) caen en `index.html`."""
 
@@ -112,7 +86,13 @@ def create_server_app(
     api = base.api
     if "cors_origins" not in api.model_fields_set:
         api = api.model_copy(update={"cors_origins": []})  # misma origen: sin CORS por defecto
-    settings = base.model_copy(update={"mode": RuntimeMode.SERVER, "api": api})
+    if "docs" not in api.model_fields_set:
+        api = api.model_copy(update={"docs": False})  # sin Swagger público en el servidor
+    update: dict[str, object] = {"mode": RuntimeMode.SERVER, "api": api}
+    if base.source_roots is None:
+        # Sin PERCEPTRON_SOURCE_ROOTS no se lee ninguna ruta del servidor (solo subidas).
+        update["source_roots"] = []
+    settings = base.model_copy(update=update)
     server = server or ServerSettings()  # secret_key por entorno
     state = ServerState(settings, server)
 
@@ -144,7 +124,8 @@ def create_server_app(
     for module in (auth, oidc, admin, sources, queue, sync):
         app.include_router(module.router, prefix=API_PREFIX)
     app.add_middleware(SessionMiddleware)
-    app.add_middleware(SecurityHeaders, hsts=server.cookie_secure)
+    # El Engine ya pone las cabeceras comunes; el servidor suma la CSP de la SPA y HSTS.
+    app.add_middleware(SecurityHeaders, api_prefix=API_PREFIX, csp=CSP, hsts=server.cookie_secure)
     if server.spa_dir:
         spa = Path(server.spa_dir)
         if not (spa / "index.html").is_file():

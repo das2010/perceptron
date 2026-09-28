@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any
@@ -24,6 +25,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic import ValidationError as PydanticValidationError
 
 from perceptron.core.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
+from perceptron.core.ids import IdPrefix
+from perceptron.core.paths import ensure_within, safe_parts
 from perceptron.domain.enums import Role
 from perceptron.domain.models import (
     ArchSpecRecord,
@@ -117,10 +120,29 @@ def _project(state: ServerState, who: Principal, project_id: str, need: Role) ->
 
 
 def _safe_rel(path: str, prefixes: tuple[str, ...]) -> PurePosixPath:
-    rel = PurePosixPath(path.replace("\\", "/"))
-    if rel.is_absolute() or ".." in rel.parts or not rel.parts or rel.parts[0] not in prefixes:
-        raise ValidationError(f"ruta no permitida para sincronizar: {path}")
-    return rel
+    """Relativa al proyecto, bajo un prefijo permitido y segura también en Windows."""
+    try:
+        parts = safe_parts(path)
+    except ValidationError:
+        raise ValidationError(f"ruta no permitida para sincronizar: {path!r}") from None
+    if parts[0] not in prefixes:
+        raise ValidationError(f"ruta no permitida para sincronizar: {path!r}")
+    return PurePosixPath(*parts)
+
+
+def _target(state: ServerState, project: Project, rel: PurePosixPath) -> Path:
+    """Archivo del proyecto; un symlink intermedio no puede sacarlo de la carpeta."""
+    root = state.ctx.settings.paths.project(project.id).root
+    return ensure_within(root / Path(*rel.parts), root)
+
+
+_ID = re.compile(r"[a-z]{2,4}_[0-9A-Za-z]{1,64}")
+
+
+def _check_id(value: str, prefix: str | None = None) -> None:
+    """Forma de id de Perceptron (`prj_01…`); nunca separadores ni otra cosa que arme rutas."""
+    if not _ID.fullmatch(value) or (prefix and not value.startswith(f"{prefix}_")):
+        raise ValidationError(f"id inválido: {value!r}")
 
 
 def _sha256(path: Path) -> str:
@@ -155,6 +177,7 @@ def push_project(
     project_id: str, body: ProjectPush, who: Who, request: Request, state: State
 ) -> SyncResult:
     """Crea el proyecto de equipo (mismo id que en el desktop) o lo actualiza."""
+    _check_id(project_id, IdPrefix.PROJECT.value)
     try:
         incoming = Project.model_validate({**body.project, "id": project_id})
     except PydanticValidationError as exc:
@@ -198,6 +221,7 @@ def push_entity(
     model = SYNC_KINDS.get(kind)
     if model is None:
         raise ValidationError(f"no se sincroniza {kind}", details={"kinds": sorted(SYNC_KINDS)})
+    _check_id(entity_id)
     data = {**body.data, "id": entity_id}
     if "project_id" in model.model_fields:
         data["project_id"] = project.id
@@ -271,7 +295,7 @@ def start_upload(project_id: str, body: UploadStart, who: Who, state: State) -> 
     """Empieza (o retoma) la subida de un archivo del proyecto."""
     project = _project(state, who, project_id, Role.EDITOR)
     rel = _safe_rel(body.path, UPLOAD_PREFIXES)
-    target = state.ctx.settings.paths.project(project.id).root / Path(*rel.parts)
+    target = _target(state, project, rel)
     if target.is_file() and target.stat().st_size == body.size and _sha256(target) == body.sha256:
         return UploadState(
             upload_id=None, path=str(rel), offset=body.size, size=body.size, complete=True
@@ -324,9 +348,12 @@ async def upload_chunk(
     have = part.stat().st_size
     if offset != have:
         raise ConflictError("offset desfasado", details={"offset": have})
-    chunk = await request.body()
-    if len(chunk) > MAX_CHUNK or have + len(chunk) > int(meta["size"]):
-        raise ValidationError("chunk demasiado grande")
+    limit = min(MAX_CHUNK, int(meta["size"]) - have)
+    chunk = bytearray()
+    async for piece in request.stream():  # sin cargar en memoria más que el tope
+        chunk += piece
+        if len(chunk) > limit:
+            raise ValidationError("chunk demasiado grande")
     with part.open("ab") as f:
         f.write(chunk)
     return UploadState(
@@ -346,7 +373,7 @@ def complete_upload(upload_id: str, who: Who, request: Request, state: State) ->
     if part.stat().st_size != int(meta["size"]) or _sha256(part) != meta["sha256"]:
         raise ValidationError("el archivo recibido no coincide (tamaño o SHA-256)")
     rel = _safe_rel(meta["path"], UPLOAD_PREFIXES)
-    target = state.ctx.settings.paths.project(project.id).root / Path(*rel.parts)
+    target = _target(state, project, rel)
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(part), target)
     shutil.rmtree(folder, ignore_errors=True)
@@ -376,8 +403,8 @@ def list_files(
 ) -> list[RemoteFile]:
     project = _project(state, who, project_id, Role.VIEWER)
     rel = _safe_rel(prefix, DOWNLOAD_PREFIXES)
-    root = state.ctx.settings.paths.project(project.id).root
-    base = root / Path(*rel.parts)
+    root = state.ctx.settings.paths.project(project.id).root.resolve()
+    base = _target(state, project, rel)
     if base.is_file():
         return [RemoteFile(path=str(rel), size=base.stat().st_size)]
     if not base.is_dir():
@@ -401,6 +428,9 @@ def download_file(
     rel = _safe_rel(path, DOWNLOAD_PREFIXES)
     target = state.ctx.settings.paths.project(project.id).root / Path(*rel.parts)
     if not target.is_file() or target.is_symlink():
+        raise NotFoundError(f"no existe {path}")
+    target = _target(state, project, rel)
+    if not target.is_file():
         raise NotFoundError(f"no existe {path}")
     state.audit.record(
         "sync.download",

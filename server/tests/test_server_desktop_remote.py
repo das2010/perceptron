@@ -218,8 +218,25 @@ def test_sync_rejects_foreign_ids_and_stale_versions(
         json={"data": {**pipeline, "name": "v3"}, "base_version": 1},
     )
     assert stale.status_code == 409 and stale.json()["details"]["server_version"] == 2
+    # Ids que no son de Perceptron no llegan a rutas ni al repositorio.
+    for bad_id in ("..", "pip_01..x", "C:evil"):
+        bad = a.put(
+            f"{API}/sync/projects/{pa['id']}/entities/Pipeline/{bad_id}",
+            json={"data": pipeline, "base_version": None},
+        )
+        assert bad.status_code in (404, 422), bad_id
+    bad_project = a.put(f"{API}/sync/projects/..%5Cotro", json={"project": {"name": "x"}})
+    assert bad_project.status_code in (404, 422)
     # Rutas fuera de lo sincronizable.
-    for path in ("../secreto", "runs/x", "/etc/passwd", "datasets/../../x"):
+    for path in (
+        "../secreto",
+        "runs/x",
+        "/etc/passwd",
+        "datasets/../../x",
+        "datasets/C:evil",  # letra de unidad: en Windows escaparía de la carpeta del proyecto
+        "datasets/con.txt",
+        "datasets/a.csv:ads",
+    ):
         bad = a.post(
             f"{API}/sync/projects/{pa['id']}/uploads",
             json={"path": path, "size": 1, "sha256": "0" * 64},

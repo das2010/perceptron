@@ -143,8 +143,32 @@ def open_source(path: Path) -> Iterator[DetectedSource]:
     )
 
 
+ZIP_MAX_FILES = 500_000
+ZIP_MAX_BYTES = 50 * 1024**3  # descomprimido
+ZIP_MAX_RATIO = 1000  # compresión sospechosa (zip bomb)…
+ZIP_RATIO_MIN_BYTES = 64 * 1024**2  # …en archivos de más de 64 MB
+
+
+def check_zip_limits(
+    zf: zipfile.ZipFile, *, max_files: int = ZIP_MAX_FILES, max_bytes: int = ZIP_MAX_BYTES
+) -> None:
+    """Rechaza ZIPs que al extraerse llenarían el disco (cantidad, tamaño total o ratio)."""
+    members = zf.infolist()
+    if len(members) > max_files:
+        raise ValidationError(f"el ZIP tiene demasiados archivos (máximo {max_files})")
+    total = 0
+    for m in members:
+        total += m.file_size
+        big = m.file_size > ZIP_RATIO_MIN_BYTES
+        if big and m.file_size > ZIP_MAX_RATIO * max(m.compress_size, 1):
+            raise ValidationError("el ZIP tiene una compresión sospechosa (zip bomb)")
+    if total > max_bytes:
+        raise ValidationError(f"el ZIP descomprimido supera {max_bytes // 1024**3} GB")
+
+
 def _safe_extract(zf: zipfile.ZipFile, root: Path) -> None:
-    """Extrae evitando rutas que escapen del destino (zip slip)."""
+    """Extrae evitando rutas que escapen del destino (zip slip) y zip bombs."""
+    check_zip_limits(zf)
     root = root.resolve()
     for member in zf.infolist():
         dest = (root / member.filename).resolve()

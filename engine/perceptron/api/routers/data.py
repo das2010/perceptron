@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -11,7 +12,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from perceptron.api.context import EngineContext, get_context
 from perceptron.core.errors import ForbiddenError, ValidationError
 from perceptron.core.ids import IdPrefix, new_id
-from perceptron.core.paths import within_roots
+from perceptron.core.netguard import check_host
+from perceptron.core.paths import ensure_within, safe_parts, within_roots
 from perceptron.data.profiling.card import ProfileCard
 from perceptron.data.schema import SemanticType, TableSchema, infer_schema
 from perceptron.data.sources.files import SourceKind, open_source, scan_table
@@ -60,7 +62,7 @@ class IngestBody(BaseModel):
 def create_source(project_id: str, body: SourceCreate, ctx: Ctx) -> DataSource:
     ctx.projects.get(project_id)
     path = Path(body.path)
-    _check_roots(ctx, path)
+    _check_roots(ctx, path, project_id)
     if not path.exists():
         raise ValidationError(f"la ruta no existe: {path}", details={"path": body.path})
     src = DataSource(
@@ -72,8 +74,11 @@ def create_source(project_id: str, body: SourceCreate, ctx: Ctx) -> DataSource:
     return ctx.repo(DataSource).add(src)
 
 
-def _check_roots(ctx: EngineContext, path: Path) -> None:
-    """En el Team Server solo se leen rutas debajo de las «fuentes del servidor» (RF-SRV-05)."""
+def _check_roots(ctx: EngineContext, path: Path, project_id: str | None = None) -> None:
+    """En el Team Server solo se leen rutas debajo de las «fuentes del servidor» (RF-SRV-05) o
+    de la carpeta del propio proyecto (subidas y fuentes materializadas)."""
+    if project_id is not None and within_roots(path, [ctx.settings.paths.project(project_id).root]):
+        return
     if not within_roots(path, ctx.settings.source_roots):
         raise ForbiddenError(
             "la ruta no está dentro de una fuente habilitada por el administrador",
@@ -81,15 +86,20 @@ def _check_roots(ctx: EngineContext, path: Path) -> None:
         )
 
 
+def _source_path(ctx: EngineContext, src: DataSource) -> Path:
+    """Ruta de la fuente, verificada otra vez: las raíces pudieron cambiar desde que se creó."""
+    path = Path(src.config["path"])
+    _check_roots(ctx, path, src.project_id)
+    return path
+
+
 MAX_UPLOAD_BYTES = 10 * 1024**3  # ~10 GB por proyecto (SPEC §2)
 
 
 def _safe_relative(name: str) -> Path:
-    """Ruta relativa segura: sin absolutas, sin `..`, con separadores normalizados."""
-    parts = [p for p in name.replace("\\", "/").split("/") if p not in ("", ".", "..")]
-    if not parts:
-        raise ValidationError(f"nombre de archivo inválido: {name!r}")
-    return Path(*parts)
+    """Ruta relativa segura: `..` y `/` iniciales se descartan; letras de unidad, NUL y nombres
+    reservados de Windows se rechazan (`safe_parts`)."""
+    return Path(*safe_parts(name, drop_parent=True))
 
 
 @router.post(
@@ -109,17 +119,21 @@ async def upload_source(
     root = ctx.settings.paths.project(project_id).root / "uploads" / upload_id
     total = 0
     written: list[Path] = []
-    for f in files:
-        rel = _safe_relative(f.filename or "archivo")
-        dest = root / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        with dest.open("wb") as out:
-            while chunk := await f.read(1024 * 1024):
-                total += len(chunk)
-                if total > MAX_UPLOAD_BYTES:
-                    raise ValidationError("la subida supera el límite de 10 GB")
-                out.write(chunk)
-        written.append(rel)
+    try:
+        for f in files:
+            rel = _safe_relative(f.filename or "archivo")
+            dest = ensure_within(root / rel, root)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            with dest.open("wb") as out:
+                while chunk := await f.read(1024 * 1024):
+                    total += len(chunk)
+                    if total > MAX_UPLOAD_BYTES:
+                        raise ValidationError("la subida supera el límite de 10 GB")
+                    out.write(chunk)
+            written.append(rel)
+    except BaseException:
+        shutil.rmtree(root, ignore_errors=True)  # sin subidas a medias en el proyecto
+        raise
     single = len(written) == 1 and len(written[0].parts) == 1
     path = root / written[0] if single else root
     if (
@@ -176,6 +190,13 @@ def _materialize(ctx: EngineContext, src: DataSource, secret: str | None) -> dic
         cfg = DbConfig.model_validate(src.config["db"])
         if cfg.dialect == "sqlite":
             _check_roots(ctx, Path(cfg.database))
+        else:
+            default_ports = {"postgresql": 5432, "mysql": 3306, "mssql": 1433}
+            check_host(
+                cfg.host or "localhost",
+                cfg.port or default_ports[cfg.dialect],
+                ctx.settings.net_policy(),
+            )
         dest = folder / "data.parquet"
         rows = materialize_db(cfg, secret, dest)
         return {"path": str(dest), "rows": rows}
@@ -246,7 +267,7 @@ def preview_source(
     source_id: str, ctx: Ctx, limit: Annotated[int, Query(ge=1, le=200)] = 20
 ) -> SourcePreview:
     src = ctx.repo(DataSource).get(source_id)
-    with open_source(Path(src.config["path"])) as detected:
+    with open_source(_source_path(ctx, src)) as detected:
         if detected.kind is SourceKind.TABLE:
             df = scan_table(detected.path).head(max(limit, 500)).collect()
             return SourcePreview(
@@ -265,7 +286,7 @@ def ingest_source(source_id: str, body: IngestBody, ctx: Ctx) -> DatasetVersion:
     src = ctx.repo(DataSource).get(source_id)
     return Workflow(ctx).ingest(
         src.project_id,
-        Path(src.config["path"]),
+        _source_path(ctx, src),
         target=body.target,
         split=body.split,
         overrides=body.overrides,

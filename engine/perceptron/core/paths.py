@@ -13,7 +13,58 @@ from pathlib import Path
 
 from platformdirs import user_data_path
 
+from perceptron.core.errors import ValidationError
+
 APP_NAME = "Perceptron"
+
+
+_WINDOWS_RESERVED = frozenset(
+    {"CON", "PRN", "AUX", "NUL"} | {f"{d}{i}" for d in ("COM", "LPT") for i in range(1, 10)}
+)
+
+
+def _check_component(part: str) -> None:
+    """Un componente de ruta que vino de afuera es seguro en Windows y en Linux."""
+    if (
+        ":" in part  # letra de unidad (`C:x` escapa de la raíz) o flujo alternativo de NTFS
+        or any(ord(c) < 32 for c in part)  # NUL y controles
+        or part != part.rstrip(". ")  # Windows recorta puntos y espacios finales
+        or part.split(".", maxsplit=1)[0].upper() in _WINDOWS_RESERVED
+    ):
+        raise ValidationError(f"componente de ruta no permitido: {part!r}")
+
+
+def safe_parts(name: str, *, drop_parent: bool = False) -> tuple[str, ...]:
+    """Componentes de una ruta relativa recibida de un cliente (subidas, sincronización).
+
+    Rechaza rutas absolutas y `..` (o, con `drop_parent`, los descarta y ancla la ruta en la
+    raíz), además de letras de unidad, NUL y nombres reservados de Windows.
+    `ValidationError` si no queda una ruta válida.
+    """
+    raw = name.replace("\\", "/")
+    if raw.startswith("/") and not drop_parent:
+        raise ValidationError(f"ruta absoluta no permitida: {name!r}")
+    parts: list[str] = []
+    for part in raw.split("/"):
+        if part in ("", "."):
+            continue
+        if part == "..":
+            if drop_parent:
+                continue
+            raise ValidationError(f"ruta con '..' no permitida: {name!r}")
+        _check_component(part)
+        parts.append(part)
+    if not parts:
+        raise ValidationError(f"ruta vacía: {name!r}")
+    return tuple(parts)
+
+
+def ensure_within(path: Path, root: Path) -> Path:
+    """`path` resuelta (symlinks incluidos) cae dentro de `root`; si no, `ValidationError`."""
+    target = path.resolve()
+    if not target.is_relative_to(root.resolve()):
+        raise ValidationError("la ruta queda fuera del área permitida")
+    return target
 
 
 def within_roots(path: Path, roots: Sequence[Path] | None) -> bool:
@@ -116,6 +167,9 @@ class WorkspacePaths:
         return self.root / "logs"
 
     def project(self, project_id: str) -> ProjectPaths:
+        # Defensa en profundidad: un id que llega de un cliente nunca arma otra ruta.
+        if safe_parts(project_id) != (project_id,):
+            raise ValidationError(f"id de proyecto inválido: {project_id!r}")
         return ProjectPaths(self.projects_dir / project_id)
 
     def ensure(self) -> WorkspacePaths:
