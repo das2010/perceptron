@@ -161,6 +161,16 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Explicación local en el playground | ✅ |
 
 
+## Capa 4c — etiquetado asistido y fuentes
+
+| Entregable | Estado |
+|---|---|
+| Conjuntos de etiquetas con origen/confianza, cola de active learning y aplicar como versión nueva (ADR-0029) | ✅ |
+| Herramienta de etiquetado en la UI (clase, multi-etiqueta, cajas; atajos y aceptación en lote) | ✅ |
+| Aceptación UC-04: las pre-etiquetas reducen ≥ 50 % las acciones manuales (test de API) | ✅ |
+| Fuentes SQL y datasets públicos (HF, Kaggle) | ✅ |
+
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
@@ -172,8 +182,8 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-PRJ-05 |  | 3 | Historial de actividad del proyecto (quién hizo qué, cuándo). | ⬜ pendiente |
 | RF-ING-01 | sí | 1 | Archivos locales: CSV, TSV, XLSX, Parquet, JSON/JSONL; carpetas de imágenes… | ✅ tabular, imágenes, texto (tabla o clase/*.txt), audio (wav/flac/mp3/ogg), ZIP |
 | RF-ING-02 |  | 1/4 | Formatos de anotación: COCO, Pascal VOC, YOLO (txt), máscaras PNG, CSV de eventos de… | ✅ COCO, Pascal VOC, YOLO, máscaras PNG, CSV de OCR; eventos de audio pendiente |
-| RF-ING-03 |  | 4 | Bases de datos: SQL Server, PostgreSQL, MySQL/MariaDB, SQLite, vía query SQL con vista… | ⬜ pendiente |
-| RF-ING-04 |  | 4 | Datasets públicos: Hugging Face Datasets y Kaggle (con credenciales del usuario),… | ⬜ pendiente |
+| RF-ING-03 |  | 4 | Bases de datos: SQL Server, PostgreSQL, MySQL/MariaDB, SQLite, vía query SQL con vista… | ✅ SQL Server, PostgreSQL, MySQL/MariaDB y SQLite con consulta, vista previa, límite de filas, lectura por lotes y refresco |
+| RF-ING-04 |  | 4 | Datasets públicos: Hugging Face Datasets y Kaggle (con credenciales del usuario),… | ✅ Hugging Face Datasets (split, token) y Kaggle (API oficial), con credenciales en el llavero |
 | RF-ING-05 |  | 6 | APIs REST (paginación, auth por header/token, mapeo JSON → tabla) y streaming (Kafka,… | ⬜ pendiente |
 | RF-ING-06 | sí | 1 | Inferencia de esquema y tipos (numérico, categórico, fecha, texto, id, ruta de… | ✅ `data.schema`: tipos semánticos + candidatos a target, override manual |
 | RF-ING-07 | sí | 1 | Cada ingesta crea un DatasetVersion inmutable con hash de contenido. | ✅ `DatasetVersion` inmutable content-addressed (ADR-0016) |
@@ -192,12 +202,12 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-PIP-03 |  | 1/3 | Catálogo de pasos por modalidad (extensible por plugins): | ✅ tabular, imagen, texto, series, audio (augmentations incluidas) |
 | RF-PIP-04 | sí | 1/3 | El pipeline se serializa (JSON) y se ajusta solo con train (fit/transform separado)… | ✅ fit solo con train, estado JSON empaquetable |
 | RF-PIP-05 |  | 1/3 | El LLM puede sugerir cambios al pipeline con justificación; el usuario acepta/rechaza… | ⬜ pendiente |
-| RF-LBL-01 |  | 4 | Herramientas de etiquetado: clase por muestra (imagen/texto/audio), multi-etiqueta,… | ⬜ pendiente |
-| RF-LBL-02 |  | 4 | Pre-etiquetado automático con: | 🟡 pre-etiquetado de texto con el LLM (L2 con NER o L3), `POST /labels/prelabel`; zero-shot locales y modelo propio en Capa 4 |
-| RF-LBL-03 |  | 4 | Active learning: priorizar para revisión humana las muestras de mayor… | ⬜ pendiente |
+| RF-LBL-01 |  | 4 | Herramientas de etiquetado: clase por muestra (imagen/texto/audio), multi-etiqueta,… | 🟡 herramienta en la UI: clase por muestra (imagen/texto/tabla), multi-etiqueta y cajas; máscaras por pincel y segmentos temporales pendientes |
+| RF-LBL-02 |  | 4 | Pre-etiquetado automático con: | 🟡 pre-etiquetado con el modelo del proyecto y con el LLM (texto, L2/L3); zero-shot local pendiente de licencias y caché de pesos |
+| RF-LBL-03 |  | 4 | Active learning: priorizar para revisión humana las muestras de mayor… | ✅ cola por incertidumbre/diversidad, aceptación en lote por confianza y ciclo etiquetar → aplicar (nueva versión) → reentrenar → pre-etiquetar |
 | RF-LBL-04 |  | 4 | Guía de etiquetado: el usuario describe las clases en lenguaje natural; el LLM genera… | ✅ guía de etiquetado por LLM (`POST /projects/{id}/labels/guide`); sin LLM, las definiciones del usuario |
-| RF-LBL-05 |  | 4 | Métricas de calidad del etiquetado: acuerdo humano-modelo, clases confusas, posibles… | ⬜ pendiente |
-| RF-LBL-06 |  | 4 | Importar/exportar etiquetas en COCO, YOLO, VOC, CSV, JSONL. | ⬜ pendiente |
+| RF-LBL-05 |  | 4 | Métricas de calidad del etiquetado: acuerdo humano-modelo, clases confusas, posibles… | ✅ acuerdo humano-modelo, pares confusos y posibles errores de etiqueta |
+| RF-LBL-06 |  | 4 | Importar/exportar etiquetas en COCO, YOLO, VOC, CSV, JSONL. | ✅ CSV, JSONL, COCO, YOLO y VOC (import y export) |
 | RF-WIZ-01 | sí | 3 | Pasos 1, 2, 3, 5, 6, 7, 8, 9 para tabular e imagen. | ✅ los 9 pasos para tabular e imagen (UI + `ProjectDraft`) |
 | RF-WIZ-02 |  | 3 | Cada paso muestra "¿Por qué?" con la explicación del LLM y permite rechazar/editar. | ✅ "¿Por qué?" en cada paso (pregunta al copiloto con el contexto del borrador); propuestas del LLM con justificación, aceptables o rechazables |
 | RF-WIZ-03 |  | 3 | Sin LLM configurado (o privacidad L0) el wizard funciona con recomendaciones por… | ✅ sin LLM (o L0) cada paso usa las recomendaciones por reglas |
