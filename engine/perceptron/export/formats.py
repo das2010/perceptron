@@ -239,9 +239,15 @@ def _onnx(
     if request.int8:
         try:
             from onnxruntime.quantization import QuantType, quantize_dynamic
+            from onnxruntime.quantization.shape_inference import quant_pre_process
 
+            # Preprocesamiento recomendado por ONNX Runtime (inferencia de formas y
+            # optimización) antes de cuantizar un grafo del exportador dynamo.
+            pre = out_dir / "model.int8-pre.onnx"
+            quant_pre_process(str(path), str(pre), skip_symbolic_shape=True)
             q = out_dir / "model.int8.onnx"
-            quantize_dynamic(str(path), str(q), weight_type=QuantType.QInt8)
+            quantize_dynamic(str(pre), str(q), weight_type=QuantType.QInt8)
+            pre.unlink(missing_ok=True)
             artifacts.append(_artifact(q, "onnx_int8", _verify(ref, run(q), None)))
         except Exception as e:
             artifacts.append(_failed("onnx_int8", e))

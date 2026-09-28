@@ -92,7 +92,9 @@ def test_export_all_formats_verified(client: TestClient, fixtures_dir: Path) -> 
     # ONNX coincide con PyTorch (aceptación §14): 1e-4 en fp32 y 1e-2 en fp16.
     assert by_format["onnx"]["verification"]["tolerance"] == 1e-4
     assert by_format["onnx_fp16"]["verification"]["tolerance"] == 1e-2
-    assert by_format["onnx_int8"]["verification"]["tolerance"] is None  # solo se informa
+    int8 = by_format["onnx_int8"]
+    assert int8["error"] is None, int8["error"]
+    assert int8["verification"]["tolerance"] is None  # solo se informa
     assert by_format["torchscript"]["legacy"] is True
     assert [i["name"] for i in report["inputs"]] == ["x_num", "x_cat"]
     assert report["signature"]["inputs"]["kind"] == "tabular"
@@ -186,6 +188,7 @@ def test_playground_and_serving_bundle(
     spec = importlib.util.spec_from_file_location("bundle_app", bundle / "app" / "app.py")
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, "bundle_app", module)
     spec.loader.exec_module(module)
     served = TestClient(module.app)
     assert served.get("/health").json()["task"] == "classification"
