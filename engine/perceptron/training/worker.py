@@ -133,6 +133,8 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         if cfg.num_workers == "auto"
         else int(cfg.num_workers)
     )
+    if cfg.code is not None:
+        workers = 0  # el sandbox no admite procesos hijos
     train_dl = make_loader(
         train_ds,
         batch_size,
@@ -142,6 +144,9 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         oversample=spec.training.oversample,
     )
     val_dl = make_loader(val_ds, batch_size, shuffle=False, num_workers=workers, seed=cfg.seed)
+
+    if cfg.code is not None:
+        _enter_sandbox(cfg, run_dir)
 
     module = PerceptronModule(
         spec,
@@ -248,6 +253,27 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         "paused" if status == "paused" else "finished", data=json.loads(result.model_dump_json())
     )
     return 0
+
+
+def _enter_sandbox(cfg: Any, run_dir: Path) -> None:
+    """Guardas del sandbox y carga del código experto (ADR-0025); irreversible."""
+    from perceptron.domain.enums import Device
+    from perceptron.sandbox import code
+    from perceptron.sandbox.guard import Policy, install, runtime_roots
+
+    (run_dir / code.CODE_FILE).write_text(cfg.code, encoding="utf-8")
+    limits = cfg.sandbox
+    # RLIMIT_AS limita memoria virtual: con CUDA se reserva mucho espacio de direcciones.
+    memory = limits.memory_mb if (cfg.device is Device.CPU or sys.platform == "win32") else None
+    install(
+        Policy(
+            write_roots=[run_dir],
+            read_roots=[cfg.dataset_dir, *runtime_roots()],
+            memory_mb=memory,
+            cpu_seconds=limits.cpu_seconds,
+        )
+    )
+    code.load(cfg.code)
 
 
 def main(argv: list[str] | None = None) -> int:

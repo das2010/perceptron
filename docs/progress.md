@@ -124,6 +124,8 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Editor visual de ArchSpec (React Flow) con validación en vivo y "ver como código" (Monaco empaquetado, sin CDN) | ✅ |
 | Editor visual de pipeline (React Flow): agregar, quitar, reordenar, parametrizar, vista previa | ✅ |
 | Sub-wizard de definición de arquitectura (familia → backbone → cabeza → regularización, `POST /projects/{id}/arch/define`), con el copiloto como guía | ✅ tabular e imagen |
+| Comparación de runs en Experimentos (curvas superpuestas, métricas e hiperparámetros que difieren) | ✅ |
+| Modo experto con Monaco (RF-ARC-06): lint en vivo, confirmación explícita y prueba en el sandbox | ✅ |
 | E2E Playwright UC-04 guiado por el wizard (incluye editor visual y código) | ✅ 40 s de punta a punta (O1: < 15 min) |
 
 ## Requisitos funcionales
@@ -184,7 +186,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-ARC-03 |  | 2 | Mini-torneo opcional: entrenar cada propuesta con un presupuesto corto (p. ej. 10 %… | ✅ `services.tournament` (fracción de épocas + subconjunto de train por época); gana la mejor en validación |
 | RF-ARC-04 | sí | 1/2 | Fallback por reglas si el LLM no está disponible o falla la validación 3 veces. | ✅ `catalog.rules` como fallback (L0, sin LLM, presupuesto, 3 fallos) con motivo informado |
 | RF-ARC-05 |  | 3 | Editor visual de ArchSpec (React Flow): bloques del catálogo como nodos, parámetros en… | ✅ editor React Flow: bloques del catálogo, parámetros e HP ajustables, validación en vivo, resumen de parámetros y memoria; guarda como ArchSpec nueva (origen manual) |
-| RF-ARC-06 |  | 3 | Modo experto — código libre: el LLM (o el usuario) escribe un… | ⬜ pendiente |
+| RF-ARC-06 |  | 3 | Modo experto — código libre: el LLM (o el usuario) escribe un… | ✅ modo experto: `build_model(config)` con validación estática (AST) y dinámica en sandbox (sin red ni procesos, E/S solo en el run, rlimits/Job Object); entrenamiento y evaluación en el sandbox; runs marcados no declarativos (ADR-0025) |
 | RF-ARC-07 |  | 1/2 | Conversión ArchSpec → código PyTorch legible ("ver como código") para aprendizaje y… | ✅ `archspec.to_code` (equivalencia verificada con pesos) y "ver como código" en la UI (Monaco) |
 | RF-HPO-01 | sí | 1 | Estrategias soportadas: | ✅ single/random/grid/TPE/CMA-ES/NSGA-II + median/ASHA/Hyperband |
 | RF-HPO-02 | sí | 1 | El LLM estratega recibe el escenario (tamaño de datos, costo por trial, presupuesto,… | ✅ estratega LLM validado contra la ArchSpec, rangos del catálogo y presupuesto; fallback por reglas |

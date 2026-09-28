@@ -90,6 +90,7 @@ class BlockSpec:
     tasks: tuple[TaskType, ...] = ()  # vacío = todas
     multi_input: bool = False
     is_backbone: bool = False
+    internal: bool = False  # no se ofrece en la paleta ni al LLM (p. ej. código experto)
 
     def public(self) -> dict[str, Any]:
         return {
@@ -267,6 +268,21 @@ def _build_timm(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) 
     pretrained = bool(p["pretrained"]) and ctx.pretrained_allowed
     full = f"{name}.{TIMM_WEIGHTS[name].pretrained_tag}" if pretrained else name
     return m.TimmBackbone(full, pretrained, _single(inputs).channels)
+
+
+def _build_code(p: dict[str, Any], inputs: list[TensorSpec], ctx: BuildContext) -> nn.Module:
+    from perceptron.sandbox.code import build
+
+    t = _single(inputs)
+    spec = {
+        "kind": t.kind.value,
+        "shape": list(t.shape),
+        "num_numeric": t.num_numeric,
+        "cardinalities": list(t.cardinalities),
+        "vocab_size": t.vocab_size,
+        "pad_id": t.pad_id,
+    }
+    return build(p, spec, ctx.num_outputs)
 
 
 def _build_small_cnn(p: dict[str, Any], inputs: list[TensorSpec], _: BuildContext) -> nn.Module:
@@ -735,8 +751,24 @@ BLOCKS: dict[str, BlockSpec] = {
             _build_add,
             multi_input=True,
         ),
+        BlockSpec(
+            "code.module",  # CODE_BLOCK
+            "Modelo de código experto (RF-ARC-06): solo se construye dentro del sandbox",
+            tuple(TensorKind),
+            _FEAT,
+            _build_code,
+            {
+                "code_sha256": _p("str", "", description="SHA-256 del código del usuario"),
+                "task": _p("str", "classification", choices=["classification", "regression"]),
+            },
+            tasks=(TaskType.CLASSIFICATION, TaskType.REGRESSION),
+            internal=True,
+        ),
     ]
 }
+
+# Bloque del código experto (RF-ARC-06): se construye solo dentro del sandbox (ADR-0025).
+CODE_BLOCK = "code.module"
 
 # El tipo de salida de estos bloques es el mismo que el de su entrada.
 SHAPE_PRESERVING = {"norm.batchnorm", "reg.dropout", "merge.add"}
@@ -749,10 +781,14 @@ def get_block(key: str) -> BlockSpec:
         raise KeyError(f"bloque desconocido: {key}") from None
 
 
+def public_blocks() -> list[BlockSpec]:
+    return [b for b in BLOCKS.values() if not b.internal]
+
+
 def blocks_for(modality: Modality, task: TaskType | None = None) -> list[BlockSpec]:
     return [
         b
-        for b in BLOCKS.values()
+        for b in public_blocks()
         if (not b.modalities or modality in b.modalities)
         and (not b.tasks or task is None or task in b.tasks)
     ]

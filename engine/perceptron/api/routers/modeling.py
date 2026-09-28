@@ -16,7 +16,7 @@ from perceptron.archspec.schema import ArchSpec
 from perceptron.archspec.to_code import archspec_to_code
 from perceptron.archspec.validate import ValidationReport
 from perceptron.catalog.define import DefinePlan
-from perceptron.catalog.registry import BLOCKS, blocks_for
+from perceptron.catalog.registry import blocks_for, public_blocks
 from perceptron.core.errors import NotFoundError, ValidationError
 from perceptron.data.pipeline.pipeline import PipelineSpec, preview_steps, transform_tabular
 from perceptron.domain.enums import Device, Modality, Origin, TaskType
@@ -24,6 +24,9 @@ from perceptron.domain.models import ArchSpecRecord, Evaluation, ModelVersion, P
 from perceptron.evaluation.evaluate import EvaluationReport
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.hpo.study import StudyControl
+from perceptron.sandbox.expert import starter_code
+from perceptron.sandbox.process import CodeCheck
+from perceptron.sandbox.static import StaticReport, check_source
 from perceptron.services.workflow import Workflow
 
 router = APIRouter()
@@ -268,6 +271,66 @@ def create_archspec(project_id: str, body: ArchSpecCreate, ctx: Ctx) -> ArchSpec
     return Workflow(ctx).save_archspec(project_id, spec, origin=Origin.MANUAL)
 
 
+class CodeLintBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    source: str
+
+
+class CodeArchSpecCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    base_archspec_id: str = Field(description="ArchSpec de la que se toman entrada, tarea y ajuste")
+    source: str
+    name: str | None = None
+    acknowledge_risk: bool = Field(
+        default=False, description="Confirmación explícita: el código no es declarativo (§13.2)"
+    )
+
+
+class CodeArchSpecResult(BaseModel):
+    record: ArchSpecRecord
+    check: CodeCheck
+
+
+@router.post("/arch/code/lint", tags=["arch"], operation_id="lintArchCode")
+def lint_arch_code(body: CodeLintBody) -> StaticReport:
+    """Validación estática del código experto, sin ejecutarlo (RF-ARC-06)."""
+    return check_source(body.source)
+
+
+@router.get(
+    "/archspecs/{archspec_id}/code/starter", tags=["arch"], operation_id="getArchCodeStarter"
+)
+def arch_code_starter(archspec_id: str, ctx: Ctx) -> CodeResponse:
+    """Código inicial del modo experto para la entrada de esta ArchSpec."""
+    spec = ArchSpec.model_validate(ctx.repo(ArchSpecRecord).get(archspec_id).spec)
+    return CodeResponse(code=starter_code(spec))
+
+
+@router.get("/archspecs/{archspec_id}/code", tags=["arch"], operation_id="getArchCode")
+def arch_code(archspec_id: str, ctx: Ctx) -> CodeResponse:
+    record = ctx.repo(ArchSpecRecord).get(archspec_id)
+    return CodeResponse(code=Workflow(ctx).archspec_source(record))
+
+
+@router.post(
+    "/projects/{project_id}/archspecs/code",
+    status_code=status.HTTP_201_CREATED,
+    tags=["arch"],
+    operation_id="createCodeArchSpec",
+)
+def create_code_archspec(project_id: str, body: CodeArchSpecCreate, ctx: Ctx) -> CodeArchSpecResult:
+    """Modo experto (RF-ARC-06): valida el código, lo prueba en el sandbox y lo guarda."""
+    ctx.projects.get(project_id)
+    record, check = Workflow(ctx).save_code_archspec(
+        project_id,
+        body.base_archspec_id,
+        body.source,
+        name=body.name,
+        acknowledge_risk=body.acknowledge_risk,
+    )
+    return CodeArchSpecResult(record=record, check=check)
+
+
 class DefineBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     dataset_version_id: str
@@ -302,14 +365,17 @@ def validate_architecture(body: dict[str, Any]) -> ValidationReport:
 
 @router.post("/arch/to-code", tags=["arch"], operation_id="archToCode")
 def arch_to_code(spec: ArchSpec) -> CodeResponse:
-    return CodeResponse(code=archspec_to_code(spec))
+    try:
+        return CodeResponse(code=archspec_to_code(spec))
+    except ValueError as exc:  # p. ej. código experto: su fuente está en /archspecs/{id}/code
+        raise ValidationError(str(exc)) from exc
 
 
 @router.get("/catalog/blocks", tags=["arch"], operation_id="listCatalogBlocks")
 def catalog_blocks(
     modality: Modality | None = None, task: TaskType | None = None
 ) -> list[dict[str, Any]]:
-    blocks = blocks_for(modality, task) if modality else list(BLOCKS.values())
+    blocks = blocks_for(modality, task) if modality else public_blocks()
     return [b.public() for b in blocks]
 
 

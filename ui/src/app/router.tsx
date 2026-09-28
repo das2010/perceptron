@@ -91,6 +91,13 @@ const archEditorRoute = createRoute({
   path: "archspecs/$archspecId",
   component: lazyRouteComponent(() => import("@/features/arch/ArchEditorPage"), "ArchEditorPage"),
 });
+const expertCodeRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "archspecs/$archspecId/code",
+  component: lazyRouteComponent(() => import("@/features/arch/ExpertCodePage"), "ExpertCodePage"),
+  validateSearch: (search: Record<string, unknown>): { from?: "current" } =>
+    search.from === "current" ? { from: "current" } : {},
+});
 const pipelineEditorRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "pipelines/$pipelineId",
@@ -119,6 +126,7 @@ const routeTree = rootRoute.addChildren([
     agentRoute,
     designRoute,
     archEditorRoute,
+    expertCodeRoute,
     pipelineEditorRoute,
     runRoute,
   ]),

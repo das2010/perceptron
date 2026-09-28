@@ -15,6 +15,8 @@ import {
   Th,
 } from "@/components/ui";
 import { useProjectId } from "@/features/projects/ProjectLayout";
+
+import { CompareRuns } from "./CompareRuns";
 import { useJob, useRuns, type Run } from "@/lib/api/hooks";
 import { useEngineSocket } from "@/lib/api/ws";
 import { formatDate, formatNumber } from "@/lib/format";
@@ -115,10 +117,15 @@ export function ExperimentsPage() {
   const { data, isPending, error } = useRuns(projectId, running ? 4000 : undefined);
   const runs = useMemo(() => [...(data ?? [])].reverse(), [data]);
   const cols = metricCols(runs);
+  const [compare, setCompare] = useState<string[]>([]);
+  const toggle = (id: string) =>
+    setCompare((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const compared = runs.filter((r) => compare.includes(r.id));
 
   return (
     <div className="space-y-6">
       {job && <LiveStudy jobId={job} metric="val_loss" />}
+      {compared.length >= 2 && <CompareRuns runs={compared} onClear={() => setCompare([])} />}
       <Card>
         <CardTitle>{t("experiments.runs")}</CardTitle>
         {isPending && <Spinner />}
@@ -128,6 +135,9 @@ export function ExperimentsPage() {
           <Table>
             <thead>
               <tr>
+                <Th>
+                  <span className="sr-only">{t("experiments.compare")}</span>
+                </Th>
                 <Th>{t("experiments.run")}</Th>
                 <Th>{t("experiments.status")}</Th>
                 {cols.map((c) => (
@@ -139,6 +149,14 @@ export function ExperimentsPage() {
             <tbody>
               {runs.map((r) => (
                 <tr key={r.id}>
+                  <Td>
+                    <input
+                      type="checkbox"
+                      checked={compare.includes(r.id)}
+                      onChange={() => toggle(r.id)}
+                      aria-label={t("experiments.compareRun", { run: r.id.split("-").at(-1) })}
+                    />
+                  </Td>
                   <Td>
                     <Link
                       to="/projects/$projectId/runs/$runId"
@@ -159,6 +177,9 @@ export function ExperimentsPage() {
               ))}
             </tbody>
           </Table>
+        )}
+        {compare.length === 1 && (
+          <p className="mt-2 text-xs text-muted">{t("experiments.compareSelect")}</p>
         )}
       </Card>
     </div>

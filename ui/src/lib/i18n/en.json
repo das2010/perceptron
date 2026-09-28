@@ -239,7 +239,14 @@
     "empty": "No model has been trained yet.",
     "run": "Run",
     "status": "Status",
-    "started": "Started"
+    "started": "Started",
+    "compare": "Compare",
+    "compareRun": "Compare {{run}}",
+    "compareTitle": "Comparing {{count}} runs",
+    "clearCompare": "Clear selection",
+    "compareMetric": "Curve metric",
+    "compareHint": "Highlighted rows are hyperparameters that differ between runs.",
+    "compareSelect": "Select two or more runs to compare them."
   },
   "status": {
     "queued": "Queued",
@@ -486,5 +493,23 @@
     "explain": "I'm defining the architecture, step “{{step}}”. The options are: {{options}}. Which one fits my data and why?",
     "useRecommended": "Fill in with the recommended",
     "build": "Create this architecture"
+  },
+  "expert": {
+    "open": "Expert mode (code)",
+    "title": "Expert mode: the model as code",
+    "warning": "Code is not declarative: Perceptron cannot explain or validate it like an ArchSpec. It runs in a sandbox with no network, no processes and no file access outside the run, with memory and time limits. Review the code before saving it, especially if the LLM proposed it.",
+    "editor": "Model code",
+    "issues_one": "{{count}} issue",
+    "issues_other": "{{count}} issues",
+    "lintOk": "No issues",
+    "line": "line {{line}}:",
+    "saveTitle": "Test in the sandbox and save",
+    "acknowledge": "I understand the code is not declarative and runs in a sandbox",
+    "save": "Test and save",
+    "checking": "Building the model in the sandbox…",
+    "checked": "Model built in the sandbox: {{params}} parameters.",
+    "notDeclarative": "Expert code (not declarative)",
+    "editCopy": "Edit as new",
+    "sandboxNote": "It is trained and evaluated inside the sandbox. To change it, edit a copy: the original stays as provenance."
   }
 }

@@ -14,7 +14,7 @@ import {
   type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ArrowLeft, Code2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Code2, FileCode2, Plus, Save, ShieldAlert, Trash2 } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -33,6 +33,7 @@ import {
   type ArchSpecRecord,
   type ValidationReport,
   useArchCode,
+  useArchSource,
   useArchSpec,
   useCatalogBlocks,
   useSaveArchSpec,
@@ -258,6 +259,18 @@ function ArchEditor({ record, projectId }: { record: ArchSpecRecord; projectId: 
         )}
         <div className="ml-auto flex gap-2">
           <Button
+            variant="ghost"
+            onClick={() =>
+              void navigate({
+                to: "/projects/$projectId/archspecs/$archspecId/code",
+                params: { projectId, archspecId: record.id },
+              })
+            }
+          >
+            <FileCode2 className="h-4 w-4" aria-hidden="true" />
+            {t("expert.open")}
+          </Button>
+          <Button
             variant="secondary"
             onClick={() => setShowCode((v) => !v)}
             aria-pressed={showCode}
@@ -410,6 +423,61 @@ function ArchEditor({ record, projectId }: { record: ArchSpecRecord; projectId: 
   );
 }
 
+/** ArchSpec de código experto: el grafo es un único nodo, así que se muestra el fuente. */
+function CodeArchView({ record, projectId }: { record: ArchSpecRecord; projectId: string }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const source = useArchSource(record.id, true);
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t("arch.back")}
+          onClick={() =>
+            void navigate({ to: "/projects/$projectId/design", params: { projectId } })
+          }
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h2 className="font-semibold">{record.name}</h2>
+        <Badge tone="warn">
+          <ShieldAlert className="h-3 w-3" aria-hidden="true" />
+          {t("expert.notDeclarative")}
+        </Badge>
+        <Button
+          className="ml-auto"
+          variant="secondary"
+          onClick={() =>
+            void navigate({
+              to: "/projects/$projectId/archspecs/$archspecId/code",
+              params: { projectId, archspecId: record.id },
+              search: { from: "current" },
+            })
+          }
+        >
+          <FileCode2 className="h-4 w-4" aria-hidden="true" />
+          {t("expert.editCopy")}
+        </Button>
+      </div>
+      <p className="text-sm text-muted">{t("expert.sandboxNote")}</p>
+      <ErrorNote error={source.error} />
+      <Card className="p-0">
+        {source.data === undefined ? (
+          <div className="p-4">
+            <Spinner />
+          </div>
+        ) : (
+          <Suspense fallback={<Spinner />}>
+            <CodeView code={source.data} dark={prefersDark()} label={record.name} />
+          </Suspense>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 export function ArchEditorPage() {
   const { projectId, archspecId } = useParams({
     from: "/projects/$projectId/archspecs/$archspecId",
@@ -417,5 +485,6 @@ export function ArchEditorPage() {
   const record = useArchSpec(archspecId);
   if (record.error) return <ErrorNote error={record.error} />;
   if (!record.data?.spec) return <Spinner />;
+  if (record.data.code_path) return <CodeArchView record={record.data} projectId={projectId} />;
   return <ArchEditor key={archspecId} record={record.data} projectId={projectId} />;
 }
