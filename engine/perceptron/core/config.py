@@ -33,7 +33,12 @@ class ApiSettings(BaseModel):
         default=None, description="Token efímero exigido en cada request (sidecar desktop)"
     )
     cors_origins: list[str] = Field(
-        default_factory=lambda: ["http://localhost:5173", "tauri://localhost"]
+        # Vite en desarrollo y los orígenes de Tauri 2 (Linux/macOS y Windows).
+        default_factory=lambda: [
+            "http://localhost:5173",
+            "tauri://localhost",
+            "http://tauri.localhost",
+        ]
     )
 
 

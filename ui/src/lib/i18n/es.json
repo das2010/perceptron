@@ -37,6 +37,22 @@
       "missingKey": "Sin clave",
       "keyPlaceholder": "Pegá la clave (no se vuelve a mostrar)",
       "keyFor": "Clave de {{name}}"
+    },
+    "desktop": {
+      "title": "Motor local (PyTorch)",
+      "variant": "Variante instalada",
+      "index": "Índice de PyTorch",
+      "driver": "Driver NVIDIA",
+      "change": "Cambiar variante",
+      "changeHint": "Se reinstala solo PyTorch; la app no se reinstala.",
+      "variants": {
+        "cpu": "CPU",
+        "cuda": "NVIDIA CUDA",
+        "rocm": "AMD ROCm (Linux)",
+        "xpu": "Intel XPU"
+      },
+      "apply": "Aplicar",
+      "applying": "Reinstalando PyTorch y reiniciando el motor… puede tardar varios minutos."
     }
   },
   "nav": {
@@ -486,5 +502,20 @@
     "explain": "Estoy definiendo la arquitectura, paso «{{step}}». Las opciones son: {{options}}. ¿Cuál conviene para mis datos y por qué?",
     "useRecommended": "Completar con lo recomendado",
     "build": "Crear esta arquitectura"
+  },
+  "desktop": {
+    "preparing": "Preparando Perceptron",
+    "preparingHint": "La primera vez se instala el entorno de Python y la versión de PyTorch que corresponde a tu hardware. Puede tardar varios minutos y necesita conexión.",
+    "steps": "Pasos de la preparación",
+    "step": {
+      "python": "Python",
+      "venv": "Entorno",
+      "deps": "Dependencias",
+      "engine": "Perceptron Engine",
+      "hardware": "Detección del hardware",
+      "torch": "PyTorch"
+    },
+    "starting": "Iniciando el motor…",
+    "retry": "Reintentar"
   }
 }
