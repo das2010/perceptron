@@ -78,8 +78,9 @@ def _pipeline(task: str, model: str) -> Any:
         from transformers import pipeline
     except ImportError:
         raise ValidationError("el zero-shot necesita el extra `ml` (transformers)") from None
+    factory: Any = pipeline  # la tarea llega como str: sin sobrecarga tipada
     try:
-        return pipeline(task, model=model, model_kwargs={"local_files_only": offline()})
+        return factory(task, model=model, model_kwargs={"local_files_only": offline()})
     except OSError as e:
         raise ValidationError(
             f"el modelo {model} no está descargado: bajalo desde la caché de modelos"

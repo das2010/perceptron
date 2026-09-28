@@ -105,7 +105,7 @@ def test_build_source_uses_patchable_http(monkeypatch: pytest.MonkeyPatch) -> No
     src = stream.build_source("rest", {"url": "https://a.test/x"})
     assert src.fetch({}, None).rows == [{"a": 1}]
     with pytest.raises(ValidationError):
-        stream.build_source("kafka", {})
+        stream.build_source("amqp", {})
 
 
 def test_file_tail_and_buffer(tmp_path: Path) -> None:

@@ -58,7 +58,7 @@ KafkaFactory = Callable[..., Any]
 
 def default_kafka(**kwargs: Any) -> Any:
     try:
-        from kafka import KafkaConsumer
+        from kafka import KafkaConsumer  # type: ignore[import-untyped]
     except ImportError:
         raise ValidationError("falta el extra `streaming` (kafka-python)") from None
     topic = kwargs.pop("topic")
@@ -153,7 +153,8 @@ def default_mqtt(client_id: str) -> Any:
         import paho.mqtt.client as mqtt
     except ImportError:
         raise ValidationError("falta el extra `streaming` (paho-mqtt)") from None
-    return mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id, clean_session=False)
+    version = mqtt.CallbackAPIVersion.VERSION2  # type: ignore[attr-defined]
+    return mqtt.Client(version, client_id=client_id, clean_session=False)
 
 
 class MqttSource:

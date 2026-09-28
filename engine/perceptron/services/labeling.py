@@ -246,7 +246,8 @@ class Labeling:
             for lab in i.label if isinstance(i.label, list) else [i.label]:
                 if lab is not None:
                     by_class[lab] = by_class.get(lab, 0) + 1
-            for shape in [*i.boxes, *i.polygons, *i.segments]:
+            shapes: list[Box | Polygon | Segment] = [*i.boxes, *i.polygons, *i.segments]
+            for shape in shapes:
                 by_class[shape.label] = by_class.get(shape.label, 0) + 1
         suggested = sum(1 for i in items if i.status == "suggested")
         return LabelingSummary(
@@ -340,7 +341,7 @@ class Labeling:
         if ls.kind is LabelKind.MULTILABEL and not isinstance(update.label, list):
             raise ValidationError("en multi-etiqueta, label es una lista")
         unknown = [lab for lab in labels if lab is not None and lab not in ls.classes]
-        shapes = [*update.boxes, *update.polygons, *update.segments]
+        shapes: list[Box | Polygon | Segment] = [*update.boxes, *update.polygons, *update.segments]
         unknown += [sh.label for sh in shapes if sh.label not in ls.classes]
         if unknown:
             raise ValidationError(f"clases desconocidas: {sorted(set(unknown))}")

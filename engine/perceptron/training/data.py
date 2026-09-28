@@ -55,8 +55,8 @@ class StreamingTabularDataset(IterableDataset[tuple[torch.Tensor, ...]]):
     def __init__(
         self, fitted: FittedPipeline, data_file: Path, split: str, *, shuffle: bool, seed: int
     ) -> None:
-        import pyarrow.compute as pc
-        import pyarrow.dataset as pads
+        import pyarrow.compute as pc  # type: ignore[import-untyped]
+        import pyarrow.dataset as pads  # type: ignore[import-untyped]
 
         from perceptron.data.splits import SPLIT_COLUMN
 
@@ -73,7 +73,9 @@ class StreamingTabularDataset(IterableDataset[tuple[torch.Tensor, ...]]):
         self.class_counts: torch.Tensor | None = None
         if target and fitted.classes and target.task is not TaskType.REGRESSION:
             col = dataset.to_table(columns=[target.name], filter=self._filter)[target.name]
-            y = encode_target(fitted, pl.from_arrow(col).to_series())  # type: ignore[union-attr]
+            values = pl.from_arrow(col)
+            series = values if isinstance(values, pl.Series) else values.to_series()
+            y = encode_target(fitted, series)
             k = len(fitted.classes)
             yt = torch.tensor(y)
             self.class_counts = torch.bincount(yt[yt >= 0], minlength=k)
@@ -82,7 +84,7 @@ class StreamingTabularDataset(IterableDataset[tuple[torch.Tensor, ...]]):
         return self.n
 
     def _batches(self) -> Any:
-        import pyarrow.dataset as pads
+        import pyarrow.dataset as pads  # type: ignore[import-untyped]
 
         dataset = pads.dataset(str(self.data_file), format="parquet")
         yield from dataset.to_batches(filter=self._filter, batch_size=STREAM_BATCH_ROWS)
@@ -523,8 +525,9 @@ def class_weights(fitted: FittedPipeline, ds: Dataset[Any]) -> torch.Tensor | No
     k = len(fitted.classes)
     streamed = getattr(ds, "class_counts", None)
     if streamed is not None:
-        counts = streamed.float().clamp(min=1)
-        return counts.sum() / (k * counts)
+        counts: torch.Tensor = streamed.float().clamp(min=1)
+        weights: torch.Tensor = counts.sum() / (k * counts)
+        return weights
     y = ds.y if hasattr(ds, "y") else None
     if y is None:
         return None

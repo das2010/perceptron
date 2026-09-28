@@ -49,8 +49,9 @@ def _in_use(ctx: EngineContext, project_id: str) -> set[str]:
     used: set[str] = set()
     for model in USERS:
         for e in ctx.repo(model).list(filters={"project_id": project_id}, limit=100_000):
-            if getattr(e, "dataset_version_id", None):
-                used.add(str(e.dataset_version_id))
+            dv_id = getattr(e, "dataset_version_id", None)
+            if dv_id:
+                used.add(str(dv_id))
     return used
 
 

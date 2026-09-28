@@ -444,7 +444,7 @@ class Monitoring:
         if emb is not None:
             out["embedding"] = emb
         cache.parent.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(cache, **out)
+        np.savez_compressed(cache, **out)  # type: ignore[arg-type]
         return out
 
     def _output_drift(

@@ -341,7 +341,9 @@ def test_parallel_cancel_stops_every_running_trial(tmp_path: Path) -> None:
 
     def launcher(cfg: RunConfig) -> FakeHandle:
         started.append(cfg.run_id)
-        return FakeHandle(cfg, sleep=0.1)
+        if len(started) == 3:  # con los tres primeros en curso
+            threading.Timer(0.05, control.cancel).start()
+        return FakeHandle(cfg, sleep=0.5)
 
     s = HPOStrategy(
         strategy="random",
@@ -350,7 +352,6 @@ def test_parallel_cancel_stops_every_running_trial(tmp_path: Path) -> None:
         budget=Budget(max_trials=10),
         parallelism=3,
     )
-    threading.Timer(0.15, control.cancel).start()  # con los tres primeros en curso
     res = _run(tmp_path, s, launcher=launcher, control=control)
     assert res.stop_reason == "cancelled"
     assert len(started) == 3  # no se lanzaron más
