@@ -84,7 +84,7 @@ class StreamingTabularDataset(IterableDataset[tuple[torch.Tensor, ...]]):
         return self.n
 
     def _batches(self) -> Any:
-        import pyarrow.dataset as pads  # type: ignore[import-untyped]
+        import pyarrow.dataset as pads
 
         dataset = pads.dataset(str(self.data_file), format="parquet")
         yield from dataset.to_batches(filter=self._filter, batch_size=STREAM_BATCH_ROWS)
