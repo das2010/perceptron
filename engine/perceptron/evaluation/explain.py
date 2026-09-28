@@ -93,28 +93,41 @@ def _target_and_label(trained: TrainedModel, out: torch.Tensor) -> tuple[Any, li
 def _tabular_attribute(
     trained: TrainedModel, x_num: torch.Tensor, x_cat: torch.Tensor, n_samples: int
 ) -> tuple[np.ndarray, list[str], list[str]]:
+    """Shapley por columna; solo se perturban las entradas no vacías (numéricas/categóricas)."""
     from captum.attr import ShapleyValueSampling
 
     model = trained.model
-    n_num, n_cat = x_num.shape[1], x_cat.shape[1]
     names = [*trained.pipeline.numeric_features, *trained.pipeline.categorical_features]
     with torch.no_grad():
         out = model(x_num, x_cat)
     target, labels = _target_and_label(trained, out)
-    b_num = x_num.median(0, keepdim=True).values
-    b_cat = x_cat.mode(0, keepdim=True).values if n_cat else x_cat[:1]
-    m_num = torch.arange(n_num).unsqueeze(0)
-    m_cat = (torch.arange(n_cat) + n_num).unsqueeze(0)
-    svs = ShapleyValueSampling(model)
+    parts = [("num", x_num), ("cat", x_cat)]
+    active = [(k, x) for k, x in parts if x.shape[1] > 0]
+    if not active:
+        raise ValidationError("el modelo no tiene variables de entrada que explicar")
+
+    def forward(*xs: torch.Tensor) -> torch.Tensor:
+        given = dict(zip([k for k, _ in active], xs, strict=True))
+        result: torch.Tensor = model(
+            given.get("num", x_num[: len(xs[0])]), given.get("cat", x_cat[: len(xs[0])])
+        )
+        return result
+
+    baselines, masks, offset = [], [], 0
+    for kind, x in active:
+        base = x.median(0, keepdim=True).values if kind == "num" else x.mode(0, keepdim=True).values
+        baselines.append(base.expand_as(x))
+        masks.append((torch.arange(x.shape[1]) + offset).unsqueeze(0))
+        offset += x.shape[1]
     with torch.no_grad():
-        attr_num, attr_cat = svs.attribute(
-            (x_num, x_cat),
-            baselines=(b_num.expand_as(x_num), b_cat.expand_as(x_cat)),
+        attrs = ShapleyValueSampling(forward).attribute(
+            tuple(x for _, x in active),
+            baselines=tuple(baselines),
             target=target,
-            feature_mask=(m_num, m_cat),
+            feature_mask=tuple(masks),
             n_samples=n_samples,
         )
-    attr = torch.cat([attr_num.float(), attr_cat.float()], dim=1).numpy()
+    attr = torch.cat([a.float() for a in attrs], dim=1).numpy()
     return attr, names, labels
 
 

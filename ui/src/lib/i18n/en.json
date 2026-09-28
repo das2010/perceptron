@@ -576,6 +576,59 @@
     "example": "Fill with an example",
     "predict": "Predict",
     "image": "Image to classify",
-    "explainLater": "Per-prediction explanations (SHAP / Integrated Gradients) come with advanced evaluation."
+    "explain": "Explain this prediction",
+    "contributions": "Contribution of each variable",
+    "heatmap": "Explanation heat map"
+  },
+  "analysis": {
+    "title": "Advanced evaluation",
+    "computing": "Computing…",
+    "tabs": {
+      "errors": "Errors",
+      "explain": "Explanation",
+      "fairness": "Fairness",
+      "robustness": "Robustness",
+      "report": "Report"
+    },
+    "errors": {
+      "summary": "{{errors}} errors out of {{total}} cases ({{metric}} = {{value}}).",
+      "labelIssues_one": "{{count}} possible label error",
+      "labelIssues_other": "{{count}} possible label errors",
+      "slices": "Where it performs worst",
+      "column": "Column",
+      "value": "Value",
+      "support": "Cases",
+      "confusions": "Most frequent confusions",
+      "confusion": "“{{actual}}” predicted as “{{predicted}}”: {{count}}",
+      "samples": "Mispredicted cases",
+      "actual": "Actual",
+      "predicted": "Predicted",
+      "confidence": "Confidence",
+      "labelIssue": "The label might be wrong"
+    },
+    "explain": {
+      "hint": "Which variables weigh the most (Shapley values on validation).",
+      "compute": "Compute",
+      "method": "Sampled Shapley on {{samples}} validation rows."
+    },
+    "fairness": {
+      "hint": "Mark sensitive attributes (e.g. region, age) to compare the model across groups.",
+      "positive": "Positive class",
+      "compute": "Compare groups",
+      "group": "Group",
+      "selection": "“{{cls}}” rate"
+    },
+    "robustness": {
+      "hint": "How much the model degrades with noise, missing values and other perturbations.",
+      "compute": "Test robustness",
+      "level": "Severity",
+      "baseline": "{{metric}} unperturbed: {{value}} ({{samples}} cases)."
+    },
+    "report": {
+      "hint": "The report includes what you already computed (explanation, fairness, robustness).",
+      "pdf": "PDF",
+      "html": "HTML",
+      "md": "Markdown"
+    }
   }
 }

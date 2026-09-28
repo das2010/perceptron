@@ -26,7 +26,7 @@ def eval_frame(view: DatasetView, split: str = "test") -> pl.DataFrame:
     df = view.read(split, purpose=Purpose.FINAL_EVALUATION)
     if "corrupt" in df.columns:
         df = df.filter(~pl.col("corrupt"))
-    return df.with_row_index(ROW)
+    return df.with_row_index(ROW).with_columns(pl.col(ROW).cast(pl.Int64))
 
 
 def save_predictions(

@@ -11,6 +11,8 @@ import {
   type ExportReport,
   type PlaygroundResult,
   useDatasetSample,
+  useExplainImage,
+  useExplainRow,
   usePredictFile,
   usePredictRows,
 } from "@/lib/api/hooks";
@@ -71,7 +73,11 @@ export function PlaygroundPanel({
   const [values, setValues] = useState<Record<string, string>>({});
   const rows = usePredictRows(runId);
   const file = usePredictFile(runId);
+  const explainRow = useExplainRow(runId);
+  const explainImage = useExplainImage(runId);
+  const [lastFile, setLastFile] = useState<File | null>(null);
   const result = rows.data ?? file.data;
+  const currentRow = () => Object.fromEntries(columns.map((c) => [c, values[c] ?? ""]));
 
   const fillExample = () => {
     const row = (sample.data?.[0] ?? {}) as Record<string, unknown>;
@@ -89,7 +95,8 @@ export function PlaygroundPanel({
           onSubmit={(e) => {
             e.preventDefault();
             file.reset();
-            rows.mutate([Object.fromEntries(columns.map((c) => [c, values[c] ?? ""]))]);
+            explainRow.reset();
+            rows.mutate([currentRow()]);
           }}
         >
           <div className="grid gap-3 sm:grid-cols-3">
@@ -121,14 +128,56 @@ export function PlaygroundPanel({
               const f = e.target.files?.[0];
               if (!f) return;
               rows.reset();
+              explainImage.reset();
+              setLastFile(f);
               file.mutate(f);
             }}
           />
         </Field>
       )}
-      <ErrorNote error={rows.error ?? file.error} />
+      <ErrorNote error={rows.error ?? file.error ?? explainRow.error ?? explainImage.error} />
       {result && <Result result={result} />}
-      <p className="mt-3 text-xs text-muted">{t("playground.explainLater")}</p>
+      {result && (
+        <Button
+          className="mt-3"
+          variant="ai"
+          size="sm"
+          loading={explainRow.isPending || explainImage.isPending}
+          onClick={() =>
+            inputs.kind === "tabular"
+              ? explainRow.mutate(currentRow())
+              : lastFile && explainImage.mutate(lastFile)
+          }
+        >
+          {t("playground.explain")}
+        </Button>
+      )}
+      {explainRow.data && (
+        <ul className="mt-3 space-y-1 text-xs" aria-label={t("playground.contributions")}>
+          {explainRow.data.contributions.slice(0, 10).map((c) => {
+            const max = Math.max(...explainRow.data.contributions.map((x) => Math.abs(x.attribution)), 1e-9);
+            return (
+              <li key={c.feature} className="flex items-center gap-2">
+                <span className="w-32 truncate">{c.feature}</span>
+                <span className="relative h-2 flex-1 rounded bg-canvas">
+                  <span
+                    className={`absolute h-2 rounded ${c.attribution >= 0 ? "left-1/2 bg-primary" : "right-1/2 bg-bad"}`}
+                    style={{ width: `${(Math.abs(c.attribution) / max) * 50}%` }}
+                  />
+                </span>
+                <span className="w-16 text-right">{c.attribution.toFixed(3)}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {explainImage.data?.heatmap_png && (
+        <img
+          className="mt-3 max-h-80 rounded-pt border border-line"
+          src={`data:image/png;base64,${explainImage.data.heatmap_png}`}
+          alt={t("playground.heatmap")}
+        />
+      )}
     </Card>
   );
 }

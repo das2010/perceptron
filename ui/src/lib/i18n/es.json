@@ -576,6 +576,59 @@
     "example": "Completar con un ejemplo",
     "predict": "Predecir",
     "image": "Imagen a clasificar",
-    "explainLater": "La explicación de cada predicción (SHAP / Integrated Gradients) llega con la evaluación avanzada."
+    "explain": "Explicar esta predicción",
+    "contributions": "Contribución de cada variable",
+    "heatmap": "Mapa de calor de la explicación"
+  },
+  "analysis": {
+    "title": "Evaluación avanzada",
+    "computing": "Calculando…",
+    "tabs": {
+      "errors": "Errores",
+      "explain": "Explicación",
+      "fairness": "Equidad",
+      "robustness": "Robustez",
+      "report": "Informe"
+    },
+    "errors": {
+      "summary": "{{errors}} errores sobre {{total}} casos ({{metric}} = {{value}}).",
+      "labelIssues_one": "{{count}} posible error de etiqueta",
+      "labelIssues_other": "{{count}} posibles errores de etiqueta",
+      "slices": "Dónde rinde peor",
+      "column": "Columna",
+      "value": "Valor",
+      "support": "Casos",
+      "confusions": "Confusiones más frecuentes",
+      "confusion": "«{{actual}}» predicho como «{{predicted}}»: {{count}}",
+      "samples": "Casos mal predichos",
+      "actual": "Real",
+      "predicted": "Predicho",
+      "confidence": "Confianza",
+      "labelIssue": "La etiqueta podría estar mal"
+    },
+    "explain": {
+      "hint": "Qué variables pesan más en las predicciones (valores de Shapley sobre validación).",
+      "compute": "Calcular",
+      "method": "Shapley por muestreo sobre {{samples}} filas de validación."
+    },
+    "fairness": {
+      "hint": "Marcá los atributos sensibles (p. ej. región, edad) para comparar el modelo entre grupos.",
+      "positive": "Clase positiva",
+      "compute": "Comparar grupos",
+      "group": "Grupo",
+      "selection": "Tasa «{{cls}}»"
+    },
+    "robustness": {
+      "hint": "Cuánto empeora el modelo con ruido, faltantes y otras perturbaciones.",
+      "compute": "Probar robustez",
+      "level": "Severidad",
+      "baseline": "{{metric}} sin perturbar: {{value}} ({{samples}} casos)."
+    },
+    "report": {
+      "hint": "El informe incluye lo que ya calculaste (explicación, equidad, robustez).",
+      "pdf": "PDF",
+      "html": "HTML",
+      "md": "Markdown"
+    }
   }
 }
