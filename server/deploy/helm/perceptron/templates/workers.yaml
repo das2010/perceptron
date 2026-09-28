@@ -1,0 +1,60 @@
+{{- range $kind, $w := .Values.workers }}
+{{- if $w.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "perceptron.fullname" $ }}-worker-{{ $kind }}
+  labels:
+    {{- include "perceptron.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: worker-{{ $kind }}
+spec:
+  replicas: {{ $w.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: worker-{{ $kind }}
+  template:
+    metadata:
+      labels:
+        {{- include "perceptron.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: worker-{{ $kind }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: worker
+          {{- $tag := ternary $.Values.image.gpuTag $.Values.image.tag (eq $kind "gpu") }}
+          image: "{{ $.Values.image.repository }}:{{ $tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          args: ["perceptron-server", "worker", "--queues", "{{ $kind }}"]
+          env:
+            {{- include "perceptron.env" $ | nindent 12 }}
+            - name: PERCEPTRON_WORKER_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            {{- include "perceptron.volumeMounts" $ | nindent 12 }}
+          {{- with $w.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        {{- include "perceptron.volumes" $ | nindent 8 }}
+      {{- with $w.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $w.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

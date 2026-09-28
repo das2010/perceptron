@@ -1,0 +1,23 @@
+# Valores de CI: activan todas las ramas del chart para validarlas con kubeconform.
+secrets:
+  databaseUrl: postgresql+pg8000://perceptron:clave@postgres:5432/perceptron
+  mlflowDatabaseUrl: postgresql+pg8000://perceptron:clave@postgres:5432/mlflow
+  secretKey: ci-clave-de-firma-de-al-menos-32-caracteres
+  masterKey: Y2ktbWFzdGVyLWtleS0zMi1ieXRlcy0xMjM0NTY3OA==
+  adminEmail: admin@preteco.test
+  adminPassword: clave-admin-de-ci
+server:
+  publicUrl: https://perceptron.preteco.test
+  oidc: '{"entra": {"kind": "entra", "display_name": "Microsoft", "tenant_id": "t", "client_id": "c"}}'
+workers:
+  gpu:
+    enabled: true
+sources:
+  existingClaim: datos-compartidos
+ingress:
+  enabled: true
+  className: nginx
+  host: perceptron.preteco.test
+  tls:
+    - hosts: [perceptron.preteco.test]
+      secretName: perceptron-tls

@@ -598,15 +598,19 @@ def get_job(job_id: str, ctx: Ctx) -> Job:
 async def job_stream(ws: WebSocket, job_id: str) -> None:
     ctx: EngineContext = ws.app.state.ctx
     job = ctx.jobs.get(job_id)
-    initial = [
-        {"job_id": job_id, "kind": "status", "data": {"status": job.status if job else "unknown"}}
-    ]
     done = job is None or job.status in TERMINAL
+    # Primero lo que ya pasó (conexión tardía o reconexión) y después el estado actual.
+    status = {
+        "job_id": job_id,
+        "kind": "status",
+        "data": {"status": job.status if job else "unknown"},
+    }
+    initial = [*ctx.jobs.history(job_id), status]
     await stream_events(
         ws,
         ctx.events,
         JOB_TOPIC,
         lambda ev: ev.payload.get("job_id") == job_id,
         initial=initial,
-        until=lambda msg: done or msg.get("kind") == "finished",
+        until=lambda msg: msg.get("kind") == "finished" or (done and msg.get("kind") == "status"),
     )

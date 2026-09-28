@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "perceptron.fullname" . }}-server
+  labels:
+    {{- include "perceptron.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+spec:
+  replicas: {{ .Values.server.replicas }}
+  strategy:
+    type: Recreate  # jobs en memoria y migraciones al arrancar: nunca dos versiones a la vez
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels:
+        {{- include "perceptron.labels" . | nindent 8 }}
+        app.kubernetes.io/component: server
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: server
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["perceptron-server", "serve", "--host", "0.0.0.0", "--port", "{{ .Values.server.port }}"]
+          ports:
+            - name: http
+              containerPort: {{ .Values.server.port }}
+          env:
+            {{- include "perceptron.env" . | nindent 12 }}
+            - name: PERCEPTRON_SERVER__COOKIE_SECURE
+              value: {{ .Values.server.cookieSecure | quote }}
+            - name: FORWARDED_ALLOW_IPS
+              value: {{ .Values.server.trustedProxies | quote }}
+            {{- with .Values.server.publicUrl }}
+            - name: PERCEPTRON_SERVER__PUBLIC_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.server.oidc }}
+            - name: PERCEPTRON_SERVER__OIDC
+              value: {{ . | quote }}
+            {{- end }}
+            - name: PERCEPTRON_SERVER__BOOTSTRAP_ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "perceptron.secretName" . }}
+                  key: admin-email
+                  optional: true
+            - name: PERCEPTRON_SERVER__BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "perceptron.secretName" . }}
+                  key: admin-password
+                  optional: true
+            {{- with .Values.server.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            {{- include "perceptron.volumeMounts" . | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/v1/system/health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/v1/system/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          {{- with .Values.server.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        {{- include "perceptron.volumes" . | nindent 8 }}
+      {{- with .Values.server.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "perceptron.fullname" . }}-server
+  labels:
+    {{- include "perceptron.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: server
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

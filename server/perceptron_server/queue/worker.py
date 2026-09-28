@@ -118,8 +118,14 @@ class WorkerRuntime:
                 "traceback": traceback.format_exc()[-3000:],
             }
         finally:
-            emit("finished", status=status, result=result, error=error)
+            # Primero el latido "libre" y después el fin: quien vea el job terminado ya ve
+            # el worker disponible en la cola.
             self.busy = None
+            try:
+                self.heartbeat()
+            except Exception:
+                logger.exception("latido del worker falló")
+            emit("finished", status=status, result=result, error=error)
             unsubscribe()
             stop_control()
         return status

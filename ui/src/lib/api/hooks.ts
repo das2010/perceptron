@@ -1223,3 +1223,55 @@ export function useQueue(enabled: boolean) {
     queryFn: async () => unwrap(await (await getApiClient()).GET("/api/v1/server/queue")),
   });
 }
+
+// ---------------------------------------------------------------- servidores de equipo (Capa 5c)
+
+export type RemoteServer = Schemas["RemoteServer"];
+
+/** Team Servers conectados desde este desktop (RF-SRV-03). */
+export function useRemoteServers(enabled = true) {
+  return useQuery({
+    queryKey: ["remote", "servers"],
+    enabled,
+    queryFn: async () => unwrap(await (await getApiClient()).GET("/api/v1/remote/servers")),
+  });
+}
+
+export function useConnectRemote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: Schemas["ServerConnect"]) =>
+      unwrap(await (await getApiClient()).POST("/api/v1/remote/servers", { body })),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["remote", "servers"] }),
+  });
+}
+
+export function useRemoveRemote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const res = await (
+        await getApiClient()
+      ).DELETE("/api/v1/remote/servers/{name}", { params: { path: { name } } });
+      if (!res.response.ok) unwrap(res);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["remote", "servers"] }),
+  });
+}
+
+/** Entrena en un worker del servidor con el progreso en vivo en el desktop. */
+export function useCreateRemoteStudy(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: Schemas["RemoteStudyCreate"]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/remote/studies", {
+          params: { path: { project_id: projectId } },
+          body,
+        }),
+      ),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.runs(projectId) }),
+  });
+}

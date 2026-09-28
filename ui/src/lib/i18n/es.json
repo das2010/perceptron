@@ -713,7 +713,10 @@
     "login": "Ingresar",
     "logout": "Cerrar sesión",
     "invalid": "Email o contraseña incorrectos.",
-    "locked": "La cuenta quedó bloqueada unos minutos por intentos fallidos."
+    "locked": "La cuenta quedó bloqueada unos minutos por intentos fallidos.",
+    "ssoWith": "Ingresar con {{provider}}",
+    "or": "o con tu usuario del servidor",
+    "ssoFailed": "No se pudo iniciar sesión con el SSO. Probá de nuevo o consultá al Admin."
   },
   "roles": {
     "viewer": "Viewer",
@@ -790,5 +793,36 @@
     "queue": "Cola",
     "since": "Desde",
     "runningOn": "en {{worker}}"
+  },
+  "remote": {
+    "title": "Servidores de equipo",
+    "hint": "Conectá este desktop a un Team Server para entrenar en sus workers (GPU) y compartir proyectos con el equipo.",
+    "empty": "Todavía no hay servidores conectados.",
+    "name": "Nombre",
+    "user": "Usuario",
+    "remove": "Quitar {{name}}",
+    "passwordHint": "Solo para el login: se guarda un token en el llavero, no la contraseña.",
+    "connect": "Conectar",
+    "where": "Dónde entrenar",
+    "local": "En este equipo",
+    "onServer": "En {{name}}",
+    "useGpu": "Usar la GPU del servidor",
+    "syncing": "Subiendo al servidor…"
+  },
+  "policies": {
+    "title": "Políticas",
+    "restricted": "Proveedores restringidos",
+    "anyProvider": "Cualquier proveedor",
+    "maxPrivacy": "Privacidad máxima frente al LLM",
+    "maxPrivacyHint": "Ningún proyecto del workspace manda más que este nivel (L0 = nada).",
+    "localMax": "Máximo con LLM local",
+    "localMaxHint": "Puede ser mayor si el modelo corre en la red propia (RF-PRV-02).",
+    "sameAsGeneral": "Igual que el general",
+    "providers": "Proveedores permitidos",
+    "providersHint": "Separados por coma (p. ej. ollama, anthropic). Vacío = todos.",
+    "save": "Guardar",
+    "sso": "SSO",
+    "noSso": "No hay proveedores SSO configurados.",
+    "ssoHint": "Se configuran en el servidor (PERCEPTRON_SERVER__OIDC); ver docs/ops/sso.md."
   }
 }

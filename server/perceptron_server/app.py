@@ -26,7 +26,7 @@ from perceptron_server.queue.launcher import (
     start_event_bridge,
 )
 from perceptron_server.queue.relay import RedisRelay, Relay
-from perceptron_server.routers import admin, auth, queue, sources
+from perceptron_server.routers import admin, auth, oidc, queue, sources, sync
 from perceptron_server.session import SessionMiddleware
 from perceptron_server.settings import ServerSettings
 from perceptron_server.state import ServerState
@@ -141,7 +141,7 @@ def create_server_app(
     app.title = "Perceptron Team Server API"
     app.version = __version__
     app.state.server = state
-    for module in (auth, admin, sources, queue):
+    for module in (auth, oidc, admin, sources, queue, sync):
         app.include_router(module.router, prefix=API_PREFIX)
     app.add_middleware(SessionMiddleware)
     app.add_middleware(SecurityHeaders, hsts=server.cookie_secure)

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: perceptron
+description: Perceptron Team Server — API + UI web, workers CPU/GPU, Valkey y MLflow server
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

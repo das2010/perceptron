@@ -202,3 +202,22 @@ def test_websocket_authorization(
     assert exc.value.code == 4403
     with editor.websocket_connect(path) as ws:
         assert ws is not None
+
+
+def test_workspace_privacy_policy(
+    admin: TestClient, make_user: UserFactory, default_workspace: str
+) -> None:
+    _, lead = make_user("pol-lead@preteco.test", "admin")
+    _, editor = make_user("pol-ed@preteco.test", "editor")
+    body = {"max_privacy_level": "L1", "allowed_llm_providers": ["ollama"]}
+    assert editor.patch(f"{API}/admin/workspaces/{default_workspace}", json=body).status_code == 403
+    ws = ok(lead.patch(f"{API}/admin/workspaces/{default_workspace}", json=body))
+    assert ws["max_privacy_level"] == "L1" and ws["allowed_llm_providers"] == ["ollama"]
+    cleared = ok(
+        admin.patch(
+            f"{API}/admin/workspaces/{default_workspace}", json={"clear_allowed_providers": True}
+        )
+    )
+    assert cleared["allowed_llm_providers"] is None and cleared["max_privacy_level"] == "L1"
+    events = ok(admin.get(f"{API}/admin/audit", params={"action": "admin.workspace_policy"}))
+    assert len(events) == 2

@@ -1,0 +1,34 @@
+# ADR-0032: SSO OIDC, Helm y backups del Team Server (Capa 5c)
+- Estado: propuesto
+- Fecha: 2026-09-28
+- Contexto:
+  - RF-SRV-01 pide SSO OIDC (Entra ID, Google Workspace, genérico), con MFA delegada al IdP y mapeo de grupos a roles.
+  - §5.4 elige Authlib.
+  - La aceptación de la Capa 5 incluye un login SSO con Entra ID de prueba.
+  - RF-SRV-08 pide backups de PostgreSQL y del almacenamiento, y §5.4 pide un Helm chart v1.
+- Decisión:
+  - **OIDC authorization code con PKCE (S256)**, `state` y `nonce`.
+    - Authlib (BSD-3) genera los tokens y el desafío PKCE. El ID token se valida con joserfc (BSD-3, del mismo autor; reemplaza a `authlib.jose`) contra el JWKS del emisor: firma, `iss`, `aud`, `exp`, `nonce`, 60 s de tolerancia. Si falta el `kid`, se reintenta con el JWKS nuevo (rotación de claves).
+    - El estado del flujo viaja en una cookie firmada (HS256), `HttpOnly`, `SameSite=Lax` (vuelve en la navegación desde el IdP), limitada a `/api/v1/auth/oidc`, con 10 min de vida. No hay estado en el servidor.
+    - El `next` solo acepta rutas propias, sin redirecciones abiertas.
+    - Entra ID: emisor `login.microsoftonline.com/{tenant}/v2.0`; el email sale de `email` o `preferred_username`/`upn`, y los grupos del claim `groups` (IDs de objeto). Google: el `hd` sale de `allowed_domains`. Genérico: cualquier emisor con discovery.
+    - **Usuarios:** se vinculan por email verificado o se crean (`auto_create`), con `auth_provider = oidc:<id>` y sin contraseña local.
+    - **Roles:** `role_mapping` da roles por grupo en cada login, sin quitar los asignados a mano. Si ningún grupo aplica, un usuario nuevo recibe `default_role` en el workspace por defecto.
+    - Tras el SSO se abre la misma sesión que con el login local. El login local se puede apagar (`password_login=false`).
+    - La auditoría registra `auth.login_sso` y `auth.sso_failed` (con el motivo).
+  - **Helm chart v1** (`server/deploy/helm/perceptron`):
+    - servidor (una réplica, estrategia `Recreate`);
+    - workers `cpu` y `gpu`: imagen `TORCH_VARIANT`, `nvidia.com/gpu` y *tolerations*;
+    - Valkey (StatefulSet) y MLflow server, incluidos o externos;
+    - PVC del workspace en `ReadWriteMany`, Ingress y Secret existente o creado;
+    - PostgreSQL es externo.
+    - CI: `helm lint --strict`, render mínimo y completo, y validación con kubeconform.
+  - **Backups** (Compose): `backup.sh` y `restore.sh`.
+    - Contenido: `pg_dump -Fc` de `perceptron` y `mlflow`, más un `tar.gz` del workspace y de los artefactos, con `SHA256SUMS`.
+    - El servidor y los workers se detienen durante la copia, para mantener la coherencia entre la base y los archivos.
+    - CI: backup → `down -v` → restauración → verificación por la API de que vuelven el proyecto y sus runs.
+    - La guía cubre Kubernetes (PITR y snapshots de PVC) y la custodia de las claves maestras.
+- Consecuencias:
+  - El flujo SSO completo se prueba en CI contra un IdP simulado con claves RSA reales, incluidos los casos de manipulación.
+  - La aceptación con un Entra ID real necesita un tenant o una app registration de prueba del usuario (client id, tenant id y secret como secrets del repo).
+  - El chart no se instala en un cluster en CI (solo lint y esquemas). La prueba en un cluster (kind) queda como mejora.

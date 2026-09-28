@@ -713,7 +713,10 @@
     "login": "Sign in",
     "logout": "Sign out",
     "invalid": "Wrong email or password.",
-    "locked": "The account is locked for a few minutes after failed attempts."
+    "locked": "The account is locked for a few minutes after failed attempts.",
+    "ssoWith": "Sign in with {{provider}}",
+    "or": "or with your server account",
+    "ssoFailed": "Single sign-on failed. Try again or ask your Admin."
   },
   "roles": {
     "viewer": "Viewer",
@@ -790,5 +793,36 @@
     "queue": "Queue",
     "since": "Since",
     "runningOn": "on {{worker}}"
+  },
+  "remote": {
+    "title": "Team servers",
+    "hint": "Connect this desktop to a Team Server to train on its (GPU) workers and share projects with your team.",
+    "empty": "No servers connected yet.",
+    "name": "Name",
+    "user": "User",
+    "remove": "Remove {{name}}",
+    "passwordHint": "Only used to sign in: a token is kept in the keychain, never the password.",
+    "connect": "Connect",
+    "where": "Where to train",
+    "local": "On this machine",
+    "onServer": "On {{name}}",
+    "useGpu": "Use the server GPU",
+    "syncing": "Uploading to the server…"
+  },
+  "policies": {
+    "title": "Policies",
+    "restricted": "Restricted providers",
+    "anyProvider": "Any provider",
+    "maxPrivacy": "Maximum LLM privacy level",
+    "maxPrivacyHint": "No project in the workspace sends more than this level (L0 = nothing).",
+    "localMax": "Maximum with a local LLM",
+    "localMaxHint": "Can be higher when the model runs on your own network (RF-PRV-02).",
+    "sameAsGeneral": "Same as general",
+    "providers": "Allowed providers",
+    "providersHint": "Comma separated (e.g. ollama, anthropic). Empty = all.",
+    "save": "Save",
+    "sso": "SSO",
+    "noSso": "No SSO providers configured.",
+    "ssoHint": "Configured on the server (PERCEPTRON_SERVER__OIDC); see docs/ops/sso.md."
   }
 }

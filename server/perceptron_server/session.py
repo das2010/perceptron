@@ -33,6 +33,7 @@ CSRF_COOKIE = "pt_csrf"
 CSRF_HEADER = "x-csrf-token"
 API_PREFIX = "/api/v1"
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+SSO_PREFIX = f"{API_PREFIX}/auth/oidc/"
 # Login y emisión de tokens no llevan CSRF (no dependen de una sesión previa).
 CSRF_EXEMPT = frozenset(
     {f"{API_PREFIX}/auth/login", f"{API_PREFIX}/auth/token", f"{API_PREFIX}/auth/refresh"}
@@ -88,9 +89,11 @@ class SessionMiddleware:
         state: ServerState = scope["app"].state.server
         conn = HTTPConnection(scope)
         websocket = scope["type"] == "websocket"
+        # Login, tokens y el retorno del SSO no dependen de una sesión previa.
+        skip = scope["path"] in CSRF_EXEMPT or scope["path"].startswith(SSO_PREFIX)
         principal, pair = (
             (None, None)
-            if scope["path"] in CSRF_EXEMPT  # login y tokens no dependen de una sesión previa
+            if skip
             else await anyio.to_thread.run_sync(self._authenticate, state, conn, not websocket)
         )
         scope.setdefault("state", {})["principal"] = principal

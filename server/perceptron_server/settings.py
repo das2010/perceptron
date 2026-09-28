@@ -7,9 +7,53 @@ El Engine se configura como siempre (`PERCEPTRON_*`), en modo `server`, con
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from perceptron.domain.enums import Role
+
+
+class GroupRole(BaseModel):
+    """Un grupo del IdP da un rol en un workspace (o en un proyecto) (RF-SRV-01)."""
+
+    group: str = Field(description="Id o nombre del grupo tal como viene en el token")
+    workspace: str = Field(description="Nombre del workspace (se crea si no existe)")
+    role: Role
+    project_id: str | None = None
+
+
+class OIDCProvider(BaseModel):
+    """Proveedor SSO OIDC (Entra ID, Google Workspace o genérico). MFA la resuelve el IdP."""
+
+    kind: Literal["entra", "google", "generic"] = "generic"
+    display_name: str
+    client_id: str
+    client_secret: SecretStr | None = Field(default=None, description="Cliente confidencial")
+    tenant_id: str | None = Field(default=None, description="Entra ID: id del tenant")
+    issuer: str | None = Field(default=None, description="Genérico: URL del emisor")
+    scopes: list[str] = Field(default_factory=lambda: ["openid", "email", "profile"])
+    groups_claim: str = "groups"
+    allowed_domains: list[str] = Field(
+        default_factory=list, description="Dominios de email aceptados (vacío = cualquiera)"
+    )
+    auto_create: bool = Field(default=True, description="Crea el usuario en el primer login")
+    default_role: Role | None = Field(
+        default=Role.VIEWER, description="Rol en el workspace por defecto si ningún grupo aplica"
+    )
+    role_mapping: list[GroupRole] = Field(default_factory=list)
+
+    def issuer_url(self) -> str:
+        if self.kind == "entra":
+            if not self.tenant_id:
+                raise ValueError("Entra ID requiere tenant_id")
+            return f"https://login.microsoftonline.com/{self.tenant_id}/v2.0"
+        if self.kind == "google":
+            return self.issuer or "https://accounts.google.com"
+        if not self.issuer:
+            raise ValueError("el proveedor OIDC genérico requiere issuer")
+        return self.issuer.rstrip("/")
 
 
 class ServerSettings(BaseSettings):
@@ -44,6 +88,17 @@ class ServerSettings(BaseSettings):
         default=30, ge=1, description="Intentos de login/refresh por IP y minuto"
     )
     min_password_length: int = Field(default=12, ge=8)
+    password_login: bool = Field(
+        default=True, description="Login local; se puede apagar si todo pasa por SSO"
+    )
+    oidc: dict[str, OIDCProvider] = Field(
+        default_factory=dict,
+        description='SSO: {"entra": {...}} (JSON en PERCEPTRON_SERVER__OIDC)',
+    )
+    public_url: str | None = Field(
+        default=None,
+        description="URL pública (https://perceptron.empresa.com) para el redirect de SSO",
+    )
     redis_url: SecretStr | None = Field(
         default=None,
         description=(

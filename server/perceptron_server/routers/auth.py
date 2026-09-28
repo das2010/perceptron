@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from perceptron.core.errors import AuthError, RateLimitedError
+from perceptron.core.errors import AuthError, ForbiddenError, RateLimitedError
 from perceptron.domain.models import Membership, User, Workspace
 from perceptron_server.accounts import Principal
 from perceptron_server.policy import principal_of
@@ -34,10 +34,16 @@ def rate_limited(request: Request, state: State) -> None:
         raise RateLimitedError("demasiados intentos; esperá un minuto")
 
 
+class SsoProvider(BaseModel):
+    id: str
+    display_name: str
+    kind: Literal["entra", "google", "generic"]
+
+
 class AuthConfig(BaseModel):
     mode: Literal["server"] = "server"
     password_login: bool = True
-    oidc_providers: list[str] = Field(default_factory=list, description="Capa 5c")
+    oidc_providers: list[SsoProvider] = Field(default_factory=list)
 
 
 class Credentials(BaseModel):
@@ -87,12 +93,27 @@ def _me(state: ServerState, who: Principal) -> Me:
 
 
 @router.get("/config", operation_id="getAuthConfig")
-def auth_config() -> AuthConfig:
+def auth_config(state: State) -> AuthConfig:
     """Público: la UI web lo usa para saber que habla con un Team Server y cómo loguearse."""
-    return AuthConfig()
+    return AuthConfig(
+        password_login=state.server.password_login,
+        oidc_providers=[
+            SsoProvider(id=name, display_name=p.display_name, kind=p.kind)
+            for name, p in state.server.oidc.items()
+        ],
+    )
 
 
-@router.post("/login", operation_id="login", dependencies=[Depends(rate_limited)])
+def password_login_enabled(state: State) -> None:
+    if not state.server.password_login:
+        raise ForbiddenError("el login local está deshabilitado: usá el SSO")
+
+
+@router.post(
+    "/login",
+    operation_id="login",
+    dependencies=[Depends(rate_limited), Depends(password_login_enabled)],
+)
 def login(body: Credentials, request: Request, response: Response, state: State) -> Me:
     ip = client_ip(request)
     try:
@@ -131,7 +152,11 @@ def me(who: Who, state: State) -> Me:
     return _me(state, who)
 
 
-@router.post("/token", operation_id="issueToken", dependencies=[Depends(rate_limited)])
+@router.post(
+    "/token",
+    operation_id="issueToken",
+    dependencies=[Depends(rate_limited), Depends(password_login_enabled)],
+)
 def token(body: Credentials, request: Request, state: State) -> TokenResponse:
     """Tokens bearer para la CLI y el desktop (sync con el servidor, Capa 5c)."""
     ip = client_ip(request)

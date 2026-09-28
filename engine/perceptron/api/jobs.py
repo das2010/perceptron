@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 import threading
 import traceback
+from collections import deque
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 JOB_TOPIC = "job.event"
 JobStatus = Literal["queued", "running", "succeeded", "failed", "cancelled"]
 TERMINAL = {"succeeded", "failed", "cancelled"}
+HISTORY_EVENTS = 2000  # por job: alcanza para las curvas de un estudio típico
 
 
 class Job(BaseModel):
@@ -53,6 +55,7 @@ class JobContext:
 
     def emit(self, kind: str, **data: Any) -> None:
         self.job.progress = {"last": kind, **data}
+        self._manager.record(self.job.id, kind, data)
         self._manager.bus.publish(JOB_TOPIC, job_id=self.job.id, kind=kind, data=data)
 
 
@@ -64,6 +67,7 @@ class JobManager:
         )
         self._jobs: dict[str, Job] = {}
         self._contexts: dict[str, JobContext] = {}
+        self._history: dict[str, deque[dict[str, Any]]] = {}
         self._lock = threading.Lock()
 
     def submit(
@@ -139,6 +143,16 @@ class JobManager:
             ctx.emit("finished", status=job.status)
             return
         ctx.emit(kind, **data)
+
+    def record(self, job_id: str, kind: str, data: dict[str, Any]) -> None:
+        """Últimos eventos del job: quien se conecta tarde al WS (o reconecta) los recibe."""
+        with self._lock:
+            history = self._history.setdefault(job_id, deque(maxlen=HISTORY_EVENTS))
+            history.append({"job_id": job_id, "kind": kind, "data": data})
+
+    def history(self, job_id: str) -> list[dict[str, Any]]:
+        with self._lock:
+            return list(self._history.get(job_id, ()))
 
     def get(self, job_id: str) -> Job | None:
         return self._jobs.get(job_id)

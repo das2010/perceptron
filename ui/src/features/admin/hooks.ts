@@ -123,3 +123,28 @@ export function useAuditEvents(filters: AuditFilters, enabled = true) {
       ),
   });
 }
+
+export function useUpdateWorkspacePolicy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      policy,
+    }: {
+      workspaceId: string;
+      policy: Schemas["WorkspacePolicy"];
+    }) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).PATCH("/api/v1/admin/workspaces/{workspace_id}", {
+          params: { path: { workspace_id: workspaceId } },
+          body: policy,
+        }),
+      ),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: adminKeys.workspaces });
+      void qc.invalidateQueries({ queryKey: ["auth", "me"] });
+    },
+  });
+}

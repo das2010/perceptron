@@ -140,3 +140,24 @@ describe("sesión del Team Server (Capa 5a)", () => {
     expect(login?.headers.get("X-CSRF-Token")).toBeNull();
   });
 });
+
+describe("SSO en el login (Capa 5c)", () => {
+  it("muestra un botón por proveedor y oculta el formulario si el login local está apagado", async () => {
+    const { LoginPage } = await import("./LoginPage");
+    const client = new QueryClient();
+    render(
+      <Providers client={client}>
+        <LoginPage
+          config={{
+            mode: "server",
+            password_login: false,
+            oidc_providers: [{ id: "entra", display_name: "Microsoft (Preteco)", kind: "entra" }],
+          }}
+        />
+      </Providers>,
+    );
+    const sso = screen.getByRole("link", { name: "Ingresar con Microsoft (Preteco)" });
+    expect(sso.getAttribute("href")).toMatch(/^\/api\/v1\/auth\/oidc\/entra\/login\?next=/);
+    expect(screen.queryByLabelText("Contraseña")).not.toBeInTheDocument();
+  });
+});

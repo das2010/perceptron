@@ -1,0 +1,91 @@
+# Perceptron Team Server (Helm v1, Capa 5c). PostgreSQL va aparte (servicio gestionado o chart
+# propio); Valkey y MLflow server pueden ir incluidos o apuntar a instancias externas.
+
+image:
+  repository: perceptron-server
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+  # Imagen con TORCH_VARIANT=cu128 para los workers GPU (server/deploy/Dockerfile).
+  gpuTag: "0.1.0-cu128"
+
+imagePullSecrets: []
+
+# Secret existente con las claves (recomendado). Claves esperadas:
+#   database-url, mlflow-database-url, secret-key, master-key
+#   admin-email y admin-password (opcionales: primer Admin)
+existingSecret: ""
+# Solo para pruebas: el chart crea el Secret con estos valores.
+secrets:
+  databaseUrl: ""
+  mlflowDatabaseUrl: ""
+  secretKey: ""
+  masterKey: ""
+  adminEmail: ""
+  adminPassword: ""
+
+server:
+  replicas: 1  # los jobs se siguen en memoria del proceso: una réplica (ADR-0031)
+  port: 8080
+  cookieSecure: true
+  publicUrl: ""          # https://perceptron.empresa.com (redirect del SSO)
+  trustedProxies: "*"    # el Ingress hace de proxy
+  quotas:
+    perUser: 2
+    perWorkspace: 6
+  # SSO OIDC (JSON de PERCEPTRON_SERVER__OIDC), p. ej.
+  # {"entra": {"kind": "entra", "display_name": "Microsoft", "tenant_id": "…", "client_id": "…"}}
+  oidc: ""
+  extraEnv: []
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
+workers:
+  cpu:
+    enabled: true
+    replicas: 1
+    resources: {}
+    nodeSelector: {}
+    tolerations: []
+  gpu:
+    enabled: false
+    replicas: 1
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+    nodeSelector: {}
+    tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+
+valkey:
+  enabled: true
+  image: valkey/valkey:8
+  storage: 2Gi
+  # Si enabled=false: URL de un Valkey/Redis externo.
+  externalUrl: ""
+
+mlflow:
+  enabled: true
+  storage: 20Gi
+  # Si enabled=false: URL de un MLflow server externo.
+  externalUrl: ""
+
+workspace:
+  # Servidor y workers comparten el workspace: se necesita ReadWriteMany (NFS, CephFS, EFS…).
+  storageClass: ""
+  accessMode: ReadWriteMany
+  size: 100Gi
+  existingClaim: ""
+
+# Fuentes del servidor (RF-SRV-05): PVC de solo lectura montado en /sources.
+sources:
+  existingClaim: ""
+
+ingress:
+  enabled: false
+  className: ""
+  host: perceptron.example.com
+  annotations: {}
+  tls: []

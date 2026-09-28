@@ -19,6 +19,7 @@ from perceptron.storage.repositories import SqlRepository
 if TYPE_CHECKING:
     from perceptron.api.jobs import Job
     from perceptron.llm.gateway import Gateway
+    from perceptron.remote.client import RemoteRegistry
     from perceptron.services.studies import StudyLauncher
 
 E = TypeVar("E", bound=Entity)
@@ -34,6 +35,8 @@ class EngineContext:
     _llm: Any = field(default=None, repr=False)
     study_launcher: StudyLauncher | None = field(default=None, repr=False)
     _closers: list[Callable[[], None]] = field(default_factory=list, repr=False)
+    # Tests: cliente HTTP alternativo para hablar con un Team Server (Capa 5c).
+    remote_http: Callable[[], Any] | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         self.projects = SqlRepository(self.db, Project)
@@ -76,6 +79,16 @@ class EngineContext:
         from perceptron.services.studies import launch_local
 
         return (self.study_launcher or launch_local)(self, study)
+
+    @property
+    def remotes(self) -> RemoteRegistry:
+        """Servidores de equipo configurados en este desktop (Capa 5c)."""
+        from perceptron.remote.client import RemoteRegistry
+
+        return RemoteRegistry(self.settings.workspace_dir, self.llm.secrets)
+
+    def remote_http_kwargs(self) -> dict[str, Any]:
+        return {"http": self.remote_http} if self.remote_http is not None else {}
 
     def use_llm(self, gateway: Gateway) -> None:
         self._llm = gateway

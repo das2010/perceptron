@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.core.errors import ForbiddenError
-from perceptron.domain.enums import Role
+from perceptron.domain.enums import PrivacyLevel, Role
 from perceptron.domain.models import Membership, User, Workspace, utcnow
 from perceptron_server.accounts import Principal, aware
 from perceptron_server.audit import AuditEvent
@@ -78,6 +78,21 @@ class UserPatch(BaseModel):
 class WorkspaceCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=200)
+
+
+class WorkspacePolicy(BaseModel):
+    """Políticas del workspace frente al LLM (RF-SRV-06, RF-PRV-02)."""
+
+    model_config = ConfigDict(extra="forbid")
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    max_privacy_level: PrivacyLevel | None = None
+    local_llm_max_privacy: PrivacyLevel | None = None
+    allowed_llm_providers: list[str] | None = Field(
+        default=None, description="Proveedores permitidos; lista vacía = ninguno"
+    )
+    clear_allowed_providers: bool = Field(
+        default=False, description="Quita la restricción de proveedores (todos permitidos)"
+    )
 
 
 class MembershipCreate(BaseModel):
@@ -166,6 +181,28 @@ def create_workspace(
         "admin.workspace_created", user_id=who.user.id, resource=ws.id, ip=client_ip(request)
     )
     return ws
+
+
+@router.patch("/workspaces/{workspace_id}", operation_id="updateWorkspacePolicy")
+def update_workspace(
+    workspace_id: str, body: WorkspacePolicy, who: Who, request: Request, state: State
+) -> Workspace:
+    """Admin del servidor o del workspace: nombre y topes de privacidad y proveedores LLM."""
+    _require_workspace_admin(who, workspace_id)
+    repo = state.accounts.workspaces
+    ws = repo.get(workspace_id)
+    changes = body.model_dump(exclude_none=True, exclude={"clear_allowed_providers"})
+    if body.clear_allowed_providers:
+        changes["allowed_llm_providers"] = None
+    updated = repo.update(ws.model_copy(update=changes))
+    state.audit.record(
+        "admin.workspace_policy",
+        user_id=who.user.id,
+        resource=workspace_id,
+        ip=client_ip(request),
+        details=body.model_dump(mode="json", exclude_none=True),
+    )
+    return updated
 
 
 # ------------------------------------------------------------------ membresías

@@ -26,6 +26,7 @@ import {
 } from "@/lib/api/hooks";
 
 import { DesktopSettings } from "./DesktopSettings";
+import { RemoteServers } from "./RemoteServers";
 
 /** La clave es write-only: se envía una vez y el Engine la guarda en el keychain (RF-LLM-08). */
 function KeyForm({ provider }: { provider: ProviderView }) {
@@ -164,6 +165,7 @@ export function SettingsPage() {
       <PageHeader title={t("nav.settings")} description={t("settings.description")} />
       <LlmSettings />
       <DesktopSettings />
+      <RemoteServers />
     </>
   );
 }

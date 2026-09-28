@@ -1,0 +1,86 @@
+{{- if .Values.mlflow.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "perceptron.fullname" . }}-mlartifacts
+  labels:
+    {{- include "perceptron.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: {{ .Values.mlflow.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "perceptron.fullname" . }}-mlflow
+  labels:
+    {{- include "perceptron.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mlflow
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: mlflow
+  template:
+    metadata:
+      labels:
+        {{- include "perceptron.labels" . | nindent 8 }}
+        app.kubernetes.io/component: mlflow
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: mlflow
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["sh", "-c"]
+          {{- $svc := printf "%s-mlflow" (include "perceptron.fullname" .) }}
+          args:
+            - >-
+              exec mlflow server --host 0.0.0.0 --port 5000
+              --backend-store-uri "$MLFLOW_DB" --artifacts-destination /mlartifacts
+              --serve-artifacts --allowed-hosts "{{ $svc }},{{ $svc }}:5000,localhost:5000"
+          env:
+            - name: MLFLOW_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "perceptron.secretName" . }}
+                  key: mlflow-database-url
+          ports:
+            - name: http
+              containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          volumeMounts:
+            - name: artifacts
+              mountPath: /mlartifacts
+      volumes:
+        - name: artifacts
+          persistentVolumeClaim:
+            claimName: {{ include "perceptron.fullname" . }}-mlartifacts
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "perceptron.fullname" . }}-mlflow
+  labels:
+    {{- include "perceptron.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: mlflow
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http
+{{- end }}
