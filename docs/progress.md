@@ -231,7 +231,8 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Auditoría de licencias del runtime Python/JS/Rust y de los pesos en CI (ADR-0036) | ✅ |
 | Telemetría opt-in con vista previa, sin endpoint de fábrica | ✅ (D7: destino a definir) |
 | Actualización N → N+1 sin pérdida de proyectos (CI) | ✅ |
-| Firma Authenticode e instaladores firmados, updater firmado | ⬜ (certificado y claves de Preteco) |
+| Updater firmado: aviso, instalación desde Configuración, release con latest.json (ADR-0037) | ✅ (CI: N → N+1 real con el updater) |
+| Firma Authenticode de los instaladores | ⬜ (certificado de Preteco, postergado) |
 | Documentación de usuario es/en (MkDocs, compilada en CI) | ✅ |
 
 ## Requisitos funcionales

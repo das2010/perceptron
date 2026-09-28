@@ -88,6 +88,12 @@ elige al construirla. Esta tarea es del Admin de plataforma:
 Una vez desplegado, los usuarios entran con el navegador a la URL del servidor. Ver
 [Team Server](team-server.md).
 
+## Actualizaciones
+
+Cuando hay una versión nueva, la app te avisa en el encabezado al abrirse. En **Configuración → Actualizaciones** ves qué cambia y la instalás con **Instalar y reiniciar**: se descarga, se verifica la firma de Preteco y la app se reinicia sola. Tus proyectos, datos y modelos no se modifican. Si preferís, también podés buscar una versión nueva a mano desde esa misma tarjeta.
+
+En Linux, el AppImage se actualiza igual. Si instalaste el `.deb`, instalá el paquete nuevo.
+
 ## Si algo no anda
 
 | Síntoma | Qué probar |

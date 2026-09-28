@@ -88,6 +88,12 @@ when building it. This is a platform admin task:
 
 Once deployed, users open the server URL in a browser. See [Team Server](team-server.md).
 
+## Updates
+
+When a new version is available, the app lets you know in the header when it opens. Under **Settings → Updates** you can see what changes and install it with **Install and restart**: it is downloaded, Preteco's signature is verified and the app restarts on its own. Your projects, data and models are not changed. You can also check for a new version manually from the same card.
+
+On Linux, the AppImage updates the same way. If you installed the `.deb`, install the new package.
+
 ## Troubleshooting
 
 | Symptom | What to try |
