@@ -34,6 +34,8 @@ class IdPrefix(StrEnum):
     AGENT_RUN = "agr"
     PROJECT_DRAFT = "dft"
     JOB = "job"
+    SESSION = "ses"
+    REFRESH_TOKEN = "rtk"  # noqa: S105 - prefijo de ID, no un secreto
 
 
 _SEP = "_"

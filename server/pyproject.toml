@@ -1,10 +1,19 @@
 [project]
 name = "perceptron-server"
 version = "0.1.0"
-description = "Perceptron Team Server: auth OIDC, RBAC, sync, cola de jobs (Capa 5)"
+description = "Perceptron Team Server: auth, RBAC, auditoría, UI web y (5b) cola de jobs"
 requires-python = ">=3.12,<3.14"
 license = { text = "Proprietary" }
-dependencies = ["perceptron-engine"]
+dependencies = [
+  "perceptron-engine[ml,llm,export,eval,sources]",
+  "alembic>=1.13",        # MIT
+  "argon2-cffi>=23.1",    # MIT
+  "pyjwt>=2.9",           # MIT
+  "pg8000>=1.31",         # BSD-3 (driver PostgreSQL; psycopg es LGPL)
+]
+
+[project.scripts]
+perceptron-server = "perceptron_server.cli:app"
 
 [build-system]
 requires = ["hatchling"]

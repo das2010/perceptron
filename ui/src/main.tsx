@@ -5,6 +5,7 @@ import "@/styles/global.css";
 
 import { App } from "@/app/App";
 import { Providers } from "@/app/providers";
+import { AuthGate } from "@/features/auth/AuthGate";
 import { RuntimeGate } from "@/features/desktop/RuntimeGate";
 import { isTauri, setPlatform } from "@/lib/platform/bridge";
 
@@ -21,7 +22,9 @@ async function boot(el: HTMLElement) {
     <StrictMode>
       <Providers>
         <RuntimeGate>
-          <App />
+          <AuthGate>
+            <App />
+          </AuthGate>
         </RuntimeGate>
       </Providers>
     </StrictMode>,

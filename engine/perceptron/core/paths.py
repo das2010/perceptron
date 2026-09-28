@@ -7,12 +7,21 @@ no ASCII (p. ej. carpetas de OneDrive corporativo, SPEC §13.5).
 from __future__ import annotations
 
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
 from platformdirs import user_data_path
 
 APP_NAME = "Perceptron"
+
+
+def within_roots(path: Path, roots: Sequence[Path] | None) -> bool:
+    """`path` (resuelta, sin symlinks ni `..`) cae dentro de alguna raíz; `None` = sin límite."""
+    if roots is None:
+        return True
+    target = path.expanduser().resolve()
+    return any(target.is_relative_to(r.expanduser().resolve()) for r in roots)
 
 
 def default_workspace_dir() -> Path:

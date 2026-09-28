@@ -1,0 +1,48 @@
+# Plan — Capa 5 (Team Server)
+
+SPEC §14:
+- servidor FastAPI con PostgreSQL, S3, MLflow server y Redis + workers GPU/CPU;
+- auth local + OIDC y RBAC;
+- sync de proyectos de equipo;
+- envío de runs desde el desktop;
+- modo estación de trabajo (UI web);
+- consola de administración;
+- políticas de LLM y privacidad, cuotas y auditoría;
+- Docker Compose y Helm.
+
+**Aceptación §14:**
+- dos usuarios con roles distintos colaboran en un proyecto;
+- un desktop sin GPU lanza un run en el worker GPU del servidor y ve el progreso en vivo;
+- un usuario completa UC-07 solo desde el navegador;
+- login SSO con Entra ID de prueba.
+
+Son tres sub-capas con un PR cada una. En CI se levanta el stack con Docker Compose (PostgreSQL, S3, Redis, MLflow).
+
+## 5a — Núcleo del servidor, auth local y RBAC
+- **Almacenamiento:** `perceptron_server` monta el mismo `create_app` del Engine sobre PostgreSQL 16 (SQLAlchemy + Alembic sobre el almacén documental actual). El workspace del servidor queda en un volumen; el object storage S3 pasa a la 5b, con los workers (ADR-0030, propuesta de D2).
+- **Auth local** (RF-SRV-01): Argon2 (argon2-cffi, MIT), sesiones JWT cortas con refresh, CSRF para la UI web y rate limiting en `/auth`.
+- **RBAC** (RF-SRV-02): Admin/Editor/Viewer por workspace y por proyecto (`Membership`), aplicado como dependencia de FastAPI en cada router.
+- **Auditoría** (RF-SRV-07): login, acceso a datasets, exportaciones, llamadas LLM y cambios de permisos.
+- **Modo estación de trabajo** (RF-SRV-05): el servidor sirve la SPA; `WebPlatformBridge` con login; "fuentes del servidor", es decir rutas montadas que habilita el Admin.
+- **Aceptación parcial:** dos usuarios (Editor y Viewer) en el mismo proyecto, con permisos verificados por la API y E2E web; UC-07 desde el navegador.
+
+## 5b — Cola de jobs, workers y envío de runs
+- **Object storage** (D2): interfaz `ObjectStore` (local | S3 estándar). Datasets y artefactos se suben y bajan por hash entre el servidor, los workers y el desktop. En Compose, SeaweedFS (Apache-2.0); MinIO server es AGPL-3.0.
+- **Cola:** Redis + Celery (BSD; Dramatiq es LGPL, ADR-0031), con colas `gpu`, `cpu` y `llm`, prioridades y cuotas por usuario y workspace (RF-SRV-04). Los workers corren el worker de entrenamiento actual sobre artefactos en S3.
+- **Envío desde el desktop:** "entrenar en el servidor" sube la versión de datos (resumible por chunks), crea el estudio remoto y sigue el progreso por el WS del servidor.
+- **MLflow server:** backend PostgreSQL y artefactos en S3.
+- **Imágenes:** Docker CPU y CUDA para server y worker. Helm chart v1.
+
+## 5c — Sync, administración y SSO
+- **Sync desktop ↔ servidor** (RF-SRV-03): el servidor es la fuente de verdad; bloqueo optimista por versión; proyectos de equipo.
+- **Consola de administración** (RF-SRV-06): usuarios, grupos, SSO, proveedores LLM, políticas de privacidad, cuotas, almacenamiento, workers y auditoría.
+- **OIDC con Authlib** (Entra ID, Google Workspace, genérico), con mapeo de grupos a roles.
+- **Backups** (RF-SRV-08): scripts y guía para PostgreSQL y el object storage.
+
+## Lo que necesito del usuario
+1. **Entra ID de prueba** para la aceptación del SSO: un tenant o una app registration de prueba (client id, tenant id y secret como secrets del repo) y un usuario de prueba.
+2. **Worker GPU** para la aceptación "desktop sin GPU → worker GPU". Opciones:
+   - un runner self-hosted con GPU;
+   - un runner GPU de GitHub (pago);
+   - aceptar la prueba en CPU y validar la GPU a mano en su infraestructura.
+3. Dónde desplegar el Team Server de prueba, si hace falta más allá del Compose en CI.

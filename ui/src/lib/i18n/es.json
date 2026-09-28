@@ -59,7 +59,8 @@
     "main": "Navegación principal",
     "home": "Inicio",
     "settings": "Configuración",
-    "projects": "Proyectos"
+    "projects": "Proyectos",
+    "admin": "Administración"
   },
   "copilot": {
     "title": "Copiloto",
@@ -702,5 +703,69 @@
     "hfToken": "Token de Hugging Face (opcional)",
     "kaggleKey": "Credenciales de Kaggle (usuario:clave)",
     "download": "Descargar y previsualizar"
+  },
+  "auth": {
+    "checking": "Verificando la sesión…",
+    "subtitle": "Team Server · iniciá sesión para continuar",
+    "email": "Email",
+    "password": "Contraseña",
+    "login": "Ingresar",
+    "logout": "Cerrar sesión",
+    "invalid": "Email o contraseña incorrectos.",
+    "locked": "La cuenta quedó bloqueada unos minutos por intentos fallidos."
+  },
+  "roles": {
+    "viewer": "Viewer",
+    "editor": "Editor",
+    "admin": "Admin",
+    "readOnly": "Solo lectura"
+  },
+  "admin": {
+    "title": "Administración",
+    "description": "Usuarios, roles y auditoría del Team Server.",
+    "forbidden": "Necesitás ser Admin del servidor o de un workspace.",
+    "users": "Usuarios",
+    "newUser": "Nuevo usuario",
+    "email": "Email",
+    "name": "Nombre",
+    "initialPassword": "Contraseña inicial",
+    "passwordHint": "Mínimo 12 caracteres. El usuario puede cambiarla después.",
+    "workspaceRole": "Rol en el workspace",
+    "serverAdmin": "Admin del servidor",
+    "createUser": "Crear usuario",
+    "status": "Estado",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "locked": "Bloqueado",
+    "lastLogin": "Último ingreso",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "makeAdmin": "Hacer admin",
+    "removeAdmin": "Quitar admin",
+    "resetPassword": "Nueva contraseña",
+    "newPasswordFor": "Nueva contraseña para {{email}} (mínimo 12 caracteres):",
+    "roles": "Roles",
+    "rolesHint": "El rol de un proyecto manda sobre el del workspace: alguien puede ser Editor en un proyecto y Viewer en el resto.",
+    "workspace": "Workspace",
+    "user": "Usuario",
+    "scope": "Alcance",
+    "wholeWorkspace": "Todo el workspace",
+    "role": "Rol",
+    "grant": "Asignar",
+    "revoke": "Quitar rol",
+    "noMembers": "Todavía no hay miembros en este workspace.",
+    "audit": "Auditoría",
+    "action": "Acción",
+    "actionHint": "Prefijo, p. ej. auth. o api.createStudy",
+    "anyone": "Cualquiera",
+    "noEvents": "No hay eventos con esos filtros.",
+    "when": "Cuándo",
+    "resource": "Recurso",
+    "result": "Resultado"
+  },
+  "serverSources": {
+    "title": "Fuentes del servidor",
+    "path": "Ruta",
+    "use": "Usar"
   }
 }

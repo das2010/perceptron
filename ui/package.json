@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "e2e:server": "playwright test -c playwright.server.config.ts",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "gen:api": "openapi-typescript ../docs/api/openapi.json -o src/lib/api/schema.d.ts",

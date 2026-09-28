@@ -6,9 +6,10 @@ import math
 from typing import Annotated, Any, Literal
 
 import polars as pl
-from fastapi import APIRouter, Depends, WebSocket, status
+from fastapi import APIRouter, Depends, Request, WebSocket, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from perceptron.api.access import get_access
 from perceptron.api.context import EngineContext, get_context
 from perceptron.api.jobs import JOB_TOPIC, TERMINAL, Job, JobContext
 from perceptron.api.streaming import stream_events
@@ -608,8 +609,12 @@ def list_models(project_id: str, ctx: Ctx) -> list[ModelVersion]:
 
 
 @router.get("/jobs", tags=["jobs"], operation_id="listJobs")
-def list_jobs(ctx: Ctx) -> list[Job]:
-    return ctx.jobs.list()
+def list_jobs(ctx: Ctx, request: Request) -> list[Job]:
+    visible = get_access(request).visible_projects(request)
+    jobs = ctx.jobs.list()
+    if visible is None:
+        return jobs
+    return [j for j in jobs if j.refs.get("project_id") in visible]
 
 
 @router.get("/jobs/{job_id}", tags=["jobs"], operation_id="getJob")

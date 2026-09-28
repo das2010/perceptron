@@ -7,6 +7,7 @@ import {
   type RouterHistory,
 } from "@tanstack/react-router";
 
+import { AdminPage } from "@/features/admin/AdminPage";
 import { AgentPage } from "@/features/agent/AgentPage";
 import { DesignPage } from "@/features/arch/DesignPage";
 import { AuditPage } from "@/features/audit/AuditPage";
@@ -30,6 +31,11 @@ const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/settings",
   component: SettingsPage,
+});
+const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: AdminPage,
 });
 export const projectRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -120,6 +126,7 @@ export const runRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   homeRoute,
   settingsRoute,
+  adminRoute,
   projectRoute.addChildren([
     overviewRoute,
     dataRoute,

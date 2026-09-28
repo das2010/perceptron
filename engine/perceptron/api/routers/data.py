@@ -9,8 +9,9 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.api.context import EngineContext, get_context
-from perceptron.core.errors import ValidationError
+from perceptron.core.errors import ForbiddenError, ValidationError
 from perceptron.core.ids import IdPrefix, new_id
+from perceptron.core.paths import within_roots
 from perceptron.data.profiling.card import ProfileCard
 from perceptron.data.schema import SemanticType, TableSchema, infer_schema
 from perceptron.data.sources.files import SourceKind, open_source, scan_table
@@ -58,6 +59,7 @@ class IngestBody(BaseModel):
 def create_source(project_id: str, body: SourceCreate, ctx: Ctx) -> DataSource:
     ctx.projects.get(project_id)
     path = Path(body.path)
+    _check_roots(ctx, path)
     if not path.exists():
         raise ValidationError(f"la ruta no existe: {path}", details={"path": body.path})
     src = DataSource(
@@ -67,6 +69,15 @@ def create_source(project_id: str, body: SourceCreate, ctx: Ctx) -> DataSource:
         config={"path": str(path)},
     )
     return ctx.repo(DataSource).add(src)
+
+
+def _check_roots(ctx: EngineContext, path: Path) -> None:
+    """En el Team Server solo se leen rutas debajo de las «fuentes del servidor» (RF-SRV-05)."""
+    if not within_roots(path, ctx.settings.source_roots):
+        raise ForbiddenError(
+            "la ruta no está dentro de una fuente habilitada por el administrador",
+            details={"path": str(path)},
+        )
 
 
 MAX_UPLOAD_BYTES = 10 * 1024**3  # ~10 GB por proyecto (SPEC §2)
@@ -162,6 +173,8 @@ def _materialize(ctx: EngineContext, src: DataSource, secret: str | None) -> dic
     folder.mkdir(parents=True, exist_ok=True)
     if src.type is DataSourceType.DB:
         cfg = DbConfig.model_validate(src.config["db"])
+        if cfg.dialect == "sqlite":
+            _check_roots(ctx, Path(cfg.database))
         dest = folder / "data.parquet"
         rows = materialize_db(cfg, secret, dest)
         return {"path": str(dest), "rows": rows}

@@ -44,6 +44,18 @@ class AuthError(PerceptronError):
     http_status = 401
 
 
+class ForbiddenError(PerceptronError):
+    """Autenticado pero sin permiso para la operación (RBAC del Team Server, RF-SRV-02)."""
+
+    code = "forbidden"
+    http_status = 403
+
+
+class RateLimitedError(PerceptronError):
+    code = "rate_limited"
+    http_status = 429
+
+
 class StorageError(PerceptronError):
     code = "storage_error"
     http_status = 500

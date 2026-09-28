@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from perceptron.api.access import get_access
 from perceptron.api.context import EngineContext, get_context
 from perceptron.domain.enums import Modality, PrivacyLevel, ProjectStatus, TaskType
 from perceptron.domain.models import Project
@@ -28,6 +29,9 @@ class ProjectCreate(BaseModel):
     privacy_level: PrivacyLevel = PrivacyLevel.L1
     llm_profile_id: str | None = None
     template: str | None = None
+    workspace_id: str | None = Field(
+        default=None, description="Team Server: workspace del proyecto (default: el del usuario)"
+    )
 
 
 class ProjectPatch(BaseModel):
@@ -48,15 +52,18 @@ class ProjectPatch(BaseModel):
 @router.get("", operation_id="listProjects")
 def list_projects(
     ctx: Ctx,
+    request: Request,
     limit: Annotated[int, Query(ge=1, le=500)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[Project]:
-    return list(ctx.projects.list(limit=limit, offset=offset))
+    visible = get_access(request).visible_projects(request)
+    return list(ctx.projects.list(ids=visible, limit=limit, offset=offset))
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, operation_id="createProject")
-def create_project(body: ProjectCreate, ctx: Ctx) -> Project:
-    project = ctx.projects.add(Project(**body.model_dump()))
+def create_project(body: ProjectCreate, ctx: Ctx, request: Request) -> Project:
+    draft = get_access(request).prepare_project(request, Project(**body.model_dump()))
+    project = ctx.projects.add(draft)
     ctx.files.init_project(project)
     ctx.events.publish("project.created", project_id=project.id)
     return project
