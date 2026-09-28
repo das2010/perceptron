@@ -381,9 +381,11 @@ mod tests {
     #[test]
     fn cuda_index_follows_the_driver() {
         let ix = indexes();
-        let (v, new) = ix.url_for("cuda", Some("575.51.02"), false);
+        let (v, new) = ix.url_for("cuda", Some("581.15"), false);
         assert_eq!(v, "cuda");
-        assert!(new.ends_with("/cu128"), "{new}");
+        assert!(new.ends_with("/cu130"), "{new}");
+        // PyTorch 2.14 no publica cu128: entre 560 y 579 va cu126.
+        assert!(ix.url_for("cuda", Some("575.51.02"), false).1.ends_with("/cu126"));
         assert!(ix.url_for("cuda", Some("561.09"), false).1.ends_with("/cu126"));
         // Driver viejo o desconocido: CPU (mejor que una wheel que no carga).
         assert_eq!(ix.url_for("cuda", Some("470.1"), false).0, "cpu");

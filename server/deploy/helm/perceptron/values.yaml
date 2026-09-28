@@ -5,8 +5,8 @@ image:
   repository: perceptron-server
   tag: "0.1.0"
   pullPolicy: IfNotPresent
-  # Imagen con TORCH_VARIANT=cu128 para los workers GPU (server/deploy/Dockerfile).
-  gpuTag: "0.1.0-cu128"
+  # Imagen con TORCH_VARIANT=cu130 para los workers GPU (server/deploy/Dockerfile).
+  gpuTag: "0.1.0-cu130"
 
 imagePullSecrets: []
 
