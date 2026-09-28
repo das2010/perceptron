@@ -182,7 +182,17 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Modo estación de trabajo: UI web servida por el servidor, fuentes del servidor | ✅ |
 | Docker Compose (servidor + PostgreSQL) con smoke en CI | ✅ |
 | Aceptación: dos usuarios con roles distintos colaboran; UC-07 solo desde el navegador | ✅ (CI: server, e2e web) |
-| Cola de jobs y workers GPU, MLflow server, S3 (5b); sync, OIDC/Entra ID, Helm, backups (5c) | ⬜ |
+
+## Capa 5b — cola de jobs, workers y MLflow server
+
+| Entregable | Estado |
+|---|---|
+| Estudios autodescriptivos y `StudyLauncher` enchufable (local en desktop, cola en el servidor) (ADR-0031) | ✅ |
+| Celery sobre Valkey con colas `gpu`/`cpu`, workers `perceptron-server worker`, cancelación | ✅ |
+| Progreso en vivo de jobs remotos por relay pub/sub (mismos WS que los jobs locales) | ✅ |
+| Cuotas de estudios en curso por usuario y workspace; vista de la cola con hardware de los workers | ✅ |
+| MLflow server (PostgreSQL + artefactos) e imagen GPU (`TORCH_VARIANT`) en Compose | ✅ |
+| Sync desktop ↔ servidor y envío de runs desde el desktop, S3, OIDC/Entra ID, Helm, backups (5c) | ⬜ |
 
 ## Requisitos funcionales
 
@@ -291,7 +301,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-SRV-01 |  | 5 | Autenticación: usuarios locales (hash Argon2) y SSO OIDC (Entra ID, Google Workspace,… | 🟡 usuarios locales con Argon2id, sesiones JWT con refresco rotativo, CSRF y bloqueo; OIDC en la 5c |
 | RF-SRV-02 |  | 5 | RBAC por workspace y proyecto (§3.2). | ✅ Admin/Editor/Viewer por workspace y proyecto sobre todas las operaciones (HTTP y WS) |
 | RF-SRV-03 |  | 5 | Sincronización desktop ↔ servidor para proyectos de equipo: metadata (PostgreSQL),… | ⬜ pendiente |
-| RF-SRV-04 |  | 5 | Cola de jobs con prioridades y cuotas por usuario/workspace; los desktops pueden… | ⬜ pendiente |
+| RF-SRV-04 |  | 5 | Cola de jobs con prioridades y cuotas por usuario/workspace; los desktops pueden… | 🟡 cola Celery/Valkey con colas gpu/cpu, cuotas y vista de la cola; envío desde el desktop en la 5c |
 | RF-SRV-05 |  | 5 | Modo estación de trabajo: la UI web del servidor ofrece la misma funcionalidad que el… | ✅ UI web en el mismo origen con login; subida de archivos y fuentes del servidor confinadas |
 | RF-SRV-06 |  | 5 | Consola de administración: usuarios, grupos, SSO, proveedores LLM y claves, políticas… | 🟡 usuarios, roles y auditoría; SSO, cuotas, almacenamiento y workers en 5b/5c |
 | RF-SRV-07 |  | 5 | Auditoría: login, acceso a datasets, exportaciones, llamadas LLM, cambios de permisos. | ✅ login, escrituras, denegaciones, lecturas de datos, descargas y cambios de roles; LLM en LLMCall |

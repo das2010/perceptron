@@ -80,6 +80,9 @@ function LiveStudy({ jobId, metric }: { jobId: string; metric: string }) {
       <CardTitle className="flex items-center gap-2">
         {t("experiments.live")}
         <Badge tone={STATUS_TONE[status]}>{t(`status.${status}`)}</Badge>
+        {job.data?.worker && (
+          <Badge tone="brand">{t("queue.runningOn", { worker: job.data.worker })}</Badge>
+        )}
         {connected && <span className="text-xs text-muted">{t("experiments.connected")}</span>}
       </CardTitle>
       {Object.keys(curves).length === 0 ? (

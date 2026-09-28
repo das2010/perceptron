@@ -60,7 +60,8 @@
     "home": "Home",
     "settings": "Settings",
     "projects": "Projects",
-    "admin": "Administration"
+    "admin": "Administration",
+    "queue": "Queue"
   },
   "copilot": {
     "title": "Copilot",
@@ -767,5 +768,27 @@
     "title": "Server sources",
     "path": "Path",
     "use": "Use"
+  },
+  "queue": {
+    "title": "Training queue",
+    "serverOnly": "The queue only exists on the Team Server.",
+    "modeQueue": "Studies run on the server workers. Running-study quota: {{user}} per person and {{workspace}} per workspace.",
+    "modeLocal": "No queue configured: studies run inside the server process. Quota: {{user}} per person and {{workspace}} per workspace.",
+    "workers": "Workers",
+    "noWorkers": "No workers connected: studies wait in the queue.",
+    "inProcess": "Studies run on the server itself.",
+    "worker": "Worker",
+    "queues": "Queues",
+    "hardware": "Hardware",
+    "cpuOnly": "CPU only",
+    "state": "State",
+    "busy": "Busy",
+    "idle": "Idle",
+    "studies": "Queued or running studies",
+    "empty": "No studies in the queue.",
+    "study": "Study",
+    "queue": "Queue",
+    "since": "Since",
+    "runningOn": "on {{worker}}"
   }
 }

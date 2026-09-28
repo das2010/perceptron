@@ -11,20 +11,19 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.api.access import get_access
 from perceptron.api.context import EngineContext, get_context
-from perceptron.api.jobs import JOB_TOPIC, TERMINAL, Job, JobContext
+from perceptron.api.jobs import JOB_TOPIC, TERMINAL, Job
 from perceptron.api.streaming import stream_events
 from perceptron.archspec.schema import ArchSpec
 from perceptron.archspec.to_code import archspec_to_code
 from perceptron.archspec.validate import ValidationReport
 from perceptron.catalog.define import DefinePlan
 from perceptron.catalog.registry import blocks_for, public_blocks
-from perceptron.core.errors import NotFoundError, ValidationError
+from perceptron.core.errors import ConflictError, NotFoundError, ValidationError
 from perceptron.data.pipeline.pipeline import PipelineSpec, preview_steps, transform_tabular
 from perceptron.domain.enums import Device, Modality, Origin, TaskType
 from perceptron.domain.models import ArchSpecRecord, Evaluation, ModelVersion, Pipeline, Run, Study
 from perceptron.evaluation.evaluate import EvaluationReport
 from perceptron.hpo.strategy import Budget, HPOStrategy
-from perceptron.hpo.study import StudyControl
 from perceptron.sandbox.expert import starter_code
 from perceptron.sandbox.process import CodeCheck
 from perceptron.sandbox.static import StaticReport, check_source
@@ -421,36 +420,6 @@ def hpo_strategy(project_id: str, body: StrategyBody, ctx: Ctx) -> HPOStrategy:
     )
 
 
-def _launch_study(
-    ctx: EngineContext, study: Study, body: StudyCreate, strategy: HPOStrategy
-) -> Job:
-    control = StudyControl()
-
-    def work(job: JobContext) -> Any:
-        job.cancel_callback = control.cancel
-
-        def on_event(ev: Any) -> None:
-            if ev.event == "epoch":
-                job.emit("epoch", run_id=ev.run_id, epoch=ev.epoch, metrics=ev.metrics)
-
-        _, result = Workflow(ctx).run_study(
-            study.project_id,
-            body.dataset_version_id,
-            body.pipeline_id,
-            body.archspec_id,
-            strategy,
-            device=body.device,
-            control=control,
-            on_event=on_event,
-            study=study,
-        )
-        return result
-
-    return ctx.jobs.submit(
-        "study", work, refs={"study_id": study.id, "project_id": study.project_id}
-    )
-
-
 @router.post(
     "/projects/{project_id}/studies",
     status_code=status.HTTP_202_ACCEPTED,
@@ -475,7 +444,7 @@ def create_study(project_id: str, body: StudyCreate, ctx: Ctx) -> StudyLaunch:
             origin=strategy.origin,
         )
     )
-    return StudyLaunch(study=study, job=_launch_study(ctx, study, body, strategy))
+    return StudyLaunch(study=study, job=ctx.launch_study(study))
 
 
 @router.get("/studies/{study_id}", tags=["hpo"], operation_id="getStudy")
@@ -516,9 +485,9 @@ def pause_study(study_id: str, ctx: Ctx) -> Job:
 )
 def resume_study(study_id: str, ctx: Ctx) -> StudyLaunch:
     study = ctx.repo(Study).get(study_id)
-    body = StudyCreate.model_validate(study.budget.get("request", {}))
-    strategy = HPOStrategy.model_validate(study.strategy)
-    return StudyLaunch(study=study, job=_launch_study(ctx, study, body, strategy))
+    if _study_job(ctx, study_id) is not None:
+        raise ConflictError(f"el estudio {study_id} ya está en ejecución")
+    return StudyLaunch(study=study, job=ctx.launch_study(study))
 
 
 # ------------------------------------------------------------------ runs

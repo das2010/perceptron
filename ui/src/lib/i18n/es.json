@@ -60,7 +60,8 @@
     "home": "Inicio",
     "settings": "Configuración",
     "projects": "Proyectos",
-    "admin": "Administración"
+    "admin": "Administración",
+    "queue": "Cola"
   },
   "copilot": {
     "title": "Copiloto",
@@ -767,5 +768,27 @@
     "title": "Fuentes del servidor",
     "path": "Ruta",
     "use": "Usar"
+  },
+  "queue": {
+    "title": "Cola de entrenamiento",
+    "serverOnly": "La cola existe solo en el Team Server.",
+    "modeQueue": "Los estudios corren en los workers del servidor. Cuota de estudios en curso: {{user}} por persona y {{workspace}} por workspace.",
+    "modeLocal": "Sin cola configurada: los estudios corren en el proceso del servidor. Cuota: {{user}} por persona y {{workspace}} por workspace.",
+    "workers": "Workers",
+    "noWorkers": "No hay workers conectados: los estudios esperan en la cola.",
+    "inProcess": "Los estudios corren en el propio servidor.",
+    "worker": "Worker",
+    "queues": "Colas",
+    "hardware": "Hardware",
+    "cpuOnly": "Solo CPU",
+    "state": "Estado",
+    "busy": "Ocupado",
+    "idle": "Libre",
+    "studies": "Estudios en cola o en curso",
+    "empty": "No hay estudios en cola.",
+    "study": "Estudio",
+    "queue": "Cola",
+    "since": "Desde",
+    "runningOn": "en {{worker}}"
   }
 }

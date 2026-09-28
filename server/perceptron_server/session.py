@@ -23,6 +23,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from perceptron_server.accounts import Principal, TokenPair
 from perceptron_server.audit import AUDITED_READS
+from perceptron_server.queue.launcher import CURRENT_PRINCIPAL
 from perceptron_server.security import decode_access
 from perceptron_server.state import ServerState, client_ip
 
@@ -93,6 +94,7 @@ class SessionMiddleware:
             else await anyio.to_thread.run_sync(self._authenticate, state, conn, not websocket)
         )
         scope.setdefault("state", {})["principal"] = principal
+        principal_token = CURRENT_PRINCIPAL.set(principal)
         method = scope.get("method", "GET")
         path: str = scope["path"]
 
@@ -128,6 +130,7 @@ class SessionMiddleware:
         try:
             await self.app(scope, receive, send_wrapper)
         finally:
+            CURRENT_PRINCIPAL.reset(principal_token)
             if not websocket:
                 await anyio.to_thread.run_sync(
                     self._audit, state, scope, principal, status.get("code")

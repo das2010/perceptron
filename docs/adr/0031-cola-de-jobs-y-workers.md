@@ -1,0 +1,38 @@
+# ADR-0031: Cola de jobs, workers y MLflow server (Capa 5b)
+- Estado: propuesto (D3 de SPEC §17; a confirmar con el responsable de producto)
+- Fecha: 2026-09-28
+- Contexto:
+  - RF-SRV-04 pide una cola de jobs con prioridades y cuotas por usuario y workspace, workers GPU/CPU, envío de runs desde el desktop y una vista de la cola y del uso de GPU.
+  - §5.4 propone Redis + Celery (o Dramatiq) con colas por recurso, y MLflow server con PostgreSQL y S3.
+  - Hasta la 5a los estudios corrían en un hilo del proceso que atiende la API, y el progreso viajaba por el `EventBus` en memoria hasta los WebSocket.
+- Decisión:
+  - **El estudio es autodescriptivo.** `Study` ya guarda la estrategia y el pedido de lanzamiento (`budget.request`), así que un worker solo necesita `(job_id, study_id)`.
+    - `perceptron.services.studies` separa **qué** se ejecuta (`execute_study`) de **dónde**: `EngineContext.launch_study` delega en un `StudyLauncher`.
+    - El desktop usa `launch_local`, en un hilo, sin cambios.
+    - El Team Server instala `QueueLauncher`.
+  - **Celery (BSD-3) sobre Valkey (BSD-3):**
+    - Dramatiq es LGPL. Ray se reserva para Ray Tune.
+    - Redis ≥ 7.4 dejó de tener licencia permisiva, así que en Compose va Valkey, compatible con el protocolo. El cliente es redis-py (MIT).
+    - Las colas son `gpu` (si se pidió CUDA, ROCm o XPU) y `cpu`.
+    - Configuración para tareas largas: `acks_late`, `prefetch=1`, *visibility timeout* de 7 días y pool `solo` (el entrenamiento lanza subprocesos propios; los hijos de prefork son daemonic). La concurrencia se escala con más workers.
+  - **Progreso sin cambios en la API:**
+    - El servidor registra el job remoto (`JobManager.track`) y lo expone igual que uno local (`/jobs`, `WS /jobs/{id}`).
+    - El worker reenvía su `EventBus` completo a Valkey pub/sub (`perceptron:events`): progreso, épocas, trials y latidos.
+    - El servidor lo re-publica en su bus (`JobManager.apply`), así que `WS /jobs/{id}` y `WS /runs/{id}/live` funcionan igual.
+    - La cancelación viaja por `perceptron:control`.
+    - Si el servidor se reinicia, los estudios siguen en los workers y su estado persiste en la base; el seguimiento en vivo de esos jobs se pierde (aceptado en v1).
+  - **Workers:**
+    - `perceptron-server worker --queues cpu|gpu` es la misma imagen con su propio `EngineContext` sobre la misma PostgreSQL y el mismo workspace (volumen compartido).
+    - Cada worker publica un latido con su hardware (GPU, RAM) y el job en curso. `GET /server/queue` y la página «Cola» muestran workers, estudios y cuotas.
+    - La imagen GPU se construye con `TORCH_VARIANT=cu128|cu126|rocm6.4|xpu` (mismas versiones de torch que `uv.lock`), con el perfil `gpu` del Compose.
+  - **Cuotas:** estudios en curso por usuario (default 2) y por workspace (default 6); al superarlas, 429 con el alcance. Aplican también sin cola (estudios en el proceso del servidor). Las prioridades entre usuarios quedan para después de medir el uso real.
+  - **MLflow server:**
+    - `PERCEPTRON_TRACKING_URI` apunta el Engine a un MLflow server con backend PostgreSQL (base `mlflow`) y artefactos proxied (`--serve-artifacts`) en un volumen.
+    - El S3 (D2, ADR-0030) entra con el sync de la 5c, cuando los datos tengan que viajar a workers sin volumen compartido.
+- Consecuencias:
+  - Aceptación verificada en CI:
+    - un estudio corre en otro `EngineContext` con el progreso en vivo en el servidor (test con relay en memoria);
+    - con un worker Celery real sobre Valkey (job de PostgreSQL);
+    - en el Compose completo: servidor, worker, Valkey y MLflow server.
+  - Requisito de despliegue: servidor y workers comparten el workspace (volumen Docker, NFS o PVC RWX). Los workers en otras máquinas sin volumen compartido necesitan el object storage (5c).
+  - La aceptación «un desktop sin GPU lanza un run en el worker GPU del servidor» necesita el sync desktop → servidor (5c) y un worker con GPU real para validarla (pendiente de un recurso del usuario).

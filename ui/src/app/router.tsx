@@ -9,6 +9,7 @@ import {
 
 import { AdminPage } from "@/features/admin/AdminPage";
 import { AgentPage } from "@/features/agent/AgentPage";
+import { QueuePage } from "@/features/queue/QueuePage";
 import { DesignPage } from "@/features/arch/DesignPage";
 import { AuditPage } from "@/features/audit/AuditPage";
 import { DataPage } from "@/features/data/DataPage";
@@ -31,6 +32,11 @@ const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/settings",
   component: SettingsPage,
+});
+const queueRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/queue",
+  component: QueuePage,
 });
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -127,6 +133,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute,
   settingsRoute,
   adminRoute,
+  queueRoute,
   projectRoute.addChildren([
     overviewRoute,
     dataRoute,

@@ -2,6 +2,7 @@ import { Link, Outlet } from "@tanstack/react-router";
 import {
   FolderKanban,
   Home,
+  ListOrdered,
   LogOut,
   PanelRightClose,
   PanelRightOpen,
@@ -147,6 +148,14 @@ export function Layout() {
                 {t("nav.settings")}
               </Link>
             </li>
+            {me && (
+              <li>
+                <Link to="/queue" className={navLink}>
+                  <ListOrdered className="h-4 w-4" aria-hidden="true" />
+                  {t("nav.queue")}
+                </Link>
+              </li>
+            )}
             {canAdminister(me) && (
               <li>
                 <Link to="/admin" className={navLink}>

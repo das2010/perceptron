@@ -62,6 +62,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "engine/tests/**" = ["S101", "S105", "S106", "PLR2004", "PLC0415"]
 "server/tests/**" = ["S101", "S105", "S106", "PLR2004", "PLC0415"]
+"server/deploy/**" = ["S101"]  # scripts de smoke: aserciones explícitas
 "server/perceptron_server/migrations/**" = ["N999", "INP001"]
 "fixtures/**" = ["S311", "E501", "PLR0914"]
 
@@ -87,7 +88,7 @@ strict = true
 
 # Librerías de ML sin stubs completos
 [[tool.mypy.overrides]]
-module = ["sklearn.*", "timm.*", "mlflow.*", "torchvision.*", "fastexcel.*", "scipy.*", "cmaes.*", "soundfile.*", "pycocotools.*", "lightgbm.*", "presidio_analyzer.*", "presidio_anonymizer.*", "keyring.*", "onnxruntime.*", "onnxconverter_common.*", "captum.*", "reportlab.*"]
+module = ["sklearn.*", "timm.*", "mlflow.*", "torchvision.*", "fastexcel.*", "scipy.*", "cmaes.*", "soundfile.*", "pycocotools.*", "lightgbm.*", "presidio_analyzer.*", "presidio_anonymizer.*", "keyring.*", "onnxruntime.*", "onnxconverter_common.*", "captum.*", "reportlab.*", "celery.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

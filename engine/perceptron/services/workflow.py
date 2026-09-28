@@ -120,7 +120,9 @@ class Workflow:
     @property
     def tracker(self) -> Tracker:
         if self._tracker is None:
-            self._tracker = MlflowTracker(self.ctx.settings.paths.mlflow_dir)
+            self._tracker = MlflowTracker(
+                self.ctx.settings.paths.mlflow_dir, self.ctx.settings.tracking_uri
+            )
         return self._tracker
 
     # ------------------------------------------------------------------ helpers

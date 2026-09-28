@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# Team Server (Capa 5a): Engine + auth/RBAC + UI web en una imagen. Variante CPU; la CUDA
-# para los workers GPU llega con la cola de jobs (Capa 5b).
+# Team Server: Engine + auth/RBAC + UI web + worker de la cola en una imagen.
+# TORCH_VARIANT=cpu (default) | cu128 | cu126 | rocm6.4 | xpu para los workers GPU (Capa 5b).
 
 FROM node:22-bookworm-slim AS ui
 WORKDIR /src
@@ -20,10 +20,13 @@ COPY engine engine
 COPY server server
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --package perceptron-server
+ARG TORCH_VARIANT=cpu
+RUN --mount=type=cache,target=/root/.cache/uv \
+    sh server/deploy/torch-variant.sh "$TORCH_VARIANT"
 COPY --from=ui /src/ui/dist /app/ui
 
 RUN useradd --system --uid 10001 --home-dir /data perceptron \
-    && mkdir -p /data /sources && chown perceptron /data
+    && mkdir -p /data /sources /mlartifacts && chown perceptron /data /mlartifacts
 USER perceptron
 ENV PATH=/app/.venv/bin:$PATH \
     PERCEPTRON_MODE=server \
