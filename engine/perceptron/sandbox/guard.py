@@ -115,7 +115,7 @@ def _under(path: str, roots: Iterable[str]) -> bool:
 
 
 def runtime_roots() -> list[Path]:
-    """Rutas del intérprete y sus paquetes: se pueden leer (torch carga módulos y datos)."""
+    """Rutas del intérprete y de lo importable: se pueden leer (torch carga módulos y datos)."""
     paths = {
         sys.prefix,
         sys.base_prefix,
@@ -127,6 +127,8 @@ def runtime_roots() -> list[Path]:
             if (p := sysconfig.get_path(k))
         ),
     }
+    # Todo lo importable (incluye instalaciones editables, p. ej. el Engine en desarrollo/CI).
+    paths |= {p for p in sys.path if p and Path(p).is_dir()}
     roots = [Path(p) for p in paths if p]
     if sys.platform.startswith("linux"):
         # Información del sistema que consultan torch y el runtime (CPU, memoria, zona horaria).
@@ -251,8 +253,21 @@ def _limit_windows(policy: Policy) -> None:
 
     limit_process_time, limit_active, limit_memory, kill_on_close = 0x2, 0x8, 0x100, 0x2000
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    # Firmas explícitas: sin argtypes, ctypes pasa los HANDLE como int de 32 bits y el
+    # pseudo-handle de GetCurrentProcess (-1) desborda.
+    kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
     kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+    kernel32.GetCurrentProcess.argtypes = []
     kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    kernel32.SetInformationJobObject.argtypes = [
+        wintypes.HANDLE,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+    ]
+    kernel32.SetInformationJobObject.restype = wintypes.BOOL
+    kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+    kernel32.AssignProcessToJobObject.restype = wintypes.BOOL
     job = kernel32.CreateJobObjectW(None, None)
     if not job:
         raise OSError(ctypes.get_last_error(), "CreateJobObjectW")

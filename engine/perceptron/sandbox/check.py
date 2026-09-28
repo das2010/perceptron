@@ -18,6 +18,7 @@ def main(argv: list[str]) -> int:
     # Todo lo pesado se importa antes de las guardas; después solo corre el código del usuario.
     import torch  # noqa: F401
 
+    import perceptron.tasks  # noqa: F401 - el builder lo importa en diferido
     from perceptron.archspec.builder import build_model
     from perceptron.archspec.schema import ArchSpec
     from perceptron.sandbox import code
