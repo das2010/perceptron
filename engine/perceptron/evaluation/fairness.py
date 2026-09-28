@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from perceptron.core.errors import ValidationError
 from perceptron.data.view import DatasetView
 from perceptron.evaluation.errors import group_values
-from perceptron.evaluation.predictions import ROW, eval_frame, load_predictions
+from perceptron.evaluation.predictions import ROW, eval_frame, load_predictions, mean
 
 DEFAULT_THRESHOLD = 0.1
 MIN_GROUP = 5
@@ -78,10 +78,10 @@ def fairness_report(
         for g, part in df.group_by("__g__"):
             if part.height < MIN_GROUP:
                 continue
-            mae = float((part["y_pred"] - part["y_true"]).abs().mean() or 0.0)
+            mae = mean((part["y_pred"] - part["y_true"]).abs())
             rows.append(GroupMetrics(group=str(g[0]), support=part.height, mae=mae))
         maes = [r.mae for r in rows if r.mae is not None]
-        overall = float((df["y_pred"] - df["y_true"]).abs().mean() or 0.0)
+        overall = mean((df["y_pred"] - df["y_true"]).abs())
         diff = (max(maes) - min(maes)) if len(maes) > 1 else 0.0
         if overall and diff / overall > threshold:
             alerts.append(

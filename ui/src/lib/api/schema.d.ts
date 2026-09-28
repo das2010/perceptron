@@ -874,6 +874,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/errors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Error Analysis
+         * @description Slices de bajo rendimiento, confusiones, posibles errores de etiqueta y mal predichos.
+         */
+        get: operations["getErrorAnalysis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/evaluate": {
         parameters: {
             query?: never;
@@ -919,6 +939,66 @@ export interface paths {
         get: operations["listEvaluations"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/explain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Explanation
+         * @description Importancia global de las features (Shapley por muestreo sobre validación, RF-EVL-02).
+         */
+        get: operations["getExplanation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/explain/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Explain Image
+         * @description Integrated Gradients de una imagen: mapa de calor sobre la clase predicha.
+         */
+        post: operations["explainImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/explain/row": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Explain Row
+         * @description Explicación local de una fila: contribución de cada feature a la predicción.
+         */
+        post: operations["explainRow"];
         delete?: never;
         options?: never;
         head?: never;
@@ -997,6 +1077,26 @@ export interface paths {
         get: operations["downloadServingBundle"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/fairness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Compute Fairness
+         * @description Métricas por subgrupo de los atributos sensibles que marca el usuario (RF-EVL-04).
+         */
+        post: operations["computeFairness"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1091,6 +1191,46 @@ export interface paths {
         put?: never;
         /** Create Report */
         post: operations["createRunReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/report/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Report Document
+         * @description Informe con marca Preteco (RF-EVL-06): HTML autocontenido, PDF o Markdown.
+         */
+        get: operations["getReportDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/robustness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Robustness
+         * @description Métrica del test con entradas perturbadas a tres severidades (RF-EVL-05).
+         */
+        get: operations["getRobustness"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1680,6 +1820,11 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** Body_explainImage */
+        Body_explainImage: {
+            /** File */
+            file: string;
+        };
         /** Body_predictFile */
         Body_predictFile: {
             /** File */
@@ -1894,6 +2039,24 @@ export interface components {
             equals: unknown;
             /** Param */
             param: string;
+        };
+        /** Confusion */
+        Confusion: {
+            /** Actual */
+            actual: string;
+            /** Count */
+            count: number;
+            /** Predicted */
+            predicted: string;
+        };
+        /** Contribution */
+        Contribution: {
+            /** Attribution */
+            attribution: number;
+            /** Feature */
+            feature: string;
+            /** Value */
+            value?: unknown;
         };
         /** DataSource */
         DataSource: {
@@ -2165,6 +2328,47 @@ export interface components {
              */
             patience: number;
         };
+        /** ErrorAnalysis */
+        ErrorAnalysis: {
+            /** Confusions */
+            confusions: components["schemas"]["Confusion"][];
+            /** Label Issues */
+            label_issues: number;
+            /** Metric */
+            metric: string;
+            /** Num Errors */
+            num_errors: number;
+            /** Num Samples */
+            num_samples: number;
+            /** Overall */
+            overall: number;
+            /** Samples */
+            samples: components["schemas"]["ErrorSample"][];
+            /** Slices */
+            slices: components["schemas"]["Slice"][];
+            /** Task */
+            task: string;
+        };
+        /** ErrorSample */
+        ErrorSample: {
+            /** Actual */
+            actual: unknown;
+            /** Confidence */
+            confidence?: number | null;
+            /** Features */
+            features?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Label Issue
+             * @default false
+             */
+            label_issue: boolean;
+            /** Predicted */
+            predicted: unknown;
+            /** Row */
+            row: number;
+        };
         /** Evaluation */
         Evaluation: {
             /** Artifacts */
@@ -2236,6 +2440,13 @@ export interface components {
             split: string;
             task: components["schemas"]["TaskType"];
         };
+        /** ExplainRow */
+        ExplainRow: {
+            /** Row */
+            row: {
+                [key: string]: unknown;
+            };
+        };
         /** ExportArtifact */
         ExportArtifact: {
             /** Error */
@@ -2302,6 +2513,48 @@ export interface components {
              */
             int8: boolean;
         };
+        /** FairnessBody */
+        FairnessBody: {
+            /** Attributes */
+            attributes: string[];
+            /** Positive Class */
+            positive_class?: string | null;
+            /**
+             * Threshold
+             * @default 0.1
+             */
+            threshold: number;
+        };
+        /** FairnessReport */
+        FairnessReport: {
+            /** Alerts */
+            alerts?: string[];
+            /** Attribute */
+            attribute: string;
+            /** Demographic Parity Difference */
+            demographic_parity_difference?: number | null;
+            /** Equalized Odds Difference */
+            equalized_odds_difference?: number | null;
+            /** Groups */
+            groups: components["schemas"]["GroupMetrics"][];
+            /** Mae Difference */
+            mae_difference?: number | null;
+            /** Positive Class */
+            positive_class?: string | null;
+            /** Task */
+            task: string;
+            /** Threshold */
+            threshold: number;
+        };
+        /** FeatureImportance */
+        FeatureImportance: {
+            /** Feature */
+            feature: string;
+            /** Importance */
+            importance: number;
+            /** Mean Attribution */
+            mean_attribution: number;
+        };
         /** GPUInfo */
         GPUInfo: {
             backend: components["schemas"]["Device"];
@@ -2322,6 +2575,34 @@ export interface components {
             vram_free_gb?: number | null;
             /** Vram Total Gb */
             vram_total_gb: number;
+        };
+        /** GlobalExplanation */
+        GlobalExplanation: {
+            /** Features */
+            features: components["schemas"]["FeatureImportance"][];
+            /** Method */
+            method: string;
+            /** Samples */
+            samples: number;
+            /** Target */
+            target: string;
+        };
+        /** GroupMetrics */
+        GroupMetrics: {
+            /** Accuracy */
+            accuracy?: number | null;
+            /** Fpr */
+            fpr?: number | null;
+            /** Group */
+            group: string;
+            /** Mae */
+            mae?: number | null;
+            /** Selection Rate */
+            selection_rate?: number | null;
+            /** Support */
+            support: number;
+            /** Tpr */
+            tpr?: number | null;
         };
         /** GuideBody */
         GuideBody: {
@@ -2762,6 +3043,20 @@ export interface components {
             /** General Rules */
             general_rules?: string[];
         };
+        /** LocalExplanation */
+        LocalExplanation: {
+            /**
+             * Contributions
+             * @default []
+             */
+            contributions: components["schemas"]["Contribution"][];
+            /** Heatmap Png */
+            heatmap_png?: string | null;
+            /** Method */
+            method: string;
+            /** Prediction */
+            prediction: string;
+        };
         /** LossSpec */
         LossSpec: {
             /**
@@ -2995,6 +3290,17 @@ export interface components {
             recall: number;
             /** Support */
             support: number;
+        };
+        /** PerturbationResult */
+        PerturbationResult: {
+            /** Degradation */
+            degradation: number;
+            /** Kind */
+            kind: string;
+            /** Metric */
+            metric: number;
+            /** Severity */
+            severity: number;
         };
         /** Pipeline */
         Pipeline: {
@@ -3507,6 +3813,19 @@ export interface components {
              */
             mode: "auto" | "llm" | "rules";
         };
+        /** RobustnessReport */
+        RobustnessReport: {
+            /** Baseline */
+            baseline: number;
+            /** Higher Is Better */
+            higher_is_better: boolean;
+            /** Metric */
+            metric: string;
+            /** Results */
+            results: components["schemas"]["PerturbationResult"][];
+            /** Samples */
+            samples: number;
+        };
         /** Run */
         Run: {
             /** Archspec Id */
@@ -3708,6 +4027,22 @@ export interface components {
          * @enum {string}
          */
         Severity: "error" | "warning";
+        /** Slice */
+        Slice: {
+            /** Column */
+            column: string;
+            /**
+             * Gap
+             * @description Cuánto peor que el total (en la dirección del error)
+             */
+            gap: number;
+            /** Metric */
+            metric: number;
+            /** Support */
+            support: number;
+            /** Value */
+            value: string;
+        };
         /** SourceCreate */
         SourceCreate: {
             /** Name */
@@ -6086,6 +6421,37 @@ export interface operations {
             };
         };
     };
+    getErrorAnalysis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorAnalysis"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     evaluateRun: {
         parameters: {
             query?: never;
@@ -6166,6 +6532,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Evaluation"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getExplanation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalExplanation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explainImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_explainImage"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalExplanation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explainRow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainRow"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalExplanation"];
                 };
             };
             /** @description Validation Error */
@@ -6339,6 +6806,41 @@ export interface operations {
             };
         };
     };
+    computeFairness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FairnessBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FairnessReport"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getRunHistory: {
         parameters: {
             query?: never;
@@ -6495,6 +6997,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Report"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getReportDocument: {
+        parameters: {
+            query?: {
+                format?: "html" | "pdf" | "md";
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getRobustness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RobustnessReport"];
                 };
             };
             /** @description Validation Error */

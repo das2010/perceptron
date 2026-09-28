@@ -27,7 +27,14 @@ describe("evaluación avanzada (Capa 4b)", () => {
         slices: [{ column: "region", value: "Sur", support: 20, metric: 0.55, gap: 0.25 }],
         confusions: [{ actual: "1", predicted: "0", count: 12 }],
         samples: [
-          { row: 4, actual: "1", predicted: "0", confidence: 0.91, label_issue: true, features: { edad: 41, region: "Sur" } },
+          {
+            row: 4,
+            actual: "1",
+            predicted: "0",
+            confidence: 0.91,
+            label_issue: true,
+            features: { edad: 41, region: "Sur" },
+          },
         ],
       }),
       "GET /api/v1/datasets/dsv_1/profile": () => ({
@@ -48,7 +55,14 @@ describe("evaluación avanzada (Capa 4b)", () => {
             equalized_odds_difference: 0.2,
             alerts: ["Paridad demográfica: la tasa de «1» difiere 0.30 entre grupos de region"],
             groups: [
-              { group: "Norte", support: 40, selection_rate: 0.1, accuracy: 0.9, tpr: 0.8, fpr: 0.05 },
+              {
+                group: "Norte",
+                support: 40,
+                selection_rate: 0.1,
+                accuracy: 0.9,
+                tpr: 0.8,
+                fpr: 0.05,
+              },
               { group: "Sur", support: 30, selection_rate: 0.4, accuracy: 0.7, tpr: 0.6, fpr: 0.2 },
             ],
           },

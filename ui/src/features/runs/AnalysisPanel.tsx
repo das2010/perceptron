@@ -123,7 +123,7 @@ function Errors({ runId }: { runId: string }) {
                 <Td>{s.confidence == null ? "—" : formatNumber(s.confidence, i18n.language, 2)}</Td>
                 {featureCols.map((c) => (
                   <Td key={c} className="max-w-40 truncate text-xs">
-                    {String(s.features[c] ?? "")}
+                    {String(s.features?.[c] ?? "")}
                   </Td>
                 ))}
               </tr>
@@ -145,7 +145,9 @@ function Explanation({ runId }: { runId: string }) {
       grid: { left: 140, right: 20, top: 10, bottom: 20 },
       xAxis: { type: "value" },
       yAxis: { type: "category", data: top.map((f) => f.feature) },
-      series: [{ type: "bar", data: top.map((f) => f.importance), itemStyle: { color: "#334000" } }],
+      series: [
+        { type: "bar", data: top.map((f) => f.importance), itemStyle: { color: "#334000" } },
+      ],
     };
   }, [q.data]);
   if (!on)
@@ -162,7 +164,11 @@ function Explanation({ runId }: { runId: string }) {
       <p className="mb-2 text-xs text-muted">
         {t("analysis.explain.method", { samples: q.data.samples })}
       </p>
-      <EChart option={option} label={t("analysis.tabs.explain")} height={Math.max(200, 24 * Math.min(15, q.data.features.length))} />
+      <EChart
+        option={option}
+        label={t("analysis.tabs.explain")}
+        height={Math.max(200, 24 * Math.min(15, q.data.features.length))}
+      />
     </div>
   );
 }
@@ -179,7 +185,9 @@ function Fairness({
   const { t, i18n } = useTranslation();
   const profile = useProfile(datasetVersionId);
   const fair = useFairness(runId);
-  const columns = (profile.data?.columns ?? []).map((c) => c.name).filter((c) => c !== profile.data?.target?.name);
+  const columns = (profile.data?.columns ?? [])
+    .map((c) => c.name)
+    .filter((c) => c !== profile.data?.target?.name);
   const [attrs, setAttrs] = useState<string[]>([]);
   const [positive, setPositive] = useState<string>("");
   return (
@@ -191,7 +199,9 @@ function Fairness({
             <input
               type="checkbox"
               checked={attrs.includes(c)}
-              onChange={() => setAttrs((a) => (a.includes(c) ? a.filter((x) => x !== c) : [...a, c]))}
+              onChange={() =>
+                setAttrs((a) => (a.includes(c) ? a.filter((x) => x !== c) : [...a, c]))
+              }
             />
             {c}
           </label>
@@ -220,7 +230,7 @@ function Fairness({
       {fair.data?.map((f) => (
         <div key={f.attribute}>
           <h4 className="font-semibold">{f.attribute}</h4>
-          {f.alerts.map((a) => (
+          {(f.alerts ?? []).map((a) => (
             <p key={a} role="alert" className="text-sm text-bad">
               <AlertTriangle className="mr-1 inline h-4 w-4" aria-hidden="true" />
               {a}

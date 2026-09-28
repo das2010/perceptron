@@ -65,3 +65,9 @@ def load_predictions(eval_dir: Path) -> pl.DataFrame:
 def proba_columns(df: pl.DataFrame) -> dict[str, str]:
     """Clase → columna de probabilidad."""
     return {c.removeprefix("p::"): c for c in df.columns if c.startswith("p::")}
+
+
+def mean(s: pl.Series) -> float:
+    """Media numérica de una serie (0 si está vacía o no es numérica)."""
+    v = s.mean()
+    return float(v) if isinstance(v, (int, float)) else 0.0

@@ -155,7 +155,10 @@ export function PlaygroundPanel({
       {explainRow.data && (
         <ul className="mt-3 space-y-1 text-xs" aria-label={t("playground.contributions")}>
           {explainRow.data.contributions.slice(0, 10).map((c) => {
-            const max = Math.max(...explainRow.data.contributions.map((x) => Math.abs(x.attribution)), 1e-9);
+            const max = Math.max(
+              ...explainRow.data.contributions.map((x) => Math.abs(x.attribution)),
+              1e-9,
+            );
             return (
               <li key={c.feature} className="flex items-center gap-2">
                 <span className="w-32 truncate">{c.feature}</span>

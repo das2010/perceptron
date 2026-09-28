@@ -20,7 +20,13 @@ from pydantic import BaseModel, Field
 
 from perceptron.data.splits import FOLD_COLUMN, SPLIT_COLUMN
 from perceptron.data.view import DatasetView
-from perceptron.evaluation.predictions import ROW, eval_frame, load_predictions, proba_columns
+from perceptron.evaluation.predictions import (
+    ROW,
+    eval_frame,
+    load_predictions,
+    mean,
+    proba_columns,
+)
 
 MIN_SUPPORT = 10
 GAP = 0.05
@@ -98,11 +104,11 @@ def analyze_errors(eval_dir: Path, dataset_dir: Path, target: str | None) -> Err
     if regression:
         err = (df["y_pred"] - df["y_true"]).abs()
         df = df.with_columns(err.alias("__err__"))
-        metric, overall = "mae", float(err.mean() or 0.0)
+        metric, overall = "mae", mean(err)
         wrong = df.filter(pl.col("__err__") > overall)
     else:
         df = df.with_columns((pl.col("y_true") == pl.col("y_pred")).alias("__ok__"))
-        metric, overall = "accuracy", float(df["__ok__"].mean() or 0.0)
+        metric, overall = "accuracy", mean(df["__ok__"])
         wrong = df.filter(~pl.col("__ok__"))
 
     # Slices de bajo rendimiento.
