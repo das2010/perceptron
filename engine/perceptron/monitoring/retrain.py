@@ -17,6 +17,7 @@ Una ejecución:
 from __future__ import annotations
 
 import logging
+import shutil
 import tempfile
 import time
 from pathlib import Path
@@ -33,6 +34,7 @@ from perceptron.domain.enums import AlertKind, RetrainStatus, Severity, SplitStr
 from perceptron.domain.models import (
     DatasetVersion,
     Deployment,
+    Pipeline,
     RetrainPolicy,
     RetrainRun,
     Run,
@@ -248,6 +250,15 @@ class Retrainer:
             base = self.mon.wf.hpo_strategy(champ_run.archspec_id, Budget())
         budget = base.budget.model_copy(update={"max_trials": 3, **policy.budget})
         strategy = base.model_copy(update={"budget": budget})
+        # Mismo preprocesamiento ajustado que el champion: la arquitectura (vocabularios,
+        # dimensiones de entrada) sigue siendo compatible; categorías nuevas → desconocidas.
+        pipeline = self.ctx.repo(Pipeline).get(champ_run.pipeline_id)
+        fitted_old = self.mon.wf._fitted_path(pipeline, dv0)
+        if not fitted_old.is_file():
+            self.mon.wf.fitted_pipeline(pipeline.id, dv0.id)
+        fitted_new = self.mon.wf._fitted_path(pipeline, dv1)
+        fitted_new.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(fitted_old, fitted_new)
         study = new_study(
             self.ctx,
             policy.project_id,
