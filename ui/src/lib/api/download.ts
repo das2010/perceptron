@@ -20,3 +20,13 @@ export async function downloadFromEngine(path: string, filename: string): Promis
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/** URL de objeto de un archivo del Engine (p. ej. una imagen a etiquetar); revocarla al usarla. */
+export async function engineObjectUrl(path: string): Promise<string> {
+  const { baseUrl, token } = await getPlatform().engine();
+  const res = await fetch(new URL(path, baseUrl), {
+    headers: token ? { [TOKEN_HEADER]: token } : {},
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return URL.createObjectURL(await res.blob());
+}

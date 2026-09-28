@@ -219,11 +219,12 @@ def test_boxes_export_import(client: TestClient, fixtures_dir: Path) -> None:
             )
         )["count"]
         assert count == 2, fmt
-        queue = _ok(client.get(f"{API}/labelsets/{other['id']}/queue?strategy=random&limit=200"))
-        got = [s["item"] for s in queue if s["item"]]
-        assert all(len(i["boxes"]) == 1 for i in got) and len(got) == 2
-        b = got[0]["boxes"][0]
-        assert b["label"] == "rayón" and b["x1"] == pytest.approx(0.1, abs=1e-4)
+        summary = _ok(client.get(f"{API}/labelsets/{other['id']}"))
+        assert summary["accepted"] == 2 and summary["by_class"] == {"rayón": 2}, fmt
+        coco = json.loads(client.get(f"{API}/labelsets/{other['id']}/export?format=coco").content)
+        x, y, w, h = coco["annotations"][0]["bbox"]
+        assert (x, y) == pytest.approx((0.1, 0.2), abs=1e-4)
+        assert (x + w, y + h) == pytest.approx((0.5, 0.6), abs=1e-4)
     evil = io.BytesIO()
     with zipfile.ZipFile(evil, "w") as z:
         z.writestr("pieza_000.xml", '<!DOCTYPE a [<!ENTITY x "y">]><annotation>&x;</annotation>')

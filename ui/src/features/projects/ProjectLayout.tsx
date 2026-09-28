@@ -8,6 +8,7 @@ const TABS = [
   { to: "/projects/$projectId", key: "overview", exact: true },
   { to: "/projects/$projectId/wizard", key: "wizard" },
   { to: "/projects/$projectId/data", key: "data" },
+  { to: "/projects/$projectId/labeling", key: "labeling" },
   { to: "/projects/$projectId/design", key: "design" },
   { to: "/projects/$projectId/train", key: "train" },
   { to: "/projects/$projectId/experiments", key: "experiments" },

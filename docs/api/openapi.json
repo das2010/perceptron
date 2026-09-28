@@ -1,6 +1,20 @@
 {
   "components": {
     "schemas": {
+      "AcceptBody": {
+        "additionalProperties": false,
+        "properties": {
+          "min_confidence": {
+            "default": 0.9,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Min Confidence",
+            "type": "number"
+          }
+        },
+        "title": "AcceptBody",
+        "type": "object"
+      },
       "AgentCreate": {
         "additionalProperties": false,
         "properties": {
@@ -966,6 +980,20 @@
         "title": "Body_explainImage",
         "type": "object"
       },
+      "Body_importLabels": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_importLabels",
+        "type": "object"
+      },
       "Body_predictFile": {
         "properties": {
           "file": {
@@ -995,6 +1023,48 @@
           "files"
         ],
         "title": "Body_uploadSource",
+        "type": "object"
+      },
+      "Box": {
+        "description": "Caja normalizada a [0, 1] (x1, y1) – (x2, y2).",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "x1": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "X1",
+            "type": "number"
+          },
+          "x2": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "X2",
+            "type": "number"
+          },
+          "y1": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y1",
+            "type": "number"
+          },
+          "y2": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y2",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x1",
+          "y1",
+          "x2",
+          "y2",
+          "label"
+        ],
+        "title": "Box",
         "type": "object"
       },
       "Budget": {
@@ -1171,6 +1241,24 @@
           "definition"
         ],
         "title": "ClassGuide",
+        "type": "object"
+      },
+      "ClassesBody": {
+        "additionalProperties": false,
+        "properties": {
+          "classes": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Classes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "classes"
+        ],
+        "title": "ClassesBody",
         "type": "object"
       },
       "ClassificationMetrics": {
@@ -1649,6 +1737,19 @@
           "attribution"
         ],
         "title": "Contribution",
+        "type": "object"
+      },
+      "Count": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "title": "Count",
         "type": "object"
       },
       "DataSource": {
@@ -4023,6 +4124,71 @@
         "title": "LLMTestResult",
         "type": "object"
       },
+      "LabelItem": {
+        "properties": {
+          "boxes": {
+            "items": {
+              "$ref": "#/components/schemas/Box"
+            },
+            "title": "Boxes",
+            "type": "array"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/LabelOrigin",
+            "default": "human"
+          },
+          "sample_id": {
+            "title": "Sample Id",
+            "type": "string"
+          },
+          "status": {
+            "default": "accepted",
+            "enum": [
+              "suggested",
+              "accepted"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "title": "LabelItem",
+        "type": "object"
+      },
       "LabelKind": {
         "enum": [
           "class",
@@ -4034,9 +4200,74 @@
         "title": "LabelKind",
         "type": "string"
       },
+      "LabelOrigin": {
+        "enum": [
+          "human",
+          "model",
+          "llm"
+        ],
+        "title": "LabelOrigin",
+        "type": "string"
+      },
+      "LabelQuality": {
+        "properties": {
+          "agreement": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Humano vs modelo, sobre las aceptadas con sugerencia",
+            "title": "Agreement"
+          },
+          "compared": {
+            "title": "Compared",
+            "type": "integer"
+          },
+          "confusing_pairs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Confusing Pairs",
+            "type": "array"
+          },
+          "suspected_errors": {
+            "description": "sample_id con etiqueta humana dudosa",
+            "items": {
+              "type": "string"
+            },
+            "title": "Suspected Errors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "compared",
+          "agreement",
+          "confusing_pairs",
+          "suspected_errors"
+        ],
+        "title": "LabelQuality",
+        "type": "object"
+      },
       "LabelSet": {
         "additionalProperties": false,
         "properties": {
+          "applied_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "DatasetVersion creada al aplicar las etiquetas (RF-LBL)",
+            "title": "Applied Version Id"
+          },
           "classes": {
             "items": {
               "type": "string"
@@ -4060,6 +4291,21 @@
           "kind": {
             "$ref": "#/components/schemas/LabelKind"
           },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/LabelOrigin",
+            "default": "human"
+          },
           "path": {
             "anyOf": [
               {
@@ -4071,6 +4317,12 @@
             ],
             "description": "Ruta relativa al proyecto",
             "title": "Path"
+          },
+          "target": {
+            "default": "label",
+            "description": "Columna objetivo al aplicar (tabular)",
+            "title": "Target",
+            "type": "string"
           },
           "updated_at": {
             "format": "date-time",
@@ -4090,6 +4342,84 @@
           "kind"
         ],
         "title": "LabelSet",
+        "type": "object"
+      },
+      "LabelSetCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "classes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Classes",
+            "type": "array"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LabelKind",
+            "default": "class"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Columna objetivo (tabular/texto)",
+            "title": "Target"
+          }
+        },
+        "title": "LabelSetCreate",
+        "type": "object"
+      },
+      "LabelUpdate": {
+        "properties": {
+          "boxes": {
+            "items": {
+              "$ref": "#/components/schemas/Box"
+            },
+            "title": "Boxes",
+            "type": "array"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "sample_id": {
+            "title": "Sample Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sample_id"
+        ],
+        "title": "LabelUpdate",
         "type": "object"
       },
       "LabelingGuide": {
@@ -4114,6 +4444,65 @@
           "classes"
         ],
         "title": "LabelingGuide",
+        "type": "object"
+      },
+      "LabelingSummary": {
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          },
+          "by_class": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Class",
+            "type": "object"
+          },
+          "labelset": {
+            "$ref": "#/components/schemas/LabelSet"
+          },
+          "suggested": {
+            "title": "Suggested",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "unlabeled": {
+            "title": "Unlabeled",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "labelset",
+          "total",
+          "accepted",
+          "suggested",
+          "unlabeled",
+          "by_class"
+        ],
+        "title": "LabelingSummary",
+        "type": "object"
+      },
+      "LabelsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "updates": {
+            "items": {
+              "$ref": "#/components/schemas/LabelUpdate"
+            },
+            "maxItems": 5000,
+            "minItems": 1,
+            "title": "Updates",
+            "type": "array"
+          }
+        },
+        "required": [
+          "updates"
+        ],
+        "title": "LabelsBody",
         "type": "object"
       },
       "LocalExplanation": {
@@ -4959,42 +5348,6 @@
           "rows"
         ],
         "title": "PlaygroundRows",
-        "type": "object"
-      },
-      "PrelabelBody": {
-        "additionalProperties": false,
-        "properties": {
-          "column": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Column"
-          },
-          "dataset_version_id": {
-            "title": "Dataset Version Id",
-            "type": "string"
-          },
-          "guide": {
-            "$ref": "#/components/schemas/LabelingGuide"
-          },
-          "limit": {
-            "default": 100,
-            "maximum": 2000.0,
-            "minimum": 1.0,
-            "title": "Limit",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "dataset_version_id",
-          "guide"
-        ],
-        "title": "PrelabelBody",
         "type": "object"
       },
       "PrivacyLevel": {
@@ -6294,6 +6647,68 @@
         ],
         "title": "RuntimeMode",
         "type": "string"
+      },
+      "Sample": {
+        "properties": {
+          "fields": {
+            "additionalProperties": true,
+            "title": "Fields",
+            "type": "object"
+          },
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LabelItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "sample_id": {
+            "title": "Sample Id",
+            "type": "string"
+          },
+          "split": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Split"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          }
+        },
+        "required": [
+          "sample_id",
+          "split"
+        ],
+        "title": "Sample",
+        "type": "object"
       },
       "SchedulerSpec": {
         "additionalProperties": false,
@@ -8162,6 +8577,90 @@
         ],
         "title": "VisionTaskProfile",
         "type": "object"
+      },
+      "perceptron__api__routers__labeling__PrelabelBody": {
+        "additionalProperties": false,
+        "properties": {
+          "guide": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LabelingGuide"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Guía (method=llm)"
+          },
+          "limit": {
+            "default": 200,
+            "maximum": 2000.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "method": {
+            "enum": [
+              "model",
+              "llm"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Modelo del proyecto (method=model)",
+            "title": "Run Id"
+          }
+        },
+        "required": [
+          "method"
+        ],
+        "title": "PrelabelBody",
+        "type": "object"
+      },
+      "perceptron__api__routers__llm__PrelabelBody": {
+        "additionalProperties": false,
+        "properties": {
+          "column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Column"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "guide": {
+            "$ref": "#/components/schemas/LabelingGuide"
+          },
+          "limit": {
+            "default": 100,
+            "maximum": 2000.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "guide"
+        ],
+        "title": "PrelabelBody",
+        "type": "object"
       }
     }
   },
@@ -8724,6 +9223,102 @@
         ]
       }
     },
+    "/api/v1/datasets/{dataset_version_id}/labelsets": {
+      "get": {
+        "operationId": "listLabelSets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_version_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LabelSet"
+                  },
+                  "title": "Response Listlabelsets",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Labelsets",
+        "tags": [
+          "labeling"
+        ]
+      },
+      "post": {
+        "operationId": "createLabelSet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_version_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelSetCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelSet"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Labelset",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
     "/api/v1/datasets/{dataset_version_id}/profile": {
       "get": {
         "operationId": "getProfile",
@@ -8962,7 +9557,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PrelabelBody"
+                "$ref": "#/components/schemas/perceptron__api__routers__llm__PrelabelBody"
               }
             }
           },
@@ -8993,6 +9588,592 @@
         "summary": "Prelabel",
         "tags": [
           "labels"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}": {
+      "get": {
+        "operationId": "getLabelSet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelingSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Labelset",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/accept": {
+      "post": {
+        "description": "Acepta en lote las sugerencias con confianza ≥ umbral.",
+        "operationId": "acceptSuggestions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Count"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Suggestions",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/apply": {
+      "post": {
+        "description": "Crea una versión nueva del dataset con las etiquetas aceptadas (para reentrenar).",
+        "operationId": "applyLabels",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetVersion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Labels",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/classes": {
+      "post": {
+        "operationId": "addLabelClasses",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassesBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelSet"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Classes",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/export": {
+      "get": {
+        "operationId": "exportLabels",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "csv",
+              "enum": [
+                "csv",
+                "jsonl",
+                "coco",
+                "yolo",
+                "voc"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Labels",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/import": {
+      "post": {
+        "operationId": "importLabels",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "csv",
+              "enum": [
+                "csv",
+                "jsonl",
+                "coco",
+                "yolo",
+                "voc"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_importLabels"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Count"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Labels",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/labels": {
+      "put": {
+        "operationId": "setLabels",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Count"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Labels",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/prelabel": {
+      "post": {
+        "description": "Sugerencias del modelo del proyecto o del LLM para lo que falta (RF-LBL-02).",
+        "operationId": "prelabelSet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/perceptron__api__routers__labeling__PrelabelBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Count"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Prelabel",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/quality": {
+      "get": {
+        "operationId": "labelQuality",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelQuality"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quality",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/queue": {
+      "get": {
+        "description": "Próximas muestras a revisar (active learning, RF-LBL-03).",
+        "operationId": "labelQueue",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "strategy",
+            "required": false,
+            "schema": {
+              "default": "uncertainty",
+              "enum": [
+                "uncertainty",
+                "diversity",
+                "random"
+              ],
+              "title": "Strategy",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Sample"
+                  },
+                  "title": "Response Labelqueue",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Label Queue",
+        "tags": [
+          "labeling"
+        ]
+      }
+    },
+    "/api/v1/labelsets/{labelset_id}/samples/{sample_id}/file": {
+      "get": {
+        "operationId": "labelSampleFile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "labelset_id",
+            "required": true,
+            "schema": {
+              "title": "Labelset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sample_id",
+            "required": true,
+            "schema": {
+              "title": "Sample Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sample File",
+        "tags": [
+          "labeling"
         ]
       }
     },

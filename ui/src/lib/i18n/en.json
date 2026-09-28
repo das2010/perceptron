@@ -123,7 +123,8 @@
       "audit": "LLM audit",
       "wizard": "Wizard",
       "agent": "Agent",
-      "design": "Design"
+      "design": "Design",
+      "labeling": "Labeling"
     }
   },
   "privacy": {
@@ -630,5 +631,48 @@
       "html": "HTML",
       "md": "Markdown"
     }
+  },
+  "labeling": {
+    "title": "Assisted labeling",
+    "set": "Set",
+    "kind": "Type",
+    "newClasses": "Classes",
+    "newClassesHint": "Comma separated (added to those already in the dataset).",
+    "create": "New set",
+    "kinds": {
+      "class": "Class",
+      "multilabel": "Multi-label",
+      "box": "Boxes",
+      "mask": "Masks",
+      "temporal_event": "Segments"
+    },
+    "progress": "{{accepted}} of {{total}} labeled · {{suggested}} pending suggestions",
+    "prelabelRun": "Model to pre-label with",
+    "prelabel": "Pre-label",
+    "threshold": "Minimum confidence",
+    "acceptAll": "Accept confident suggestions",
+    "apply": "Apply labels (new version)",
+    "applied": "New version with {{samples}} labeled samples.",
+    "goTrain": "Retrain",
+    "queue": "Review queue",
+    "strategy": "Queue order",
+    "strategies": {
+      "uncertainty": "Most uncertain first",
+      "diversity": "Diverse",
+      "random": "Random"
+    },
+    "queueDone": "You reviewed this batch. Reload the queue to continue.",
+    "queueEmpty": "Nothing left to label.",
+    "position": "Sample {{current}} of {{total}}",
+    "sampleAlt": "Sample to label",
+    "suggestion": "Suggestion: “{{label}}” ({{confidence}}%)",
+    "acceptSuggestion": "Accept (Enter)",
+    "classes": "Classes",
+    "save": "Save",
+    "skip": "Skip",
+    "boxClass": "Box class",
+    "boxes_one": "{{count}} box",
+    "boxes_other": "{{count}} boxes",
+    "undo": "Undo"
   }
 }

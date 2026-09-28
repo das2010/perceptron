@@ -979,3 +979,143 @@ export function useExplainImage(runId: string) {
     },
   });
 }
+
+// ---------------------------------------------------------------- etiquetado (Capa 4c)
+
+export type LabelSet = WithId<Schemas["LabelSet"]> & { classes: string[] };
+export type LabelingSummary = Schemas["LabelingSummary"];
+export type LabelSample = Schemas["Sample"];
+export type LabelUpdate = Schemas["LabelUpdate"];
+export type Box = Schemas["Box"];
+
+const lsKey = (id: string) => ["labelsets", id] as const;
+
+export function useLabelSets(datasetVersionId: string | undefined) {
+  return useQuery({
+    queryKey: ["datasets", datasetVersionId, "labelsets"],
+    enabled: Boolean(datasetVersionId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/datasets/{dataset_version_id}/labelsets", {
+          params: { path: { dataset_version_id: datasetVersionId ?? "" } },
+        }),
+      ) as LabelSet[],
+  });
+}
+
+export function useCreateLabelSet(datasetVersionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: Schemas["LabelSetCreate"]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/datasets/{dataset_version_id}/labelsets", {
+          params: { path: { dataset_version_id: datasetVersionId } },
+          body,
+        }),
+      ) as LabelSet,
+    onSuccess: () =>
+      void qc.invalidateQueries({ queryKey: ["datasets", datasetVersionId, "labelsets"] }),
+  });
+}
+
+export function useLabelSummary(labelsetId: string | undefined) {
+  return useQuery({
+    queryKey: [...lsKey(labelsetId ?? ""), "summary"],
+    enabled: Boolean(labelsetId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/labelsets/{labelset_id}", {
+          params: { path: { labelset_id: labelsetId ?? "" } },
+        }),
+      ),
+  });
+}
+
+export function useLabelQueue(
+  labelsetId: string | undefined,
+  strategy: "uncertainty" | "diversity" | "random",
+) {
+  return useQuery({
+    queryKey: [...lsKey(labelsetId ?? ""), "queue", strategy],
+    enabled: Boolean(labelsetId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/labelsets/{labelset_id}/queue", {
+          params: { path: { labelset_id: labelsetId ?? "" }, query: { strategy, limit: 50 } },
+        }),
+      ),
+  });
+}
+
+function useLabelMutation<T>(labelsetId: string, fn: (id: string, arg: T) => Promise<unknown>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (arg: T) => fn(labelsetId, arg),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: lsKey(labelsetId) }),
+  });
+}
+
+export function useSetLabels(labelsetId: string) {
+  return useLabelMutation(labelsetId, async (id, updates: LabelUpdate[]) =>
+    unwrap(
+      await (
+        await getApiClient()
+      ).PUT("/api/v1/labelsets/{labelset_id}/labels", {
+        params: { path: { labelset_id: id } },
+        body: { updates },
+      }),
+    ),
+  );
+}
+
+export function useAcceptSuggestions(labelsetId: string) {
+  return useLabelMutation(labelsetId, async (id, min_confidence: number) =>
+    unwrap(
+      await (
+        await getApiClient()
+      ).POST("/api/v1/labelsets/{labelset_id}/accept", {
+        params: { path: { labelset_id: id } },
+        body: { min_confidence },
+      }),
+    ),
+  );
+}
+
+export function usePrelabelWithModel(labelsetId: string) {
+  return useLabelMutation(labelsetId, async (id, run_id: string) =>
+    unwrap(
+      await (
+        await getApiClient()
+      ).POST("/api/v1/labelsets/{labelset_id}/prelabel", {
+        params: { path: { labelset_id: id } },
+        body: { method: "model", run_id, limit: 2000 },
+      }),
+    ),
+  );
+}
+
+export function useApplyLabels(labelsetId: string, projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/labelsets/{labelset_id}/apply", {
+          params: { path: { labelset_id: labelsetId } },
+        }),
+      ) as DatasetVersion,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.datasets(projectId) });
+      void qc.invalidateQueries({ queryKey: lsKey(labelsetId) });
+    },
+  });
+}

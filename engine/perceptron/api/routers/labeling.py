@@ -53,7 +53,7 @@ def create_labelset(dataset_version_id: str, body: LabelSetCreate, ctx: Ctx) -> 
 
 @router.get("/datasets/{dataset_version_id}/labelsets", operation_id="listLabelSets")
 def list_labelsets(dataset_version_id: str, ctx: Ctx) -> list[LabelSet]:
-    return _labeling(ctx).list(dataset_version_id)
+    return _labeling(ctx).list_sets(dataset_version_id)
 
 
 @router.get("/labelsets/{labelset_id}", operation_id="getLabelSet")

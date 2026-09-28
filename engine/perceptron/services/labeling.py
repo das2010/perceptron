@@ -195,7 +195,7 @@ class Labeling:
         self._save(ls, items)
         return ls
 
-    def list(self, dataset_version_id: str) -> list[LabelSet]:
+    def list_sets(self, dataset_version_id: str) -> list[LabelSet]:
         sets: list[LabelSet] = self.ctx.repo(LabelSet).list(
             filters={"dataset_version_id": dataset_version_id}, limit=200
         )
@@ -566,7 +566,7 @@ class Labeling:
             config={"path": str(source), "labelset_id": ls.id},
         )
         self.ctx.repo(DataSource).add(src)
-        new = self.wf.ingest(
+        new: DatasetVersion = self.wf.ingest(
             dv.project_id,
             source,
             target=None if source.is_dir() else ls.target,
