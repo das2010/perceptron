@@ -108,8 +108,11 @@ services:
     volumes:
       - workspace:/data
       - ${PERCEPTRON_SOURCES_DIR:-./sources}:/sources:ro
-    healthcheck:
-      disable: true
+    healthcheck:  # el HEALTHCHECK HTTP de la imagen es del servidor: acá, proceso vivo
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   worker-gpu:
     profiles: ["gpu"]
@@ -130,8 +133,11 @@ services:
     volumes:
       - workspace:/data
       - ${PERCEPTRON_SOURCES_DIR:-./sources}:/sources:ro
-    healthcheck:
-      disable: true
+    healthcheck:  # el HEALTHCHECK HTTP de la imagen es del servidor: acá, proceso vivo
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     deploy:
       resources:
         reservations:
