@@ -89,6 +89,10 @@ def test_text_playground(client: TestClient, fixtures_dir: Path) -> None:
     why = _ok(client.post(f"{API}/runs/{run_id}/explain/text", json={"text": texts[0]}))
     assert why["method"] == "occlusion" and why["prediction"] == first["prediction"]
     assert why["contributions"] and all("attribution" in c for c in why["contributions"])
+    # RF-EVL-05: robustez ante typos y palabras eliminadas.
+    rob = _ok(client.get(f"{API}/runs/{run_id}/robustness"))
+    assert {r["kind"] for r in rob["results"]} == {"typos", "palabras eliminadas"}
+    assert rob["samples"] > 0 and len(rob["results"]) == 6
 
 
 def test_audio_playground(client: TestClient, fixtures_dir: Path) -> None:
@@ -106,4 +110,6 @@ def test_audio_playground(client: TestClient, fixtures_dir: Path) -> None:
 
     why = _ok(client.post(f"{API}/runs/{run_id}/explain/audio", files=files))
     assert why["method"] == "integrated_gradients"
+    rob = _ok(client.get(f"{API}/runs/{run_id}/robustness"))
+    assert {r["kind"] for r in rob["results"]} == {"ruido de fondo", "volumen bajo"}
     assert base64.b64decode(why["heatmap_png"])[1:4] == b"PNG"
