@@ -1217,6 +1217,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Templates
+         * @description Plantillas UC-01…UC-09: modalidad, tarea y métrica objetivo (RF-PRJ-02).
+         */
+        get: operations["listProjectTemplates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}": {
         parameters: {
             query?: never;
@@ -1228,7 +1248,11 @@ export interface paths {
         get: operations["getProject"];
         put?: never;
         post?: never;
-        /** Delete Project */
+        /**
+         * Delete Project
+         * @description Elimina el proyecto con sus datos, runs, modelos y carpeta (RF-PRJ-01). Irreversible:
+         *     la UI pide confirmar escribiendo el nombre; para conservarlo, archivarlo (PATCH status).
+         */
         delete: operations["deleteProject"];
         options?: never;
         head?: never;
@@ -1441,6 +1465,26 @@ export interface paths {
         head?: never;
         /** Update Draft */
         patch: operations["updateDraft"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate
+         * @description Proyecto nuevo con la misma configuración; sin datos ni runs (RF-PRJ-01).
+         */
+        post: operations["duplicateProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/projects/{project_id}/hpo/strategy": {
@@ -2000,6 +2044,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/explain/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Explain Audio
+         * @description Integrated Gradients sobre el espectrograma: qué momentos y frecuencias pesaron.
+         */
+        post: operations["explainAudio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/explain/image": {
         parameters: {
             query?: never;
@@ -2034,6 +2098,26 @@ export interface paths {
          * @description Explicación local de una fila: contribución de cada feature a la predicción.
          */
         post: operations["explainRow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/explain/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Explain Text
+         * @description Oclusión por token: cuánto aporta cada palabra a la clase predicha.
+         */
+        post: operations["explainText"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2158,6 +2242,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/mlflow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open In Mlflow
+         * @description Enlace al run en la UI de MLflow (opcional, RF-TRK-02). En el desktop la levanta.
+         */
+        post: operations["openRunInMlflow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/predict": {
         parameters: {
             query?: never;
@@ -2189,9 +2293,29 @@ export interface paths {
         put?: never;
         /**
          * Predict File
-         * @description Playground: una imagen (modelos de imagen) o un CSV (tabular).
+         * @description Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV.
          */
         post: operations["predictFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/predict/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict Texts
+         * @description Playground (RF-EXP-02): textos para modelos de texto.
+         */
+        post: operations["predictTexts"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3197,6 +3321,11 @@ export interface components {
              */
             password_login: boolean;
         };
+        /** Body_explainAudio */
+        Body_explainAudio: {
+            /** File */
+            file: string;
+        };
         /** Body_explainImage */
         Body_explainImage: {
             /** File */
@@ -4166,6 +4295,11 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** ExplainText */
+        ExplainText: {
+            /** Text */
+            text: string;
+        };
         /** ExportArtifact */
         ExportArtifact: {
             /** Error */
@@ -5120,6 +5254,11 @@ export interface components {
             /** Workspace Id */
             workspace_id: string;
         };
+        /** MlflowLink */
+        MlflowLink: {
+            /** Url */
+            url: string;
+        };
         /**
          * Modality
          * @enum {string}
@@ -5497,6 +5636,11 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /** PlaygroundTexts */
+        PlaygroundTexts: {
+            /** Texts */
+            texts: string[];
+        };
         /** PredictBody */
         PredictBody: {
             /** Rows */
@@ -5667,7 +5811,10 @@ export interface components {
             /** Target Metric */
             target_metric?: string | null;
             task?: components["schemas"]["TaskType"] | null;
-            /** Template */
+            /**
+             * Template
+             * @description Plantilla de caso de uso (RF-PRJ-02): completa lo que falte
+             */
             template?: string | null;
             /**
              * Workspace Id
@@ -5720,6 +5867,11 @@ export interface components {
              */
             version: number;
         };
+        /** ProjectDuplicate */
+        ProjectDuplicate: {
+            /** Name */
+            name?: string | null;
+        };
         /** ProjectPatch */
         ProjectPatch: {
             /** Description */
@@ -5765,6 +5917,18 @@ export interface components {
          * @enum {string}
          */
         ProjectStatus: "draft" | "active" | "archived";
+        /** ProjectTemplate */
+        ProjectTemplate: {
+            /** Id */
+            id: string;
+            /** Modalities */
+            modalities: components["schemas"]["Modality"][];
+            /** Target Metric */
+            target_metric: string;
+            task: components["schemas"]["TaskType"];
+            /** Use Case */
+            use_case: string;
+        };
         /** ProposeArchBody */
         ProposeArchBody: {
             /** Dataset Version Id */
@@ -7067,6 +7231,12 @@ export interface components {
              * @default 1
              */
             gradient_clip: number | null;
+            /**
+             * Lr Finder
+             * @description Barrido de LR antes de entrenar; usa el sugerido (RF-TRN-04)
+             * @default false
+             */
+            lr_finder: boolean;
             /**
              * Min Epochs
              * @description Épocas mínimas antes de early stopping (None = 1/3)
@@ -9890,6 +10060,26 @@ export interface operations {
             };
         };
     };
+    listProjectTemplates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectTemplate"][];
+                };
+            };
+        };
+    };
     getProject: {
         parameters: {
             query?: never;
@@ -10409,6 +10599,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DraftView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicateProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectDuplicate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Project"];
                 };
             };
             /** @description Validation Error */
@@ -11491,6 +11716,41 @@ export interface operations {
             };
         };
     };
+    explainAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_explainAudio"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalExplanation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     explainImage: {
         parameters: {
             query?: never;
@@ -11538,6 +11798,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ExplainRow"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalExplanation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explainText: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainText"];
             };
         };
         responses: {
@@ -11789,6 +12084,37 @@ export interface operations {
             };
         };
     };
+    openRunInMlflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MlflowLink"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     predictRows: {
         parameters: {
             query?: never;
@@ -11836,6 +12162,41 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_predictFile"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaygroundResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictTexts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaygroundTexts"];
             };
         };
         responses: {

@@ -206,8 +206,9 @@ export function PlaygroundPanel({
           onClick={() => {
             if (inputs.kind === "tabular") explainRow.mutate(currentRow());
             else if (inputs.kind === "tokens") explainText.mutate(text);
-            else if (inputs.kind === "spectrogram") lastFile && explainAudio.mutate(lastFile);
-            else if (lastFile) explainImage.mutate(lastFile);
+            else if (inputs.kind === "spectrogram") {
+              if (lastFile) explainAudio.mutate(lastFile);
+            } else if (lastFile) explainImage.mutate(lastFile);
           }}
         >
           {t("playground.explain")}

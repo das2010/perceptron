@@ -1047,6 +1047,20 @@
         "title": "AuthConfig",
         "type": "object"
       },
+      "Body_explainAudio": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_explainAudio",
+        "type": "object"
+      },
       "Body_explainImage": {
         "properties": {
           "file": {
@@ -3466,6 +3480,22 @@
           "row"
         ],
         "title": "ExplainRow",
+        "type": "object"
+      },
+      "ExplainText": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ExplainText",
         "type": "object"
       },
       "ExportArtifact": {
@@ -6031,6 +6061,19 @@
         "title": "MembershipCreate",
         "type": "object"
       },
+      "MlflowLink": {
+        "properties": {
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "MlflowLink",
+        "type": "object"
+      },
       "Modality": {
         "enum": [
           "tabular",
@@ -6878,6 +6921,24 @@
         "title": "PlaygroundRows",
         "type": "object"
       },
+      "PlaygroundTexts": {
+        "properties": {
+          "texts": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Texts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "texts"
+        ],
+        "title": "PlaygroundTexts",
+        "type": "object"
+      },
       "PredictBody": {
         "additionalProperties": false,
         "properties": {
@@ -7360,6 +7421,7 @@
                 "type": "null"
               }
             ],
+            "description": "Plantilla de caso de uso (RF-PRJ-02): completa lo que falte",
             "title": "Template"
           },
           "workspace_id": {
@@ -7435,6 +7497,26 @@
           "project_id"
         ],
         "title": "ProjectDraft",
+        "type": "object"
+      },
+      "ProjectDuplicate": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "ProjectDuplicate",
         "type": "object"
       },
       "ProjectPatch": {
@@ -7597,6 +7679,41 @@
         ],
         "title": "ProjectStatus",
         "type": "string"
+      },
+      "ProjectTemplate": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "modalities": {
+            "items": {
+              "$ref": "#/components/schemas/Modality"
+            },
+            "title": "Modalities",
+            "type": "array"
+          },
+          "target_metric": {
+            "title": "Target Metric",
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "use_case": {
+            "title": "Use Case",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "use_case",
+          "modalities",
+          "task",
+          "target_metric"
+        ],
+        "title": "ProjectTemplate",
+        "type": "object"
       },
       "ProposeArchBody": {
         "additionalProperties": false,
@@ -10825,6 +10942,12 @@
             ],
             "default": 1.0,
             "title": "Gradient Clip"
+          },
+          "lr_finder": {
+            "default": false,
+            "description": "Barrido de LR antes de entrenar; usa el sugerido (RF-TRN-04)",
+            "title": "Lr Finder",
+            "type": "boolean"
           },
           "min_epochs": {
             "anyOf": [
@@ -15572,8 +15695,35 @@
         ]
       }
     },
+    "/api/v1/projects/templates": {
+      "get": {
+        "description": "Plantillas UC-01…UC-09: modalidad, tarea y métrica objetivo (RF-PRJ-02).",
+        "operationId": "listProjectTemplates",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectTemplate"
+                  },
+                  "title": "Response Listprojecttemplates",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Templates",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}": {
       "delete": {
+        "description": "Elimina el proyecto con sus datos, runs, modelos y carpeta (RF-PRJ-01). Irreversible:\nla UI pide confirmar escribiendo el nombre; para conservarlo, archivarlo (PATCH status).",
         "operationId": "deleteProject",
         "parameters": [
           {
@@ -16353,6 +16503,59 @@
         "summary": "Update Draft",
         "tags": [
           "wizard"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/duplicate": {
+      "post": {
+        "description": "Proyecto nuevo con la misma configuración; sin datos ni runs (RF-PRJ-01).",
+        "operationId": "duplicateProject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectDuplicate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Duplicate",
+        "tags": [
+          "projects"
         ]
       }
     },
@@ -17915,6 +18118,59 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/explain/audio": {
+      "post": {
+        "description": "Integrated Gradients sobre el espectrograma: qué momentos y frecuencias pesaron.",
+        "operationId": "explainAudio",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_explainAudio"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalExplanation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Explain Audio",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/explain/image": {
       "post": {
         "description": "Integrated Gradients de una imagen: mapa de calor sobre la clase predicha.",
@@ -18016,6 +18272,59 @@
           }
         },
         "summary": "Explain Row",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/explain/text": {
+      "post": {
+        "description": "Oclusión por token: cuánto aporta cada palabra a la clase predicha.",
+        "operationId": "explainText",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainText"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocalExplanation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Explain Text",
         "tags": [
           "analysis"
         ]
@@ -18352,6 +18661,49 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/mlflow": {
+      "post": {
+        "description": "Enlace al run en la UI de MLflow (opcional, RF-TRK-02). En el desktop la levanta.",
+        "operationId": "openRunInMlflow",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MlflowLink"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Open In Mlflow",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/predict": {
       "post": {
         "description": "Playground (RF-EXP-02): filas de tabla con las columnas originales.",
@@ -18407,7 +18759,7 @@
     },
     "/api/v1/runs/{run_id}/predict/file": {
       "post": {
-        "description": "Playground: una imagen (modelos de imagen) o un CSV (tabular).",
+        "description": "Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV.",
         "operationId": "predictFile",
         "parameters": [
           {
@@ -18453,6 +18805,59 @@
           }
         },
         "summary": "Predict File",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/predict/text": {
+      "post": {
+        "description": "Playground (RF-EXP-02): textos para modelos de texto.",
+        "operationId": "predictTexts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaygroundTexts"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaygroundResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict Texts",
         "tags": [
           "export"
         ]
