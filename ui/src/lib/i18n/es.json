@@ -371,6 +371,10 @@
       "summary": "Se van a entrenar hasta {{max_trials}} intentos de hasta {{max_epochs_per_trial}} épocas; el mejor en validación se evalúa luego en el test sellado.",
       "summaryAgent": "El agente va a iterar con hasta {{max_trials}} intentos en total y cerrará con el mejor modelo, evaluado en el test sellado.",
       "missing": "Faltan pasos: datos, preparación y arquitectura (o el modo agente)."
+    },
+    "why": {
+      "button": "¿Por qué?",
+      "question": "¿Por qué conviene lo que se recomienda en el paso «{{step}}» para mi proyecto? Explicámelo con mis datos y decime qué cambiarías."
     }
   },
   "agent": {

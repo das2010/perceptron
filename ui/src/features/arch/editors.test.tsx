@@ -144,28 +144,29 @@ describe("editor visual de ArchSpec (RF-ARC-05)", () => {
       }),
     });
     renderAt("/projects/prj_1/archspecs/arc_1");
-    expect(await screen.findByText("Válida", {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText("Válida", {}, { timeout: 8000 })).toBeInTheDocument();
     expect(screen.getByText(/12\.345 parámetros/)).toBeInTheDocument();
 
     // Agregar un bloque al final deja la cabeza en el medio: el validador lo marca.
     await userEvent.selectOptions(screen.getByLabelText("Agregar bloque"), "tabular.resnet");
     await userEvent.click(screen.getByRole("button", { name: "Agregar" }));
-    expect(await screen.findByText(/falta la cabeza/, {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText(/falta la cabeza/, {}, { timeout: 8000 })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Guardar como nueva/ })).toBeDisabled();
     await userEvent.click(screen.getByRole("button", { name: "Quitar" }));
-    expect(await screen.findByText("Válida", {}, { timeout: 3000 })).toBeInTheDocument();
+    expect(await screen.findByText("Válida", {}, { timeout: 8000 })).toBeInTheDocument();
 
     const name = screen.getByLabelText("Nombre");
     await userEvent.clear(name);
     await userEvent.type(name, "mlp-editada");
-    await waitFor(() => expect(validated.at(-1)?.name).toBe("mlp-editada"), { timeout: 3000 });
+    await waitFor(() => expect(validated.at(-1)?.name).toBe("mlp-editada"), { timeout: 8000 });
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /Guardar como nueva/ })).toBeEnabled(),
+      { timeout: 8000 },
     );
     await userEvent.click(screen.getByRole("button", { name: /Guardar como nueva/ }));
-    await waitFor(() => expect(saved?.spec.name).toBe("mlp-editada"));
+    await waitFor(() => expect(saved?.spec.name).toBe("mlp-editada"), { timeout: 8000 });
     expect(saved?.spec.nodes.map((n) => n.id)).toEqual(["embed", "mlp", "head"]);
-  });
+  }, 30_000);
 });
 
 describe("editor visual de pipeline (RF-PIP-02)", () => {

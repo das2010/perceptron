@@ -4,9 +4,20 @@ import { create } from "zustand";
 interface UiState {
   copilotOpen: boolean;
   toggleCopilot: () => void;
+  /** Pregunta pendiente para el copiloto (p. ej. el "¿Por qué?" de un paso del wizard). */
+  copilotQuestion: string | null;
+  askCopilot: (question: string) => void;
+  takeCopilotQuestion: () => string | null;
 }
 
-export const useUiStore = create<UiState>((set) => ({
+export const useUiStore = create<UiState>((set, get) => ({
   copilotOpen: false,
   toggleCopilot: () => set((s) => ({ copilotOpen: !s.copilotOpen })),
+  copilotQuestion: null,
+  askCopilot: (question) => set({ copilotOpen: true, copilotQuestion: question }),
+  takeCopilotQuestion: () => {
+    const q = get().copilotQuestion;
+    if (q !== null) set({ copilotQuestion: null });
+    return q;
+  },
 }));

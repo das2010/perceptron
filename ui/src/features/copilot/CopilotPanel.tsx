@@ -7,6 +7,7 @@ import { Send, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useUiStore } from "@/app/store";
 import { AiSuggestion, Button, Textarea } from "@/components/ui";
 import { useDraft, useUpdateDraft } from "@/lib/api/hooks";
 import { wsUrl } from "@/lib/api/ws";
@@ -32,6 +33,7 @@ function useCopilotSocket(projectId: string | undefined) {
   const [patches, setPatches] = useState<Change[][]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!projectId) return;
@@ -40,6 +42,8 @@ function useCopilotSocket(projectId: string | undefined) {
       if (closed) return;
       const ws = new WebSocket(url);
       socket.current = ws;
+      ws.onopen = () => setReady(true);
+      ws.onclose = () => setReady(false);
       ws.onmessage = (ev: MessageEvent<string>) => {
         const msg = JSON.parse(ev.data) as ServerEvent;
         if (msg.type === "token") {
@@ -75,7 +79,7 @@ function useCopilotSocket(projectId: string | undefined) {
     return true;
   };
   const dismiss = (i: number) => setPatches((prev) => prev.filter((_, j) => j !== i));
-  return { messages, patches, busy, error, send, dismiss };
+  return { messages, patches, busy, error, ready, send, dismiss };
 }
 
 function PatchCard({ changes, onDone }: { changes: Change[]; onDone: () => void }) {
@@ -109,8 +113,16 @@ export function CopilotPanel() {
   const { t } = useTranslation();
   const projectId = (useParams({ strict: false }) as { projectId?: string }).projectId;
   useDraft(projectId); // precarga la versión del borrador para aplicar sugerencias
-  const { messages, patches, busy, error, send, dismiss } = useCopilotSocket(projectId);
+  const { messages, patches, busy, error, ready, send, dismiss } = useCopilotSocket(projectId);
   const [text, setText] = useState("");
+  const question = useUiStore((s) => s.copilotQuestion);
+
+  // Preguntas que llegan desde otras pantallas ("¿Por qué?" del wizard) se envían al conectar.
+  useEffect(() => {
+    if (!question || !ready || busy) return;
+    const q = useUiStore.getState().takeCopilotQuestion();
+    if (q) send(q);
+  }, [question, ready, busy, send]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();

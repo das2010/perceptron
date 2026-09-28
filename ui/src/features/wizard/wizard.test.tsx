@@ -47,8 +47,10 @@ class FakeSocket {
   readyState = 1;
   onmessage: ((ev: MessageEvent<string>) => void) | null = null;
   sent: string[] = [];
+  onopen: (() => void) | null = null;
   constructor(public url: string) {
     FakeSocket.last = this;
+    queueMicrotask(() => this.onopen?.());
   }
   send(data: string) {
     this.sent.push(data);
@@ -141,6 +143,21 @@ describe("wizard y copiloto", () => {
         origin: "copilot",
       }),
     );
+  });
+
+  it("¿Por qué? abre el copiloto y pregunta por el paso actual (RF-WIZ-02)", async () => {
+    vi.stubGlobal("WebSocket", FakeSocket);
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/draft": () => draft("task"),
+    });
+    renderAt("/projects/prj_1/wizard");
+    await userEvent.click(await screen.findByRole("button", { name: /¿Por qué?/ }));
+    await waitFor(() => expect(FakeSocket.last?.sent.length).toBe(1));
+    const sent = JSON.parse(FakeSocket.last?.sent[0] ?? "{}") as { text: string };
+    expect(sent.text).toContain("«Tarea y métrica»");
+    expect(await screen.findByText("Conviene optimizar el recall.")).toBeInTheDocument();
   });
 
   it("agente: pide aprobación y la registra", async () => {

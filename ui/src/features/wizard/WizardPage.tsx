@@ -4,7 +4,7 @@
  * estrategia) se muestran en violeta y se aceptan o descartan; sin LLM se usan reglas.
  */
 import { useNavigate } from "@tanstack/react-router";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -21,6 +21,7 @@ import {
   Spinner,
   Textarea,
 } from "@/components/ui";
+import { useUiStore } from "@/app/store";
 import { UploadPanel } from "@/features/data/DataPage";
 import { ProfileView } from "@/features/data/ProfileView";
 import { useProjectId } from "@/features/projects/ProjectLayout";
@@ -457,6 +458,7 @@ export function WizardPage() {
   const projectId = useProjectId();
   const { data: view, isPending, error } = useDraft(projectId);
   const update = useUpdateDraft(projectId);
+  const askCopilot = useUiStore((s) => s.askCopilot);
 
   if (isPending) return <Spinner />;
   if (error || !view) return <ErrorNote error={error} />;
@@ -489,7 +491,19 @@ export function WizardPage() {
         ))}
       </ol>
       <Card>
-        <CardTitle>{t(`wizard.step.${step}`)}</CardTitle>
+        <CardTitle className="flex items-center justify-between gap-2">
+          {t(`wizard.step.${step}`)}
+          <Button
+            size="sm"
+            variant="ai"
+            onClick={() =>
+              askCopilot(t("wizard.why.question", { step: t(`wizard.step.${step}`) }))
+            }
+          >
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            {t("wizard.why.button")}
+          </Button>
+        </CardTitle>
         <p className="mb-4 text-sm text-muted">{t(`wizard.help.${step}`)}</p>
         {step === "goal" && <StepGoal values={values} save={save} />}
         {step === "data" && <StepData values={values} save={save} />}

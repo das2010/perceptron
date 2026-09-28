@@ -371,6 +371,10 @@
       "summary": "Up to {{max_trials}} trials of up to {{max_epochs_per_trial}} epochs will be trained; the best on validation is then evaluated on the sealed test set.",
       "summaryAgent": "The agent will iterate with up to {{max_trials}} trials in total and close with the best model, evaluated on the sealed test set.",
       "missing": "Missing steps: data, preparation and architecture (or agent mode)."
+    },
+    "why": {
+      "button": "Why?",
+      "question": "Why is the recommendation in the “{{step}}” step a good fit for my project? Explain it with my data and tell me what you would change."
     }
   },
   "agent": {
