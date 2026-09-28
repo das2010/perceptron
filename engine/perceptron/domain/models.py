@@ -312,6 +312,18 @@ class LLMCall(Entity):
     latency_s: float = Field(default=0.0, ge=0)
 
 
+class ProjectDraft(Entity):
+    """Estado del wizard de un proyecto (RF-WIZ-04): versionado, se retoma donde quedó."""
+
+    id: str = Field(default_factory=_id_factory(IdPrefix.PROJECT_DRAFT))
+    project_id: str
+    step: str = "goal"
+    values: JsonDict = Field(default_factory=dict, description="DraftValues (services.wizard)")
+    history: list[JsonDict] = Field(
+        default_factory=list, description="Cambios con su origen (usuario o copiloto)"
+    )
+
+
 class AgentRun(Entity):
     """Una ejecución del agente autónomo (RF-AGT-01..05): límites, bitácora y resultado."""
 
@@ -344,6 +356,7 @@ class AgentRun(Entity):
 ALL_ENTITIES: tuple[type[Entity], ...] = (
     Workspace,
     AgentRun,
+    ProjectDraft,
     User,
     Membership,
     Project,

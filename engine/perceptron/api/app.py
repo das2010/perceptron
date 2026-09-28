@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response
 
 from perceptron import __version__
 from perceptron.api.context import EngineContext
-from perceptron.api.routers import agent, data, llm, modeling, projects, system
+from perceptron.api.routers import agent, data, llm, modeling, projects, system, wizard
 from perceptron.core.config import Settings, get_settings
 from perceptron.core.errors import AuthError, PerceptronError
 
@@ -80,4 +80,5 @@ def create_app(settings: Settings | None = None, ctx: EngineContext | None = Non
     app.include_router(modeling.router, prefix=API_PREFIX)
     app.include_router(llm.router, prefix=API_PREFIX)
     app.include_router(agent.router, prefix=API_PREFIX)
+    app.include_router(wizard.router, prefix=API_PREFIX)
     return app
