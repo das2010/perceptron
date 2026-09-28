@@ -26,6 +26,7 @@ import {
 } from "@/lib/api/hooks";
 import { downloadFromEngine } from "@/lib/api/download";
 
+import { ActivityCard } from "./ActivityCard";
 import { useProjectId } from "./ProjectLayout";
 
 function Stat({ label, value }: { label: string; value: number | string }) {
@@ -186,6 +187,7 @@ export function OverviewPage() {
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </Link>
       <ProjectActions project={project} />
+      <ActivityCard projectId={projectId} />
     </div>
   );
 }

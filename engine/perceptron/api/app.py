@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse, Response
 
 from perceptron import __version__
 from perceptron.api.access import AccessPolicy, OpenAccess, authorized
+from perceptron.api.activity import activity_middleware
 from perceptron.api.context import EngineContext
 from perceptron.api.routers import (
     agent,
@@ -103,6 +104,8 @@ def create_app(
         if exc.http_status >= 500:  # solo el tipo, nunca el mensaje (telemetría opt-in)
             request.app.state.ctx.telemetry.error(type(exc).__name__)
         return JSONResponse(exc.to_dict(), status_code=exc.http_status)
+
+    app.middleware("http")(activity_middleware)
 
     @app.middleware("http")
     async def usage_counter(

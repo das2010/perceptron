@@ -1064,5 +1064,37 @@
     "epoch": "Time per epoch",
     "fits": "fits",
     "doesNotFit": "does not fit"
+  },
+  "activity": {
+    "title": "Recent activity",
+    "empty": "No activity yet.",
+    "someone": "Someone",
+    "op": {
+      "createProject": "created the project",
+      "duplicateProject": "created it by duplicating another project",
+      "importProject": "imported it from a package",
+      "updateProject": "changed the project settings",
+      "uploadSource": "uploaded data",
+      "createSource": "added a data source",
+      "createDbSource": "added a database source",
+      "createStreamSource": "added a streaming source",
+      "ingestSource": "created a data version",
+      "proposePipeline": "built a pipeline",
+      "updatePipeline": "saved the pipeline",
+      "proposeArchitecture": "asked for architecture proposals",
+      "createArchSpec": "saved an architecture",
+      "createStudy": "started a training",
+      "cancelStudy": "cancelled a training",
+      "evaluateRun": "evaluated a run",
+      "registerModel": "registered a model",
+      "exportRun": "exported a model",
+      "promoteModel": "promoted a model to production",
+      "rollbackModel": "rolled back to the previous model",
+      "createDeployment": "deployed a model",
+      "createAgentRun": "started the agent",
+      "createLabelSet": "created a label set",
+      "setLabels": "labeled samples",
+      "createRemoteStudy": "trained on the Team Server"
+    }
   }
 }

@@ -1064,5 +1064,37 @@
     "epoch": "Tiempo por época",
     "fits": "entra",
     "doesNotFit": "no entra"
+  },
+  "activity": {
+    "title": "Actividad reciente",
+    "empty": "Todavía no hay actividad.",
+    "someone": "Alguien",
+    "op": {
+      "createProject": "creó el proyecto",
+      "duplicateProject": "lo creó duplicando otro proyecto",
+      "importProject": "lo importó desde un paquete",
+      "updateProject": "cambió la configuración del proyecto",
+      "uploadSource": "subió datos",
+      "createSource": "agregó una fuente de datos",
+      "createDbSource": "agregó una base de datos como fuente",
+      "createStreamSource": "agregó una fuente streaming",
+      "ingestSource": "creó una versión de datos",
+      "proposePipeline": "armó un pipeline",
+      "updatePipeline": "guardó el pipeline",
+      "proposeArchitecture": "pidió propuestas de arquitectura",
+      "createArchSpec": "guardó una arquitectura",
+      "createStudy": "lanzó un entrenamiento",
+      "cancelStudy": "canceló un entrenamiento",
+      "evaluateRun": "evaluó un run",
+      "registerModel": "registró un modelo",
+      "exportRun": "exportó un modelo",
+      "promoteModel": "promovió un modelo a producción",
+      "rollbackModel": "volvió al modelo anterior",
+      "createDeployment": "publicó un modelo",
+      "createAgentRun": "lanzó el agente",
+      "createLabelSet": "creó un set de etiquetas",
+      "setLabels": "etiquetó muestras",
+      "createRemoteStudy": "entrenó en el Team Server"
+    }
   }
 }

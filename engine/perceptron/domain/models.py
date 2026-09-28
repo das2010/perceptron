@@ -298,6 +298,18 @@ class DriftReport(Entity):
     action: str | None = None
 
 
+class ActivityEntry(Entity):
+    """Qué se hizo en el proyecto, quién y cuándo (RF-PRJ-05)."""
+
+    id: str = Field(default_factory=_id_factory(IdPrefix.ACTIVITY))
+    project_id: str
+    operation: str = Field(description="operation_id de la API (p. ej. createSource)")
+    method: str
+    path: str
+    actor: str | None = Field(default=None, description="Usuario (Team Server) o local")
+    status: int
+
+
 class Alert(Entity):
     """Alerta del monitoreo (RF-MON-04): en la app y, si hay canales, por email o webhook."""
 
@@ -466,4 +478,5 @@ ALL_ENTITIES: tuple[type[Entity], ...] = (
     RetrainRun,
     LLMSession,
     LLMCall,
+    ActivityEntry,
 )

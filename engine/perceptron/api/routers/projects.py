@@ -14,11 +14,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.background import BackgroundTask
 
 from perceptron.api.access import get_access
+from perceptron.api.activity import note
 from perceptron.api.context import EngineContext, get_context
 from perceptron.catalog.project_templates import PROJECT_TEMPLATES, ProjectTemplate, get_template
 from perceptron.core.errors import ValidationError
 from perceptron.domain.enums import Modality, PrivacyLevel, ProjectStatus, TaskType
-from perceptron.domain.models import Project
+from perceptron.domain.models import ActivityEntry, Project
 from perceptron.services.project_package import SUFFIX, export_project, import_project
 from perceptron.services.projects import duplicate_project, purge_project
 
@@ -98,8 +99,18 @@ def create_project(body: ProjectCreate, ctx: Ctx, request: Request) -> Project:
     draft = get_access(request).prepare_project(request, Project.model_validate(values))
     project = ctx.projects.add(draft)
     ctx.files.init_project(project)
+    note(request, project.id, "createProject")
     ctx.events.publish("project.created", project_id=project.id)
     return project
+
+
+@router.get("/{project_id}/activity", operation_id="listProjectActivity")
+def project_activity(
+    project_id: str, ctx: Ctx, limit: Annotated[int, Query(ge=1, le=1000)] = 200
+) -> list[ActivityEntry]:
+    """Quién hizo qué y cuándo en el proyecto, lo más reciente primero (RF-PRJ-05)."""
+    ctx.projects.get(project_id)
+    return list(ctx.repo(ActivityEntry).list(filters={"project_id": project_id}, limit=limit))
 
 
 @router.get("/{project_id}", operation_id="getProject")
@@ -144,6 +155,7 @@ def duplicate(project_id: str, body: ProjectDuplicate, ctx: Ctx, request: Reques
     )
     project = ctx.projects.add(draft)
     ctx.files.init_project(project)
+    note(request, project.id, "duplicateProject")
     ctx.events.publish("project.created", project_id=project.id)
     return project
 
@@ -193,5 +205,6 @@ async def import_package(
             raise ValidationError("el archivo no es un paquete .perceptron válido") from None
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    note(request, project.id, "importProject")
     ctx.events.publish("project.created", project_id=project.id)
     return project
