@@ -326,7 +326,9 @@
     "predicted": "Predicted",
     "actual": "Actual",
     "class": "Class",
-    "support": "Cases"
+    "support": "Cases",
+    "openMlflow": "Open in MLflow",
+    "mlflowHint": "See the run in the MLflow UI (optional)"
   },
   "models": {
     "title": "Registered models",

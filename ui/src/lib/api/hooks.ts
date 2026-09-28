@@ -6,6 +6,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 
 import { getApiClient } from "./client";
 import type { components } from "./schema";
+import { getPlatform } from "@/lib/platform/bridge";
 
 export type Schemas = components["schemas"];
 /** Las entidades siempre traen `id` en las respuestas (en el schema figura con default). */
@@ -345,6 +346,21 @@ export function useRuns(projectId: string, refetchMs?: number) {
           params: { path: { project_id: projectId } },
         }),
       ) as Run[],
+  });
+}
+
+/** Enlace al run en la UI de MLflow (opcional, RF-TRK-02); el desktop la levanta. */
+export function useOpenInMlflow(runId: string) {
+  return useMutation({
+    mutationFn: async () => {
+      const link = unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/mlflow", { params: { path: { run_id: runId } } }),
+      ) as { url: string };
+      await getPlatform().openExternal(link.url);
+      return link.url;
+    },
   });
 }
 

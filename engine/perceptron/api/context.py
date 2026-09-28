@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from fastapi import Request
 
 from perceptron.api.jobs import JobManager
-from perceptron.core.config import Settings
+from perceptron.core.config import RuntimeMode, Settings
 from perceptron.core.events import EventBus
 from perceptron.domain.models import Entity, Project, Study
 from perceptron.storage.db import Database
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from perceptron.llm.gateway import Gateway
     from perceptron.remote.client import RemoteRegistry
     from perceptron.services.studies import StudyLauncher
+    from perceptron.tracking.mlflow_ui import MlflowUi
 
 E = TypeVar("E", bound=Entity)
 
@@ -40,6 +41,7 @@ class EngineContext:
     remote_http: Callable[[], Any] | None = field(default=None, repr=False)
     _scheduler: Any = field(default=None, repr=False)
     _telemetry: Any = field(default=None, repr=False)
+    _mlflow_ui: Any = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         self.projects = SqlRepository(self.db, Project)
@@ -99,6 +101,26 @@ class EngineContext:
 
     def use_llm(self, gateway: Gateway) -> None:
         self._llm = gateway
+
+    @property
+    def mlflow_ui(self) -> MlflowUi:
+        """Enlace opcional a la UI de MLflow (RF-TRK-02); en el desktop se levanta a pedido."""
+        if self._mlflow_ui is None:
+            from perceptron.tracking.mlflow_ui import MlflowUi
+
+            root = self.settings.paths.mlflow_dir
+            uri = (
+                self.settings.tracking_uri
+                or f"sqlite:///{(root / 'mlflow.db').resolve().as_posix()}"
+            )
+            self._mlflow_ui = MlflowUi(
+                uri,
+                root / "artifacts",
+                public_url=self.settings.mlflow_ui_url,
+                can_launch=self.settings.mode is not RuntimeMode.SERVER,
+            )
+            self.on_close(self._mlflow_ui.close)
+        return cast("MlflowUi", self._mlflow_ui)
 
     @property
     def telemetry(self) -> Telemetry:

@@ -37,6 +37,7 @@ function fakeDesktop(engine: () => Promise<{ baseUrl: string; token: string }>) 
     pickDirectory: async () => null,
     getSecret: async () => null,
     setSecret: async () => {},
+    openExternal: async () => {},
   };
   return { bridge, runtime, emit: (p: RuntimeProgress) => emit(p) };
 }
