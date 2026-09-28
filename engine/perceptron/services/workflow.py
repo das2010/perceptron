@@ -62,17 +62,33 @@ from perceptron.evaluation.evaluate import (
     build_model_version,
     evaluate_run,
 )
+from perceptron.export.formats import (
+    EXPORT_DIR,
+    REPORT_FILE,
+    ExportReport,
+    ExportRequest,
+    export_run,
+)
 from perceptron.hpo.recommend import recommend_strategy
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.hpo.study import StudyControl, StudyResult, TrialRecord, run_study
 from perceptron.llm.schemas import Report
 from perceptron.sandbox.code import CODE_FILE
 from perceptron.sandbox.expert import build_code_spec, is_code_spec
-from perceptron.sandbox.process import CodeCheck, check_code, default_limits, evaluate_in_sandbox
+from perceptron.sandbox.process import (
+    CodeCheck,
+    check_code,
+    default_limits,
+    evaluate_in_sandbox,
+    export_in_sandbox,
+)
 from perceptron.sandbox.static import check_source
 from perceptron.tracking.tracker import MlflowTracker, RunRecorder, Tracker
 from perceptron.training.config import RunConfig, RunEvent, RunResult
 from perceptron.training.hardware import detect_hardware
+
+# Playground: sesiones de ONNX Runtime por run (se recargan si cambia el export).
+_INFERENCE_CACHE: dict[str, tuple[tuple[str, int], Any]] = {}
 
 if TYPE_CHECKING:
     from perceptron.services.llm_roles import LLMRoles
@@ -555,6 +571,74 @@ class Workflow:
                 "evaluation",
             )
         return evaluation, report
+
+    # ------------------------------------------------------------------ export (RF-EXP-01)
+
+    def export(self, run_id: str, request: ExportRequest) -> ExportReport:
+        """Exporta el modelo del run y verifica cada formato (ADR-0027)."""
+        run = self.ctx.repo(Run).get(run_id)
+        if run.status is not RunStatus.SUCCEEDED:
+            raise ValidationError(f"el run {run_id} no terminó bien ({run.status.value})")
+        run_dir = self._run_dir(run)
+        dataset_dir = self.view(self.dataset(run.dataset_version_id)).root
+        if (run_dir / CODE_FILE).is_file():
+            # Código experto: exportar ejecuta el modelo, así que va al sandbox.
+            export_in_sandbox(run_dir, dataset_dir, request.model_dump(mode="json"))
+            return self.export_report(run_id)
+        return export_run(run_dir, dataset_dir, request)
+
+    def export_report(self, run_id: str) -> ExportReport:
+        run = self.ctx.repo(Run).get(run_id)
+        path = self._run_dir(run) / EXPORT_DIR / REPORT_FILE
+        if not path.is_file():
+            raise NotFoundError(f"el run {run_id} no fue exportado")
+        return ExportReport.model_validate_json(path.read_text(encoding="utf-8"))
+
+    def export_file(self, run_id: str, name: str) -> Path:
+        """Ruta de un artefacto exportado (solo los del reporte, la firma o el pipeline)."""
+        report = self.export_report(run_id)
+        allowed = {a.file for a in report.artifacts if a.file} | {
+            "signature.json",
+            "pipeline.json",
+            REPORT_FILE,
+        }
+        if name not in allowed:
+            raise NotFoundError(f"el export del run {run_id} no tiene {name!r}")
+        return self._run_dir(self.ctx.repo(Run).get(run_id)) / EXPORT_DIR / name
+
+    def serving_bundle(self, run_id: str) -> Path:
+        """Zip del servidor de inferencia (RF-EXP-03) desde el export ONNX verificado."""
+        from perceptron.serving.bundle import build_bundle
+
+        run = self.ctx.repo(Run).get(run_id)
+        record = self.ctx.repo(ArchSpecRecord).find(run.archspec_id)
+        name = record.name if record else run_id
+        return build_bundle(self._run_dir(run), name)
+
+    def project_zip(self, run_id: str) -> Path:
+        """Proyecto de código autónomo del run (RF-EXP-04, O5)."""
+        from perceptron.export.project import build_project
+
+        run = self.ctx.repo(Run).get(run_id)
+        record = self.ctx.repo(ArchSpecRecord).find(run.archspec_id)
+        dataset_dir = self.view(self.dataset(run.dataset_version_id)).root
+        return build_project(self._run_dir(run), dataset_dir, record.name if record else run_id)
+
+    def inference_model(self, run_id: str) -> Any:
+        """Modelo ONNX exportado listo para el playground (RF-EXP-02), cacheado por archivo."""
+        from perceptron.serving.runtime import MODEL_FILE, InferenceModel
+
+        run = self.ctx.repo(Run).get(run_id)
+        model_dir = self._run_dir(run) / EXPORT_DIR
+        onnx = model_dir / MODEL_FILE
+        if not onnx.is_file():
+            raise NotFoundError(f"el run {run_id} no tiene export ONNX (exportalo primero)")
+        key = (str(onnx), onnx.stat().st_mtime_ns)
+        cached = _INFERENCE_CACHE.get(run_id)
+        if cached is None or cached[0] != key:
+            cached = (key, InferenceModel(model_dir))
+            _INFERENCE_CACHE[run_id] = cached
+        return cached[1]
 
     def evaluation_report(self, run_id: str) -> EvaluationReport:
         run = self.ctx.repo(Run).get(run_id)

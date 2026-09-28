@@ -808,3 +808,81 @@ export function useCreateCodeArchSpec(projectId: string) {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["projects", projectId, "archspecs"] }),
   });
 }
+
+// ---------------------------------------------------------------- export y playground (Capa 4a)
+
+export type ExportReport = Schemas["ExportReport"];
+export type PlaygroundResult = Schemas["PlaygroundResult"];
+
+export function useExportReport(runId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["runs", runId, "export"],
+    enabled,
+    retry: false,
+    queryFn: async () => {
+      const res = await (
+        await getApiClient()
+      ).GET("/api/v1/runs/{run_id}/export", { params: { path: { run_id: runId } } });
+      if (res.response.status === 404) return null;
+      return unwrap(res);
+    },
+  });
+}
+
+export function useExportRun(runId: string) {
+  return useMutation({
+    mutationFn: async (body: Schemas["ExportRequest"]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/export", { params: { path: { run_id: runId } }, body }),
+      ),
+  });
+}
+
+export function usePredictRows(runId: string) {
+  return useMutation({
+    mutationFn: async (rows: Record<string, unknown>[]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/predict", {
+          params: { path: { run_id: runId } },
+          body: { rows },
+        }),
+      ),
+  });
+}
+
+export function usePredictFile(runId: string) {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      return unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/predict/file", {
+          params: { path: { run_id: runId } },
+          body: form as unknown as Schemas["Body_predictFile"],
+          bodySerializer: (b) => b as unknown as FormData,
+        }),
+      );
+    },
+  });
+}
+
+export function useDatasetSample(datasetVersionId: string | undefined) {
+  return useQuery({
+    queryKey: ["datasets", datasetVersionId, "sample"],
+    enabled: Boolean(datasetVersionId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/datasets/{dataset_version_id}/samples", {
+          params: { path: { dataset_version_id: datasetVersionId ?? "" }, query: { limit: 1 } },
+        }),
+      ),
+  });
+}

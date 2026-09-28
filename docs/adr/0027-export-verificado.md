@@ -1,0 +1,16 @@
+# ADR-0027: Export verificado del modelo (Capa 4a)
+- Estado: aceptado
+- Fecha: 2026-09-28
+- Contexto: RF-EXP-01 pide exportar a ONNX (verificado contra PyTorch), torch.export y TorchScript (legacy), con cuantización INT8 opcional. RF-EXP-05 pide una firma en todos los formatos. La aceptación de §14 exige que ONNX coincida con PyTorch con tolerancia 1e-4 (1e-2 en fp16).
+- Decisión:
+  - **Dónde vive.** Módulo `perceptron.export.formats`; se expone con `POST /runs/{id}/export` (job), `GET /runs/{id}/export` y la descarga por nombre de los artefactos del reporte (nunca rutas arbitrarias).
+  - **Batch de referencia.** Se trazan y verifican sobre un batch real de validación, no sintético: así se ejercitan los rangos de valores y los embeddings reales.
+  - **ONNX.** Se usa `torch.onnx.export` con opset 18 y batch dinámico, y se verifica en ONNX Runtime (CPU) contra la salida de PyTorch: máxima diferencia absoluta ≤ 1e-4.
+    - **fp16:** `onnxconverter-common`, con entradas y salidas en fp32, y tolerancia 1e-2.
+    - **INT8 dinámico:** ONNX Runtime; se informan la diferencia y el acuerdo del argmax, sin tolerancia que falle, porque la cuantización cambia la salida por diseño.
+  - **Otros formatos.** `torch.export` (ExportedProgram con dimensión de batch dinámica) y TorchScript (`jit.trace`, marcado *legacy*), con la misma verificación a 1e-4. Si un formato falla, se registra en su artefacto y no bloquea a los demás.
+  - **Firma.** Entradas (tipo, columnas o shape), salidas (tarea, clases), hash de la ArchSpec, run y versión del Engine. Se guarda en `signature.json`, en el reporte y junto al `pipeline.json` ajustado: todo lo que necesita la inferencia fuera de Perceptron.
+  - **Código experto.** Exportar ejecuta el modelo, así que corre en el sandbox (`perceptron.sandbox.export`, ADR-0025).
+  - **Dependencias.** Extra `export` del Engine: `onnx`, `onnxscript`, `onnxruntime` y `onnxconverter-common`, todas MIT.
+- Consecuencias: los modelos con operaciones sin soporte en ONNX (algunos encoders de texto) reportan el error por formato; torch.export y TorchScript siguen disponibles. El paquete de inferencia y el servidor REST (RF-EXP-03) consumen estos artefactos.
+- Alternativas consideradas: verificar con entradas aleatorias (no representa los datos); fallar todo el export si un formato falla (peor experiencia).

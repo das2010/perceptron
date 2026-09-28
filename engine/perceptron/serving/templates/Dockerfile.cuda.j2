@@ -1,0 +1,17 @@
+# Servidor de inferencia GPU (CUDA) de «{{ name }}» (generado por Perceptron {{ version }}).
+# Requiere el NVIDIA Container Toolkit: docker run --gpus all ...
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+ENV PYTHONUNBUFFERED=1 PYTHONPATH=/srv/vendor PERCEPTRON_MODEL_DIR=/srv/app/model
+WORKDIR /srv
+COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /usr/local/bin/uv
+RUN uv python install 3.12 && uv venv /opt/venv --python 3.12
+ENV VIRTUAL_ENV=/opt/venv PATH=/opt/venv/bin:$PATH
+COPY requirements.txt .
+RUN sed 's/^onnxruntime==/onnxruntime-gpu==/' requirements.txt > req-gpu.txt \
+    && uv pip install --no-cache -r req-gpu.txt{% if needs_torch %} \
+    && uv pip install --no-cache --index-url https://download.pytorch.org/whl/cu128 \
+       torch=={{ torch_version }} torchvision=={{ torchvision_version }}{% endif %}
+COPY vendor/ vendor/
+COPY app/ app/
+EXPOSE 8000
+CMD ["uvicorn", "app.app:app", "--host", "0.0.0.0", "--port", "8000"]

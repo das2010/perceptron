@@ -57,6 +57,7 @@ def register(app: typer.Typer) -> None:
     app.command("train")(train)
     app.command("eval")(evaluate)
     app.command("quickstart")(quickstart)
+    app.command("export")(export)
 
 
 @contextmanager
@@ -544,3 +545,55 @@ def llm_report(
     with _ctx(workspace) as ctx:
         r = Workflow(ctx).roles.report(run, mode="auto" if llm else "rules")
         _out(r, as_json, r.markdown)
+
+
+def export(
+    run_id: Annotated[str, typer.Argument(help="Run a exportar")],
+    formats: Annotated[
+        str, typer.Option(help="Formatos separados por coma: onnx, torch_export, torchscript")
+    ] = "onnx",
+    fp16: Annotated[bool, typer.Option(help="ONNX fp16")] = False,
+    int8: Annotated[bool, typer.Option(help="ONNX INT8 dinámico")] = False,
+    serving: Annotated[
+        Path | None, typer.Option(help="Guardar el servidor de inferencia (zip) en esta ruta")
+    ] = None,
+    project: Annotated[
+        Path | None, typer.Option(help="Guardar el proyecto de código (zip) en esta ruta")
+    ] = None,
+    workspace: WorkspaceOpt = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Exporta un run verificado (ONNX/torch.export/TorchScript) y, opcionalmente, el servidor
+    de inferencia y el proyecto de código (RF-EXP-01, 03, 04)."""
+    import shutil
+
+    from perceptron.export.formats import ExportFormat, ExportRequest
+    from perceptron.services.workflow import Workflow
+
+    request = ExportRequest(
+        formats=[ExportFormat(f.strip()) for f in formats.split(",") if f.strip()],
+        fp16=fp16,
+        int8=int8,
+    )
+    with _ctx(workspace) as ctx:
+        wf = Workflow(ctx)
+        report = wf.export(run_id, request)
+        out: dict[str, Any] = {"report": report.model_dump(mode="json")}
+        if serving is not None:
+            shutil.copyfile(wf.serving_bundle(run_id), serving)
+            out["serving"] = str(serving)
+        if project is not None:
+            shutil.copyfile(wf.project_zip(run_id), project)
+            out["project"] = str(project)
+    if as_json:
+        typer.echo(json.dumps(out, indent=2, ensure_ascii=False))
+        return
+    for a in report.artifacts:
+        v = a.verification
+        state = a.error or (f"máx. dif. {v.max_abs_diff:.2e}" if v else "ok")
+        typer.echo(f"{a.format:14} {a.file or '—':28} {state}")
+    for key in ("serving", "project"):
+        if key in out:
+            typer.echo(f"{key}: {out[key]}")
+    if not report.ok:
+        raise typer.Exit(1)

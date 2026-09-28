@@ -20,12 +20,16 @@ import {
   useDiagnosis,
   useEvaluate,
   useEvaluation,
+  useExportReport,
   useRegister,
   useReport,
   useRun,
   type EvaluationReport,
 } from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
+
+import { ExportPanel } from "./ExportPanel";
+import { PlaygroundPanel } from "./PlaygroundPanel";
 
 /** Error del worker guardado en `Run.diagnosis.error` (tipo, mensaje, pista). */
 function formatRunError(diagnosis: unknown): string {
@@ -134,6 +138,7 @@ export function RunPage() {
   const done = run.data?.status === "succeeded";
   const diagnosis = useDiagnosis(runId, done);
   const report = useReport(runId);
+  const exported = useExportReport(runId, done);
 
   if (run.isPending) return <Spinner />;
   if (run.error || !run.data) return <ErrorNote error={run.error} />;
@@ -235,6 +240,18 @@ export function RunPage() {
       </Card>
 
       {evaluated && <Confusion report={evaluated} />}
+
+      {done && <ExportPanel runId={runId} />}
+      {done &&
+        exported.data?.artifacts.some(
+          (a) => a.format === "onnx" && !a.error && a.verification?.passed,
+        ) && (
+          <PlaygroundPanel
+            runId={runId}
+            datasetVersionId={r.dataset_version_id}
+            report={exported.data}
+          />
+        )}
 
       {report.data && (
         <Card>

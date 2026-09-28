@@ -542,5 +542,40 @@
     "notDeclarative": "Código experto (no declarativo)",
     "editCopy": "Editar como nueva",
     "sandboxNote": "Se entrena y evalúa dentro del sandbox. Para cambiarla, editá una copia: la original queda como procedencia."
+  },
+  "export": {
+    "title": "Exportar el modelo",
+    "hint": "Cada formato se verifica contra PyTorch sobre datos reales de validación (ONNX: diferencia máxima 1e-4; fp16: 1e-2).",
+    "format": {
+      "onnx": "ONNX",
+      "onnx_fp16": "ONNX fp16",
+      "onnx_int8": "ONNX INT8",
+      "torch_export": "torch.export",
+      "torchscript": "TorchScript"
+    },
+    "fp16": "ONNX fp16",
+    "int8": "ONNX INT8 (CPU)",
+    "run": "Exportar",
+    "running": "Exportando y verificando…",
+    "col": {
+      "format": "Formato",
+      "size": "Tamaño",
+      "check": "Verificación"
+    },
+    "diff": "dif. {{diff}} (tol. {{tol}})",
+    "failed": "falló",
+    "download": "Descargar {{file}}",
+    "serving": "Servidor de inferencia (Docker)",
+    "project": "Proyecto de código",
+    "needsOnnx": "Primero exportá a ONNX"
+  },
+  "playground": {
+    "title": "Probar el modelo",
+    "prediction": "Predicción:",
+    "confidence": "confianza {{value}} %",
+    "example": "Completar con un ejemplo",
+    "predict": "Predecir",
+    "image": "Imagen a clasificar",
+    "explainLater": "La explicación de cada predicción (SHAP / Integrated Gradients) llega con la evaluación avanzada."
   }
 }

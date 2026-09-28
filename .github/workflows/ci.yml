@@ -148,3 +148,54 @@ jobs:
         with:
           python-version: "3.12"
       - run: python fixtures/generate.py --check
+
+  export-o5:
+    name: export O5 (proyecto y servidor en contenedores limpios)
+    # Aceptación de la Capa 4 (SPEC §14): el proyecto exportado entrena e infiere en una
+    # máquina limpia con uv sync, y el servidor de inferencia responde desde su Docker.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --all-packages --locked
+      - name: Entrenar UC-01 y exportar (ONNX, servidor y proyecto)
+        env:
+          PERCEPTRON_OFFLINE: "1"
+        run: |
+          ws="$RUNNER_TEMP/ws"
+          uv run perceptron quickstart fixtures/uc01_churn/churn.csv --target churn \
+            --trials 1 --max-epochs 3 -w "$ws" --json > "$RUNNER_TEMP/qs.json"
+          run_id=$(python3 -c "import json,sys; t=open(sys.argv[1]).read(); print(json.JSONDecoder().raw_decode(t[t.find('{'):])[0]['best_run_id'])" "$RUNNER_TEMP/qs.json")
+          mkdir -p out
+          uv run perceptron export "$run_id" -w "$ws" --formats onnx \
+            --serving out/serving.zip --project out/project.zip
+          (cd out && unzip -q serving.zip -d serving && unzip -q project.zip -d project)
+          python3 - <<'PY'
+          import csv, json
+          rows = list(csv.DictReader(open("fixtures/uc01_churn/churn.csv", encoding="utf-8")))[:3]
+          for r in rows:
+              r.pop("churn")
+          json.dump({"rows": rows}, open("out/rows.json", "w"))
+          PY
+      - name: Proyecto exportado en un contenedor limpio (uv sync → train → infer → pytest)
+        run: |
+          proj=$(ls -d out/project/*/ | head -1)
+          pkg=$(basename "$(ls -d "$proj"src/*/ | head -1)")
+          docker run --rm -v "$PWD/$proj:/p" -w /p ghcr.io/astral-sh/uv:python3.12-bookworm-slim \
+            sh -c "uv sync && uv run $pkg-train && uv run $pkg-infer data/val.parquet --out /p/pred.csv && uv run pytest -q"
+          test -s "$proj/pred.csv" && head -3 "$proj/pred.csv"
+      - name: Servidor de inferencia desde su Dockerfile
+        run: |
+          docker build -f out/serving/Dockerfile.cpu -t perceptron-serving out/serving
+          docker run -d --name srv -p 8000:8000 -e PERCEPTRON_API_KEY=clave perceptron-serving
+          for i in $(seq 1 60); do curl -fs localhost:8000/health && break; sleep 2; done
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8000/predict -H 'Content-Type: application/json' -d @out/rows.json)" = "401"
+          curl -fs -X POST localhost:8000/predict -H "X-API-Key: clave" \
+            -H "Content-Type: application/json" -d @out/rows.json | tee out/pred.json
+          python3 -c "import json; p=json.load(open('out/pred.json'))['predictions']; assert len(p)==3 and 'confidence' in p[0], p"
+      - name: Logs del servidor
+        if: failure()
+        run: docker logs srv || true

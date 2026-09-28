@@ -925,6 +925,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run Export */
+        get: operations["getRunExport"];
+        put?: never;
+        /**
+         * Export Run
+         * @description Exporta el modelo del run (job): ONNX, torch.export y/o TorchScript, verificados.
+         */
+        post: operations["exportRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/export/files/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Run Export */
+        get: operations["downloadRunExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/export/project.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Export Project
+         * @description Proyecto de código autónomo (RF-EXP-04): uv, modelo generado, train/infer/serve y datos.
+         */
+        get: operations["downloadExportProject"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/export/serving.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Serving Bundle
+         * @description Servidor de inferencia listo para Docker (RF-EXP-03): FastAPI + ONNX Runtime.
+         */
+        get: operations["downloadServingBundle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/history": {
         parameters: {
             query?: never;
@@ -939,6 +1017,46 @@ export interface paths {
         get: operations["getRunHistory"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/predict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict Rows
+         * @description Playground (RF-EXP-02): filas de tabla con las columnas originales.
+         */
+        post: operations["predictRows"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/predict/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict File
+         * @description Playground: una imagen (modelos de imagen) o un CSV (tabular).
+         */
+        post: operations["predictFile"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1562,6 +1680,11 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** Body_predictFile */
+        Body_predictFile: {
+            /** File */
+            file: string;
+        };
         /** Body_uploadSource */
         Body_uploadSource: {
             /** Files */
@@ -2112,6 +2235,72 @@ export interface components {
              */
             split: string;
             task: components["schemas"]["TaskType"];
+        };
+        /** ExportArtifact */
+        ExportArtifact: {
+            /** Error */
+            error?: string | null;
+            /** File */
+            file: string;
+            /** Format */
+            format: string;
+            /**
+             * Legacy
+             * @default false
+             */
+            legacy: boolean;
+            /** Sha256 */
+            sha256: string;
+            /** Size Bytes */
+            size_bytes: number;
+            verification?: components["schemas"]["Verification"] | null;
+        };
+        /**
+         * ExportFormat
+         * @enum {string}
+         */
+        ExportFormat: "onnx" | "torch_export" | "torchscript";
+        /** ExportLaunch */
+        ExportLaunch: {
+            job: components["schemas"]["Job"];
+        };
+        /** ExportReport */
+        ExportReport: {
+            /** Artifacts */
+            artifacts: components["schemas"]["ExportArtifact"][];
+            /** Created At */
+            created_at: string;
+            /** Inputs */
+            inputs: {
+                [key: string]: unknown;
+            }[];
+            /** Outputs */
+            outputs: {
+                [key: string]: unknown;
+            }[];
+            /** Run Id */
+            run_id: string;
+            /** Signature */
+            signature: {
+                [key: string]: unknown;
+            };
+        };
+        /** ExportRequest */
+        ExportRequest: {
+            /** Formats */
+            formats?: components["schemas"]["ExportFormat"][];
+            /**
+             * Fp16
+             * @description ONNX en fp16 (verificado con tolerancia 1e-2)
+             * @default false
+             */
+            fp16: boolean;
+            /**
+             * Int8
+             * @description ONNX con cuantización dinámica INT8 (CPU)
+             * @default false
+             */
+            int8: boolean;
         };
         /** GPUInfo */
         GPUInfo: {
@@ -2890,6 +3079,24 @@ export interface components {
             graph: components["schemas"]["PipelineSpec"];
             /** Version */
             version: number;
+        };
+        /** PlaygroundResult */
+        PlaygroundResult: {
+            /** Input Kind */
+            input_kind: string;
+            /** Predictions */
+            predictions: {
+                [key: string]: unknown;
+            }[];
+            /** Task */
+            task: string;
+        };
+        /** PlaygroundRows */
+        PlaygroundRows: {
+            /** Rows */
+            rows: {
+                [key: string]: unknown;
+            }[];
         };
         /** PrelabelBody */
         PrelabelBody: {
@@ -3998,6 +4205,22 @@ export interface components {
             trainable_params?: number | null;
             /** Valid */
             valid: boolean;
+        };
+        /** Verification */
+        Verification: {
+            /** Argmax Agreement */
+            argmax_agreement?: number | null;
+            /** Max Abs Diff */
+            max_abs_diff: number;
+            /** Passed */
+            passed: boolean;
+            /** Samples */
+            samples: number;
+            /**
+             * Tolerance
+             * @description None: solo se informa (INT8)
+             */
+            tolerance: number | null;
         };
         /** VersionInfo */
         VersionInfo: {
@@ -5956,6 +6179,166 @@ export interface operations {
             };
         };
     };
+    getRunExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    exportRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportLaunch"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    downloadRunExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    downloadExportProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    downloadServingBundle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getRunHistory: {
         parameters: {
             query?: never;
@@ -5976,6 +6359,76 @@ export interface operations {
                     "application/json": {
                         [key: string]: number;
                     }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictRows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaygroundRows"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaygroundResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_predictFile"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaygroundResult"];
                 };
             };
             /** @description Validation Error */

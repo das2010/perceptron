@@ -1,0 +1,12 @@
+# Licencias
+
+El código de este proyecto fue generado por Perceptron para uso del titular de la licencia de Perceptron.
+
+## Pesos preentrenados
+{% if weights %}
+| Modelo | Tag | Licencia | Uso comercial | Origen |
+|---|---|---|---|---|
+{% for w in weights %}| {{ w.model }} | {{ w.pretrained_tag }} | {{ w.license }} | {{ "sí" if w.commercial_ok else "no" }} | {{ w.source }} |
+{% endfor %}{% else %}
+El modelo no usa pesos preentrenados de terceros.
+{% endif %}

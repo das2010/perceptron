@@ -1,0 +1,73 @@
+"""Datos y preprocesamiento de «{{ name }}» (pipeline de Perceptron, fit solo con train)."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import polars as pl
+import torch
+from torch.utils.data import Dataset
+
+from perceptron.data.pipeline.pipeline import (
+    FittedPipeline,
+    encode_target,
+    image_transforms,
+    transform_tabular,
+)
+
+ROOT = Path(__file__).resolve().parents[2]
+DATA = ROOT / "data"
+ARTIFACTS = ROOT / "artifacts"
+FILES = DATA / "files"
+IMAGE = {{ "True" if image else "False" }}
+
+
+class TabularDataset(Dataset[tuple[torch.Tensor, ...]]):
+    def __init__(self, fitted: FittedPipeline, df: pl.DataFrame) -> None:
+        arr = transform_tabular(fitted, df)
+        self.x_num = torch.tensor(arr.x_num)
+        self.x_cat = torch.tensor(arr.x_cat)
+        y = arr.y if arr.y is not None else np.zeros(df.height, dtype=np.int64)
+        self.y = torch.tensor(y)
+
+    def __len__(self) -> int:
+        return len(self.y)
+
+    def __getitem__(self, i: int) -> tuple[torch.Tensor, ...]:
+        return self.x_num[i], self.x_cat[i], self.y[i]
+
+
+class ImageDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
+    def __init__(self, fitted: FittedPipeline, df: pl.DataFrame, *, train: bool) -> None:
+        from PIL import Image
+
+        self._open = Image.open
+        df = df.filter(~pl.col("corrupt")) if "corrupt" in df.columns else df
+        self.paths = [FILES / p for p in df["path"].to_list()]
+        target = fitted.spec.target
+        if target and target.name in df.columns:
+            self.y = torch.tensor(encode_target(fitted, df[target.name]))
+        else:
+            self.y = torch.zeros(len(self.paths), dtype=torch.long)
+        self.transform = image_transforms(fitted, train=train)
+        img = fitted.spec.image
+        self.mode = "L" if img and img.channels == 1 else "RGB"
+
+    def __len__(self) -> int:
+        return len(self.paths)
+
+    def __getitem__(self, i: int) -> tuple[torch.Tensor, torch.Tensor]:
+        with self._open(self.paths[i]) as im:
+            return self.transform(im.convert(self.mode)), self.y[i]
+
+
+def make_dataset(fitted: FittedPipeline, df: pl.DataFrame, *, train: bool) -> Dataset[Any]:
+    if IMAGE:
+        return ImageDataset(fitted, df, train=train)
+    return TabularDataset(fitted, df)
+
+
+def read_split(name: str) -> pl.DataFrame:
+    return pl.read_parquet(DATA / f"{name}.parquet")

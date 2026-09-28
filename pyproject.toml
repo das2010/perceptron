@@ -7,7 +7,7 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-  "perceptron-engine[ml,llm]",
+  "perceptron-engine[ml,llm,export]",
   "perceptron-server",
   "pytest>=8",
   "pytest-cov>=5",
@@ -84,7 +84,7 @@ strict = true
 
 # Librerías de ML sin stubs completos
 [[tool.mypy.overrides]]
-module = ["sklearn.*", "timm.*", "mlflow.*", "torchvision.*", "fastexcel.*", "scipy.*", "cmaes.*", "soundfile.*", "pycocotools.*", "lightgbm.*", "presidio_analyzer.*", "presidio_anonymizer.*", "keyring.*"]
+module = ["sklearn.*", "timm.*", "mlflow.*", "torchvision.*", "fastexcel.*", "scipy.*", "cmaes.*", "soundfile.*", "pycocotools.*", "lightgbm.*", "presidio_analyzer.*", "presidio_anonymizer.*", "keyring.*", "onnxruntime.*", "onnxconverter_common.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]

@@ -1,0 +1,33 @@
+# {{ name }}
+
+Proyecto exportado desde **Perceptron {{ version }}** el {{ created }} (run `{{ run_id }}`). Es autónomo: no necesita Perceptron para entrenar ni para predecir.
+
+- **Entrada:** {{ kind }}{% if columns %} (columnas: {{ columns | join(", ") }}){% endif %}.
+- **Tarea:** {{ task }}{% if classes %} ({{ classes | join(", ") }}){% endif %}.
+- **Modelo:** `src/{{ package }}/model.py`, código PyTorch generado desde la ArchSpec `{{ archspec_hash[:12] }}`.
+- **Datos:** `data/` trae train y validación. El test sellado de Perceptron no se exporta.
+- **Pesos:** `artifacts/model.pt` son los que entrenó Perceptron. `artifacts/pipeline.json` es el preprocesamiento ajustado.
+
+## Uso
+
+```bash
+uv sync
+uv run {{ package }}-train                 # reentrena desde cero (config.yaml) y reescribe artifacts/
+uv run {{ package }}-infer data/val.parquet --out predicciones.csv
+uv run pytest                              # prueba de humo
+```
+
+`src/{{ package }}/serve.py` levanta una API REST (`uv run --with fastapi --with uvicorn uvicorn {{ package }}.serve:app`).
+
+## Estructura
+
+| Ruta | Contenido |
+|---|---|
+| `config.yaml` | hiperparámetros del mejor intento (editables) |
+| `src/{{ package }}/model.py` | arquitectura (`Model`) |
+| `src/{{ package }}/data.py` | lectura de datos y preprocesamiento |
+| `src/{{ package }}/train.py` | entrenamiento con early stopping |
+| `src/{{ package }}/infer.py` | predicción por lotes |
+| `vendor/perceptron/` | pipeline de preprocesamiento de Perceptron (mismo código que en el entrenamiento) |
+
+Ver `LICENSES.md` para los pesos preentrenados que use el modelo.

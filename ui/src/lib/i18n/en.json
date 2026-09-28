@@ -542,5 +542,40 @@
     "notDeclarative": "Expert code (not declarative)",
     "editCopy": "Edit as new",
     "sandboxNote": "It is trained and evaluated inside the sandbox. To change it, edit a copy: the original stays as provenance."
+  },
+  "export": {
+    "title": "Export the model",
+    "hint": "Each format is verified against PyTorch on real validation data (ONNX: max difference 1e-4; fp16: 1e-2).",
+    "format": {
+      "onnx": "ONNX",
+      "onnx_fp16": "ONNX fp16",
+      "onnx_int8": "ONNX INT8",
+      "torch_export": "torch.export",
+      "torchscript": "TorchScript"
+    },
+    "fp16": "ONNX fp16",
+    "int8": "ONNX INT8 (CPU)",
+    "run": "Export",
+    "running": "Exporting and verifying…",
+    "col": {
+      "format": "Format",
+      "size": "Size",
+      "check": "Verification"
+    },
+    "diff": "diff {{diff}} (tol. {{tol}})",
+    "failed": "failed",
+    "download": "Download {{file}}",
+    "serving": "Inference server (Docker)",
+    "project": "Code project",
+    "needsOnnx": "Export to ONNX first"
+  },
+  "playground": {
+    "title": "Try the model",
+    "prediction": "Prediction:",
+    "confidence": "confidence {{value}}%",
+    "example": "Fill with an example",
+    "predict": "Predict",
+    "image": "Image to classify",
+    "explainLater": "Per-prediction explanations (SHAP / Integrated Gradients) come with advanced evaluation."
   }
 }

@@ -952,6 +952,20 @@
         "title": "AugmentSpec",
         "type": "object"
       },
+      "Body_predictFile": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_predictFile",
+        "type": "object"
+      },
       "Body_uploadSource": {
         "properties": {
           "files": {
@@ -2408,6 +2422,156 @@
           "checkpoint"
         ],
         "title": "EvaluationReport",
+        "type": "object"
+      },
+      "ExportArtifact": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "file": {
+            "title": "File",
+            "type": "string"
+          },
+          "format": {
+            "title": "Format",
+            "type": "string"
+          },
+          "legacy": {
+            "default": false,
+            "title": "Legacy",
+            "type": "boolean"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "verification": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verification"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "format",
+          "file",
+          "size_bytes",
+          "sha256"
+        ],
+        "title": "ExportArtifact",
+        "type": "object"
+      },
+      "ExportFormat": {
+        "enum": [
+          "onnx",
+          "torch_export",
+          "torchscript"
+        ],
+        "title": "ExportFormat",
+        "type": "string"
+      },
+      "ExportLaunch": {
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/Job"
+          }
+        },
+        "required": [
+          "job"
+        ],
+        "title": "ExportLaunch",
+        "type": "object"
+      },
+      "ExportReport": {
+        "properties": {
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ExportArtifact"
+            },
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "inputs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Inputs",
+            "type": "array"
+          },
+          "outputs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Outputs",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "signature": {
+            "additionalProperties": true,
+            "title": "Signature",
+            "type": "object"
+          }
+        },
+        "required": [
+          "run_id",
+          "created_at",
+          "signature",
+          "inputs",
+          "outputs",
+          "artifacts"
+        ],
+        "title": "ExportReport",
+        "type": "object"
+      },
+      "ExportRequest": {
+        "properties": {
+          "formats": {
+            "items": {
+              "$ref": "#/components/schemas/ExportFormat"
+            },
+            "title": "Formats",
+            "type": "array"
+          },
+          "fp16": {
+            "default": false,
+            "description": "ONNX en fp16 (verificado con tolerancia 1e-2)",
+            "title": "Fp16",
+            "type": "boolean"
+          },
+          "int8": {
+            "default": false,
+            "description": "ONNX con cuantización dinámica INT8 (CPU)",
+            "title": "Int8",
+            "type": "boolean"
+          }
+        },
+        "title": "ExportRequest",
         "type": "object"
       },
       "GPUInfo": {
@@ -4261,6 +4425,52 @@
           "graph"
         ],
         "title": "PipelineUpdate",
+        "type": "object"
+      },
+      "PlaygroundResult": {
+        "properties": {
+          "input_kind": {
+            "title": "Input Kind",
+            "type": "string"
+          },
+          "predictions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Predictions",
+            "type": "array"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "predictions",
+          "task",
+          "input_kind"
+        ],
+        "title": "PlaygroundResult",
+        "type": "object"
+      },
+      "PlaygroundRows": {
+        "properties": {
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "title": "PlaygroundRows",
         "type": "object"
       },
       "PrelabelBody": {
@@ -7212,6 +7422,53 @@
           "valid"
         ],
         "title": "ValidationReport",
+        "type": "object"
+      },
+      "Verification": {
+        "properties": {
+          "argmax_agreement": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Argmax Agreement"
+          },
+          "max_abs_diff": {
+            "title": "Max Abs Diff",
+            "type": "number"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "samples": {
+            "title": "Samples",
+            "type": "integer"
+          },
+          "tolerance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "None: solo se informa (INT8)",
+            "title": "Tolerance"
+          }
+        },
+        "required": [
+          "samples",
+          "max_abs_diff",
+          "tolerance",
+          "passed"
+        ],
+        "title": "Verification",
         "type": "object"
       },
       "VersionInfo": {
@@ -10175,6 +10432,230 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/export": {
+      "get": {
+        "operationId": "getRunExport",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Run Export",
+        "tags": [
+          "export"
+        ]
+      },
+      "post": {
+        "description": "Exporta el modelo del run (job): ONNX, torch.export y/o TorchScript, verificados.",
+        "operationId": "exportRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportLaunch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Run",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/export/files/{name}": {
+      "get": {
+        "operationId": "downloadRunExport",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Run Export",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/export/project.zip": {
+      "get": {
+        "description": "Proyecto de código autónomo (RF-EXP-04): uv, modelo generado, train/infer/serve y datos.",
+        "operationId": "downloadExportProject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Export Project",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/export/serving.zip": {
+      "get": {
+        "description": "Servidor de inferencia listo para Docker (RF-EXP-03): FastAPI + ONNX Runtime.",
+        "operationId": "downloadServingBundle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Serving Bundle",
+        "tags": [
+          "export"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/history": {
       "get": {
         "description": "Métricas por época de un run terminado (para las curvas de la UI, RF-TRK-02).",
@@ -10222,6 +10703,112 @@
         "summary": "Get Run History",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/predict": {
+      "post": {
+        "description": "Playground (RF-EXP-02): filas de tabla con las columnas originales.",
+        "operationId": "predictRows",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaygroundRows"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaygroundResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict Rows",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/predict/file": {
+      "post": {
+        "description": "Playground: una imagen (modelos de imagen) o un CSV (tabular).",
+        "operationId": "predictFile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predictFile"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaygroundResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict File",
+        "tags": [
+          "export"
         ]
       }
     },
