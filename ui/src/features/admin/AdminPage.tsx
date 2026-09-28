@@ -43,6 +43,7 @@ import {
   useWorkspaces,
 } from "./hooks";
 import { PoliciesTab } from "./PoliciesTab";
+import { SystemTab } from "./SystemTab";
 
 const ROLES: Role[] = ["viewer", "editor", "admin"];
 
@@ -422,6 +423,7 @@ export function AdminPage() {
           <TabsTrigger value="roles">{t("admin.roles")}</TabsTrigger>
           <TabsTrigger value="policies">{t("policies.title")}</TabsTrigger>
           {serverAdmin && <TabsTrigger value="audit">{t("admin.audit")}</TabsTrigger>}
+          {serverAdmin && <TabsTrigger value="system">{t("system.title")}</TabsTrigger>}
         </TabsList>
         {serverAdmin && (
           <TabsContent value="users">
@@ -437,6 +439,11 @@ export function AdminPage() {
         {serverAdmin && (
           <TabsContent value="audit">
             <AuditTab />
+          </TabsContent>
+        )}
+        {serverAdmin && (
+          <TabsContent value="system">
+            <SystemTab />
           </TabsContent>
         )}
       </Tabs>

@@ -1129,5 +1129,31 @@
       "remove": "Quitar el paso {{step}}",
       "update": "Cambiar el paso {{step}}"
     }
+  },
+  "system": {
+    "title": "Sistema",
+    "storage": "Almacenamiento",
+    "usage": "{{used}} en uso · {{free}} libres en",
+    "project": "Proyecto",
+    "size": "Tamaño",
+    "quotas": "Cuotas",
+    "quotasHint": "Se configuran en el servidor (PERCEPTRON_MAX_RUNNING_STUDIES_PER_*). La cuota LLM está en Políticas.",
+    "quota": {
+      "max_running_studies_per_user": "Estudios en curso por usuario",
+      "max_running_studies_per_workspace": "Estudios en curso por workspace"
+    },
+    "workers": "Workers",
+    "mode": {
+      "local": "sin cola (en el servidor)",
+      "queue": "cola de workers"
+    },
+    "noWorkers": "No hay workers conectados.",
+    "worker": "Worker",
+    "queues": "Colas",
+    "state": "Estado",
+    "heartbeat": "Último latido",
+    "busy": "ocupado",
+    "idle": "libre",
+    "secondsAgo": "hace {{s}} s"
   }
 }

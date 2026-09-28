@@ -1129,5 +1129,31 @@
       "remove": "Remove step {{step}}",
       "update": "Change step {{step}}"
     }
+  },
+  "system": {
+    "title": "System",
+    "storage": "Storage",
+    "usage": "{{used}} used · {{free}} free at",
+    "project": "Project",
+    "size": "Size",
+    "quotas": "Quotas",
+    "quotasHint": "Configured on the server (PERCEPTRON_MAX_RUNNING_STUDIES_PER_*). The LLM quota is under Policies.",
+    "quota": {
+      "max_running_studies_per_user": "Running studies per user",
+      "max_running_studies_per_workspace": "Running studies per workspace"
+    },
+    "workers": "Workers",
+    "mode": {
+      "local": "no queue (on the server)",
+      "queue": "worker queue"
+    },
+    "noWorkers": "No workers connected.",
+    "worker": "Worker",
+    "queues": "Queues",
+    "state": "State",
+    "heartbeat": "Last heartbeat",
+    "busy": "busy",
+    "idle": "idle",
+    "secondsAgo": "{{s}} s ago"
   }
 }
