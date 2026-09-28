@@ -112,3 +112,31 @@ def test_server_sources_confine_paths(
         },
     )
     assert sqlite.status_code == 403
+
+
+def test_hardened_defaults_without_explicit_configuration(
+    settings: Settings, server_settings: ServerSettings, fixtures_dir: Path
+) -> None:
+    """Capa 7: sin Swagger público, sin rutas del servidor como fuentes si el admin no las
+    habilitó, y cabeceras de seguridad también en la API."""
+    bare = settings.model_copy(update={"source_roots": None})
+    app = create_server_app(bare, server_settings)
+    with TestClient(app) as c:
+        assert c.get(f"{API}/docs").status_code != 200
+        assert c.get(f"{API}/openapi.json").status_code != 200
+        admin = login(app, ADMIN_EMAIL, ADMIN_PASSWORD)
+        health = admin.get(f"{API}/system/health")
+        assert health.headers["cache-control"] == "no-store"
+        assert health.headers["x-frame-options"] == "DENY"
+        pid = ok(admin.post(f"{API}/projects", json={"name": "Raíces"}), 201)["id"]
+        csv = next(fixtures_dir.rglob("*.csv"))
+        denied = admin.post(f"{API}/projects/{pid}/sources", json={"path": str(csv)})
+        assert denied.status_code == 403
+        # Las subidas (carpeta del proyecto) siguen funcionando.
+        up = admin.post(
+            f"{API}/projects/{pid}/uploads",
+            files=[("files", ("datos.csv", b"a,b\n1,2\n", "text/csv"))],
+        )
+        src = ok(up, 201)
+        assert ok(admin.post(f"{API}/sources/{src['id']}/preview"))["columns"] == ["a", "b"]
+    assert app.openapi()["paths"]  # el contrato se sigue generando desde el código

@@ -12,7 +12,6 @@ import logging
 import os
 import socket
 import threading
-import traceback
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -112,11 +111,8 @@ class WorkerRuntime:
             status = "cancelled" if control.cancelled else "succeeded"
         except Exception as exc:
             logger.exception("el estudio falló en el worker", extra={"job_id": job_id})
-            error = {
-                "type": type(exc).__name__,
-                "message": str(exc),
-                "traceback": traceback.format_exc()[-3000:],
-            }
+            # El traceback queda en el log del worker, no en el job que ve el cliente.
+            error = {"type": type(exc).__name__, "message": str(exc)[:2000]}
         finally:
             # Primero el latido "libre" y después el fin: quien vea el job terminado ya ve
             # el worker disponible en la cola.

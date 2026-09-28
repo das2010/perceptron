@@ -14,6 +14,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.api.context import EngineContext, get_context
 from perceptron.api.jobs import Job
+from perceptron.core.config import RuntimeMode
+from perceptron.core.errors import ForbiddenError
 from perceptron.domain.enums import Device
 from perceptron.domain.models import ArchSpecRecord
 from perceptron.hpo.strategy import Budget, HPOStrategy
@@ -24,6 +26,16 @@ from perceptron.services.workflow import Workflow
 router = APIRouter(prefix="/remote", tags=["remote"])
 project_router = APIRouter(tags=["remote"])
 Ctx = Annotated[EngineContext, Depends(get_context)]
+
+
+def desktop_only(ctx: Ctx) -> None:
+    """Conectarse a un Team Server es cosa del desktop: en el servidor, un usuario no puede
+    hacer que el servidor inicie sesión contra una URL arbitraria (SSRF)."""
+    if ctx.settings.mode is RuntimeMode.SERVER:
+        raise ForbiddenError("los servidores remotos se configuran desde el desktop")
+
+
+DesktopOnly = [Depends(desktop_only)]
 
 
 class ServerConnect(BaseModel):
@@ -55,7 +67,12 @@ def list_servers(ctx: Ctx) -> list[RemoteServer]:
     return ctx.remotes.list()
 
 
-@router.post("/servers", status_code=status.HTTP_201_CREATED, operation_id="connectRemoteServer")
+@router.post(
+    "/servers",
+    status_code=status.HTTP_201_CREATED,
+    operation_id="connectRemoteServer",
+    dependencies=DesktopOnly,
+)
 def connect(body: ServerConnect, ctx: Ctx) -> RemoteServer:
     """Login en el servidor; la contraseña no se guarda (solo el token de refresco)."""
     tokens, me = RemoteClient.login(body.url, body.email, body.password, **ctx.remote_http_kwargs())
@@ -71,7 +88,10 @@ def connect(body: ServerConnect, ctx: Ctx) -> RemoteServer:
 
 
 @router.delete(
-    "/servers/{name}", status_code=status.HTTP_204_NO_CONTENT, operation_id="removeRemoteServer"
+    "/servers/{name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="removeRemoteServer",
+    dependencies=DesktopOnly,
 )
 def remove(name: str, ctx: Ctx) -> Response:
     ctx.remotes.remove(name)
@@ -82,6 +102,7 @@ def remove(name: str, ctx: Ctx) -> Response:
     "/projects/{project_id}/remote/studies",
     status_code=status.HTTP_202_ACCEPTED,
     operation_id="createRemoteStudy",
+    dependencies=DesktopOnly,
 )
 def create_remote_study(project_id: str, body: RemoteStudyCreate, ctx: Ctx) -> Job:
     """Entrena en el servidor: sube datos y arquitectura, encola y sigue el progreso."""

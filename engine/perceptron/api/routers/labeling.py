@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.api.context import EngineContext, get_context
+from perceptron.api.security import MB, read_limited
 from perceptron.core.errors import ValidationError
 from perceptron.domain.enums import LabelKind
 from perceptron.domain.models import DatasetVersion, LabelSet
@@ -157,7 +158,7 @@ async def import_labels(
     file: Annotated[UploadFile, File()],
     format: Annotated[LabelFormat, Query()] = "csv",
 ) -> Count:
-    data = await file.read()
+    data = await read_limited(file, 512 * MB)
     return Count(count=_labeling(ctx).import_labels(labelset_id, data, format))
 
 

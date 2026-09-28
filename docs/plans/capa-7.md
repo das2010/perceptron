@@ -31,7 +31,7 @@ SPEC §14:
 - **Upgrade N → N+1:**
   - migraciones versionadas también para el workspace del desktop (hoy `create_all`), en SQLite con Alembic o un `schema_version`;
   - test de CI: se crea un workspace con el último release, se abre con la versión nueva y se verifican proyectos, datos, runs y modelos.
-- **Hardening:**
+- **Hardening** (hecho en la 7c, ADR-0038 y `docs/security/asvs-l2.md`):
   - revisión con checklist OWASP ASVS nivel 2 para el servidor;
   - `bandit`/`pip-audit`/`pnpm audit`/`cargo audit` en CI;
   - CSP de Tauri, límites de upload y cabeceras.

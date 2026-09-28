@@ -91,6 +91,9 @@ def _set_webhook(ctx: EngineContext, dep_id: str, url: str | None) -> None:
     if url is None:
         return
     if url:
+        from perceptron.core.netguard import check_url
+
+        check_url(url, ctx.settings.net_policy())
         ctx.llm.secrets.set(webhook_secret(dep_id), url)
     else:
         ctx.llm.secrets.delete(webhook_secret(dep_id))
@@ -275,6 +278,11 @@ def create_stream_source(project_id: str, body: StreamSourceCreate, ctx: Ctx) ->
         if not within_roots(Path(str(body.config.get("path", ""))), ctx.settings.source_roots):
             raise ForbiddenError("la ruta no está dentro de una fuente habilitada")
     build_source(body.kind, body.config)  # valida la configuración
+    if body.kind in ("rest", "websocket"):
+        from perceptron.core.netguard import check_url
+
+        schemes = ("http", "https") if body.kind == "rest" else ("ws", "wss")
+        check_url(str(body.config.get("url", "")), ctx.settings.net_policy(), schemes=schemes)
     src = DataSource(
         project_id=project_id,
         name=body.name,

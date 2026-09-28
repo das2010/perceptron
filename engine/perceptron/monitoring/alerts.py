@@ -16,6 +16,8 @@ from typing import TYPE_CHECKING, Any
 
 import httpx
 
+from perceptron.core.errors import ValidationError
+from perceptron.core.netguard import check_url
 from perceptron.domain.enums import AlertKind, AlertStatus, Severity
 from perceptron.domain.models import Alert, Deployment, utcnow
 
@@ -123,6 +125,11 @@ class AlertService:
     def _webhook(self, alert: Alert, deployment: Deployment) -> bool:
         url = self.ctx.llm.secrets.get(webhook_secret(deployment.id))
         if not url:
+            return False
+        try:
+            check_url(url, self.ctx.settings.net_policy())  # la red pudo cambiar desde que se cargó
+        except ValidationError:
+            logger.warning("webhook de alertas bloqueado por la política de red")
             return False
         link = self._link(alert)
         payload = {

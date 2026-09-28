@@ -85,6 +85,10 @@ fn parse_ready(line: &str) -> Option<Connection> {
     })
 }
 
+fn log_line_for_ready(conn: &Connection) -> String {
+    serde_json::json!({"event": "ready", "base_url": conn.base_url, "token": "<omitido>"}).to_string()
+}
+
 fn drain(reader: impl Read + Send + 'static, mut log: File) {
     thread::spawn(move || {
         let mut buf = [0u8; 8192];
@@ -120,10 +124,16 @@ pub fn launch(launcher: &Launcher, logs_dir: &Path) -> Result<EngineProcess, Str
     thread::spawn(move || {
         let mut sent = false;
         for line in BufReader::new(stdout).lines().map_while(Result::ok) {
-            let _ = writeln!(out_log, "{line}");
-            if !sent {
-                if let Some(conn) = parse_ready(&line) {
-                    sent = tx.send(conn).is_ok();
+            match parse_ready(&line) {
+                // La línea `ready` trae el token del sidecar: no queda en el log.
+                Some(conn) => {
+                    let _ = writeln!(out_log, "{}", log_line_for_ready(&conn));
+                    if !sent {
+                        sent = tx.send(conn).is_ok();
+                    }
+                }
+                None => {
+                    let _ = writeln!(out_log, "{line}");
                 }
             }
         }
@@ -194,5 +204,15 @@ mod tests {
         assert_eq!(conn.token, "abc");
         assert!(parse_ready(r#"{"event":"log","host":"x","port":1}"#).is_none());
         assert!(parse_ready("INFO: arrancando").is_none());
+    }
+
+    #[test]
+    fn ready_log_line_omits_the_token() {
+        let conn = parse_ready(r#"{"event":"ready","host":"127.0.0.1","port":5,"token":"s3cr3t"}"#)
+            .unwrap();
+        let line = log_line_for_ready(&conn);
+        assert!(!line.contains("s3cr3t"));
+        assert!(line.contains("http://127.0.0.1:5"));
+        assert!(serde_json::from_str::<serde_json::Value>(&line).is_ok());
     }
 }

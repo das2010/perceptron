@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import logging.handlers
+import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -48,8 +49,27 @@ def log_context(**fields: str | None) -> Iterator[None]:
         _context.reset(token)
 
 
+# Secretos dentro de texto: `?token=…` en URLs (access log de WebSockets), `Bearer …`.
+_SECRET_IN_TEXT = re.compile(
+    r"(?i)((?:[?&;]|\b)(?:token|access_token|refresh_token|api_key|apikey|password|secret)=)"
+    r"[^&\s\"']+"
+)
+_BEARER = re.compile(r"(?i)(bearer\s+)[A-Za-z0-9._~+/=-]+")
+
+
+def scrub(text: str) -> str:
+    """Enmascara secretos embebidos en un mensaje o una URL."""
+    return _BEARER.sub(r"\1***", _SECRET_IN_TEXT.sub(r"\1***", text))
+
+
 def redact(key: str, value: Any) -> Any:
-    return "***" if any(h in key.lower() for h in _SECRET_HINTS) else value
+    if any(h in key.lower() for h in _SECRET_HINTS):
+        return "***"
+    if isinstance(value, dict):
+        return {str(k): redact(str(k), v) for k, v in value.items()}
+    if isinstance(value, str):
+        return scrub(value)
+    return value
 
 
 class ContextFilter(logging.Filter):
@@ -60,19 +80,24 @@ class ContextFilter(logging.Filter):
         return True
 
 
+class ScrubbingFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        return scrub(super().format(record))
+
+
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         data: dict[str, Any] = {
             "ts": datetime.fromtimestamp(record.created, UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
-            "msg": record.getMessage(),
+            "msg": scrub(record.getMessage()),
         }
         for key, value in vars(record).items():
             if key not in _RESERVED and not key.startswith("_"):
                 data[key] = redact(key, value)
         if record.exc_info:
-            data["exc"] = self.formatException(record.exc_info)
+            data["exc"] = scrub(self.formatException(record.exc_info))
         return json.dumps(data, ensure_ascii=False, default=str)
 
 
@@ -87,7 +112,7 @@ def configure_logging(settings: LoggingSettings, logs_dir: Path | None = None) -
     formatter: logging.Formatter = (
         JsonFormatter()
         if settings.json_output
-        else logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+        else ScrubbingFormatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
     )
     handlers: list[logging.Handler] = [logging.StreamHandler()]
     if settings.to_file and logs_dir is not None:

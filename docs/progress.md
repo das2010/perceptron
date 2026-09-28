@@ -136,7 +136,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Runtime Python embebido con uv y variante de PyTorch por hardware; cambio de variante sin reinstalar (RF-TRN-02, ADR-0026) | ✅ en CI se verifica la variante `cpu`; CUDA/ROCm/XPU salen del mapa de índices y no hay runners con GPU para probarlas |
 | Keychain del SO (Credential Manager / Secret Service) y selector de carpetas nativo | 🟡 implementado, sin prueba automatizada (necesita sesión de escritorio) |
 | Instaladores NSIS/MSI y .deb/AppImage con smoke test de instalación limpia (`desktop.yml`) | ✅ Windows (NSIS silencioso) y Ubuntu 24.04 (.deb): aprovisionan desde cero, detectan `cpu` y el Engine responde |
-| Updater firmado y firma de código de los instaladores | ⬜ pendiente de claves y certificado |
+| Updater firmado y firma de código de los instaladores | 🟡 updater firmado (ADR-0037); Authenticode postergado |
 
 
 ## Capa 4a — export, serving y playground
@@ -234,6 +234,21 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Updater firmado: aviso, instalación desde Configuración, release con latest.json (ADR-0037) | ✅ (CI: N → N+1 real con el updater) |
 | Firma Authenticode de los instaladores | ⬜ (certificado de Preteco, postergado) |
 | Documentación de usuario es/en (MkDocs, compilada en CI) | ✅ |
+
+## Capa 7c — hardening de seguridad (OWASP ASVS nivel 2, ADR-0038)
+
+| Entregable | Estado |
+|---|---|
+| Rutas de cliente seguras en Windows y Linux (`safe_parts`, `ensure_within`, ids en sync) | ✅ |
+| SSRF: destinos internos bloqueados en el servidor (fuentes API/WS, webhooks, DB), sin redirects | ✅ |
+| Servidor sin rutas propias como fuente si no se configuran `SOURCE_ROOTS` | ✅ |
+| Errores sin tracebacks ni eco de datos; logs sin tokens | ✅ |
+| Cabeceras de seguridad y `no-store` en la API; Swagger apagado en el servidor | ✅ |
+| Límites de uploads y ZIPs (zip bomb) | ✅ |
+| Sesiones con vida absoluta, `Origin` en WebSockets, SSO con email verificado (nOAuth) | ✅ |
+| Desktop: token fuera de los logs, keychain acotado a `ui.*`, CSP más estricta | ✅ |
+| CI: `contents: read`, cargo audit, CodeQL, Dependabot; `torch>=2.6` | ✅ |
+| Verificación ASVS L2 control por control (`docs/security/asvs-l2.md`) | ✅ (riesgos aceptados documentados) |
 
 ## Requisitos funcionales
 

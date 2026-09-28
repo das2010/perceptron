@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import threading
 from typing import Annotated, Any, Literal
 
@@ -17,6 +18,8 @@ from perceptron.domain.models import ProjectDraft
 from perceptron.llm.types import Message
 from perceptron.services.wizard import STEPS, DraftValues, Wizard
 from perceptron.services.workflow import Workflow
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["wizard"])
 Ctx = Annotated[EngineContext, Depends(get_context)]
@@ -81,8 +84,9 @@ def _produce(
             put({"type": "patch", "patch": patch.model_dump(mode="json"), "llm_call_id": call_id})
     except PerceptronError as e:
         put({"type": "error", "code": e.code, "message": e.message})
-    except Exception as e:  # el copiloto nunca tira abajo la conexión
-        put({"type": "error", "code": "internal_error", "message": str(e)})
+    except Exception:  # el copiloto nunca tira abajo la conexión
+        logger.exception("el copiloto falló", extra={"project_id": project_id})
+        put({"type": "error", "code": "internal_error", "message": "error interno del copiloto"})
     finally:
         put({"type": "_end"})
 

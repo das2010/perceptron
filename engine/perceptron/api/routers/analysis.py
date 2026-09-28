@@ -9,6 +9,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.api.context import EngineContext, get_context
+from perceptron.api.security import MB, read_limited
 from perceptron.core.errors import ValidationError
 from perceptron.evaluation.errors import ErrorAnalysis
 from perceptron.evaluation.explain import GlobalExplanation, LocalExplanation
@@ -72,7 +73,7 @@ async def explain_image(
     from PIL import Image, UnidentifiedImageError
 
     try:
-        image = Image.open(io.BytesIO(await file.read()))
+        image = Image.open(io.BytesIO(await read_limited(file, 64 * MB)))
     except UnidentifiedImageError as exc:
         raise ValidationError("el archivo no es una imagen válida") from exc
     result: LocalExplanation = Workflow(ctx).explain_image(run_id, image)

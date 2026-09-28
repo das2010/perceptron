@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from perceptron.api.context import EngineContext, get_context
 from perceptron.api.jobs import Job, JobContext
+from perceptron.api.security import MB, read_limited
 from perceptron.core.errors import ValidationError
 from perceptron.domain.models import Run
 from perceptron.export.formats import ExportReport, ExportRequest
@@ -101,7 +102,7 @@ async def predict_file(
     import csv
     import io
 
-    data = await file.read()
+    data = await read_limited(file, 256 * MB)
 
     def call(model: Any) -> Any:
         if model.kind == "tabular":

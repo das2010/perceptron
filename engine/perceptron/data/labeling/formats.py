@@ -18,6 +18,7 @@ from xml.etree import ElementTree as ET
 import polars as pl
 
 from perceptron.core.errors import ValidationError
+from perceptron.data.sources.files import check_zip_limits
 from perceptron.domain.enums import LabelKind
 
 if TYPE_CHECKING:
@@ -179,6 +180,7 @@ def import_labels(ls: LabelSet, df: pl.DataFrame, data: bytes, fmt: Format) -> l
         return [LabelUpdate(sample_id=s, boxes=b) for s, b in boxes.items()]
     # YOLO/VOC: un zip con un archivo por imagen (y classes.txt en YOLO).
     with zipfile.ZipFile(io.BytesIO(data)) as z:
+        check_zip_limits(z, max_files=200_000, max_bytes=2 * 1024**3)
         names = z.namelist()
         classes = ls.classes
         if fmt == "yolo" and "classes.txt" in names:

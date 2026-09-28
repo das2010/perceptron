@@ -14,18 +14,37 @@ from __future__ import annotations
 import secrets
 from http.cookies import SimpleCookie
 from typing import Any
+from urllib.parse import urlsplit
 
 import anyio
 from starlette.datastructures import MutableHeaders
 from starlette.requests import HTTPConnection
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+from starlette.websockets import WebSocketClose
 
 from perceptron_server.accounts import Principal, TokenPair
 from perceptron_server.audit import AUDITED_READS
+from perceptron_server.policy import WS_FORBIDDEN
 from perceptron_server.queue.launcher import CURRENT_PRINCIPAL
 from perceptron_server.security import decode_access
 from perceptron_server.state import ServerState, client_ip
+
+
+def _origin_allowed(state: ServerState, conn: HTTPConnection) -> bool:
+    """Mismo host que el servidor, su URL pública o un origen CORS configurado."""
+    origin = conn.headers.get("origin")
+    if origin is None:
+        return True  # clientes que no son navegadores (CLI, desktop)
+    host = conn.headers.get("host", "")
+    if urlsplit(origin).netloc.lower() == host.lower():
+        return True
+    allowed = {o.rstrip("/").lower() for o in state.settings.api.cors_origins}
+    if state.server.public_url:
+        public = urlsplit(state.server.public_url)
+        allowed.add(f"{public.scheme}://{public.netloc}".lower())
+    return origin.rstrip("/").lower() in allowed
+
 
 ACCESS_COOKIE = "pt_access"
 REFRESH_COOKIE = "pt_refresh"
@@ -118,6 +137,19 @@ class SessionMiddleware:
                 )
                 await response(scope, receive, send)
                 return
+
+        # Las cookies viajan solas: un WebSocket desde otro sitio no usa la sesión (CSWSH).
+        if (
+            websocket
+            and principal is not None
+            and principal.via == "cookie"
+            and not _origin_allowed(state, conn)
+        ):
+            CURRENT_PRINCIPAL.reset(principal_token)
+            await WebSocketClose(code=WS_FORBIDDEN, reason="origen no permitido")(
+                scope, receive, send
+            )
+            return
 
         status: dict[str, int] = {}
 

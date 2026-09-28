@@ -26,7 +26,7 @@ def pull_source(ctx: EngineContext, source_id: str) -> dict[str, Any]:
     if src.type not in (DataSourceType.STREAM, DataSourceType.API) or "stream" not in src.config:
         raise ValidationError("la fuente no es streaming ni API")
     spec = src.config["stream"]
-    source = build_source(str(spec["kind"]), dict(spec["config"]))
+    source = build_source(str(spec["kind"]), dict(spec["config"]), net=ctx.settings.net_policy())
     buffer = buffer_for(ctx, src)
     secret_ref = src.secret_refs.get("token")
     secret = ctx.llm.secrets.get(secret_ref) if secret_ref else None

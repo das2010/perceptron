@@ -28,8 +28,8 @@ perceptron = "perceptron.cli.main:app"
 [project.optional-dependencies]
 # Stack de ML (Capa 1, ADR-0014). La variante de torch (CPU/CUDA/ROCm/XPU) se elige por hardware.
 ml = [
-  "torch>=2.5",
-  "torchvision>=0.20",
+  "torch>=2.6",  # weights_only=True por defecto en torch.load (checkpoints de Lightning)
+  "torchvision>=0.21",
   "lightning>=2.4",
   "torchmetrics>=1.4",
   "timm>=1.0",

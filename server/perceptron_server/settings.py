@@ -68,7 +68,14 @@ class ServerSettings(BaseSettings):
         description="Clave HMAC de los JWT (≥ 32 caracteres aleatorios; rotarla cierra sesiones)"
     )
     access_ttl_s: int = Field(default=15 * 60, ge=60, le=24 * 3600)
-    refresh_ttl_s: int = Field(default=7 * 24 * 3600, ge=3600)
+    refresh_ttl_s: int = Field(
+        default=7 * 24 * 3600, ge=3600, description="Inactividad máxima de una sesión"
+    )
+    session_max_age_s: int = Field(
+        default=30 * 24 * 3600,
+        ge=3600,
+        description="Vida absoluta de una sesión: después hay que volver a iniciar sesión",
+    )
     cookie_secure: bool = Field(
         default=True, description="Cookies solo por HTTPS; apagar solo en desarrollo/CI sin TLS"
     )

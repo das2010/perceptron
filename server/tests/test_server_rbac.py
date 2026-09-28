@@ -250,3 +250,20 @@ def test_license_usage_and_install_is_admin_only(
     assert ok(admin.put(f"{API}/system/license", json={"content": doc}))["status"] == "valid"
     usage = ok(admin.get(f"{API}/admin/license"))
     assert usage["licensee"] == "Acme" and usage["over_limit"] == ["seats"]  # 2 usuarios, tope 1
+
+
+def test_websocket_from_another_site_cannot_use_the_session_cookie(
+    make_user: UserFactory, fixtures_dir: Path
+) -> None:
+    """Cross-site WebSocket hijacking: el navegador manda las cookies igual (ASVS V13.5)."""
+    _, editor = make_user("ws-origin@preteco.test", "editor")
+    pid, _ = _dataset(editor, fixtures_dir)
+    path = f"{API}/projects/{pid}/copilot"
+    with (
+        pytest.raises(WebSocketDisconnect) as exc,
+        editor.websocket_connect(path, headers={"origin": "https://sitio-malicioso.test"}),
+    ):
+        pass
+    assert exc.value.code == 4403
+    with editor.websocket_connect(path, headers={"origin": "http://testserver"}) as ws:
+        assert ws is not None

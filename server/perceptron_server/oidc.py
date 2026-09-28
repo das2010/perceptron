@@ -175,13 +175,19 @@ class OIDCClient:
         return self._identity(claims)
 
     def _identity(self, claims: dict[str, Any]) -> Identity:
-        email = claims.get("email")
-        if not email and self.provider.kind == "entra":
+        # Las cuentas se vinculan por email: solo sirve uno que el IdP garantiza.
+        if self.provider.kind == "entra":
+            # UPN del tenant; el claim `email` de Entra es editable (nOAuth) salvo que el
+            # dominio esté verificado (`xms_edov`).
             email = claims.get("preferred_username") or claims.get("upn")
+            if not email and claims.get("xms_edov") is True:
+                email = claims.get("email")
+        else:
+            email = claims.get("email")
+            if claims.get("email_verified") is not True:
+                raise AuthError("el email del proveedor SSO no está verificado")
         if not isinstance(email, str) or "@" not in email:
             raise AuthError("el proveedor SSO no informó un email")
-        if claims.get("email_verified") is False:
-            raise AuthError("el email del proveedor SSO no está verificado")
         domain = email.rsplit("@", 1)[1].lower()
         allowed = [d.lower() for d in self.provider.allowed_domains]
         if allowed and domain not in allowed:

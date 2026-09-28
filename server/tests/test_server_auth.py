@@ -144,3 +144,36 @@ def test_last_server_admin_cannot_be_removed(admin: TestClient) -> None:
     me = ok(admin.get(f"{API}/auth/me"))
     r = admin.patch(f"{API}/admin/users/{me['user']['id']}", json={"is_server_admin": False})
     assert r.status_code == 409
+
+
+def test_sessions_have_an_absolute_lifetime(app: FastAPI, anon: TestClient) -> None:
+    """Aunque se use todos los días, una sesión vence a los `session_max_age_s` (ASVS V3.3)."""
+    tokens = ok(
+        anon.post(f"{API}/auth/token", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    )
+    state = app.state.server
+    assert ok(anon.post(f"{API}/auth/refresh", json={"refresh_token": tokens["refresh_token"]}))
+    fresh = ok(
+        anon.post(f"{API}/auth/token", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    )
+    state.accounts.settings = state.accounts.settings.model_copy(update={"session_max_age_s": 0})
+    expired = anon.post(f"{API}/auth/refresh", json={"refresh_token": fresh["refresh_token"]})
+    assert expired.status_code == 401
+
+
+def test_sso_identity_only_trusts_verified_emails() -> None:
+    from perceptron.core.errors import AuthError
+    from perceptron_server.oidc import OIDCClient
+    from perceptron_server.settings import OIDCProvider
+
+    google = OIDCClient("g", OIDCProvider(kind="google", display_name="G", client_id="c"))
+    with pytest.raises(AuthError, match="verificado"):
+        google._identity({"sub": "1", "email": "ana@preteco.com"})
+    assert google._identity({"sub": "1", "email": "Ana@preteco.com", "email_verified": True}).email
+    entra = OIDCClient("e", OIDCProvider(kind="entra", display_name="E", client_id="c"))
+    # El claim `email` de Entra es editable por el usuario (nOAuth): no identifica a nadie.
+    with pytest.raises(AuthError, match="email"):
+        entra._identity({"sub": "1", "email": "ceo@preteco.com"})
+    upn = entra._identity({"sub": "1", "email": "ceo@preteco.com", "preferred_username": "a@x.com"})
+    assert upn.email == "a@x.com"
+    assert entra._identity({"sub": "1", "email": "b@x.com", "xms_edov": True}).email == "b@x.com"
