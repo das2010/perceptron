@@ -36,9 +36,11 @@ class Purpose(StrEnum):
     FINAL_EVALUATION = "final_evaluation"
     # Auditoría de privacidad (RF-PRV-03): busca fugas en todo el dataset, no entrena ni elige.
     PRIVACY_AUDIT = "privacy_audit"
+    # Etiquetado (RF-LBL, ADR-0029): una persona anota todas las muestras; no entrena ni elige.
+    LABELING = "labeling"
 
 
-_READS_TEST = frozenset({Purpose.FINAL_EVALUATION, Purpose.PRIVACY_AUDIT})
+_READS_TEST = frozenset({Purpose.FINAL_EVALUATION, Purpose.PRIVACY_AUDIT, Purpose.LABELING})
 
 
 class SealedTestSetError(PerceptronError):

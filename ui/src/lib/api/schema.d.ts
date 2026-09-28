@@ -214,6 +214,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/{dataset_version_id}/labelsets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Labelsets */
+        get: operations["listLabelSets"];
+        put?: never;
+        /** Create Labelset */
+        post: operations["createLabelSet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/{dataset_version_id}/profile": {
         parameters: {
             query?: never;
@@ -300,6 +318,205 @@ export interface paths {
          * @description Pre-etiquetado de texto con el LLM (requiere privacidad L2+, RF-LBL-02).
          */
         post: operations["prelabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Labelset */
+        get: operations["getLabelSet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Suggestions
+         * @description Acepta en lote las sugerencias con confianza ≥ umbral.
+         */
+        post: operations["acceptSuggestions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Labels
+         * @description Crea una versión nueva del dataset con las etiquetas aceptadas (para reentrenar).
+         */
+        post: operations["applyLabels"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Classes */
+        post: operations["addLabelClasses"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Labels */
+        get: operations["exportLabels"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Labels */
+        post: operations["importLabels"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Labels */
+        put: operations["setLabels"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/prelabel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Prelabel
+         * @description Sugerencias del modelo del proyecto o del LLM para lo que falta (RF-LBL-02).
+         */
+        post: operations["prelabelSet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/quality": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Quality */
+        get: operations["labelQuality"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Label Queue
+         * @description Próximas muestras a revisar (active learning, RF-LBL-03).
+         */
+        get: operations["labelQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/labelsets/{labelset_id}/samples/{sample_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sample File */
+        get: operations["labelSampleFile"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -776,6 +993,46 @@ export interface paths {
         put?: never;
         /** Create Source */
         post: operations["createSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/sources/db": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Db Source
+         * @description Consulta SQL (SQL Server, PostgreSQL, MySQL/MariaDB, SQLite) materializada en Parquet.
+         */
+        post: operations["createDbSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/sources/hub": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Hub Source
+         * @description Dataset público de Hugging Face o Kaggle, descargado a la caché del proyecto.
+         */
+        post: operations["createHubSource"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1271,6 +1528,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sources/{source_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Source
+         * @description Vuelve a ejecutar la consulta o la descarga; la próxima ingesta crea otra versión.
+         */
+        post: operations["refreshSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/studies/{study_id}": {
         parameters: {
             query?: never;
@@ -1400,6 +1677,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcceptBody */
+        AcceptBody: {
+            /**
+             * Min Confidence
+             * @default 0.9
+             */
+            min_confidence: number;
+        };
         /** AgentCreate */
         AgentCreate: {
             approval?: components["schemas"]["ApprovalPolicy"];
@@ -1825,6 +2110,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_importLabels */
+        Body_importLabels: {
+            /** File */
+            file: string;
+        };
         /** Body_predictFile */
         Body_predictFile: {
             /** File */
@@ -1834,6 +2124,22 @@ export interface components {
         Body_uploadSource: {
             /** Files */
             files: string[];
+        };
+        /**
+         * Box
+         * @description Caja normalizada a [0, 1] (x1, y1) – (x2, y2).
+         */
+        Box: {
+            /** Label */
+            label: string;
+            /** X1 */
+            x1: number;
+            /** X2 */
+            x2: number;
+            /** Y1 */
+            y1: number;
+            /** Y2 */
+            y2: number;
         };
         /** Budget */
         Budget: {
@@ -1900,6 +2206,11 @@ export interface components {
             name: string;
             /** Positive Examples */
             positive_examples?: string[];
+        };
+        /** ClassesBody */
+        ClassesBody: {
+            /** Classes */
+            classes: string[];
         };
         /** ClassificationMetrics */
         ClassificationMetrics: {
@@ -2058,6 +2369,11 @@ export interface components {
             /** Value */
             value?: unknown;
         };
+        /** Count */
+        Count: {
+            /** Count */
+            count: number;
+        };
         /** DataSource */
         DataSource: {
             /**
@@ -2153,6 +2469,51 @@ export interface components {
              * @default 1
              */
             version: number;
+        };
+        /** DbConfig */
+        DbConfig: {
+            /**
+             * Database
+             * @description Nombre de la base (o ruta del archivo en SQLite)
+             */
+            database: string;
+            /**
+             * Dialect
+             * @enum {string}
+             */
+            dialect: "sqlite" | "postgresql" | "mysql" | "mssql";
+            /** Host */
+            host?: string | null;
+            /**
+             * Max Rows
+             * @default 5000000
+             */
+            max_rows: number;
+            /**
+             * Odbc Driver
+             * @default ODBC Driver 18 for SQL Server
+             */
+            odbc_driver: string;
+            /** Port */
+            port?: number | null;
+            /**
+             * Query
+             * @description Consulta SQL de solo lectura
+             */
+            query: string;
+            /** User */
+            user?: string | null;
+        };
+        /** DbSourceCreate */
+        DbSourceCreate: {
+            config: components["schemas"]["DbConfig"];
+            /** Name */
+            name: string;
+            /**
+             * Password
+             * @description Solo de escritura: va al keychain
+             */
+            password?: string | null;
         };
         /** DefineBody */
         DefineBody: {
@@ -2717,6 +3078,31 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** HubSourceCreate */
+        HubSourceCreate: {
+            /**
+             * Dataset
+             * @description repo_id (HF) u owner/slug (Kaggle)
+             */
+            dataset: string;
+            /** Name */
+            name?: string | null;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "huggingface" | "kaggle";
+            /**
+             * Split
+             * @description Split de HF (train, test…)
+             */
+            split?: string | null;
+            /**
+             * Token
+             * @description Solo de escritura: token de HF o «usuario:clave» de Kaggle
+             */
+            token?: string | null;
+        };
         /** ImageProfile */
         ImageProfile: {
             /** Channels */
@@ -3000,13 +3386,63 @@ export interface components {
             /** Provider */
             provider?: string | null;
         };
+        /** LabelItem */
+        LabelItem: {
+            /** Boxes */
+            boxes?: components["schemas"]["Box"][];
+            /** Confidence */
+            confidence?: number | null;
+            /** Label */
+            label?: string | string[] | null;
+            /** @default human */
+            origin: components["schemas"]["LabelOrigin"];
+            /** Sample Id */
+            sample_id: string;
+            /**
+             * Status
+             * @default accepted
+             * @enum {string}
+             */
+            status: "suggested" | "accepted";
+            /** Updated At */
+            updated_at?: string;
+        };
         /**
          * LabelKind
          * @enum {string}
          */
         LabelKind: "class" | "multilabel" | "box" | "mask" | "temporal_event";
+        /**
+         * LabelOrigin
+         * @enum {string}
+         */
+        LabelOrigin: "human" | "model" | "llm";
+        /** LabelQuality */
+        LabelQuality: {
+            /**
+             * Agreement
+             * @description Humano vs modelo, sobre las aceptadas con sugerencia
+             */
+            agreement: number | null;
+            /** Compared */
+            compared: number;
+            /** Confusing Pairs */
+            confusing_pairs: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Suspected Errors
+             * @description sample_id con etiqueta humana dudosa
+             */
+            suspected_errors: string[];
+        };
         /** LabelSet */
         LabelSet: {
+            /**
+             * Applied Version Id
+             * @description DatasetVersion creada al aplicar las etiquetas (RF-LBL)
+             */
+            applied_version_id?: string | null;
             /** Classes */
             classes?: string[];
             /**
@@ -3019,11 +3455,21 @@ export interface components {
             /** Id */
             id?: string;
             kind: components["schemas"]["LabelKind"];
+            /** Name */
+            name?: string | null;
+            /** @default human */
+            origin: components["schemas"]["LabelOrigin"];
             /**
              * Path
              * @description Ruta relativa al proyecto
              */
             path?: string | null;
+            /**
+             * Target
+             * @description Columna objetivo al aplicar (tabular)
+             * @default label
+             */
+            target: string;
             /**
              * Updated At
              * Format: date-time
@@ -3036,12 +3482,56 @@ export interface components {
              */
             version: number;
         };
+        /** LabelSetCreate */
+        LabelSetCreate: {
+            /** Classes */
+            classes?: string[];
+            /** @default class */
+            kind: components["schemas"]["LabelKind"];
+            /** Name */
+            name?: string | null;
+            /**
+             * Target
+             * @description Columna objetivo (tabular/texto)
+             */
+            target?: string | null;
+        };
+        /** LabelUpdate */
+        LabelUpdate: {
+            /** Boxes */
+            boxes?: components["schemas"]["Box"][];
+            /** Label */
+            label?: string | string[] | null;
+            /** Sample Id */
+            sample_id: string;
+        };
         /** LabelingGuide */
         LabelingGuide: {
             /** Classes */
             classes: components["schemas"]["ClassGuide"][];
             /** General Rules */
             general_rules?: string[];
+        };
+        /** LabelingSummary */
+        LabelingSummary: {
+            /** Accepted */
+            accepted: number;
+            /** By Class */
+            by_class: {
+                [key: string]: number;
+            };
+            labelset: components["schemas"]["LabelSet"];
+            /** Suggested */
+            suggested: number;
+            /** Total */
+            total: number;
+            /** Unlabeled */
+            unlabeled: number;
+        };
+        /** LabelsBody */
+        LabelsBody: {
+            /** Updates */
+            updates: components["schemas"]["LabelUpdate"][];
         };
         /** LocalExplanation */
         LocalExplanation: {
@@ -3403,19 +3893,6 @@ export interface components {
             rows: {
                 [key: string]: unknown;
             }[];
-        };
-        /** PrelabelBody */
-        PrelabelBody: {
-            /** Column */
-            column?: string | null;
-            /** Dataset Version Id */
-            dataset_version_id: string;
-            guide: components["schemas"]["LabelingGuide"];
-            /**
-             * Limit
-             * @default 100
-             */
-            limit: number;
         };
         /**
          * PrivacyLevel
@@ -3899,6 +4376,22 @@ export interface components {
          * @enum {string}
          */
         RuntimeMode: "desktop" | "server";
+        /** Sample */
+        Sample: {
+            /** Fields */
+            fields?: {
+                [key: string]: unknown;
+            };
+            item?: components["schemas"]["LabelItem"] | null;
+            /** Path */
+            path?: string | null;
+            /** Sample Id */
+            sample_id: string;
+            /** Split */
+            split: string | null;
+            /** Text */
+            text?: string | null;
+        };
         /** SchedulerSpec */
         SchedulerSpec: {
             /** Params */
@@ -4589,6 +5082,39 @@ export interface components {
             /** Text Length P95 */
             text_length_p95?: number | null;
         };
+        /** PrelabelBody */
+        perceptron__api__routers__labeling__PrelabelBody: {
+            /** @description Guía (method=llm) */
+            guide?: components["schemas"]["LabelingGuide"] | null;
+            /**
+             * Limit
+             * @default 200
+             */
+            limit: number;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "model" | "llm";
+            /**
+             * Run Id
+             * @description Modelo del proyecto (method=model)
+             */
+            run_id?: string | null;
+        };
+        /** PrelabelBody */
+        perceptron__api__routers__llm__PrelabelBody: {
+            /** Column */
+            column?: string | null;
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            guide: components["schemas"]["LabelingGuide"];
+            /**
+             * Limit
+             * @default 100
+             */
+            limit: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -4989,6 +5515,72 @@ export interface operations {
             };
         };
     };
+    listLabelSets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelSet"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createLabelSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabelSetCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelSet"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getProfile: {
         parameters: {
             query?: never;
@@ -5148,7 +5740,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PrelabelBody"];
+                "application/json": components["schemas"]["perceptron__api__routers__llm__PrelabelBody"];
             };
         };
         responses: {
@@ -5159,6 +5751,375 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LabelSet"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getLabelSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelingSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acceptSuggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Count"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    applyLabels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetVersion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    addLabelClasses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassesBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelSet"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    exportLabels: {
+        parameters: {
+            query?: {
+                format?: "csv" | "jsonl" | "coco" | "yolo" | "voc";
+            };
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    importLabels: {
+        parameters: {
+            query?: {
+                format?: "csv" | "jsonl" | "coco" | "yolo" | "voc";
+            };
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_importLabels"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Count"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    setLabels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabelsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Count"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prelabelSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["perceptron__api__routers__labeling__PrelabelBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Count"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    labelQuality: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelQuality"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    labelQueue: {
+        parameters: {
+            query?: {
+                strategy?: "uncertainty" | "diversity" | "random";
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                labelset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sample"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    labelSampleFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                labelset_id: string;
+                sample_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -6251,6 +7212,76 @@ export interface operations {
             };
         };
     };
+    createDbSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DbSourceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createHubSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HubSourceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     createStudy: {
         parameters: {
             query?: never;
@@ -7129,6 +8160,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourcePreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refreshSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSource"];
                 };
             };
             /** @description Validation Error */

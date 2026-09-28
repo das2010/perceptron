@@ -148,7 +148,18 @@ class ChainSecrets:
         return None
 
     def set(self, name: str, value: str) -> None:
-        self.stores[0].set(name, value)
+        try:
+            self.stores[0].set(name, value)
+        except PermissionError:
+            raise
+        except Exception as exc:  # p. ej. Linux sin Secret Service: keyring.errors.NoKeyringError
+            from perceptron.core.errors import ValidationError
+
+            raise ValidationError(
+                "No hay un llavero del sistema disponible para guardar la credencial. "
+                f"Definí {MASTER_KEY_ENV} para guardarla cifrada en archivo.",
+                details={"reason": type(exc).__name__},
+            ) from exc
 
     def delete(self, name: str) -> None:
         for store in self.stores:

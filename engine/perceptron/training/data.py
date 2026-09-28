@@ -310,6 +310,21 @@ _VISION_DATASETS: dict[TaskType, Any] = {
 }
 
 
+def make_dataset_from_frame(
+    view: DatasetView, fitted: FittedPipeline, df: pl.DataFrame
+) -> Dataset[Any]:
+    """Dataset de evaluación sobre filas arbitrarias de la versión (p. ej. el pre-etiquetado)."""
+    if view.modality is Modality.TABULAR:
+        return TabularDataset(fitted, df)
+    if view.modality is Modality.IMAGE:
+        return ImageDataset(fitted, df, view.files_dir, train=False)
+    if view.modality is Modality.TEXT:
+        return TextDataset(fitted, df)
+    if view.modality is Modality.AUDIO:
+        return AudioDataset(fitted, df, view.files_dir, train=False)
+    raise NotImplementedError(f"pre-etiquetado para {view.modality} no disponible")
+
+
 def make_dataset(
     view: DatasetView,
     fitted: FittedPipeline,

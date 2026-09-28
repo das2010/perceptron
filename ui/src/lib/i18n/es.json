@@ -123,7 +123,8 @@
       "audit": "Auditoría LLM",
       "wizard": "Wizard",
       "agent": "Agente",
-      "design": "Diseño"
+      "design": "Diseño",
+      "labeling": "Etiquetado"
     }
   },
   "privacy": {
@@ -630,5 +631,76 @@
       "html": "HTML",
       "md": "Markdown"
     }
+  },
+  "labeling": {
+    "title": "Etiquetado asistido",
+    "set": "Conjunto",
+    "kind": "Tipo",
+    "newClasses": "Clases",
+    "newClassesHint": "Separadas por coma (se suman las que ya trae el dataset).",
+    "create": "Nuevo conjunto",
+    "kinds": {
+      "class": "Clase",
+      "multilabel": "Multi-etiqueta",
+      "box": "Cajas",
+      "mask": "Máscaras",
+      "temporal_event": "Segmentos"
+    },
+    "progress": "{{accepted}} de {{total}} etiquetadas · {{suggested}} sugerencias pendientes",
+    "prelabelRun": "Modelo para pre-etiquetar",
+    "prelabel": "Pre-etiquetar",
+    "threshold": "Confianza mínima",
+    "acceptAll": "Aceptar sugerencias confiables",
+    "apply": "Aplicar etiquetas (nueva versión)",
+    "applied": "Nueva versión con {{samples}} muestras etiquetadas.",
+    "goTrain": "Reentrenar",
+    "queue": "Cola de revisión",
+    "strategy": "Orden de la cola",
+    "strategies": {
+      "uncertainty": "Más dudosas primero",
+      "diversity": "Diversas",
+      "random": "Al azar"
+    },
+    "queueDone": "Revisaste esta tanda. Recargá la cola para seguir.",
+    "queueEmpty": "No quedan muestras por etiquetar.",
+    "position": "Muestra {{current}} de {{total}}",
+    "sampleAlt": "Muestra a etiquetar",
+    "suggestion": "Sugerencia: «{{label}}» ({{confidence}} %)",
+    "acceptSuggestion": "Aceptar (Enter)",
+    "classes": "Clases",
+    "save": "Guardar",
+    "skip": "Saltar",
+    "boxClass": "Clase de la caja",
+    "boxes_one": "{{count}} caja",
+    "boxes_other": "{{count}} cajas",
+    "undo": "Deshacer"
+  },
+  "sources": {
+    "fromDb": "Desde una base de datos",
+    "fromHub": "Dataset público (Hugging Face / Kaggle)",
+    "dialect": "Motor",
+    "dialects": {
+      "postgresql": "PostgreSQL",
+      "mysql": "MySQL / MariaDB",
+      "mssql": "SQL Server",
+      "sqlite": "SQLite (archivo)"
+    },
+    "database": "Base",
+    "file": "Archivo .sqlite",
+    "name": "Nombre",
+    "host": "Servidor",
+    "port": "Puerto",
+    "user": "Usuario",
+    "password": "Contraseña",
+    "passwordHint": "Se guarda en el llavero del sistema, nunca en el proyecto.",
+    "query": "Consulta SQL",
+    "queryHint": "Solo lectura. Se lee por lotes y se guarda como una copia del proyecto.",
+    "runQuery": "Ejecutar y previsualizar",
+    "provider": "Origen",
+    "dataset": "Dataset",
+    "split": "Split",
+    "hfToken": "Token de Hugging Face (opcional)",
+    "kaggleKey": "Credenciales de Kaggle (usuario:clave)",
+    "download": "Descargar y previsualizar"
   }
 }

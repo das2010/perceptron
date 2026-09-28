@@ -80,6 +80,11 @@ const agentRoute = createRoute({
   validateSearch: (search: Record<string, unknown>): { agent?: string } =>
     typeof search.agent === "string" ? { agent: search.agent } : {},
 });
+const labelingRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "labeling",
+  component: lazyRouteComponent(() => import("@/features/labeling/LabelingPage"), "LabelingPage"),
+});
 const designRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "design",
@@ -125,6 +130,7 @@ const routeTree = rootRoute.addChildren([
     wizardRoute,
     agentRoute,
     designRoute,
+    labelingRoute,
     archEditorRoute,
     expertCodeRoute,
     pipelineEditorRoute,

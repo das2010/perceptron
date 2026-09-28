@@ -22,6 +22,7 @@ from perceptron.domain.enums import (
     Device,
     ExportFormat,
     LabelKind,
+    LabelOrigin,
     LLMPurpose,
     Modality,
     ModelStage,
@@ -166,6 +167,12 @@ class LabelSet(Entity):
     kind: LabelKind
     classes: list[str] = Field(default_factory=list)
     path: str | None = Field(default=None, description="Ruta relativa al proyecto")
+    name: str | None = None
+    origin: LabelOrigin = LabelOrigin.HUMAN
+    target: str = Field(default="label", description="Columna objetivo al aplicar (tabular)")
+    applied_version_id: str | None = Field(
+        default=None, description="DatasetVersion creada al aplicar las etiquetas (RF-LBL)"
+    )
 
 
 class Pipeline(Entity):

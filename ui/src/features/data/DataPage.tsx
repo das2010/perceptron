@@ -29,6 +29,7 @@ import {
 import { formatDate } from "@/lib/format";
 
 import { ProfileView } from "./ProfileView";
+import { RemoteSources } from "./RemoteSources";
 
 export function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) => void }) {
   const { t } = useTranslation();
@@ -89,6 +90,13 @@ export function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) =
           onChange={(e) => onFiles(e.target.files)}
         />
       </div>
+      <RemoteSources
+        projectId={projectId}
+        onReady={(res) => {
+          setState(res);
+          setTarget(res.preview.columns.includes("target") ? "target" : "");
+        }}
+      />
       <ErrorNote error={upload.error ?? ingest.error} />
 
       {state && (

@@ -17,6 +17,7 @@ from perceptron.api.routers import (
     analysis,
     data,
     export,
+    labeling,
     llm,
     modeling,
     projects,
@@ -93,4 +94,5 @@ def create_app(settings: Settings | None = None, ctx: EngineContext | None = Non
     app.include_router(wizard.router, prefix=API_PREFIX)
     app.include_router(export.router, prefix=API_PREFIX)
     app.include_router(analysis.router, prefix=API_PREFIX)
+    app.include_router(labeling.router, prefix=API_PREFIX)
     return app
