@@ -330,3 +330,62 @@ def test_segments_become_audio_clips(client: TestClient, fixtures_dir: Path) -> 
     dv1 = _ok(client.post(f"{API}/labelsets/{ls['id']}/apply"), 201)
     assert dv1["modality"] == "audio" and dv1["parent_id"] == dv0["id"]
     assert dv1["num_samples"] == 20
+
+
+def test_zero_shot_prelabel(client: TestClient, fixtures_dir: Path) -> None:
+    """RF-LBL-02: zero-shot local con los nombres de clase (backend falso, sin descargar)."""
+    from perceptron.data.labeling import zero_shot
+
+    calls: list[tuple[str, str, int]] = []
+
+    def fake(
+        model: str, modality: Any, inputs: Any, labels: list[str], multi: bool
+    ) -> list[dict[str, float]]:
+        calls.append((model, modality.value, len(inputs)))
+        return [{labels[0]: 0.7, labels[1]: 0.3} for _ in inputs]
+
+    zero_shot.set_backend(fake)
+    try:
+        _, dv0 = _defects(client, fixtures_dir)
+        ls = _ok(
+            client.post(
+                f"{API}/datasets/{dv0['id']}/labelsets",
+                json={"kind": "class", "classes": ["zz_a", "zz_b"], "target": "sin_columna"},
+            ),
+            201,
+        )
+        n = _ok(
+            client.post(
+                f"{API}/labelsets/{ls['id']}/prelabel", json={"method": "zero_shot", "limit": 7}
+            )
+        )["count"]
+        assert n == 7
+        assert calls and calls[0][:2] == ("google/siglip-base-patch16-224", "image")
+        queue = _ok(client.get(f"{API}/labelsets/{ls['id']}/queue?limit=7"))
+        assert all(s["item"]["label"] == "zz_a" for s in queue)
+        assert all(s["item"]["confidence"] == pytest.approx(0.7) for s in queue)
+        wrong = client.post(
+            f"{API}/labelsets/{ls['id']}/prelabel",
+            json={"method": "zero_shot", "model": "laion/clap-htsat-unfused"},
+        )
+        assert wrong.status_code == 422  # modelo de audio sobre imágenes
+    finally:
+        zero_shot.set_backend(None)
+
+
+def test_zero_shot_catalog() -> None:
+    from perceptron.core.errors import ValidationError
+    from perceptron.data.labeling.zero_shot import ZERO_SHOT_MODELS, classify, resolve_model
+    from perceptron.domain.enums import Modality
+
+    assert all(z.commercial_ok for z in ZERO_SHOT_MODELS.values())
+    assert {z.modality for z in ZERO_SHOT_MODELS.values()} == {
+        Modality.IMAGE,
+        Modality.TEXT,
+        Modality.AUDIO,
+    }
+    assert resolve_model(Modality.TEXT, None).model.startswith("MoritzLaurer/")
+    with pytest.raises(ValidationError):
+        resolve_model(Modality.TABULAR, None)
+    with pytest.raises(ValidationError):
+        classify(Modality.TEXT, ["hola"], ["una"])

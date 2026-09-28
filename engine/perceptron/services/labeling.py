@@ -471,6 +471,57 @@ class Labeling:
         self._save(ls, items)
         return len(suggestions)
 
+    def prelabel_zero_shot(
+        self, labelset_id: str, *, model: str | None = None, limit: int = 200
+    ) -> int:
+        """Sugerencias zero-shot locales con los nombres de clase (RF-LBL-02), sin entrenar."""
+        from perceptron.data.labeling.zero_shot import classify
+
+        ls = self._labelset(labelset_id)
+        if ls.kind not in (LabelKind.CLASS, LabelKind.MULTILABEL):
+            raise ValidationError("el zero-shot cubre etiquetas de clase y multi-etiqueta")
+        dv = self._dataset(ls)
+        view: DatasetView = self.wf.view(dv)
+        items = self.items(labelset_id)
+        df = self.frame(dv)
+        if "corrupt" in df.columns:
+            df = df.filter(~pl.col("corrupt"))
+        rows = [
+            r
+            for r in df.iter_rows(named=True)
+            if not (
+                items.get(_row_id(r["__i__"])) and items[_row_id(r["__i__"])].status == "accepted"
+            )
+        ][:limit]
+        if not rows:
+            return 0
+        modality = view.modality
+        column = view.text_column
+        if column and modality not in (Modality.IMAGE, Modality.AUDIO):
+            modality, inputs = Modality.TEXT, [str(r[column] or "") for r in rows]
+        elif modality in (Modality.IMAGE, Modality.AUDIO) and "path" in df.columns:
+            inputs = [str(view.files_dir / str(r["path"])) for r in rows]
+        else:
+            raise ValidationError("el zero-shot cubre imagen, texto y audio")
+        multi = ls.kind is LabelKind.MULTILABEL
+        scores = classify(modality, inputs, ls.classes, model=model, multi_label=multi)
+        for r, sc in zip(rows, scores, strict=True):
+            if not sc:
+                continue
+            best = max(sc, key=lambda c: sc[c])
+            label: str | list[str] = [c for c, v in sc.items() if v >= 0.5] or [best]
+            if not multi:
+                label = best
+            items[_row_id(r["__i__"])] = LabelItem(
+                sample_id=_row_id(r["__i__"]),
+                label=label,
+                origin=LabelOrigin.MODEL,
+                confidence=float(sc[best]),
+                status="suggested",
+            )
+        self._save(ls, items)
+        return len(rows)
+
     # ---------------------------------------------------------------- calidad (RF-LBL-05)
 
     def quality(self, labelset_id: str, *, error_confidence: float = 0.9) -> LabelQuality:

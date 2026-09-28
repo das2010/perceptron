@@ -166,10 +166,11 @@ def _cache_dir(ctx: EngineContext) -> Any:
 
 def _report(ctx: EngineContext) -> CacheReport:
     from perceptron.catalog.registry import HF_TEXT_MODELS, TIMM_WEIGHTS
+    from perceptron.data.labeling.zero_shot import ZERO_SHOT_MODELS
 
     report = list_cached(_cache_dir(ctx))
     cached = {m.id for m in report.models}
-    curated = sorted({*HF_TEXT_MODELS, *TIMM_WEIGHTS})
+    curated = sorted({*HF_TEXT_MODELS, *TIMM_WEIGHTS, *ZERO_SHOT_MODELS})
     return report.model_copy(update={"available": [m for m in curated if m not in cached]})
 
 
@@ -195,7 +196,8 @@ def verify_models_cache() -> VerifyReport:
 def prefetch_model(body: PrefetchBody, ctx: Ctx) -> Job:
     """Descarga un modelo curado ahora, para entrenar después sin conexión."""
     from perceptron.catalog.registry import HF_TEXT_MODELS, TIMM_WEIGHTS
+    from perceptron.data.labeling.zero_shot import ZERO_SHOT_MODELS
 
-    if body.model not in HF_TEXT_MODELS and body.model not in TIMM_WEIGHTS:
+    if body.model not in {*HF_TEXT_MODELS, *TIMM_WEIGHTS, *ZERO_SHOT_MODELS}:
         raise ValidationError(f"{body.model} no está en el catálogo de pesos curados")
     return ctx.jobs.submit("prefetch", lambda _: {"model": prefetch(body.model)})

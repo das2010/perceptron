@@ -41,6 +41,7 @@ describe("etiquetado asistido (Capa 4c)", () => {
   it("etiqueta con atajos, acepta la sugerencia con Enter y acepta en lote", async () => {
     const puts: unknown[] = [];
     const accepts: unknown[] = [];
+    const prelabels: unknown[] = [];
     const done = new Set<string>();
     mockEngine({
       "GET /api/v1/projects": () => [project()],
@@ -73,6 +74,10 @@ describe("etiquetado asistido (Capa 4c)", () => {
         body.updates.forEach((u) => done.add(u.sample_id));
         return { count: 1 };
       },
+      "POST /api/v1/labelsets/lbl_1/prelabel": async (req) => {
+        prelabels.push(await req.json());
+        return { count: 5 };
+      },
       "POST /api/v1/labelsets/lbl_1/accept": async (req) => {
         accepts.push(await req.json());
         return { count: 2 };
@@ -102,5 +107,8 @@ describe("etiquetado asistido (Capa 4c)", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /Aceptar sugerencias confiables/ }));
     await waitFor(() => expect(accepts).toEqual([{ min_confidence: 0.9 }]));
+
+    await userEvent.click(screen.getByRole("button", { name: /Zero-shot local/ }));
+    await waitFor(() => expect(prelabels).toEqual([{ method: "zero_shot", limit: 200 }]));
   });
 });

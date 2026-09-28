@@ -8020,7 +8020,12 @@ export interface components {
              * Method
              * @enum {string}
              */
-            method: "model" | "llm";
+            method: "model" | "llm" | "zero_shot";
+            /**
+             * Model
+             * @description Modelo zero-shot curado (method=zero_shot); por defecto el de la modalidad
+             */
+            model?: string | null;
             /**
              * Run Id
              * @description Modelo del proyecto (method=model)

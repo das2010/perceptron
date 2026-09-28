@@ -117,20 +117,26 @@ def add_classes(labelset_id: str, body: ClassesBody, ctx: Ctx) -> LabelSet:
 
 class PrelabelBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    method: Literal["model", "llm"]
+    method: Literal["model", "llm", "zero_shot"]
     run_id: str | None = Field(default=None, description="Modelo del proyecto (method=model)")
+    model: str | None = Field(
+        default=None,
+        description="Modelo zero-shot curado (method=zero_shot); por defecto el de la modalidad",
+    )
     guide: LabelingGuide | None = Field(default=None, description="Guía (method=llm)")
     limit: int = Field(default=200, ge=1, le=2000)
 
 
 @router.post("/labelsets/{labelset_id}/prelabel", operation_id="prelabelSet")
 def prelabel(labelset_id: str, body: PrelabelBody, ctx: Ctx) -> Count:
-    """Sugerencias del modelo del proyecto o del LLM para lo que falta (RF-LBL-02)."""
+    """Sugerencias para lo que falta (RF-LBL-02): modelo del proyecto, zero-shot local o LLM."""
     lab = _labeling(ctx)
     if body.method == "model":
         if not body.run_id:
             raise ValidationError("indicá el run del modelo (run_id)")
         return Count(count=lab.prelabel_with_model(labelset_id, body.run_id))
+    if body.method == "zero_shot":
+        return Count(count=lab.prelabel_zero_shot(labelset_id, model=body.model, limit=body.limit))
     if body.guide is None:
         raise ValidationError("el pre-etiquetado con LLM necesita la guía de etiquetado")
     return Count(count=lab.prelabel_with_llm(labelset_id, body.guide, limit=body.limit))

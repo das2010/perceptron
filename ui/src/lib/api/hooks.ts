@@ -1280,6 +1280,20 @@ export function usePrelabelWithModel(labelsetId: string) {
   );
 }
 
+/** Zero-shot local con los nombres de clase (RF-LBL-02): no necesita un modelo entrenado. */
+export function usePrelabelZeroShot(labelsetId: string) {
+  return useLabelMutation(labelsetId, async (id, limit: number) =>
+    unwrap(
+      await (
+        await getApiClient()
+      ).POST("/api/v1/labelsets/{labelset_id}/prelabel", {
+        params: { path: { labelset_id: id } },
+        body: { method: "zero_shot", limit },
+      }),
+    ),
+  );
+}
+
 export function useApplyLabels(labelsetId: string, projectId: string) {
   const qc = useQueryClient();
   return useMutation({

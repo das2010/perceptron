@@ -748,7 +748,9 @@
     "markStart": "Mark start",
     "markEnd": "Mark end",
     "segmentHint": "Play and mark the start and end of the event.",
-    "segmentFrom": "From {{s}} s…"
+    "segmentFrom": "From {{s}} s…",
+    "zeroShot": "Local zero-shot",
+    "zeroShotHint": "Suggests labels with a pretrained model from the class names, no training needed (first 200 pending)."
   },
   "sources": {
     "fromDb": "From a database",

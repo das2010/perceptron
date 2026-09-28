@@ -39,6 +39,7 @@ import {
   useLabelSets,
   useLabelSummary,
   usePrelabelWithModel,
+  usePrelabelZeroShot,
   useRuns,
   useSetLabels,
 } from "@/lib/api/hooks";
@@ -397,6 +398,8 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
   const summary = useLabelSummary(labelset.id);
   const runs = useRuns(projectId);
   const prelabel = usePrelabelWithModel(labelset.id);
+  const zeroShot = usePrelabelZeroShot(labelset.id);
+  const classKind = labelset.kind === "class" || labelset.kind === "multilabel";
   const accept = useAcceptSuggestions(labelset.id);
   const apply = useApplyLabels(labelset.id, projectId);
   const [runId, setRunId] = useState("");
@@ -460,6 +463,17 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
             <Wand2 className="h-4 w-4" aria-hidden="true" />
             {t("labeling.prelabel")}
           </Button>
+          {classKind && (
+            <Button
+              variant="ai"
+              loading={zeroShot.isPending}
+              title={t("labeling.zeroShotHint")}
+              onClick={() => zeroShot.mutate(200)}
+            >
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              {t("labeling.zeroShot")}
+            </Button>
+          )}
           <Field label={t("labeling.threshold")}>
             <Input
               type="number"
@@ -517,7 +531,9 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
             </Link>
           </p>
         )}
-        <ErrorNote error={prelabel.error ?? accept.error ?? apply.error ?? error} />
+        <ErrorNote
+          error={prelabel.error ?? zeroShot.error ?? accept.error ?? apply.error ?? error}
+        />
       </Card>
       <Annotator labelset={labelset} />
     </div>
