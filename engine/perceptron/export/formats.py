@@ -210,6 +210,9 @@ def _onnx(
         output_names=["output"],
         dynamic_shapes=_batch_dynamic(len(inputs)),
         opset_version=ONNX_OPSET,
+        # Un solo archivo (sin `model.onnx.data`): el paquete de serving y las conversiones
+        # fp16/INT8 lo copian y cargan entero. Los modelos del catálogo quedan lejos de 2 GB.
+        external_data=False,
     )
 
     def run(p: Path, feed_dtype: Any = None) -> np.ndarray:
