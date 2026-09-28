@@ -136,7 +136,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Runtime Python embebido con uv y variante de PyTorch por hardware; cambio de variante sin reinstalar (RF-TRN-02, ADR-0026) | ✅ en CI se verifica la variante `cpu`; CUDA/ROCm/XPU salen del mapa de índices y no hay runners con GPU para probarlas |
 | Keychain del SO (Credential Manager / Secret Service) y selector de carpetas nativo | 🟡 implementado, sin prueba automatizada (necesita sesión de escritorio) |
 | Instaladores NSIS/MSI y .deb/AppImage con smoke test de instalación limpia (`desktop.yml`) | ✅ Windows (NSIS silencioso) y Ubuntu 24.04 (.deb): aprovisionan desde cero, detectan `cpu` y el Engine responde |
-| Updater firmado y firma de código de los instaladores | ⬜ pendiente de claves y certificado |
+| Updater firmado y firma de código de los instaladores | 🟡 updater firmado (ADR-0037); Authenticode postergado |
 
 
 ## Capa 4a — export, serving y playground
