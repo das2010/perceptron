@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -14,6 +14,7 @@ from perceptron.core.ids import IdPrefix, new_id
 from perceptron.data.profiling.card import ProfileCard
 from perceptron.data.schema import SemanticType, TableSchema, infer_schema
 from perceptron.data.sources.files import SourceKind, open_source, scan_table
+from perceptron.data.sources.remote import DbConfig, download_hf, download_kaggle, materialize_db
 from perceptron.data.splits import SPLIT_COLUMN, SplitRequest
 from perceptron.domain.enums import DataSourceType, Modality
 from perceptron.domain.models import DatasetVersion, DataSource
@@ -124,6 +125,106 @@ async def upload_source(
         config={"path": str(path), "uploaded": True, "files": len(written)},
     )
     return ctx.repo(DataSource).add(src)
+
+
+# ------------------------------------------------------------------ fuentes remotas (RF-ING-03/04)
+
+
+class DbSourceCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1)
+    config: DbConfig
+    password: str | None = Field(default=None, description="Solo de escritura: va al keychain")
+
+
+class HubSourceCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    provider: Literal["huggingface", "kaggle"]
+    dataset: str = Field(min_length=3, description="repo_id (HF) u owner/slug (Kaggle)")
+    split: str | None = Field(default=None, description="Split de HF (train, test…)")
+    token: str | None = Field(
+        default=None, description="Solo de escritura: token de HF o «usuario:clave» de Kaggle"
+    )
+    name: str | None = None
+
+
+def _source_dir(ctx: EngineContext, src: DataSource) -> Path:
+    path: Path = ctx.settings.paths.project(src.project_id).root / "sources" / src.id
+    return path
+
+
+def _secret_name(src: DataSource) -> str:
+    return f"source/{src.id}/credentials"
+
+
+def _materialize(ctx: EngineContext, src: DataSource, secret: str | None) -> dict[str, Any]:
+    folder = _source_dir(ctx, src)
+    folder.mkdir(parents=True, exist_ok=True)
+    if src.type is DataSourceType.DB:
+        cfg = DbConfig.model_validate(src.config["db"])
+        dest = folder / "data.parquet"
+        rows = materialize_db(cfg, secret, dest)
+        return {"path": str(dest), "rows": rows}
+    if src.type is DataSourceType.HF:
+        path = download_hf(src.config["dataset"], src.config.get("split"), secret, folder)
+        return {"path": str(path)}
+    path = download_kaggle(src.config["dataset"], secret, folder)
+    return {"path": str(path)}
+
+
+@router.post(
+    "/projects/{project_id}/sources/db",
+    status_code=status.HTTP_201_CREATED,
+    operation_id="createDbSource",
+)
+def create_db_source(project_id: str, body: DbSourceCreate, ctx: Ctx) -> DataSource:
+    """Consulta SQL (SQL Server, PostgreSQL, MySQL/MariaDB, SQLite) materializada en Parquet."""
+    ctx.projects.get(project_id)
+    src = DataSource(
+        project_id=project_id,
+        name=body.name,
+        type=DataSourceType.DB,
+        config={"db": body.config.model_dump(mode="json")},
+    )
+    if body.password:
+        ctx.llm.secrets.set(_secret_name(src), body.password)
+        src.secret_refs = {"password": _secret_name(src)}
+    src.config.update(_materialize(ctx, src, body.password))
+    return ctx.repo(DataSource).add(src)
+
+
+@router.post(
+    "/projects/{project_id}/sources/hub",
+    status_code=status.HTTP_201_CREATED,
+    operation_id="createHubSource",
+)
+def create_hub_source(project_id: str, body: HubSourceCreate, ctx: Ctx) -> DataSource:
+    """Dataset público de Hugging Face o Kaggle, descargado a la caché del proyecto."""
+    ctx.projects.get(project_id)
+    kind = DataSourceType.HF if body.provider == "huggingface" else DataSourceType.KAGGLE
+    src = DataSource(
+        project_id=project_id,
+        name=body.name or body.dataset,
+        type=kind,
+        config={"dataset": body.dataset, "split": body.split},
+    )
+    if body.token:
+        ctx.llm.secrets.set(_secret_name(src), body.token)
+        src.secret_refs = {"token": _secret_name(src)}
+    src.config.update(_materialize(ctx, src, body.token))
+    return ctx.repo(DataSource).add(src)
+
+
+@router.post("/sources/{source_id}/refresh", operation_id="refreshSource")
+def refresh_source(source_id: str, ctx: Ctx) -> DataSource:
+    """Vuelve a ejecutar la consulta o la descarga; la próxima ingesta crea otra versión."""
+    src = ctx.repo(DataSource).get(source_id)
+    if src.type not in (DataSourceType.DB, DataSourceType.HF, DataSourceType.KAGGLE):
+        raise ValidationError("solo las fuentes remotas se refrescan")
+    secret = ctx.llm.secrets.get(_secret_name(src)) if src.secret_refs else None
+    config = {**src.config, **_materialize(ctx, src, secret)}
+    updated: DataSource = ctx.repo(DataSource).update(src.model_copy(update={"config": config}))
+    return updated
 
 
 @router.post("/sources/{source_id}/preview", operation_id="previewSource")

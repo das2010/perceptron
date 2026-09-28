@@ -72,6 +72,13 @@ eval = [
   "reportlab>=4.2",
   "markdown-it-py>=3",
 ]
+# Capa 4c (RF-ING-03): drivers SQL puros o de licencia permisiva. PostgreSQL con pg8000 (BSD),
+# MySQL/MariaDB con PyMySQL (MIT), SQL Server con pyodbc (MIT; requiere el ODBC Driver 18).
+sources = [
+  "pg8000>=1.31",
+  "pymysql>=1.1",
+  "pyodbc>=5.1",
+]
 # NER para PII en texto libre (L2, ADR-0022): `presidio-analyzer` y `presidio-anonymizer` se
 # instalan aparte junto con un modelo NER de licencia compatible. No es un extra: spaCy
 # restringe numpy y el lock resuelve todos los extras juntos.
