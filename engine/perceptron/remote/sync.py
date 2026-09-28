@@ -117,8 +117,9 @@ class ProjectSync:
     def __init__(self, ctx: EngineContext, client: RemoteClient, project_id: str) -> None:
         self.ctx = ctx
         self.client = client
-        self.project_id = project_id
-        self.root = ctx.settings.paths.project(project_id).root
+        # El id que va en las URLs del servidor es el del proyecto guardado, no el del pedido.
+        self.project_id = ctx.projects.get(project_id).id
+        self.root = ctx.settings.paths.project(self.project_id).root
         self.state = RemoteState(self.root, client.server.name)
 
     # ------------------------------------------------------------------ push

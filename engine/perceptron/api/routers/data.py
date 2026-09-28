@@ -375,11 +375,13 @@ def dataset_retention(project_id: str, body: RetentionBody, ctx: Ctx) -> Retenti
 @router.get("/datasets/{dataset_version_id}/dvc.zip", operation_id="downloadDatasetDvc")
 def download_dvc(dataset_version_id: str, ctx: Ctx) -> FileResponse:
     """Versión de datos con su `.dvc` (DVC 3, md5) para agregarla a un repositorio DVC."""
+    dv = ctx.repo(DatasetVersion).get(dataset_version_id)
     tmp = Path(tempfile.mkdtemp(prefix="perceptron-dvc-"))
-    out = export_dvc(ctx, dataset_version_id, tmp / f"{dataset_version_id}-dvc.zip")
+    # El nombre sale del hash guardado, no del id del pedido.
+    out = export_dvc(ctx, dv.id, tmp / "dataset-dvc.zip")
     return FileResponse(
         out,
-        filename=out.name,
+        filename=f"dataset-{dv.content_hash[:12]}-dvc.zip",
         media_type="application/zip",
         background=BackgroundTask(shutil.rmtree, tmp, ignore_errors=True),
     )

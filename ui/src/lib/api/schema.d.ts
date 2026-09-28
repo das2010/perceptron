@@ -76,6 +76,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * System Status
+         * @description Almacenamiento, cuotas y estado de los workers para la consola (RF-SRV-06).
+         */
+        get: operations["getSystemStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -575,6 +595,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/datasets/{dataset_version_id}/dvc.zip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Dvc
+         * @description Versión de datos con su `.dvc` (DVC 3, md5) para agregarla a un repositorio DVC.
+         */
+        get: operations["downloadDatasetDvc"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/datasets/{dataset_version_id}/labelsets": {
         parameters: {
             query?: never;
@@ -745,6 +785,26 @@ export interface paths {
         put?: never;
         /** Predict */
         post: operations["predictDeployment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployments/{deployment_id}/predict/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict Files
+         * @description Imágenes o audios (hasta 64 por pedido): se registra el embedding, no el archivo.
+         */
+        post: operations["predictDeploymentFiles"];
         delete?: never;
         options?: never;
         head?: never;
@@ -958,7 +1018,7 @@ export interface paths {
         put?: never;
         /**
          * Prelabel
-         * @description Sugerencias del modelo del proyecto o del LLM para lo que falta (RF-LBL-02).
+         * @description Sugerencias para lo que falta (RF-LBL-02): modelo del proyecto, zero-shot local o LLM.
          */
         post: operations["prelabelSet"];
         delete?: never;
@@ -1193,6 +1253,46 @@ export interface paths {
          * @description Pipeline ajustado aplicado a las primeras filas de train (vista previa, RF-PIP-02).
          */
         post: operations["previewPipeline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pipelines/{pipeline_id}/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suggest Pipeline Changes
+         * @description Cambios sugeridos con justificación y diff; no se aplica nada (RF-PIP-05).
+         */
+        post: operations["suggestPipelineChanges"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pipelines/{pipeline_id}/suggestions/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Pipeline Suggestions
+         * @description Aplica solo las sugerencias que el usuario aceptó.
+         */
+        post: operations["applyPipelineSuggestions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1492,6 +1592,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/datasets/retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dataset Retention
+         * @description Conserva las últimas N versiones (y las que están en uso); con `dry_run` solo informa.
+         */
+        post: operations["applyDatasetRetention"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/deployments": {
         parameters: {
             query?: never;
@@ -1710,6 +1830,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/remote/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remote Pull
+         * @description Baja los cambios del servidor y resuelve los conflictos indicados.
+         */
+        post: operations["remoteSyncPull"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/remote/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remote Push
+         * @description Sube lo que cambió solo en el desktop (con conflictos, primero hay que resolverlos).
+         */
+        post: operations["remoteSyncPush"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/remote/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Remote Status
+         * @description Qué cambió en el servidor, qué cambió acá y qué cambió en los dos lados (RF-SRV-03).
+         */
+        get: operations["remoteSyncStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/remote/studies": {
         parameters: {
             query?: never;
@@ -1856,54 +2036,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/projects/{project_id}/remote/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["remoteSyncStatus"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{project_id}/remote/pull": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["remoteSyncPull"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{project_id}/remote/push": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["remoteSyncPush"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/projects/{project_id}/sources/stream": {
         parameters: {
             query?: never;
@@ -1911,7 +2043,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Stream Sources */
+        /**
+         * List Stream Sources
+         * @description Fuentes streaming/API del proyecto con el estado de su buffer (RF-ING-05).
+         */
         get: operations["listStreamSources"];
         put?: never;
         /** Create Stream Source */
@@ -2803,7 +2938,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Pull Project
+         * @description El proyecto de equipo como lo tiene el servidor (edición concurrente, RF-SRV-03).
+         */
+        get: operations["pullProject"];
         /**
          * Push Project
          * @description Crea el proyecto de equipo (mismo id que en el desktop) o lo actualiza.
@@ -3368,6 +3507,16 @@ export interface components {
          * @enum {string}
          */
         AlertStatus: "open" | "acknowledged" | "resolved";
+        /** ApplySuggestionsBody */
+        ApplySuggestionsBody: {
+            /** Changes */
+            changes: components["schemas"]["PipelineChange"][];
+            /**
+             * Version
+             * @description Versión del pipeline sobre la que se sugirió
+             */
+            version: number;
+        };
         /** ApprovalBody */
         ApprovalBody: {
             /** Comment */
@@ -3650,6 +3799,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_predictDeploymentFiles */
+        Body_predictDeploymentFiles: {
+            /** Files */
+            files: string[];
+        };
         /** Body_predictFile */
         Body_predictFile: {
             /** File */
@@ -3675,22 +3829,6 @@ export interface components {
             y1: number;
             /** Y2 */
             y2: number;
-        };
-        /** Polygon */
-        Polygon: {
-            /** Label */
-            label: string;
-            /** Points */
-            points: number[][];
-        };
-        /** Segment */
-        Segment: {
-            /** End S */
-            end_s: number;
-            /** Label */
-            label: string;
-            /** Start S */
-            start_s: number;
         };
         /** Budget */
         Budget: {
@@ -4598,6 +4736,24 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** EntitySync */
+        EntitySync: {
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Local Version */
+            local_version?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Server Version */
+            server_version?: number | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "synced" | "pull" | "push" | "conflict" | "server_only" | "local_only";
+        };
         /** ErrorAnalysis */
         ErrorAnalysis: {
             /** Confusions */
@@ -5377,18 +5533,18 @@ export interface components {
         LabelItem: {
             /** Boxes */
             boxes?: components["schemas"]["Box"][];
-            /** Polygons */
-            polygons?: components["schemas"]["Polygon"][];
-            /** Segments */
-            segments?: components["schemas"]["Segment"][];
             /** Confidence */
             confidence?: number | null;
             /** Label */
             label?: string | string[] | null;
             /** @default human */
             origin: components["schemas"]["LabelOrigin"];
+            /** Polygons */
+            polygons?: components["schemas"]["Polygon"][];
             /** Sample Id */
             sample_id: string;
+            /** Segments */
+            segments?: components["schemas"]["Segment"][];
             /**
              * Status
              * @default accepted
@@ -5491,14 +5647,14 @@ export interface components {
         LabelUpdate: {
             /** Boxes */
             boxes?: components["schemas"]["Box"][];
-            /** Polygons */
-            polygons?: components["schemas"]["Polygon"][];
-            /** Segments */
-            segments?: components["schemas"]["Segment"][];
             /** Label */
             label?: string | string[] | null;
+            /** Polygons */
+            polygons?: components["schemas"]["Polygon"][];
             /** Sample Id */
             sample_id: string;
+            /** Segments */
+            segments?: components["schemas"]["Segment"][];
         };
         /** LabelingGuide */
         LabelingGuide: {
@@ -6025,6 +6181,28 @@ export interface components {
              */
             version: number;
         };
+        /** PipelineChange */
+        PipelineChange: {
+            /**
+             * After
+             * @description `add`: id del paso después del cual va (None = al final)
+             */
+            after?: string | null;
+            /**
+             * Op
+             * @enum {string}
+             */
+            op: "add" | "remove" | "update";
+            /** Rationale */
+            rationale: string;
+            /** @description Paso completo en `add` y `update` */
+            step?: components["schemas"]["StepSpec"] | null;
+            /**
+             * Step Id
+             * @description Paso afectado (el nuevo, en `add`)
+             */
+            step_id: string;
+        };
         /** PipelinePreview */
         PipelinePreview: {
             /** Categorical Features */
@@ -6097,6 +6275,19 @@ export interface components {
         PlaygroundTexts: {
             /** Texts */
             texts: string[];
+        };
+        /**
+         * Polygon
+         * @description Polígono normalizado a [0, 1] (máscaras de segmentación, RF-LBL-01).
+         */
+        Polygon: {
+            /** Label */
+            label: string;
+            /**
+             * Points
+             * @description [[x, y], ...]
+             */
+            points: number[][];
         };
         /** PredictBody */
         PredictBody: {
@@ -6379,6 +6570,15 @@ export interface components {
          * @enum {string}
          */
         ProjectStatus: "draft" | "active" | "archived";
+        /** ProjectStorage */
+        ProjectStorage: {
+            /** Bytes */
+            bytes: number;
+            /** Name */
+            name: string;
+            /** Project Id */
+            project_id: string;
+        };
         /** ProjectTemplate */
         ProjectTemplate: {
             /** Id */
@@ -6494,6 +6694,18 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** PullBody */
+        PullBody: {
+            /**
+             * Resolutions
+             * @description Conflictos: id → versión del servidor o la propia
+             */
+            resolutions?: {
+                [key: string]: "theirs" | "mine";
+            };
+            /** Server */
+            server: string;
+        };
         /** PullResult */
         PullResult: {
             /** Added */
@@ -6530,6 +6742,11 @@ export interface components {
              * @default 0.2
              */
             temperature: number | null;
+        };
+        /** PushBody */
+        PushBody: {
+            /** Server */
+            server: string;
         };
         /** QueueView */
         QueueView: {
@@ -6642,6 +6859,34 @@ export interface components {
              * @enum {string}
              */
             mode: "auto" | "llm" | "rules";
+        };
+        /** RetentionBody */
+        RetentionBody: {
+            /**
+             * Dry Run
+             * @default true
+             */
+            dry_run: boolean;
+            /** Keep Last */
+            keep_last: number;
+        };
+        /** RetentionReport */
+        RetentionReport: {
+            /** Deleted */
+            deleted: string[];
+            /** Dry Run */
+            dry_run: boolean;
+            /** Freed Bytes */
+            freed_bytes: number;
+            /**
+             * In Use
+             * @description Se conservan por estar en uso o ser padres
+             */
+            in_use: string[];
+            /** Keep Last */
+            keep_last: number;
+            /** Kept */
+            kept: string[];
         };
         /**
          * RetrainPolicy
@@ -7009,6 +7254,18 @@ export interface components {
             type: "int" | "float" | "categorical";
         };
         /**
+         * Segment
+         * @description Segmento temporal en segundos (eventos de audio, RF-LBL-01).
+         */
+        Segment: {
+            /** End S */
+            end_s: number;
+            /** Label */
+            label: string;
+            /** Start S */
+            start_s: number;
+        };
+        /**
          * SemanticType
          * @enum {string}
          */
@@ -7327,39 +7584,6 @@ export interface components {
             mode: "auto" | "llm" | "rules";
         };
         /** StreamSourceCreate */
-        EntitySync: {
-            id: string;
-            kind: string;
-            local_version?: number | null;
-            name?: string | null;
-            server_version?: number | null;
-            /** @enum {string} */
-            state: "synced" | "pull" | "push" | "conflict" | "server_only" | "local_only";
-        };
-        SyncStatus: {
-            items: components["schemas"]["EntitySync"][];
-            server: string;
-        };
-        PullOutcome: {
-            conflicts_left: string[];
-            downloaded: number;
-            pulled: number;
-            pushed: number;
-        };
-        PullBody: {
-            resolutions?: {
-                [key: string]: "theirs" | "mine";
-            };
-            server: string;
-        };
-        PushBody: {
-            server: string;
-        };
-        /** StreamSourceInfo */
-        StreamSourceInfo: {
-            buffer: components["schemas"]["PullResult"];
-            source: components["schemas"]["DataSource"];
-        };
         StreamSourceCreate: {
             /** Config */
             config: {
@@ -7382,6 +7606,11 @@ export interface components {
              * @description Solo de escritura: va al keychain
              */
             token?: string | null;
+        };
+        /** StreamSourceInfo */
+        StreamSourceInfo: {
+            buffer: components["schemas"]["PullResult"];
+            source: components["schemas"]["DataSource"];
         };
         /** Study */
         Study: {
@@ -7453,6 +7682,17 @@ export interface components {
             job: components["schemas"]["Job"];
             study: components["schemas"]["Study"];
         };
+        /** SuggestBody */
+        SuggestBody: {
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /**
+             * Mode
+             * @default auto
+             * @enum {string}
+             */
+            mode: "auto" | "llm" | "rules";
+        };
         /** SuggestedAction */
         SuggestedAction: {
             /**
@@ -7470,6 +7710,31 @@ export interface components {
             /** Value */
             value?: unknown;
         };
+        /**
+         * SuggestionItem
+         * @description Una sugerencia con su diff: el paso antes y después (None si no existe).
+         */
+        SuggestionItem: {
+            after: components["schemas"]["StepSpec"] | null;
+            before: components["schemas"]["StepSpec"] | null;
+            change: components["schemas"]["PipelineChange"];
+            /** Index */
+            index: number;
+        };
+        /** SuggestionsResult */
+        SuggestionsResult: {
+            /** Fallback Reason */
+            fallback_reason?: string | null;
+            /** Items */
+            items: components["schemas"]["SuggestionItem"][];
+            /** Llm Call Id */
+            llm_call_id?: string | null;
+            origin: components["schemas"]["Origin"];
+            /** Pipeline Id */
+            pipeline_id: string;
+            /** Pipeline Version */
+            pipeline_version: number;
+        };
         /** SyncResult */
         SyncResult: {
             /**
@@ -7486,6 +7751,34 @@ export interface components {
             unchanged: boolean;
             /** Version */
             version: number;
+        };
+        /** SyncStatus */
+        SyncStatus: {
+            /** Items */
+            items: components["schemas"]["EntitySync"][];
+            /** Server */
+            server: string;
+        };
+        /** SystemStatus */
+        SystemStatus: {
+            /** Free Bytes */
+            free_bytes: number;
+            /** Projects */
+            projects: components["schemas"]["ProjectStorage"][];
+            /** Queue Mode */
+            queue_mode: string;
+            /** Quotas */
+            quotas: {
+                [key: string]: number;
+            };
+            /** Used Bytes */
+            used_bytes: number;
+            /** Workers */
+            workers: {
+                [key: string]: unknown;
+            }[];
+            /** Workspace Path */
+            workspace_path: string;
         };
         /** TableSchema */
         TableSchema: {
@@ -8045,6 +8338,11 @@ export interface components {
             created_at?: string;
             /** Id */
             id?: string;
+            /**
+             * Llm Monthly Budget Usd
+             * @description Cuota de gasto LLM del workspace por mes (RF-LLM-06)
+             */
+            llm_monthly_budget_usd?: number | null;
             /** @description Tope con LLM local; puede superar el general (RF-PRV-02) */
             local_llm_max_privacy?: components["schemas"]["PrivacyLevel"] | null;
             /** @default L3 */
@@ -8084,6 +8382,17 @@ export interface components {
              * @default false
              */
             clear_allowed_providers: boolean;
+            /**
+             * Clear Llm Budget
+             * @description Quita la cuota mensual
+             * @default false
+             */
+            clear_llm_budget: boolean;
+            /**
+             * Llm Monthly Budget Usd
+             * @description Cuota mensual de gasto LLM (RF-LLM-06)
+             */
+            llm_monthly_budget_usd?: number | null;
             local_llm_max_privacy?: components["schemas"]["PrivacyLevel"] | null;
             max_privacy_level?: components["schemas"]["PrivacyLevel"] | null;
             /** Name */
@@ -8353,6 +8662,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getSystemStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SystemStatus"];
                 };
             };
         };
@@ -9270,6 +9599,37 @@ export interface operations {
             };
         };
     };
+    downloadDatasetDvc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dataset_version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listLabelSets: {
         parameters: {
             query?: never;
@@ -9676,6 +10036,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PredictBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Predictions"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictDeploymentFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deployment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_predictDeploymentFiles"];
             };
         };
         responses: {
@@ -10564,6 +10959,76 @@ export interface operations {
             };
         };
     };
+    suggestPipelineChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pipeline_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuggestBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionsResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    applyPipelineSuggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pipeline_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplySuggestionsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pipeline"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listProjects: {
         parameters: {
             query?: {
@@ -11185,6 +11650,41 @@ export interface operations {
             };
         };
     };
+    applyDatasetRetention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetentionBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listDeployments: {
         parameters: {
             query?: never;
@@ -11618,6 +12118,109 @@ export interface operations {
             };
         };
     };
+    remoteSyncPull: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PullBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remoteSyncPush: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remoteSyncStatus: {
+        parameters: {
+            query: {
+                server: string;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     createRemoteStudy: {
         parameters: {
             query?: never;
@@ -11906,6 +12509,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DataSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listStreamSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StreamSourceInfo"][];
                 };
             };
             /** @description Validation Error */
@@ -13194,101 +13828,6 @@ export interface operations {
             };
         };
     };
-    remoteSyncStatus: {
-        parameters: {
-            query: {
-                server: string;
-            };
-            header?: never;
-            path: {
-                project_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SyncStatus"];
-                };
-            };
-        };
-    };
-    remoteSyncPull: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PullBody"];
-            };
-        };
-        responses: {
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Job"];
-                };
-            };
-        };
-    };
-    remoteSyncPush: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PushBody"];
-            };
-        };
-        responses: {
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Job"];
-                };
-            };
-        };
-    };
-    listStreamSources: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                project_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StreamSourceInfo"][];
-                };
-            };
-        };
-    };
     getStreamBuffer: {
         parameters: {
             query?: never;
@@ -13592,6 +14131,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudyLaunch"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pullProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

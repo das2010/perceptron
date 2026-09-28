@@ -21,7 +21,7 @@ describe("sugerencias de pipeline (RF-PIP-05)", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("muestra el diff, y aplica solo las aceptadas", async () => {
-    let applied: { version: number; changes: { op: string }[] } | null = null;
+    const applied: { version: number; changes: { op: string }[] }[] = [];
     const change = (op: string, rationale: string) => ({
       op,
       step_id: "impute",
@@ -49,7 +49,7 @@ describe("sugerencias de pipeline (RF-PIP-05)", () => {
         ],
       }),
       "POST /api/v1/pipelines/pip_1/suggestions/apply": async (req) => {
-        applied = (await req.json()) as typeof applied;
+        applied.push((await req.json()) as (typeof applied)[number]);
         return { id: "pip_1", version: 4, project_id: "prj_1", name: "p", graph: {} };
       },
     });
@@ -62,12 +62,14 @@ describe("sugerencias de pipeline (RF-PIP-05)", () => {
     expect(await screen.findByText("Cambiar el paso impute")).toBeInTheDocument();
     expect(screen.getByText(/"strategy": "median"/)).toBeInTheDocument();
     expect(screen.getAllByText(/"strategy": "mean"/).length).toBeGreaterThan(0);
-    const [acceptUpdate] = screen.getAllByRole("button", { name: "Aceptar" });
-    await userEvent.click(acceptUpdate!);
-    await userEvent.click(screen.getAllByRole("button", { name: "Descartar" })[1]!);
+    const accept = screen.getAllByRole("button", { name: "Aceptar" });
+    const discard = screen.getAllByRole("button", { name: "Descartar" });
+    if (!accept[0] || !discard[1]) throw new Error("faltan botones de sugerencia");
+    await userEvent.click(accept[0]);
+    await userEvent.click(discard[1]);
     await userEvent.click(screen.getByRole("button", { name: "Aplicar 1 sugerencia aceptada" }));
-    await waitFor(() => expect(applied).not.toBeNull());
-    expect(applied!.version).toBe(3);
-    expect(applied!.changes.map((c) => c.op)).toEqual(["update"]);
+    await waitFor(() => expect(applied).toHaveLength(1));
+    expect(applied[0]?.version).toBe(3);
+    expect(applied[0]?.changes.map((c) => c.op)).toEqual(["update"]);
   });
 });

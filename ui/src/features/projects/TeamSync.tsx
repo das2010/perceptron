@@ -23,6 +23,13 @@ import { getPlatform } from "@/lib/platform/bridge";
 
 type Status = Schemas["SyncStatus"];
 type Choice = "theirs" | "mine";
+/** Resultado del job de sincronización (`PullOutcome` del Engine). */
+interface Outcome {
+  pulled: number;
+  pushed: number;
+  conflicts_left: string[];
+  downloaded: number;
+}
 const TONE = {
   synced: "ok",
   pull: "brand",
@@ -83,8 +90,7 @@ export function TeamSync({ project }: { project: Project }) {
   const count = (s: string) => items.filter((i) => i.state === s).length;
   const conflicts = items.filter((i) => i.state === "conflict");
   const busy = run.isPending || (Boolean(run.data) && !finished);
-  const result =
-    job.data?.status === "succeeded" ? (job.data.result as Schemas["PullOutcome"]) : null;
+  const result = job.data?.status === "succeeded" ? (job.data.result as Outcome) : null;
   return (
     <Card>
       <CardTitle className="flex items-center justify-between gap-2">

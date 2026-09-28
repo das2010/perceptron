@@ -349,7 +349,7 @@ function PipelineEditor({ pipeline }: { pipeline: Pipeline }) {
       {graph.modality === "tabular" && (
         <Preview projectId={pipeline.project_id} graph={graph} step={step} />
       )}
-      <PipelineSuggestions projectId={pipeline.project_id} pipelineId={pipeline.id} />
+      <PipelineSuggestions projectId={pipeline.project_id} pipelineId={pipeline.id ?? ""} />
     </div>
   );
 }
