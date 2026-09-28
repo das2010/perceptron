@@ -147,7 +147,18 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Servidor de inferencia FastAPI + ONNX Runtime con Dockerfiles CPU/CUDA (RF-EXP-03) | ✅ |
 | Proyecto de código exportable autónomo con uv (RF-EXP-04) | ✅ |
 | Playground en la página del run (RF-EXP-02) | 🟡 tabular e imagen |
-| Aceptación O5: proyecto y servidor en contenedores limpios (job `export-o5`) | 🟡 en CI |
+| Aceptación O5: proyecto y servidor en contenedores limpios (job `export-o5`) | ✅ uv sync → train → infer → pytest en `python:3.12-slim`; servidor Docker con API key |
+
+
+## Capa 4b — evaluación avanzada e informe
+
+| Entregable | Estado |
+|---|---|
+| Análisis de errores (RF-EVL-03) y fairness (RF-EVL-04) sobre el test sellado | ✅ |
+| Explicabilidad con Captum (RF-EVL-02) | 🟡 tabular e imagen |
+| Robustez ante perturbaciones (RF-EVL-05) | 🟡 tabular e imagen |
+| Informe HTML/PDF/Markdown con marca y model card (RF-EVL-06, ADR-0028) | ✅ |
+| Explicación local en el playground | ✅ |
 
 
 ## Requisitos funcionales
@@ -237,11 +248,11 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-TRK-03 |  | 1 | Model Registry de MLflow para ModelVersion y stages. | ⬜ pendiente |
 | RF-TRK-04 |  | 1 | Comparación de runs: tabla, curvas superpuestas, diff de configuración (ArchSpec,… | ⬜ pendiente |
 | RF-EVL-01 | sí | 1 | Métricas por tarea: | ✅ clasificación, regresión, forecasting (MASE, backtesting, naive), anomalías, detección (mAP), segmentación (IoU/Dice), OCR (CER/WER); SED pendiente |
-| RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | ⬜ pendiente |
-| RF-EVL-03 |  | 1/4 | Análisis de errores: explorador de muestras mal predichas con filtros, slices… | ⬜ pendiente |
-| RF-EVL-04 |  | 1/4 | Fairness: el usuario marca atributos sensibles; métricas por subgrupo (Fairlearn:… | ⬜ pendiente |
-| RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | ⬜ pendiente |
-| RF-EVL-06 | sí | 2/4 | Informe final generado por el LLM (o plantilla sin LLM): resumen ejecutivo, qué se… | ✅ informante LLM (Markdown + model card, métricas de la evaluación) o plantilla sin LLM; `POST /runs/{rid}/report` |
+| RF-EVL-02 |  | 1/4 | Explicabilidad: SHAP (tabular, importancia global y local), Integrated Gradients /… | 🟡 Captum: Shapley por muestreo global/local (tabular) e Integrated Gradients con mapa de calor (imagen); texto, audio y series pendientes (ADR-0028) |
+| RF-EVL-03 |  | 1/4 | Análisis de errores: explorador de muestras mal predichas con filtros, slices… | ✅ slices de bajo rendimiento, confusiones, posibles errores de etiqueta (confident learning) y explorador de mal predichos |
+| RF-EVL-04 |  | 1/4 | Fairness: el usuario marca atributos sensibles; métricas por subgrupo (Fairlearn:… | ✅ métricas por grupo, paridad demográfica e igualdad de oportunidades (definiciones de Fairlearn), alertas por umbral |
+| RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | 🟡 ruido, categorías cambiadas y faltantes (tabular); ruido, desenfoque y JPEG (imagen); texto y audio pendientes |
+| RF-EVL-06 | sí | 2/4 | Informe final generado por el LLM (o plantilla sin LLM): resumen ejecutivo, qué se… | ✅ informe LLM o plantilla exportable a HTML (Titillium Web embebida), PDF (reportlab) y Markdown con model card |
 | RF-EXP-01 | sí | 4 | Exportar a ONNX (con verificación numérica vs. PyTorch), torch.export… | ✅ ONNX (opset 18, batch dinámico) verificado en ONNX Runtime (1e-4; fp16 1e-2; INT8 informado), torch.export y TorchScript legacy (ADR-0027) |
 | RF-EXP-02 | sí | 4 | Playground en la app: cargar un archivo/fila/imagen/audio/texto, ver predicción,… | 🟡 playground tabular (formulario por columna) e imagen con predicción, confianza y probabilidades; audio/texto y explicación local en la 4b |
 | RF-EXP-03 |  | 4 | API REST de inferencia: generar y levantar un servidor FastAPI (ONNX Runtime o… | ✅ servidor FastAPI + ONNX Runtime con pipeline embebido, /predict, /predict/batch, /metrics, API key, Dockerfile CPU/CUDA (tabular e imagen) |
