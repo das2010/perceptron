@@ -75,6 +75,23 @@ def test_full_flow_uc01(client: TestClient, fixtures_dir: Path) -> None:
         )
     )
     assert len(prev["x_num"]) == 4 and prev["classes"] == ["0", "1"]
+    # Vista previa por paso de un grafo sin guardar (RF-PIP-02): la salida intermedia.
+    graph = pipe["graph"]
+    first = graph["steps"][0]["id"]
+    step = _ok(
+        client.post(
+            f"{API}/projects/{pid}/pipelines/preview-steps",
+            json={"dataset_version_id": dv["id"], "graph": graph, "upto_step": first, "rows": 3},
+        )
+    )
+    assert step["step_id"] == first and len(step["rows"]) == 3
+    assert "churn" not in step["columns"] and len(step["dtypes"]) == len(step["columns"])
+    broken = {**graph, "steps": [{**graph["steps"][0], "kind": "no_existe"}]}
+    r = client.post(
+        f"{API}/projects/{pid}/pipelines/preview-steps",
+        json={"dataset_version_id": dv["id"], "graph": broken},
+    )
+    assert r.status_code == 422, r.text
 
     proposals = _ok(
         client.post(

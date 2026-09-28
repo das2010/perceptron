@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import math
 from typing import Annotated, Any, Literal
 
+import polars as pl
 from fastapi import APIRouter, Depends, WebSocket, status
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,8 +16,8 @@ from perceptron.archspec.schema import ArchSpec
 from perceptron.archspec.to_code import archspec_to_code
 from perceptron.archspec.validate import ValidationReport
 from perceptron.catalog.registry import BLOCKS, blocks_for
-from perceptron.core.errors import NotFoundError
-from perceptron.data.pipeline.pipeline import PipelineSpec, transform_tabular
+from perceptron.core.errors import NotFoundError, ValidationError
+from perceptron.data.pipeline.pipeline import PipelineSpec, preview_steps, transform_tabular
 from perceptron.domain.enums import Device, Modality, Origin, TaskType
 from perceptron.domain.models import ArchSpecRecord, Evaluation, ModelVersion, Pipeline, Run, Study
 from perceptron.evaluation.evaluate import EvaluationReport
@@ -100,6 +102,51 @@ def preview_pipeline(pipeline_id: str, body: PipelinePreviewBody, ctx: Ctx) -> P
         x_num=arr.x_num.round(6).tolist(),
         x_cat=arr.x_cat.tolist(),
         classes=fitted.classes,
+    )
+
+
+class StepsPreviewBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dataset_version_id: str
+    graph: PipelineSpec
+    upto_step: str | None = None
+    rows: int = Field(default=10, ge=1, le=100)
+
+
+class StepsPreview(BaseModel):
+    step_id: str | None
+    columns: list[str]
+    dtypes: list[str]
+    rows: list[list[Any]]
+
+
+def _json_cell(value: Any) -> Any:
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
+
+
+@router.post(
+    "/projects/{project_id}/pipelines/preview-steps",
+    tags=["pipelines"],
+    operation_id="previewPipelineSteps",
+)
+def preview_pipeline_steps(project_id: str, body: StepsPreviewBody, ctx: Ctx) -> StepsPreview:
+    """Vista previa de un grafo (guardado o no) tras un paso, sobre filas de train (RF-PIP-02)."""
+    ctx.projects.get(project_id)
+    wf = Workflow(ctx)
+    train = wf.view(wf.dataset(body.dataset_version_id)).read("train")
+    try:
+        df = preview_steps(body.graph, train, upto=body.upto_step, rows=body.rows)
+    except (ValueError, KeyError, TypeError, pl.exceptions.PolarsError) as exc:
+        raise ValidationError(f"no se pudo aplicar el pipeline: {exc}") from exc
+    return StepsPreview(
+        step_id=body.upto_step,
+        columns=df.columns,
+        dtypes=[str(t) for t in df.dtypes],
+        rows=[[_json_cell(v) for v in row] for row in df.rows()],
     )
 
 
