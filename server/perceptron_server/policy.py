@@ -83,6 +83,7 @@ EDIT_READS = frozenset(
         "downloadExportProject",
         "downloadServingBundle",
         "exportLabels",
+        "downloadProjectPackage",
         "listLlmAudit",
     }
 )

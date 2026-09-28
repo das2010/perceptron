@@ -256,7 +256,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 |---|---|---|---|---|
 | RF-PRJ-01 | sí | 1/3 | Crear, abrir, duplicar, archivar y eliminar proyectos. | ✅ crear, abrir, duplicar (configuración), archivar/restaurar y eliminar con datos y carpeta (API, CLI y UI) |
 | RF-PRJ-02 | sí | 1/3 | Plantillas de proyecto por caso de uso (UC-01…UC-09) que preconfiguran modalidad,… | ✅ plantillas UC-01…UC-09 (modalidad, tarea y métrica `val_*`), selector en Nuevo proyecto y `--template`; el HPO optimiza la métrica del proyecto |
-| RF-PRJ-03 |  | 3 | Exportar/importar proyecto como paquete .perceptron (zip con manifiesto; datos… | ⬜ pendiente |
+| RF-PRJ-03 |  | 3 | Exportar/importar proyecto como paquete .perceptron (zip con manifiesto; datos… | ✅ paquete `.perceptron` (manifiesto con proyecto y entidades, runs y modelos; datos opcionales), import con los mismos ids y rutas reescritas; API, CLI y UI |
 | RF-PRJ-04 |  | 5 | Promover un proyecto local a proyecto de equipo (sube metadata, datasets y runs… | 🟡 sincronización de proyecto, datos y arquitectura al lanzar en el servidor; falta la promoción explícita con selección de runs |
 | RF-PRJ-05 |  | 3 | Historial de actividad del proyecto (quién hizo qué, cuándo). | 🟡 auditoría del Team Server filtrable por proyecto (solo admins); falta el historial local y la vista por proyecto |
 | RF-ING-01 | sí | 1 | Archivos locales: CSV, TSV, XLSX, Parquet, JSON/JSONL; carpetas de imágenes… | ✅ tabular, imágenes, texto (tabla o clase/*.txt), audio (wav/flac/mp3/ogg), ZIP |

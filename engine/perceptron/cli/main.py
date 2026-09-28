@@ -248,6 +248,42 @@ def project_archive(
         ctx.close()
 
 
+@project_app.command("export")
+def project_export(
+    project_id: Annotated[str, typer.Argument(help="Proyecto")],
+    out: Annotated[Path, typer.Option("--out", "-o", help="Archivo .perceptron a generar")],
+    with_data: Annotated[bool, typer.Option("--with-data", help="Incluir los datos")] = False,
+    workspace: WorkspaceOpt = None,
+) -> None:
+    """Exporta el proyecto como paquete .perceptron (RF-PRJ-03)."""
+    from perceptron.api.context import EngineContext
+    from perceptron.services.project_package import export_project
+
+    ctx = EngineContext.create(_settings(workspace))
+    try:
+        path = export_project(ctx, project_id, out, include_data=with_data)
+        typer.echo(f"Paquete: {path} ({path.stat().st_size / 1024**2:.1f} MB)")
+    finally:
+        ctx.close()
+
+
+@project_app.command("import")
+def project_import(
+    package: Annotated[Path, typer.Argument(help="Archivo .perceptron")],
+    workspace: WorkspaceOpt = None,
+) -> None:
+    """Importa un paquete .perceptron (conserva los ids; falla si el proyecto ya existe)."""
+    from perceptron.api.context import EngineContext
+    from perceptron.services.project_package import import_project
+
+    ctx = EngineContext.create(_settings(workspace))
+    try:
+        project = import_project(ctx, package)
+        typer.echo(f"Proyecto importado: {project.id}  {project.name}")
+    finally:
+        ctx.close()
+
+
 @project_app.command("delete")
 def project_delete(
     project_id: Annotated[str, typer.Argument(help="Proyecto")],

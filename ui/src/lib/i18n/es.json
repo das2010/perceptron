@@ -125,7 +125,8 @@
     "recent": "Proyectos recientes",
     "empty": "Todavía no hay proyectos. Creá uno para empezar.",
     "showArchived_one": "Mostrar el archivado ({{count}})",
-    "showArchived_other": "Mostrar archivados ({{count}})"
+    "showArchived_other": "Mostrar archivados ({{count}})",
+    "importProject": "Importar proyecto"
   },
   "project": {
     "name": "Nombre",
@@ -161,7 +162,9 @@
       "deleteTitle": "Eliminar «{{name}}»",
       "deleteWarning": "Se borran para siempre los datos, versiones, runs, modelos y la carpeta del proyecto. No se puede deshacer; si solo querés sacarlo de la vista, archivalo.",
       "typeName": "Escribí «{{name}}» para confirmar",
-      "deleteConfirm": "Eliminar definitivamente"
+      "deleteConfirm": "Eliminar definitivamente",
+      "export": "Exportar .perceptron",
+      "withData": "con los datos"
     }
   },
   "privacy": {

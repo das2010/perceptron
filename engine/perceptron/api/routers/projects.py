@@ -2,16 +2,24 @@
 
 from __future__ import annotations
 
+import shutil
+import tempfile
+import zipfile
+from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
+from starlette.background import BackgroundTask
 
 from perceptron.api.access import get_access
 from perceptron.api.context import EngineContext, get_context
 from perceptron.catalog.project_templates import PROJECT_TEMPLATES, ProjectTemplate, get_template
+from perceptron.core.errors import ValidationError
 from perceptron.domain.enums import Modality, PrivacyLevel, ProjectStatus, TaskType
 from perceptron.domain.models import Project
+from perceptron.services.project_package import SUFFIX, export_project, import_project
 from perceptron.services.projects import duplicate_project, purge_project
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -136,5 +144,54 @@ def duplicate(project_id: str, body: ProjectDuplicate, ctx: Ctx, request: Reques
     )
     project = ctx.projects.add(draft)
     ctx.files.init_project(project)
+    ctx.events.publish("project.created", project_id=project.id)
+    return project
+
+
+# ------------------------------------------------------------------ paquete .perceptron (RF-PRJ-03)
+
+MAX_PACKAGE_BYTES = 20 * 1024**3
+
+
+@router.get("/{project_id}/package", operation_id="downloadProjectPackage")
+def download_package(project_id: str, ctx: Ctx, include_data: bool = False) -> FileResponse:
+    """Proyecto completo en un `.perceptron` (entidades, runs, modelos; datos opcionales)."""
+    project = ctx.projects.get(project_id)
+    tmp = Path(tempfile.mkdtemp(prefix="perceptron-export-"))
+    safe = (
+        "".join(c if c.isalnum() or c in " -_" else "_" for c in project.name).strip() or "proyecto"
+    )
+    out = export_project(ctx, project.id, tmp / f"{safe}{SUFFIX}", include_data=include_data)
+    return FileResponse(
+        out,
+        filename=out.name,
+        media_type="application/zip",
+        background=BackgroundTask(shutil.rmtree, tmp, ignore_errors=True),
+    )
+
+
+@router.post("/import", status_code=status.HTTP_201_CREATED, operation_id="importProject")
+async def import_package(
+    ctx: Ctx, request: Request, file: Annotated[UploadFile, File()]
+) -> Project:
+    """Importa un `.perceptron` con sus ids; si el proyecto ya existe, 409."""
+    tmp = Path(tempfile.mkdtemp(prefix="perceptron-import-"))
+    try:
+        path = tmp / "paquete.perceptron"
+        total = 0
+        with path.open("wb") as out:
+            while chunk := await file.read(1024 * 1024):
+                total += len(chunk)
+                if total > MAX_PACKAGE_BYTES:
+                    raise ValidationError("el paquete supera el límite de 20 GB")
+                out.write(chunk)
+        try:
+            project = import_project(
+                ctx, path, prepare=lambda p: get_access(request).prepare_project(request, p)
+            )
+        except zipfile.BadZipFile:
+            raise ValidationError("el archivo no es un paquete .perceptron válido") from None
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     ctx.events.publish("project.created", project_id=project.id)
     return project

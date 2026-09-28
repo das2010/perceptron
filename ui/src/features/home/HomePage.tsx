@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Cpu, Plus } from "lucide-react";
+import { Cpu, PackageOpen, Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -22,6 +22,7 @@ import { EngineStatus } from "@/features/system/EngineStatus";
 import {
   useCreateProject,
   useHardware,
+  useImportProject,
   useProjects,
   useProjectTemplates,
   type ProjectTemplate,
@@ -148,6 +149,8 @@ export function HomePage() {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const importer = useImportProject();
+  const navigate = useNavigate();
   const { data, isPending, error } = useProjects();
   const all = Array.isArray(data) ? data : [];
   const archivedCount = all.filter((p) => p.status === "archived").length;
@@ -158,16 +161,38 @@ export function HomePage() {
       <PageHeader
         title={t("app.tagline")}
         actions={
-          <Button onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            {t("home.newProject")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-pt border border-line bg-card px-4 py-2 text-sm hover:bg-canvas">
+              <PackageOpen className="h-4 w-4" aria-hidden="true" />
+              {t("home.importProject")}
+              <input
+                type="file"
+                accept=".perceptron,.zip"
+                className="sr-only"
+                aria-label={t("home.importProject")}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  importer.mutate(f, {
+                    onSuccess: (p) =>
+                      void navigate({ to: "/projects/$projectId", params: { projectId: p.id } }),
+                  });
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <Button onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              {t("home.newProject")}
+            </Button>
+          </div>
         }
       />
       <div className="grid gap-4 md:grid-cols-2">
         <EngineStatus />
         <HardwareCard />
       </div>
+      <ErrorNote error={importer.error} />
       <div className="mb-3 mt-8 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{t("home.recent")}</h2>
         {archivedCount > 0 && (

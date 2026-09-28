@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Archive, ArchiveRestore, ArrowRight, Copy, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowRight, Copy, Package, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +24,7 @@ import {
   useUpdateProject,
   type Project,
 } from "@/lib/api/hooks";
+import { downloadFromEngine } from "@/lib/api/download";
 
 import { useProjectId } from "./ProjectLayout";
 
@@ -45,7 +46,21 @@ function ProjectActions({ project }: { project: Project }) {
   const remove = useDeleteProject(project.id);
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
+  const [withData, setWithData] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<unknown>(null);
   const archived = project.status === "archived";
+
+  const exportPackage = () => {
+    setExporting(true);
+    setExportError(null);
+    downloadFromEngine(
+      `/api/v1/projects/${project.id}/package?include_data=${withData}`,
+      `${project.name}.perceptron`,
+    )
+      .catch(setExportError)
+      .finally(() => setExporting(false));
+  };
 
   const toggleArchive = () =>
     update.mutate({ version: project.version, status: archived ? "active" : "archived" });
@@ -80,13 +95,25 @@ function ProjectActions({ project }: { project: Project }) {
           )}
           {t(archived ? "project.actions.restore" : "project.actions.archive")}
         </Button>
+        <Button variant="secondary" loading={exporting} onClick={exportPackage}>
+          <Package className="h-4 w-4" aria-hidden="true" />
+          {t("project.actions.export")}
+        </Button>
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            checked={withData}
+            onChange={(e) => setWithData(e.target.checked)}
+          />
+          {t("project.actions.withData")}
+        </label>
         <Button variant="danger" onClick={() => setConfirming(true)}>
           <Trash2 className="h-4 w-4" aria-hidden="true" />
           {t("project.actions.delete")}
         </Button>
       </div>
       <p className="mt-2 text-xs text-muted">{t("project.actions.hint")}</p>
-      <ErrorNote error={update.error ?? duplicate.error} />
+      <ErrorNote error={update.error ?? duplicate.error ?? exportError} />
       <Dialog
         open={confirming}
         onOpenChange={(o) => {

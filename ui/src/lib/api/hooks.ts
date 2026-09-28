@@ -143,6 +143,26 @@ export function useUpdateProject(projectId: string) {
   });
 }
 
+/** Importa un paquete .perceptron (RF-PRJ-03). */
+export function useImportProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      return unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/import", {
+          body: form as unknown as Schemas["Body_importProject"],
+          bodySerializer: (b) => b as unknown as FormData,
+        }),
+      ) as Project;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.projects }),
+  });
+}
+
 export function useDuplicateProject(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
