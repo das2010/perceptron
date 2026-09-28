@@ -682,3 +682,48 @@ export function usePreviewSteps(projectId: string) {
       ),
   });
 }
+
+// ---------------------------------------------------------------- sub-wizard de definición (§7.6)
+
+export type DefinePlan = Schemas["DefinePlan"];
+
+export function useDefinitionPlan(
+  projectId: string,
+  datasetVersionId: string,
+  pipelineId: string,
+  choices: Record<string, string>,
+) {
+  return useQuery({
+    queryKey: ["projects", projectId, "arch-define", datasetVersionId, pipelineId, choices],
+    placeholderData: (prev) => prev,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/arch/define", {
+          params: { path: { project_id: projectId } },
+          body: { dataset_version_id: datasetVersionId, pipeline_id: pipelineId, choices },
+        }),
+      ),
+  });
+}
+
+export function useBuildDefinition(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      dataset_version_id: string;
+      pipeline_id: string;
+      choices: Record<string, string>;
+    }) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/arch/define/build", {
+          params: { path: { project_id: projectId } },
+          body,
+        }),
+      ) as ArchSpecRecord,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["projects", projectId, "archspecs"] }),
+  });
+}

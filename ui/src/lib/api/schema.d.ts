@@ -430,6 +430,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/arch/define": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Plan Arch Definition
+         * @description Sub-wizard de definición: opciones explicadas de cada paso según lo ya elegido.
+         */
+        post: operations["planArchDefinition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/arch/define/build": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Build Arch Definition */
+        post: operations["buildArchDefinition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/arch/propose": {
         parameters: {
             query?: never;
@@ -1698,6 +1735,64 @@ export interface components {
              * @default 1
              */
             version: number;
+        };
+        /** DefineBody */
+        DefineBody: {
+            /**
+             * Choices
+             * @description Paso → opción (family, backbone, head, regularization)
+             */
+            choices?: {
+                [key: string]: string;
+            };
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /** Pipeline Id */
+            pipeline_id: string;
+        };
+        /** DefineOption */
+        DefineOption: {
+            /**
+             * Available
+             * @default true
+             */
+            available: boolean;
+            /** Description */
+            description: string;
+            /** Id */
+            id: string;
+            /**
+             * Reason
+             * @description Por qué no está disponible
+             */
+            reason?: string | null;
+            /**
+             * Recommended
+             * @default false
+             */
+            recommended: boolean;
+            /** Title */
+            title: string;
+        };
+        /** DefinePlan */
+        DefinePlan: {
+            /** Complete */
+            complete: boolean;
+            modality: components["schemas"]["Modality"];
+            /** Steps */
+            steps: components["schemas"]["DefineStep"][];
+            task: components["schemas"]["TaskType"];
+        };
+        /** DefineStep */
+        DefineStep: {
+            /** Choice */
+            choice?: string | null;
+            /** Options */
+            options: components["schemas"]["DefineOption"][];
+            /** Step */
+            step: string;
+            /** Title */
+            title: string;
         };
         /**
          * Device
@@ -4738,6 +4833,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AgentLaunch"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    planArchDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefineBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DefinePlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    buildArchDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefineBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchSpecRecord"];
                 };
             };
             /** @description Validation Error */

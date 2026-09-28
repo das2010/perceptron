@@ -470,5 +470,21 @@
     "previewAll": "Show pipeline result",
     "previewAfter": "First train rows after step “{{step}}” (includes unsaved changes).",
     "previewAfterAll": "First train rows after the whole pipeline (includes unsaved changes)."
+  },
+  "define": {
+    "open": "Define step by step",
+    "close": "Hide the definition assistant",
+    "steps": "Definition steps",
+    "step": {
+      "family": "Family",
+      "backbone": "Backbone or size",
+      "head": "Head and loss",
+      "regularization": "Regularization"
+    },
+    "recommended": "Recommended",
+    "explainButton": "Explain the options",
+    "explain": "I'm defining the architecture, step “{{step}}”. The options are: {{options}}. Which one fits my data and why?",
+    "useRecommended": "Fill in with the recommended",
+    "build": "Create this architecture"
   }
 }

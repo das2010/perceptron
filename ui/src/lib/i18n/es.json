@@ -470,5 +470,21 @@
     "previewAll": "Ver resultado del pipeline",
     "previewAfter": "Primeras filas de train después del paso «{{step}}» (incluye cambios sin guardar).",
     "previewAfterAll": "Primeras filas de train después de todo el pipeline (incluye cambios sin guardar)."
+  },
+  "define": {
+    "open": "Definir paso a paso",
+    "close": "Ocultar el asistente de definición",
+    "steps": "Pasos de la definición",
+    "step": {
+      "family": "Familia",
+      "backbone": "Backbone o tamaño",
+      "head": "Cabeza y pérdida",
+      "regularization": "Regularización"
+    },
+    "recommended": "Recomendada",
+    "explainButton": "Explicame las opciones",
+    "explain": "Estoy definiendo la arquitectura, paso «{{step}}». Las opciones son: {{options}}. ¿Cuál conviene para mis datos y por qué?",
+    "useRecommended": "Completar con lo recomendado",
+    "build": "Crear esta arquitectura"
   }
 }

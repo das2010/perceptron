@@ -1633,6 +1633,144 @@
         "title": "DatasetVersion",
         "type": "object"
       },
+      "DefineBody": {
+        "additionalProperties": false,
+        "properties": {
+          "choices": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Paso → opción (family, backbone, head, regularization)",
+            "title": "Choices",
+            "type": "object"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "pipeline_id"
+        ],
+        "title": "DefineBody",
+        "type": "object"
+      },
+      "DefineOption": {
+        "properties": {
+          "available": {
+            "default": true,
+            "title": "Available",
+            "type": "boolean"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por qué no está disponible",
+            "title": "Reason"
+          },
+          "recommended": {
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description"
+        ],
+        "title": "DefineOption",
+        "type": "object"
+      },
+      "DefinePlan": {
+        "properties": {
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "modality": {
+            "$ref": "#/components/schemas/Modality"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/DefineStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          }
+        },
+        "required": [
+          "modality",
+          "task",
+          "steps",
+          "complete"
+        ],
+        "title": "DefinePlan",
+        "type": "object"
+      },
+      "DefineStep": {
+        "properties": {
+          "choice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choice"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/DefineOption"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "step": {
+            "title": "Step",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "title",
+          "options"
+        ],
+        "title": "DefineStep",
+        "type": "object"
+      },
       "Device": {
         "enum": [
           "cuda",
@@ -8412,6 +8550,111 @@
         "summary": "Create Agent Run",
         "tags": [
           "agent"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/arch/define": {
+      "post": {
+        "description": "Sub-wizard de definición: opciones explicadas de cada paso según lo ya elegido.",
+        "operationId": "planArchDefinition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefineBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinePlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plan Arch Definition",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/arch/define/build": {
+      "post": {
+        "operationId": "buildArchDefinition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefineBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchSpecRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Build Arch Definition",
+        "tags": [
+          "arch"
         ]
       }
     },

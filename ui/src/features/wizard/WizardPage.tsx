@@ -22,6 +22,7 @@ import {
   Textarea,
 } from "@/components/ui";
 import { useUiStore } from "@/app/store";
+import { DefineWizard } from "@/features/arch/DefineWizard";
 import { UploadPanel } from "@/features/data/DataPage";
 import { ProfileView } from "@/features/data/ProfileView";
 import { useProjectId } from "@/features/projects/ProjectLayout";
@@ -152,8 +153,20 @@ function StepArchitecture({ values, save }: { values: DraftValues; save: Save })
   const pipeline = useProposePipeline(projectId);
   const propose = useProposeArchitecture(projectId);
   const [proposals, setProposals] = useState<ArchProposals | null>(null);
+  const [defining, setDefining] = useState(false);
   const dv = values.dataset_version_id;
   if (!dv) return <EmptyState>{t("train.noData")}</EmptyState>;
+
+  const openDefine = () => {
+    if (defining) return setDefining(false);
+    if (values.pipeline_id) return setDefining(true);
+    pipeline.mutate(dv, {
+      onSuccess: (p) => {
+        save({ pipeline_id: p.id ?? null });
+        setDefining(true);
+      },
+    });
+  };
 
   const run = () =>
     pipeline.mutate(dv, {
@@ -174,9 +187,26 @@ function StepArchitecture({ values, save }: { values: DraftValues; save: Save })
 
   return (
     <div className="space-y-4">
-      <Button loading={pipeline.isPending || propose.isPending} onClick={run}>
-        {t("train.proposeArch")}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button loading={pipeline.isPending || propose.isPending} onClick={run}>
+          {t("train.proposeArch")}
+        </Button>
+        <Button variant="secondary" onClick={openDefine} aria-expanded={defining}>
+          {defining ? t("define.close") : t("define.open")}
+        </Button>
+      </div>
+      {defining && values.pipeline_id && (
+        <DefineWizard
+          projectId={projectId}
+          datasetVersionId={dv}
+          pipelineId={values.pipeline_id}
+          onBuilt={(rec) => {
+            save({ archspec_id: rec.id, strategy: null });
+            setDefining(false);
+            setProposals(null);
+          }}
+        />
+      )}
       <ErrorNote error={pipeline.error ?? propose.error} />
       {proposals?.fallback_reason && (
         <p className="text-xs text-muted">
@@ -496,9 +526,7 @@ export function WizardPage() {
           <Button
             size="sm"
             variant="ai"
-            onClick={() =>
-              askCopilot(t("wizard.why.question", { step: t(`wizard.step.${step}`) }))
-            }
+            onClick={() => askCopilot(t("wizard.why.question", { step: t(`wizard.step.${step}`) }))}
           >
             <Sparkles className="h-4 w-4" aria-hidden="true" />
             {t("wizard.why.button")}

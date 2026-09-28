@@ -123,6 +123,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Vista del agente: lanzamiento con límites y aprobaciones, bitácora en vivo, aprobar/rechazar/detener | ✅ |
 | Editor visual de ArchSpec (React Flow) con validación en vivo y "ver como código" (Monaco empaquetado, sin CDN) | ✅ |
 | Editor visual de pipeline (React Flow): agregar, quitar, reordenar, parametrizar, vista previa | ✅ |
+| Sub-wizard de definición de arquitectura (familia → backbone → cabeza → regularización, `POST /projects/{id}/arch/define`), con el copiloto como guía | ✅ tabular e imagen |
 | E2E Playwright UC-04 guiado por el wizard (incluye editor visual y código) | ✅ 40 s de punta a punta (O1: < 15 min) |
 
 ## Requisitos funcionales
