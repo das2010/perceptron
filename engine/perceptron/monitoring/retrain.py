@@ -161,12 +161,9 @@ class Retrainer:
         labels = np.full(n, "train", dtype=object)
         labels[order[:n_hold]] = "test"
         rest = order[n_hold:]
-        val = (
-            rng.choice(rest, size=max(1, round(len(rest) * 0.15)), replace=False)
-            if len(rest) > 6
-            else []
-        )
-        labels[list(val)] = "val"
+        if len(rest) > 6:
+            val = rng.choice(rest, size=max(1, round(len(rest) * 0.15)), replace=False)
+            labels[val] = "val"
         added = new.drop("__at", strict=False).with_columns(pl.Series(SPLIT_TMP, labels.tolist()))
         # Tipos de la versión vieja: las fuentes pueden traer números como texto.
         casted = added.with_columns(
@@ -269,7 +266,9 @@ class Retrainer:
             raise ValidationError(f"el entrenamiento del challenger no terminó bien ({state})")
         best = (current.result.get("best_trial") or {}).get("run_id")
         if not best:
-            raise ValidationError("el estudio no produjo un modelo")
+            errors = [t.get("error") for t in current.result.get("trials") or [] if t.get("error")]
+            detail = "; ".join(str(e)[:300] for e in errors[:3]) or "sin trials completos"
+            raise ValidationError(f"el estudio no produjo un modelo: {detail}")
         from perceptron.export.formats import ExportRequest
 
         self.mon.wf.evaluate(best)
