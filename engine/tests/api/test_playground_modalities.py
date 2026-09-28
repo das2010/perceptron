@@ -93,6 +93,9 @@ def test_text_playground(client: TestClient, fixtures_dir: Path) -> None:
     rob = _ok(client.get(f"{API}/runs/{run_id}/robustness"))
     assert {r["kind"] for r in rob["results"]} == {"typos", "palabras eliminadas"}
     assert rob["samples"] > 0 and len(rob["results"]) == 6
+    # RF-EVL-02: tokens que más pesan en validación.
+    glob = _ok(client.get(f"{API}/runs/{run_id}/explain"))
+    assert glob["method"] == "occlusion" and glob["features"]
 
 
 def test_audio_playground(client: TestClient, fixtures_dir: Path) -> None:
@@ -112,4 +115,7 @@ def test_audio_playground(client: TestClient, fixtures_dir: Path) -> None:
     assert why["method"] == "integrated_gradients"
     rob = _ok(client.get(f"{API}/runs/{run_id}/robustness"))
     assert {r["kind"] for r in rob["results"]} == {"ruido de fondo", "volumen bajo"}
+    glob = _ok(client.get(f"{API}/runs/{run_id}/explain"))
+    assert glob["method"] == "integrated_gradients"
+    assert glob["features"][0]["feature"].startswith(("banda mel", "MFCC"))
     assert base64.b64decode(why["heatmap_png"])[1:4] == b"PNG"
