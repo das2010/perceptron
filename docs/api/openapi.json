@@ -9942,6 +9942,68 @@
         "title": "WorkspaceCreate",
         "type": "object"
       },
+      "WorkspacePolicy": {
+        "additionalProperties": false,
+        "description": "Políticas del workspace frente al LLM (RF-SRV-06, RF-PRV-02).",
+        "properties": {
+          "allowed_llm_providers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Proveedores permitidos; lista vacía = ninguno",
+            "title": "Allowed Llm Providers"
+          },
+          "clear_allowed_providers": {
+            "default": false,
+            "description": "Quita la restricción de proveedores (todos permitidos)",
+            "title": "Clear Allowed Providers",
+            "type": "boolean"
+          },
+          "local_llm_max_privacy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrivacyLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_privacy_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrivacyLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "WorkspacePolicy",
+        "type": "object"
+      },
       "perceptron__api__routers__labeling__PrelabelBody": {
         "additionalProperties": false,
         "properties": {
@@ -10477,6 +10539,59 @@
           }
         },
         "summary": "Create Workspace",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/workspaces/{workspace_id}": {
+      "patch": {
+        "description": "Admin del servidor o del workspace: nombre y topes de privacidad y proveedores LLM.",
+        "operationId": "updateWorkspacePolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspacePolicy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workspace"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Workspace",
         "tags": [
           "admin"
         ]

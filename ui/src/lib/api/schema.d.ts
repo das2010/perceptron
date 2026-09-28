@@ -109,6 +109,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/workspaces/{workspace_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Workspace
+         * @description Admin del servidor o del workspace: nombre y topes de privacidad y proveedores LLM.
+         */
+        patch: operations["updateWorkspacePolicy"];
+        trace?: never;
+    };
     "/api/v1/agent/runs/{agent_id}": {
         parameters: {
             query?: never;
@@ -6075,6 +6095,27 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * WorkspacePolicy
+         * @description Políticas del workspace frente al LLM (RF-SRV-06, RF-PRV-02).
+         */
+        WorkspacePolicy: {
+            /**
+             * Allowed Llm Providers
+             * @description Proveedores permitidos; lista vacía = ninguno
+             */
+            allowed_llm_providers?: string[] | null;
+            /**
+             * Clear Allowed Providers
+             * @description Quita la restricción de proveedores (todos permitidos)
+             * @default false
+             */
+            clear_allowed_providers: boolean;
+            local_llm_max_privacy?: components["schemas"]["PrivacyLevel"] | null;
+            max_privacy_level?: components["schemas"]["PrivacyLevel"] | null;
+            /** Name */
+            name?: string | null;
+        };
         /** PrelabelBody */
         perceptron__api__routers__labeling__PrelabelBody: {
             /** @description Guía (method=llm) */
@@ -6370,6 +6411,41 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workspace"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateWorkspacePolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspacePolicy"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
