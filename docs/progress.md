@@ -111,7 +111,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Layout §11.2 (sidebar, área principal, panel de copiloto plegable), tema claro/oscuro, i18n es/en | ✅ |
 | Inicio (Engine, hardware, proyectos), Proyecto (Resumen, Datos, Entrenar, Experimentos, Run, Modelos, Auditoría LLM), Configuración LLM | ✅ |
 | Subida de archivos/carpetas desde el navegador (`POST /projects/{id}/uploads`), historia por época (`GET /runs/{rid}/history`) | ✅ |
-| E2E Playwright UC-01 guiado contra el Engine real (job `e2e-ui`) | 🟡 en CI |
+| E2E Playwright UC-01 guiado contra el Engine real (job `e2e-ui`) | ✅ 32 s de punta a punta (O1: < 15 min) |
 
 ## Requisitos funcionales
 
