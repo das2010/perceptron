@@ -31,6 +31,7 @@ import {
   useDriftReports,
   useUpdateDeployment,
 } from "./hooks";
+import { RetrainPanel } from "./RetrainPanel";
 
 const TONE = { none: "ok", low: "neutral", medium: "warn", high: "bad" } as const;
 type Sev = keyof typeof TONE;
@@ -293,6 +294,9 @@ export function MonitoringPage() {
       {deployments.data?.map((d) => (
         <DeploymentCard key={d.id} projectId={projectId} dep={d} />
       ))}
+      {deployments.data && deployments.data.length > 0 && (
+        <RetrainPanel projectId={projectId} deployments={deployments.data} />
+      )}
     </div>
   );
 }

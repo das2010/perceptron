@@ -50,6 +50,7 @@ def create_app(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         owned = ctx is None
         app.state.ctx = ctx or (ctx_factory or EngineContext.create)(settings)
+        app.state.ctx.start_scheduler()
         try:
             yield
         finally:

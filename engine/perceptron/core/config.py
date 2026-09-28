@@ -103,6 +103,13 @@ class AlertSettings(BaseModel):
     )
 
 
+class MonitoringSettings(BaseModel):
+    """Scheduler del monitoreo: disparadores de reentrenamiento y sondeo de fuentes."""
+
+    scheduler: bool = True
+    interval_s: float = Field(default=30.0, gt=0)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="PERCEPTRON_",
@@ -119,6 +126,7 @@ class Settings(BaseSettings):
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
     alerts: AlertSettings = Field(default_factory=AlertSettings)
+    monitoring: MonitoringSettings = Field(default_factory=MonitoringSettings)
     database_url: SecretStr | None = Field(
         default=None,
         description="URL SQLAlchemy de la metadata (Team Server: PostgreSQL); None = SQLite local",

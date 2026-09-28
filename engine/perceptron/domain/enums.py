@@ -166,6 +166,16 @@ class AlertKind(StrEnum):
     PROMOTION = "promotion"
 
 
+class RetrainStatus(StrEnum):
+    RUNNING = "running"
+    AWAITING_APPROVAL = "awaiting_approval"
+    PROMOTED = "promoted"
+    NOT_IMPROVED = "not_improved"
+    REJECTED = "rejected"
+    SKIPPED = "skipped"
+    FAILED = "failed"
+
+
 class AlertStatus(StrEnum):
     OPEN = "open"
     ACKNOWLEDGED = "acknowledged"

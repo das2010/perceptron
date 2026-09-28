@@ -33,6 +33,7 @@ from perceptron.domain.enums import (
     PrivacyLevel,
     ProjectScope,
     ProjectStatus,
+    RetrainStatus,
     Role,
     RunStatus,
     Severity,
@@ -310,12 +311,54 @@ class Alert(Entity):
 
 
 class RetrainPolicy(Entity):
+    """Cuándo y cómo reentrenar el modelo en uso (RF-MON-05)."""
+
     id: str = Field(default_factory=_id_factory(IdPrefix.RETRAIN_POLICY))
     project_id: str
-    triggers: list[JsonDict] = Field(default_factory=list)
+    deployment_id: str | None = Field(default=None, description="Deployment que vigila")
+    source_ids: list[str] = Field(
+        default_factory=list, description="Fuentes streaming/API con datos nuevos"
+    )
+    triggers: list[JsonDict] = Field(
+        default_factory=list,
+        description="drift {min_severity}, cron {expr}, volume {min_rows}, degradation {max_drop}",
+    )
     require_approval: bool = True
-    budget: JsonDict = Field(default_factory=dict)
+    budget: JsonDict = Field(default_factory=dict, description="max_trials, max_epochs_per_trial")
+    min_improvement: float = Field(default=0.0, ge=0)
+    holdout_fraction: float = Field(
+        default=0.3, gt=0, lt=1, description="Filas nuevas reservadas para comparar (no entrenan)"
+    )
+    use_feedback: bool = Field(
+        default=True, description="Suma el feedback etiquetado del deployment a los datos nuevos"
+    )
+    cooldown_s: int = Field(default=3600, ge=0)
     enabled: bool = False
+    last_run_at: datetime | None = None
+    last_cron_at: datetime | None = None
+    consumed: JsonDict = Field(
+        default_factory=dict, description="Último lote de cada fuente ya usado para reentrenar"
+    )
+
+
+class RetrainRun(Entity):
+    """Una ejecución de la política: datos nuevos → challenger → comparación → promoción."""
+
+    id: str = Field(default_factory=_id_factory(IdPrefix.RETRAIN_RUN))
+    project_id: str
+    policy_id: str
+    trigger: JsonDict = Field(default_factory=dict)
+    status: RetrainStatus = RetrainStatus.RUNNING
+    champion_id: str | None = None
+    dataset_version_id: str | None = None
+    study_id: str | None = None
+    run_id: str | None = None
+    model_version_id: str | None = None
+    challenge: JsonDict | None = None
+    new_rows: int = 0
+    log: list[JsonDict] = Field(default_factory=list)
+    error: str | None = None
+    finished_at: datetime | None = None
 
 
 # --------------------------------------------------------------------- LLM y auditoría
@@ -417,6 +460,7 @@ ALL_ENTITIES: tuple[type[Entity], ...] = (
     DriftReport,
     Alert,
     RetrainPolicy,
+    RetrainRun,
     LLMSession,
     LLMCall,
 )

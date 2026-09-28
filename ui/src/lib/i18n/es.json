@@ -871,5 +871,35 @@
     "low": "Leve",
     "medium": "Medio",
     "high": "Alto"
+  },
+  "retrain": {
+    "title": "Reentrenamiento automático",
+    "hint": "Con datos nuevos etiquetados (fuentes streaming o feedback) se entrena un challenger con la misma arquitectura; se compara con el champion sobre datos que ninguno vio y se promueve solo si mejora.",
+    "deployment": "Modelo en uso a vigilar",
+    "onDrift": "Con drift de datos",
+    "volume": "Con N filas nuevas",
+    "volumeHint": "Vacío = no usar este disparador.",
+    "cron": "Por calendario (cron, UTC)",
+    "cronHint": "minuto hora día mes día-semana, p. ej. 0 3 * * 1",
+    "approval": "Pedir aprobación antes de promover",
+    "enabled": "Política activa",
+    "save": "Guardar política",
+    "runNow": "Reentrenar ahora",
+    "noRuns": "Todavía no hubo reentrenamientos.",
+    "when": "Cuándo",
+    "trigger": "Disparador",
+    "status": "Estado",
+    "result": "Resultado",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "st": {
+      "running": "En curso",
+      "awaiting_approval": "Espera aprobación",
+      "promoted": "Promovido",
+      "not_improved": "No mejoró",
+      "rejected": "Rechazado",
+      "skipped": "Sin datos nuevos",
+      "failed": "Falló"
+    }
   }
 }

@@ -7663,6 +7663,45 @@
         "title": "ProviderView",
         "type": "object"
       },
+      "PullResult": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "batches": {
+            "title": "Batches",
+            "type": "integer"
+          },
+          "last_batch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Batch"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "state": {
+            "additionalProperties": true,
+            "title": "State",
+            "type": "object"
+          }
+        },
+        "required": [
+          "added",
+          "batches",
+          "rows"
+        ],
+        "title": "PullResult",
+        "type": "object"
+      },
       "PurposeRef": {
         "additionalProperties": false,
         "properties": {
@@ -8027,6 +8066,380 @@
         },
         "title": "ReportBody",
         "type": "object"
+      },
+      "RetrainPolicy": {
+        "additionalProperties": false,
+        "description": "Cuándo y cómo reentrenar el modelo en uso (RF-MON-05).",
+        "properties": {
+          "budget": {
+            "additionalProperties": true,
+            "description": "max_trials, max_epochs_per_trial",
+            "title": "Budget",
+            "type": "object"
+          },
+          "consumed": {
+            "additionalProperties": true,
+            "description": "Último lote de cada fuente ya usado para reentrenar",
+            "title": "Consumed",
+            "type": "object"
+          },
+          "cooldown_s": {
+            "default": 3600,
+            "minimum": 0.0,
+            "title": "Cooldown S",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "deployment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Deployment que vigila",
+            "title": "Deployment Id"
+          },
+          "enabled": {
+            "default": false,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "holdout_fraction": {
+            "default": 0.3,
+            "description": "Filas nuevas reservadas para comparar (no entrenan)",
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Holdout Fraction",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_cron_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Cron At"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          },
+          "min_improvement": {
+            "default": 0.0,
+            "minimum": 0.0,
+            "title": "Min Improvement",
+            "type": "number"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "require_approval": {
+            "default": true,
+            "title": "Require Approval",
+            "type": "boolean"
+          },
+          "source_ids": {
+            "description": "Fuentes streaming/API con datos nuevos",
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Ids",
+            "type": "array"
+          },
+          "triggers": {
+            "description": "drift {min_severity}, cron {expr}, volume {min_rows}, degradation {max_drop}",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Triggers",
+            "type": "array"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "use_feedback": {
+            "default": true,
+            "description": "Suma el feedback etiquetado del deployment a los datos nuevos",
+            "title": "Use Feedback",
+            "type": "boolean"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "title": "RetrainPolicy",
+        "type": "object"
+      },
+      "RetrainPolicyBody": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "additionalProperties": true,
+            "title": "Budget",
+            "type": "object"
+          },
+          "cooldown_s": {
+            "default": 3600,
+            "minimum": 0.0,
+            "title": "Cooldown S",
+            "type": "integer"
+          },
+          "deployment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deployment Id"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "holdout_fraction": {
+            "default": 0.3,
+            "exclusiveMaximum": 1.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Holdout Fraction",
+            "type": "number"
+          },
+          "min_improvement": {
+            "default": 0.0,
+            "minimum": 0.0,
+            "title": "Min Improvement",
+            "type": "number"
+          },
+          "require_approval": {
+            "default": true,
+            "title": "Require Approval",
+            "type": "boolean"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Ids",
+            "type": "array"
+          },
+          "triggers": {
+            "items": {
+              "$ref": "#/components/schemas/Trigger"
+            },
+            "title": "Triggers",
+            "type": "array"
+          },
+          "use_feedback": {
+            "default": true,
+            "title": "Use Feedback",
+            "type": "boolean"
+          }
+        },
+        "title": "RetrainPolicyBody",
+        "type": "object"
+      },
+      "RetrainRun": {
+        "additionalProperties": false,
+        "description": "Una ejecución de la política: datos nuevos → challenger → comparación → promoción.",
+        "properties": {
+          "challenge": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challenge"
+          },
+          "champion_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Champion Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version Id"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "log": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Log",
+            "type": "array"
+          },
+          "model_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version Id"
+          },
+          "new_rows": {
+            "default": 0,
+            "title": "New Rows",
+            "type": "integer"
+          },
+          "policy_id": {
+            "title": "Policy Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RetrainStatus",
+            "default": "running"
+          },
+          "study_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Study Id"
+          },
+          "trigger": {
+            "additionalProperties": true,
+            "title": "Trigger",
+            "type": "object"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "policy_id"
+        ],
+        "title": "RetrainRun",
+        "type": "object"
+      },
+      "RetrainStatus": {
+        "enum": [
+          "running",
+          "awaiting_approval",
+          "promoted",
+          "not_improved",
+          "rejected",
+          "skipped",
+          "failed"
+        ],
+        "title": "RetrainStatus",
+        "type": "string"
       },
       "RobustnessReport": {
         "properties": {
@@ -9296,6 +9709,63 @@
         "title": "StrategyBody",
         "type": "object"
       },
+      "StreamSourceCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "kind": {
+            "enum": [
+              "rest",
+              "websocket",
+              "file"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "poll_interval_s": {
+            "anyOf": [
+              {
+                "minimum": 10.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sondeo automático",
+            "title": "Poll Interval S"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo de escritura: va al keychain",
+            "title": "Token"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "config"
+        ],
+        "title": "StreamSourceCreate",
+        "type": "object"
+      },
       "Study": {
         "additionalProperties": false,
         "properties": {
@@ -10128,6 +10598,72 @@
           }
         },
         "title": "TrainingSpec",
+        "type": "object"
+      },
+      "Trigger": {
+        "additionalProperties": false,
+        "properties": {
+          "expr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expr"
+          },
+          "max_drop": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drop"
+          },
+          "min_rows": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Rows"
+          },
+          "min_severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Severity-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "enum": [
+              "drift",
+              "cron",
+              "volume",
+              "degradation"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "Trigger",
         "type": "object"
       },
       "UploadStart": {
@@ -15934,6 +16470,194 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/retrain-policy": {
+      "get": {
+        "operationId": "getRetrainPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RetrainPolicy"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Getretrainpolicy"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Policy",
+        "tags": [
+          "monitoring"
+        ]
+      },
+      "put": {
+        "operationId": "putRetrainPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrainPolicyBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrainPolicy"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Policy",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/retrain-policy/run": {
+      "post": {
+        "operationId": "runRetrainPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrainRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Policy",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/retrain-runs": {
+      "get": {
+        "operationId": "listRetrainRuns",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RetrainRun"
+                  },
+                  "title": "Response Listretrainruns",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Retrain Runs",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/runs": {
       "get": {
         "operationId": "listRuns",
@@ -16154,6 +16878,58 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/sources/stream": {
+      "post": {
+        "operationId": "createStreamSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StreamSourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSource"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Stream Source",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/studies": {
       "post": {
         "operationId": "createStudy",
@@ -16356,6 +17132,132 @@
         "summary": "Remove",
         "tags": [
           "remote"
+        ]
+      }
+    },
+    "/api/v1/retrain-runs/{retrain_run_id}": {
+      "get": {
+        "operationId": "getRetrainRun",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "retrain_run_id",
+            "required": true,
+            "schema": {
+              "title": "Retrain Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrainRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Retrain Run",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/retrain-runs/{retrain_run_id}/approve": {
+      "post": {
+        "operationId": "approveRetrain",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "retrain_run_id",
+            "required": true,
+            "schema": {
+              "title": "Retrain Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrainRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/retrain-runs/{retrain_run_id}/reject": {
+      "post": {
+        "operationId": "rejectRetrain",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "retrain_run_id",
+            "required": true,
+            "schema": {
+              "title": "Retrain Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrainRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reject",
+        "tags": [
+          "monitoring"
         ]
       }
     },
@@ -17566,6 +18468,48 @@
         ]
       }
     },
+    "/api/v1/sources/{source_id}/buffer": {
+      "get": {
+        "operationId": "getStreamBuffer",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PullResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Buffer",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
     "/api/v1/sources/{source_id}/ingest": {
       "post": {
         "operationId": "ingestSource",
@@ -17669,6 +18613,48 @@
         "summary": "Preview Source",
         "tags": [
           "data"
+        ]
+      }
+    },
+    "/api/v1/sources/{source_id}/pull": {
+      "post": {
+        "operationId": "pullStreamSource",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PullResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pull",
+        "tags": [
+          "monitoring"
         ]
       }
     },

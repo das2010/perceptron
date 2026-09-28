@@ -1,4 +1,4 @@
-# Progreso de implementación
+🟡 REST paginado con auth, WebSocket y archivo que crece con buffer y sondeo; Kafka/MQTT pendientes
 
 Estado de cada requisito funcional de [SPEC.md](../SPEC.md). Leyenda: ✅ hecho · 🟡 parcial · ⬜ pendiente.
 La columna **Capa** es la capa de §14 donde se implementa.
@@ -203,6 +203,26 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Sync desktop ↔ servidor: proyectos de equipo con mismos IDs, bloqueo optimista, subida resumible por chunks con SHA-256 | ✅ |
 | Aceptación: un desktop lanza un run en un worker del servidor y ve el progreso en vivo (HTTP + WS reales en CI) | ✅ (worker CPU en CI; GPU real pendiente de recurso) |
 
+## Capa 6a — serving monitoreado, drift, alertas y champion/challenger
+
+| Entregable | Estado |
+|---|---|
+| Deployments sobre el ONNX del champion con registro muestreado de predicciones y feedback (ADR-0033) | ✅ |
+| Drift de datos (PSI, KS, χ², JS), de salida del modelo (MMD, dominio) y de performance | ✅ |
+| Alertas en la app, email y webhook con cooldown | ✅ |
+| Champion/challenger sobre el mismo holdout, promoción solo si mejora, rollback | ✅ |
+| Diff entre versiones (filas, esquema, distribución, archivos) y linaje | ✅ |
+
+## Capa 6b — reentrenamiento automático y fuentes streaming
+
+| Entregable | Estado |
+|---|---|
+| Fuentes REST (paginación, auth), WebSocket y archivo que crece, con buffer y sondeo (ADR-0034) | ✅ |
+| RetrainPolicy: drift, cron, volumen y degradación; aprobación opcional; bitácora | ✅ |
+| Versión de datos con split predefinido (test del champion fijo) y linaje append | ✅ |
+| Aceptación UC-10: drift → alerta → reentrenamiento → challenger → promoción si mejora → rollback | ✅ (test de API) |
+| Kafka/MQTT (extras opcionales), embeddings internos para no estructurado | ⬜ |
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
@@ -216,7 +236,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-ING-02 |  | 1/4 | Formatos de anotación: COCO, Pascal VOC, YOLO (txt), máscaras PNG, CSV de eventos de… | ✅ COCO, Pascal VOC, YOLO, máscaras PNG, CSV de OCR; eventos de audio pendiente |
 | RF-ING-03 |  | 4 | Bases de datos: SQL Server, PostgreSQL, MySQL/MariaDB, SQLite, vía query SQL con vista… | ✅ SQL Server, PostgreSQL, MySQL/MariaDB y SQLite con consulta, vista previa, límite de filas, lectura por lotes y refresco |
 | RF-ING-04 |  | 4 | Datasets públicos: Hugging Face Datasets y Kaggle (con credenciales del usuario),… | ✅ Hugging Face Datasets (split, token) y Kaggle (API oficial), con credenciales en el llavero |
-| RF-ING-05 |  | 6 | APIs REST (paginación, auth por header/token, mapeo JSON → tabla) y streaming (Kafka,… | ⬜ pendiente |
+| RF-ING-05 |  | 6 | APIs REST (paginación, auth por header/token, mapeo JSON → tabla) y streaming (Kafka,… | 🟡 REST paginado con auth, WebSocket y archivo que crece con buffer y sondeo; Kafka/MQTT pendientes |
 | RF-ING-06 | sí | 1 | Inferencia de esquema y tipos (numérico, categórico, fecha, texto, id, ruta de… | ✅ `data.schema`: tipos semánticos + candidatos a target, override manual |
 | RF-ING-07 | sí | 1 | Cada ingesta crea un DatasetVersion inmutable con hash de contenido. | ✅ `DatasetVersion` inmutable content-addressed (ADR-0016) |
 | RF-ING-08 | sí | 1 | Particionado: aleatorio estratificado, por grupo (evitar leakage entre entidades),… | ✅ aleatorio, estratificado, grupo, temporal (por serie), k-fold; test sellado |
@@ -300,13 +320,13 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-EXP-03 |  | 4 | API REST de inferencia: generar y levantar un servidor FastAPI (ONNX Runtime o… | ✅ servidor FastAPI + ONNX Runtime con pipeline embebido, /predict, /predict/batch, /metrics, API key, Dockerfile CPU/CUDA (tabular e imagen) |
 | RF-EXP-04 |  | 4 | Proyecto de código exportable: repositorio Python standalone generado desde plantillas… | ✅ repo autónomo (uv): modelo generado, pipeline vendorizado, train/infer/serve, config, datos train/val, pesos y prueba de humo; O5 en CI (tabular e imagen) |
 | RF-EXP-05 |  | 4 | Firma del modelo: schema de entrada/salida, versión, hash; incluido en todos los formatos. | ✅ firma (entradas, salidas, hash de ArchSpec, run, versión) en el reporte, `signature.json` y en el servidor |
-| RF-MON-01 |  | 6 | Registro de predicciones del serving (muestreado, configurable, respetando privacidad)… | ⬜ pendiente |
-| RF-MON-02 |  | 6 | Drift de datos: tabular con Evidently (PSI, KS, Jensen-Shannon, chi²) por feature; no… | ⬜ pendiente |
-| RF-MON-03 |  | 6 | Drift de concepto / performance: métricas sobre datos etiquetados recientes vs. baseline. | ⬜ pendiente |
-| RF-MON-04 |  | 6 | Alertas: en la app, email (SMTP) y webhook (Teams/Slack genérico). | ⬜ pendiente |
-| RF-MON-05 |  | 6 | Políticas de reentrenamiento (RetrainPolicy): disparadores por drift, calendario… | ⬜ pendiente |
-| RF-MON-06 |  | 6 | Champion/challenger: el nuevo modelo se evalúa contra el productivo en un holdout… | ⬜ pendiente |
-| RF-MON-07 |  | 6 | Versionado de datasets: snapshots inmutables por manifiesto de hashes… | ⬜ pendiente |
+| RF-MON-01 |  | 6 | Registro de predicciones del serving (muestreado, configurable, respetando privacidad)… | ✅ registro muestreado de predicciones (features de la firma + clave) y feedback por id o clave |
+| RF-MON-02 |  | 6 | Drift de datos: tabular con Evidently (PSI, KS, Jensen-Shannon, chi²) por feature; no… | 🟡 tabular (PSI, KS, χ², JS) y espacio de salida del modelo (MMD, centroides, dominio); embeddings internos para imagen/texto/audio pendientes |
+| RF-MON-03 |  | 6 | Drift de concepto / performance: métricas sobre datos etiquetados recientes vs. baseline. | ✅ métricas sobre feedback reciente contra el test del champion |
+| RF-MON-04 |  | 6 | Alertas: en la app, email (SMTP) y webhook (Teams/Slack genérico). | ✅ en la app, email SMTP y webhook (Teams/Slack) con cooldown |
+| RF-MON-05 |  | 6 | Políticas de reentrenamiento (RetrainPolicy): disparadores por drift, calendario… | ✅ disparadores drift, cron, volumen y degradación; HPO reducido; aprobación opcional |
+| RF-MON-06 |  | 6 | Champion/challenger: el nuevo modelo se evalúa contra el productivo en un holdout… | ✅ challenger contra champion en el mismo holdout, promoción solo si mejora, rollback |
+| RF-MON-07 |  | 6 | Versionado de datasets: snapshots inmutables por manifiesto de hashes… | 🟡 versiones inmutables, linaje y diff (filas, esquema, distribución, archivos); retención y export DVC pendientes |
 | RF-SRV-01 |  | 5 | Autenticación: usuarios locales (hash Argon2) y SSO OIDC (Entra ID, Google Workspace,… | ✅ locales (Argon2id, JWT con refresco rotativo, CSRF, bloqueo) y SSO OIDC con grupos → roles; validación con Entra ID real pendiente de tenant |
 | RF-SRV-02 |  | 5 | RBAC por workspace y proyecto (§3.2). | ✅ Admin/Editor/Viewer por workspace y proyecto sobre todas las operaciones (HTTP y WS) |
 | RF-SRV-03 |  | 5 | Sincronización desktop ↔ servidor para proyectos de equipo: metadata (PostgreSQL),… | 🟡 push de proyecto, datos, pipeline y arquitectura (bloqueo optimista, chunks reanudables) y pull de estudios y runs; S3 y edición concurrente de proyectos pendientes |

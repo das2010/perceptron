@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.api.context import EngineContext, get_context
-from perceptron.domain.enums import AlertStatus, DeploymentStatus, Severity
-from perceptron.domain.models import Alert, Deployment, DriftReport, ModelVersion
+from perceptron.core.errors import NotFoundError, ValidationError
+from perceptron.domain.enums import AlertStatus, DataSourceType, DeploymentStatus, Severity
+from perceptron.domain.models import (
+    Alert,
+    DataSource,
+    Deployment,
+    DriftReport,
+    ModelVersion,
+    RetrainPolicy,
+    RetrainRun,
+)
 from perceptron.monitoring.alerts import webhook_secret
 from perceptron.monitoring.service import ChallengeResult, Monitoring
 
@@ -226,3 +235,178 @@ def acknowledge(alert_id: str, ctx: Ctx) -> Alert:
 @router.post("/alerts/{alert_id}/resolve", operation_id="resolveAlert")
 def resolve(alert_id: str, ctx: Ctx) -> Alert:
     return _set_alert(ctx, alert_id, AlertStatus.RESOLVED)
+
+
+# ------------------------------------------------------------------ fuentes streaming (RF-ING-05)
+
+
+class StreamSourceCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=200)
+    kind: Literal["rest", "websocket", "file"]
+    config: dict[str, Any]
+    token: str | None = Field(default=None, description="Solo de escritura: va al keychain")
+    poll_interval_s: float | None = Field(default=None, ge=10, description="Sondeo automático")
+
+
+class PullResult(BaseModel):
+    added: int
+    batches: int
+    rows: int
+    last_batch: str | None = None
+    state: dict[str, Any] = Field(default_factory=dict)
+
+
+@router.post(
+    "/projects/{project_id}/sources/stream",
+    status_code=status.HTTP_201_CREATED,
+    operation_id="createStreamSource",
+)
+def create_stream_source(project_id: str, body: StreamSourceCreate, ctx: Ctx) -> DataSource:
+    from perceptron.data.sources.stream import build_source
+
+    ctx.projects.get(project_id)
+    if body.kind == "file":
+        from pathlib import Path
+
+        from perceptron.core.errors import ForbiddenError
+        from perceptron.core.paths import within_roots
+
+        if not within_roots(Path(str(body.config.get("path", ""))), ctx.settings.source_roots):
+            raise ForbiddenError("la ruta no está dentro de una fuente habilitada")
+    build_source(body.kind, body.config)  # valida la configuración
+    src = DataSource(
+        project_id=project_id,
+        name=body.name,
+        type=DataSourceType.API if body.kind == "rest" else DataSourceType.STREAM,
+        config={
+            "stream": {"kind": body.kind, "config": body.config},
+            "poll_interval_s": body.poll_interval_s,
+        },
+    )
+    if body.token:
+        name = f"source/{src.id}/token"
+        ctx.llm.secrets.set(name, body.token)
+        src.secret_refs = {"token": name}
+    return ctx.repo(DataSource).add(src)
+
+
+@router.post("/sources/{source_id}/pull", operation_id="pullStreamSource")
+def pull(source_id: str, ctx: Ctx) -> PullResult:
+    from perceptron.services.streams import pull_source
+
+    return PullResult.model_validate(pull_source(ctx, source_id))
+
+
+@router.get("/sources/{source_id}/buffer", operation_id="getStreamBuffer")
+def buffer(source_id: str, ctx: Ctx) -> PullResult:
+    from perceptron.services.streams import buffer_for
+
+    stats = buffer_for(ctx, ctx.repo(DataSource).get(source_id)).stats()
+    return PullResult.model_validate({"added": 0, **stats})
+
+
+# ------------------------------------------------------------------ reentrenamiento (RF-MON-05)
+
+
+class Trigger(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    type: Literal["drift", "cron", "volume", "degradation"]
+    min_severity: Severity | None = None
+    expr: str | None = None
+    min_rows: int | None = Field(default=None, ge=1)
+    max_drop: float | None = Field(default=None, gt=0, le=1)
+
+
+class RetrainPolicyBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    deployment_id: str | None = None
+    source_ids: list[str] = Field(default_factory=list)
+    triggers: list[Trigger] = Field(default_factory=list)
+    require_approval: bool = True
+    budget: dict[str, Any] = Field(default_factory=lambda: {"max_trials": 3})
+    min_improvement: float = Field(default=0.0, ge=0)
+    holdout_fraction: float = Field(default=0.3, gt=0, lt=1)
+    use_feedback: bool = True
+    cooldown_s: int = Field(default=3600, ge=0)
+    enabled: bool = True
+
+
+def _policy(ctx: EngineContext, project_id: str) -> RetrainPolicy | None:
+    found = ctx.repo(RetrainPolicy).list(filters={"project_id": project_id}, limit=1)
+    return found[0] if found else None
+
+
+@router.get("/projects/{project_id}/retrain-policy", operation_id="getRetrainPolicy")
+def get_policy(project_id: str, ctx: Ctx) -> RetrainPolicy | None:
+    ctx.projects.get(project_id)
+    return _policy(ctx, project_id)
+
+
+@router.put("/projects/{project_id}/retrain-policy", operation_id="putRetrainPolicy")
+def put_policy(project_id: str, body: RetrainPolicyBody, ctx: Ctx) -> RetrainPolicy:
+    from perceptron.monitoring.cron import Cron
+
+    ctx.projects.get(project_id)
+    for t in body.triggers:
+        if t.type == "cron":
+            Cron(t.expr or "")
+    if body.deployment_id:
+        dep = ctx.repo(Deployment).get(body.deployment_id)
+        if dep.project_id != project_id:
+            raise ValidationError("el deployment es de otro proyecto")
+    for sid in body.source_ids:
+        if ctx.repo(DataSource).get(sid).project_id != project_id:
+            raise ValidationError("la fuente es de otro proyecto")
+    data = body.model_dump(mode="json")
+    data["triggers"] = [{k: v for k, v in t.items() if v is not None} for t in data["triggers"]]
+    repo = ctx.repo(RetrainPolicy)
+    current = _policy(ctx, project_id)
+    if current is None:
+        return repo.add(RetrainPolicy(project_id=project_id, **data))
+    return repo.update(
+        current.model_copy(
+            update=RetrainPolicy.model_validate({**current.model_dump(), **data}).model_dump(
+                exclude={"id", "version", "created_at", "updated_at"}
+            )
+        )
+    )
+
+
+@router.post(
+    "/projects/{project_id}/retrain-policy/run",
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="runRetrainPolicy",
+)
+def run_policy(project_id: str, ctx: Ctx) -> RetrainRun:
+    from perceptron.monitoring.retrain import Retrainer
+
+    policy = _policy(ctx, project_id)
+    if policy is None:
+        raise NotFoundError("el proyecto no tiene política de reentrenamiento")
+    return Retrainer(ctx).start(policy.id, {"type": "manual"})
+
+
+@router.get("/projects/{project_id}/retrain-runs", operation_id="listRetrainRuns")
+def list_retrain_runs(project_id: str, ctx: Ctx) -> list[RetrainRun]:
+    ctx.projects.get(project_id)
+    return list(ctx.repo(RetrainRun).list(filters={"project_id": project_id}, limit=200))
+
+
+@router.get("/retrain-runs/{retrain_run_id}", operation_id="getRetrainRun")
+def get_retrain_run(retrain_run_id: str, ctx: Ctx) -> RetrainRun:
+    return ctx.repo(RetrainRun).get(retrain_run_id)
+
+
+@router.post("/retrain-runs/{retrain_run_id}/approve", operation_id="approveRetrain")
+def approve(retrain_run_id: str, ctx: Ctx) -> RetrainRun:
+    from perceptron.monitoring.retrain import Retrainer
+
+    return Retrainer(ctx).approve(retrain_run_id)
+
+
+@router.post("/retrain-runs/{retrain_run_id}/reject", operation_id="rejectRetrain")
+def reject(retrain_run_id: str, ctx: Ctx) -> RetrainRun:
+    from perceptron.monitoring.retrain import Retrainer
+
+    return Retrainer(ctx).reject(retrain_run_id)

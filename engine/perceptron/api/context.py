@@ -37,6 +37,7 @@ class EngineContext:
     _closers: list[Callable[[], None]] = field(default_factory=list, repr=False)
     # Tests: cliente HTTP alternativo para hablar con un Team Server (Capa 5c).
     remote_http: Callable[[], Any] | None = field(default=None, repr=False)
+    _scheduler: Any = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         self.projects = SqlRepository(self.db, Project)
@@ -92,6 +93,17 @@ class EngineContext:
 
     def use_llm(self, gateway: Gateway) -> None:
         self._llm = gateway
+
+    def start_scheduler(self) -> None:
+        """Disparadores de reentrenamiento y sondeo de fuentes (Capa 6), una vez por contexto."""
+        if self._scheduler is not None or not self.settings.monitoring.scheduler:
+            return
+        from perceptron.monitoring.scheduler import Scheduler
+
+        scheduler = Scheduler(self, self.settings.monitoring.interval_s)
+        scheduler.start()
+        self._scheduler = scheduler
+        self.on_close(scheduler.stop)
 
     def on_close(self, callback: Callable[[], None]) -> None:
         """Libera recursos de extensiones (p. ej. el relay de eventos del Team Server)."""

@@ -76,6 +76,40 @@ def execute_study(
     return result
 
 
+def new_study(
+    ctx: EngineContext,
+    project_id: str,
+    dataset_version_id: str,
+    pipeline_id: str,
+    archspec_id: str,
+    strategy: HPOStrategy,
+    *,
+    device: Device | None = None,
+) -> Study:
+    """Crea el estudio con todo lo necesario para ejecutarse en cualquier lado."""
+    from perceptron.domain.models import ArchSpecRecord
+
+    record = ctx.repo(ArchSpecRecord).get(archspec_id)
+    request = {
+        "dataset_version_id": dataset_version_id,
+        "pipeline_id": pipeline_id,
+        "archspec_id": archspec_id,
+        "strategy": strategy.model_dump(mode="json"),
+        "budget": strategy.budget.model_dump(mode="json"),
+        "device": device.value if device else None,
+    }
+    return ctx.repo(Study).add(
+        Study(
+            project_id=project_id,
+            name=f"hpo-{record.name}",
+            strategy=strategy.model_dump(mode="json"),
+            budget={**strategy.budget.model_dump(mode="json"), "request": request},
+            objectives=[o.metric for o in strategy.objectives],
+            origin=strategy.origin,
+        )
+    )
+
+
 def launch_local(ctx: EngineContext, study: Study) -> Job:
     """Desktop: el estudio corre en un hilo del Engine (job 202 + WS, SPEC §10)."""
     control = StudyControl()
