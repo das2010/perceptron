@@ -94,4 +94,43 @@ describe("App", () => {
     expect(await screen.findByText("Agregar datos")).toBeInTheDocument();
     expect(body).toMatchObject({ name: "Motores", privacy_level: "L1" });
   });
+
+  it("una plantilla de caso de uso prellena el objetivo y viaja al crear (RF-PRJ-02)", async () => {
+    const created = project({ id: "prj_nuevo", name: "Sonidos" });
+    let body: Record<string, unknown> = {};
+    mockEngine({
+      "GET /api/v1/projects": () => [],
+      "GET /api/v1/projects/templates": () => [
+        {
+          id: "machine-sound",
+          use_case: "UC-09",
+          modalities: ["audio"],
+          task: "classification",
+          target_metric: "val_f1_macro",
+        },
+      ],
+      "POST /api/v1/projects": async (req) => {
+        body = (await req.json()) as Record<string, unknown>;
+        return new Response(JSON.stringify(created), {
+          status: 201,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+      "GET /api/v1/projects/prj_nuevo": () => created,
+      "GET /api/v1/projects/prj_nuevo/datasets": () => [],
+    });
+    renderApp();
+    await userEvent.click(await screen.findByRole("button", { name: "Nuevo proyecto" }));
+    const select = await screen.findByLabelText("Plantilla");
+    await screen.findByRole("option", { name: "UC-09 · Fallas de motor por sonido" });
+    await userEvent.selectOptions(select, "machine-sound");
+    expect(screen.getByText("Audio · Clasificación · optimiza val_f1_macro")).toBeInTheDocument();
+    expect(screen.getByLabelText("Objetivo")).toHaveValue(
+      "Detectar fallas de motor a partir de grabaciones de audio.",
+    );
+    await userEvent.type(screen.getByLabelText("Nombre"), "Sonidos");
+    await userEvent.click(screen.getByRole("button", { name: "Crear" }));
+    expect(await screen.findByText("Agregar datos")).toBeInTheDocument();
+    expect(body).toMatchObject({ name: "Sonidos", template: "machine-sound" });
+  });
 });

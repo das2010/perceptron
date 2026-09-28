@@ -143,7 +143,11 @@
       "design": "Diseño",
       "labeling": "Etiquetado",
       "monitoring": "Monitoreo"
-    }
+    },
+    "template": "Plantilla",
+    "noTemplate": "Sin plantilla",
+    "noTemplateHint": "Elegí un caso de uso para preconfigurar modalidad, tarea y métrica.",
+    "templateHint": "{{modalities}} · {{task}} · optimiza {{metric}}"
   },
   "privacy": {
     "L0": "L0 — Sin LLM: se usan solo reglas.",
@@ -948,5 +952,43 @@
     "preview": "Ver exactamente qué se enviaría",
     "enable": "Activar telemetría",
     "disable": "Desactivar telemetría"
+  },
+  "templates": {
+    "churn": {
+      "title": "Churn de clientes",
+      "goal": "¿Qué clientes se van a dar de baja el mes que viene?"
+    },
+    "ticket-resolution-time": {
+      "title": "Tiempo de resolución de tickets",
+      "goal": "Estimar cuántas horas va a llevar resolver cada ticket de soporte."
+    },
+    "ticket-category": {
+      "title": "Categoría de tickets",
+      "goal": "Clasificar cada ticket de soporte en su categoría a partir del texto."
+    },
+    "visual-inspection": {
+      "title": "Inspección visual de defectos",
+      "goal": "Detectar piezas con defectos a partir de fotos de la línea."
+    },
+    "damage-segmentation": {
+      "title": "Segmentación de daños",
+      "goal": "Marcar en cada foto las zonas con daño."
+    },
+    "document-ocr": {
+      "title": "Texto de remitos",
+      "goal": "Extraer el texto de remitos escaneados."
+    },
+    "demand-forecast": {
+      "title": "Demanda semanal por SKU",
+      "goal": "Pronosticar la demanda de las próximas semanas para cada producto."
+    },
+    "sensor-anomalies": {
+      "title": "Anomalías en sensores",
+      "goal": "Detectar comportamientos anómalos en la telemetría de los equipos."
+    },
+    "machine-sound": {
+      "title": "Fallas de motor por sonido",
+      "goal": "Detectar fallas de motor a partir de grabaciones de audio."
+    }
   }
 }

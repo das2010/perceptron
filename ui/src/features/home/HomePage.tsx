@@ -19,7 +19,13 @@ import {
   Textarea,
 } from "@/components/ui";
 import { EngineStatus } from "@/features/system/EngineStatus";
-import { useCreateProject, useHardware, useProjects } from "@/lib/api/hooks";
+import {
+  useCreateProject,
+  useHardware,
+  useProjects,
+  useProjectTemplates,
+  type ProjectTemplate,
+} from "@/lib/api/hooks";
 import { formatDate } from "@/lib/format";
 
 const PRIVACY = ["L0", "L1", "L2", "L3"] as const;
@@ -34,14 +40,24 @@ function NewProjectDialog({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const create = useCreateProject();
+  const templates = useProjectTemplates();
   const [name, setName] = useState("");
   const [goal, setGoal] = useState("");
   const [privacy, setPrivacy] = useState<(typeof PRIVACY)[number]>("L1");
+  const [template, setTemplate] = useState<ProjectTemplate | null>(null);
+
+  const choose = (id: string) => {
+    const next = templates.data?.find((tp) => tp.id === id) ?? null;
+    // El ejemplo de objetivo solo reemplaza lo que no escribió el usuario.
+    const example = (tp: ProjectTemplate | null) => (tp ? t(`templates.${tp.id}.goal`) : "");
+    if (!goal || goal === example(template)) setGoal(example(next));
+    setTemplate(next);
+  };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     create.mutate(
-      { name, goal, description: "", privacy_level: privacy },
+      { name, goal, description: "", privacy_level: privacy, template: template?.id ?? null },
       {
         onSuccess: (p) => {
           onOpenChange(false);
@@ -54,6 +70,27 @@ function NewProjectDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} title={t("home.newProject")}>
       <form onSubmit={submit} className="flex flex-col gap-4">
+        <Field
+          label={t("project.template")}
+          hint={
+            template
+              ? t("project.templateHint", {
+                  task: t(`task.${template.task}`),
+                  modalities: template.modalities.map((m) => t(`modality.${m}`)).join(" + "),
+                  metric: template.target_metric,
+                })
+              : t("project.noTemplateHint")
+          }
+        >
+          <Select value={template?.id ?? ""} onChange={(e) => choose(e.target.value)}>
+            <option value="">{t("project.noTemplate")}</option>
+            {templates.data?.map((tp) => (
+              <option key={tp.id} value={tp.id}>
+                {`${tp.use_case} · ${t(`templates.${tp.id}.title`)}`}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <Field label={t("project.name")}>
           <Input required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>

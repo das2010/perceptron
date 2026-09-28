@@ -12,6 +12,7 @@ export type Schemas = components["schemas"];
 type WithId<T> = T & { id: string };
 
 export type Project = WithId<Schemas["Project"]>;
+export type ProjectTemplate = Schemas["ProjectTemplate"];
 export type DatasetVersion = WithId<Schemas["DatasetVersion"]>;
 export type ProfileCard = Schemas["ProfileCard"];
 export type Run = WithId<Schemas["Run"]>;
@@ -103,6 +104,15 @@ export function useProject(projectId: string) {
           params: { path: { project_id: projectId } },
         }),
       ) as Project,
+  });
+}
+
+export function useProjectTemplates() {
+  return useQuery({
+    queryKey: ["projects", "templates"] as const,
+    staleTime: Infinity,
+    queryFn: async () =>
+      unwrap(await (await getApiClient()).GET("/api/v1/projects/templates")) as ProjectTemplate[],
   });
 }
 

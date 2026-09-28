@@ -18,6 +18,19 @@ MEDIAN_MIN_TRIALS = 5
 CMAES_MIN_TRIALS = 20
 
 
+def training_metrics(spec: ArchSpec) -> set[str]:
+    """Métricas de validación que registra el entrenamiento de esta arquitectura."""
+    from perceptron.tasks import get_adapter
+
+    names = get_adapter(spec.task.type).build_metrics(spec).keys()
+    return {"val_loss", *(f"val_{n}" for n in names)}
+
+
+def objective_metric(spec: ArchSpec, preferred: str | None) -> str | None:
+    """`preferred` si el entrenamiento la registra; si no, None (default de la arquitectura)."""
+    return preferred if preferred and preferred in training_metrics(spec) else None
+
+
 def recommend_strategy(
     spec: ArchSpec,
     budget: Budget,

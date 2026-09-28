@@ -176,18 +176,28 @@ def project_create(
     privacy: Annotated[
         PrivacyLevel, typer.Option(help="Nivel de privacidad LLM")
     ] = PrivacyLevel.L1,
+    template: Annotated[
+        str | None, typer.Option(help="Plantilla de caso de uso (churn, visual-inspection…)")
+    ] = None,
     as_json: JsonOpt = False,
 ) -> None:
     from perceptron.api.context import EngineContext
+    from perceptron.api.routers.projects import apply_template
     from perceptron.domain.models import Project
 
     ctx = EngineContext.create(_settings(workspace))
     try:
-        project = ctx.projects.add(
-            Project(
-                name=name, goal=goal, modalities=modality or [], task=task, privacy_level=privacy
-            )
+        values = apply_template(
+            {
+                "name": name,
+                "goal": goal,
+                "modalities": modality or [],
+                "task": task,
+                "privacy_level": privacy,
+                "template": template,
+            }
         )
+        project = ctx.projects.add(Project.model_validate(values))
         ctx.files.init_project(project)
         if as_json:
             typer.echo(project.model_dump_json())
