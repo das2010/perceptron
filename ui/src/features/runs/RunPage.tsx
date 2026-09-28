@@ -34,8 +34,15 @@ function formatRunError(diagnosis: unknown): string {
   const error = (diagnosis as { error?: unknown } | null | undefined)?.error;
   if (!error) return "";
   if (typeof error === "string") return error;
-  const e = error as { type?: string; message?: string; hint?: string };
-  return [e.type, e.message, e.hint].filter(Boolean).join("\n") || JSON.stringify(error, null, 2);
+  const e = error as {
+    code?: string;
+    type?: string;
+    message?: string;
+    hint?: string;
+    log_tail?: string;
+  };
+  const parts = [e.code ?? e.type, e.message, e.hint, e.log_tail].filter(Boolean);
+  return parts.length ? parts.join("\n") : JSON.stringify(error, null, 2);
 }
 
 function useHistory(runId: string) {
