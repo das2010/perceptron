@@ -30,7 +30,7 @@ import { formatDate } from "@/lib/format";
 
 import { ProfileView } from "./ProfileView";
 
-function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) => void }) {
+export function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) => void }) {
   const { t } = useTranslation();
   const projectId = useProjectId();
   const upload = useUpload(projectId);

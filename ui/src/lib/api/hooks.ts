@@ -469,3 +469,59 @@ export function useAudit(projectId: string) {
       ) as LLMCall[],
   });
 }
+
+// ---------------------------------------------------------------- wizard (RF-WIZ-04)
+
+export type DraftView = Schemas["DraftView"];
+export type DraftValues = Schemas["DraftValues"];
+
+export function useDraft(projectId: string | undefined) {
+  return useQuery({
+    queryKey: ["projects", projectId ?? "", "draft"],
+    enabled: Boolean(projectId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/draft", {
+          params: { path: { project_id: projectId ?? "" } },
+        }),
+      ),
+  });
+}
+
+/** Guarda cambios del borrador con bloqueo optimista (usa la versión en caché). */
+export function useUpdateDraft(projectId: string) {
+  const qc = useQueryClient();
+  const key = ["projects", projectId, "draft"];
+  return useMutation({
+    mutationFn: async ({
+      values,
+      step,
+      origin = "user",
+    }: {
+      values?: Partial<DraftValues>;
+      step?: string;
+      origin?: "user" | "copilot";
+    }) => {
+      const current = qc.getQueryData<DraftView>(key);
+      return unwrap(
+        await (
+          await getApiClient()
+        ).PATCH("/api/v1/projects/{project_id}/draft", {
+          params: { path: { project_id: projectId } },
+          body: {
+            version: current?.draft.version ?? 1,
+            values: (values ?? {}) as Record<string, unknown>,
+            ...(step ? { step } : {}),
+            origin,
+          },
+        }),
+      );
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(key, data);
+      void qc.invalidateQueries({ queryKey: keys.project(projectId) });
+    },
+  });
+}

@@ -1677,6 +1677,263 @@
         "title": "Diagnosis",
         "type": "object"
       },
+      "DraftUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "origin": {
+            "default": "user",
+            "enum": [
+              "user",
+              "copilot"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
+          },
+          "values": {
+            "additionalProperties": true,
+            "description": "Campos de DraftValues",
+            "title": "Values",
+            "type": "object"
+          },
+          "version": {
+            "description": "Versión conocida (bloqueo optimista)",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "DraftUpdate",
+        "type": "object"
+      },
+      "DraftValues": {
+        "additionalProperties": false,
+        "description": "Lo que el wizard va definiendo. Todo opcional: se completa paso a paso.",
+        "properties": {
+          "archspec_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archspec Id"
+          },
+          "autonomous": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Lanzar con el agente autónomo",
+            "title": "Autonomous"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version Id"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "enum": [
+                  "cpu",
+                  "cuda",
+                  "rocm",
+                  "xpu",
+                  "mps"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "llm_budget_usd": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Budget Usd"
+          },
+          "max_epochs_per_trial": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Epochs Per Trial"
+          },
+          "max_time_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Time S"
+          },
+          "max_trials": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Trials"
+          },
+          "pipeline_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Id"
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "HPOStrategy elegida",
+            "title": "Strategy"
+          },
+          "success_threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Umbral de éxito del negocio traducido a la métrica técnica",
+            "title": "Success Threshold"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "target_metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "p. ej. val_roc_auc, val_f1_macro",
+            "title": "Target Metric"
+          },
+          "task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "DraftValues",
+        "type": "object"
+      },
+      "DraftView": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/ProjectDraft"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "values": {
+            "$ref": "#/components/schemas/DraftValues"
+          }
+        },
+        "required": [
+          "draft",
+          "steps",
+          "values"
+        ],
+        "title": "DraftView",
+        "type": "object"
+      },
       "EarlyStopping": {
         "additionalProperties": false,
         "properties": {
@@ -4173,6 +4430,62 @@
           "name"
         ],
         "title": "ProjectCreate",
+        "type": "object"
+      },
+      "ProjectDraft": {
+        "additionalProperties": false,
+        "description": "Estado del wizard de un proyecto (RF-WIZ-04): versionado, se retoma donde quedó.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "history": {
+            "description": "Cambios con su origen (usuario o copiloto)",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "step": {
+            "default": "goal",
+            "title": "Step",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": true,
+            "description": "DraftValues (services.wizard)",
+            "title": "Values",
+            "type": "object"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "title": "ProjectDraft",
         "type": "object"
       },
       "ProjectPatch": {
@@ -8075,6 +8388,98 @@
         "summary": "List Datasets",
         "tags": [
           "data"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/draft": {
+      "get": {
+        "operationId": "getDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Draft",
+        "tags": [
+          "wizard"
+        ]
+      },
+      "patch": {
+        "operationId": "updateDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Draft",
+        "tags": [
+          "wizard"
         ]
       }
     },

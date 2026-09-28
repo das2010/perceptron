@@ -48,7 +48,23 @@
   "copilot": {
     "title": "Copilot",
     "toggle": "Show or hide the copilot",
-    "soon": "The conversational copilot arrives with the wizard. Meanwhile, AI proposals show up in violet at each step and you can always accept or reject them."
+    "openProject": "Open a project to chat with the copilot.",
+    "intro": "Tell me what you want to achieve or ask about any step: I explain and propose changes that you accept or dismiss.",
+    "ask": "Ask the copilot…",
+    "send": "Send",
+    "unavailable": "No LLM is configured (or the project's privacy is L0). The wizard keeps working with rules.",
+    "patchTitle": "Suggested changes to the draft",
+    "field": {
+      "goal": "Goal",
+      "target": "Target column",
+      "task": "Task",
+      "target_metric": "Metric",
+      "success_threshold": "Success threshold",
+      "max_trials": "Trials",
+      "max_epochs_per_trial": "Epochs per trial",
+      "max_time_s": "Max time (s)",
+      "autonomous": "Autonomous mode"
+    }
   },
   "ai": {
     "suggested": "Suggested by AI",
@@ -88,7 +104,9 @@
       "train": "Train",
       "experiments": "Experiments",
       "models": "Models",
-      "audit": "LLM audit"
+      "audit": "LLM audit",
+      "wizard": "Wizard",
+      "agent": "Agent"
     }
   },
   "privacy": {
@@ -284,5 +302,115 @@
     "agent": "Agent",
     "reporter": "Report",
     "labeler": "Labeling"
+  },
+  "wizard": {
+    "steps": "Wizard steps",
+    "prev": "Back",
+    "next": "Next",
+    "step": {
+      "goal": "Goal",
+      "data": "Data",
+      "quality": "Quality",
+      "labeling": "Labeling",
+      "task": "Task and metric",
+      "architecture": "Architecture",
+      "hpo": "Hyperparameter search",
+      "budget": "Budget and hardware",
+      "review": "Review and launch"
+    },
+    "help": {
+      "goal": "Describe what you want to achieve. The copilot helps you refine it.",
+      "data": "Upload data or pick an existing version.",
+      "quality": "Review the profile and quality alerts before training.",
+      "labeling": "The model learns from labeled examples.",
+      "task": "What kind of problem it is and which metric measures success.",
+      "architecture": "Neural network proposals for your data (from the AI or by rules).",
+      "hpo": "How the best hyperparameters are searched within your budget.",
+      "budget": "Time, device and whether the agent should iterate on its own.",
+      "review": "Everything chosen, before training."
+    },
+    "goal": {
+      "label": "What do you want to achieve?",
+      "hint": "E.g.: detect whether a bearing is about to fail from its sound.",
+      "placeholder": "Describe it as you would to a colleague…"
+    },
+    "data": {
+      "pick": "Pick a data version"
+    },
+    "labeling": {
+      "ok": "Your data already has labels in “{{target}}”.",
+      "none": "No target column was detected. Assisted labeling arrives in Layer 4; for now pick the target in Data."
+    },
+    "task": {
+      "task": "Task",
+      "metric": "Metric to optimize",
+      "metricHint": "If you don't pick one, validation loss is used.",
+      "metricAuto": "Automatic (val_loss)",
+      "threshold": "Success threshold (optional)"
+    },
+    "arch": {
+      "chosen": "Chosen architecture: {{id}}"
+    },
+    "hpo": {
+      "needArch": "Pick an architecture first."
+    },
+    "budget": {
+      "maxTime": "Max time (minutes)",
+      "maxTimeHint": "Whichever comes first stops the search: time or trials.",
+      "device": "Device",
+      "deviceAuto": "The recommended one",
+      "autonomous": "Mode",
+      "autonomousHint": "The agent decides architecture, search and iterations within the limits.",
+      "guided": "Guided (you decide)",
+      "agent": "Autonomous agent"
+    },
+    "review": {
+      "arch": "Architecture",
+      "summary": "Up to {{max_trials}} trials of up to {{max_epochs_per_trial}} epochs will be trained; the best on validation is then evaluated on the sealed test set.",
+      "summaryAgent": "The agent will iterate with up to {{max_trials}} trials in total and close with the best model, evaluated on the sealed test set.",
+      "missing": "Missing steps: data, preparation and architecture (or agent mode)."
+    }
+  },
+  "agent": {
+    "launchTitle": "Autonomous agent",
+    "launchHint": "The LLM acts as an ML engineer: proposes, trains, diagnoses and iterates. The system enforces the limits and the sealed test set is only opened at the end.",
+    "maxTrials": "Max trials (total)",
+    "maxIterations": "Max iterations",
+    "maxCost": "Max LLM cost (USD)",
+    "approval": "Human approval",
+    "approvalMode": {
+      "never": "Never",
+      "each_iteration": "Before each iteration",
+      "family_change": "When the architecture family changes",
+      "budget_pct": "After 50% of the budget"
+    },
+    "launch": "Launch agent",
+    "runTitle": "Agent",
+    "state": {
+      "running": "Working",
+      "awaiting_approval": "Awaiting approval",
+      "finished": "Finished",
+      "failed": "Failed",
+      "stopped": "Stopped"
+    },
+    "fallback": "Used rules",
+    "iterations": "Iterations",
+    "trials": "Trials",
+    "cost": "LLM cost",
+    "stopReason": "Stop reason",
+    "stop": "Stop",
+    "approvalNeeded": "The agent asks for your approval",
+    "result": "Result on the sealed test set",
+    "openBest": "Open the best run",
+    "log": "Log",
+    "kind": {
+      "decision": "Decision",
+      "system": "System",
+      "approval": "Approval",
+      "fallback": "Rules",
+      "limit": "Limit",
+      "finish": "Close",
+      "suggestion": "Suggestion"
+    }
   }
 }

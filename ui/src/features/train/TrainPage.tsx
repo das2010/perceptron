@@ -54,7 +54,7 @@ function Step({
   );
 }
 
-function ProposalCard({
+export function ProposalCard({
   p,
   origin,
   chosen,

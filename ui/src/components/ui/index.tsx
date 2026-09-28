@@ -186,12 +186,15 @@ export function Field({
   hint?: ReactNode;
   children: ReactNode;
 }) {
+  // La pista va fuera del <label>: el nombre accesible del control es solo el rótulo.
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-semibold">{label}</span>
-      {children}
+    <div className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1">
+        <span className="font-semibold">{label}</span>
+        {children}
+      </label>
       {hint && <span className="text-xs text-muted">{hint}</span>}
-    </label>
+    </div>
   );
 }
 

@@ -472,6 +472,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Draft */
+        get: operations["getDraft"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Draft */
+        patch: operations["updateDraft"];
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/hpo/strategy": {
         parameters: {
             query?: never;
@@ -1623,6 +1641,85 @@ export interface components {
             /** Summary */
             summary: string;
         };
+        /** DraftUpdate */
+        DraftUpdate: {
+            /**
+             * Origin
+             * @default user
+             * @enum {string}
+             */
+            origin: "user" | "copilot";
+            /** Step */
+            step?: string | null;
+            /**
+             * Values
+             * @description Campos de DraftValues
+             */
+            values?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Version
+             * @description Versión conocida (bloqueo optimista)
+             */
+            version: number;
+        };
+        /**
+         * DraftValues
+         * @description Lo que el wizard va definiendo. Todo opcional: se completa paso a paso.
+         */
+        DraftValues: {
+            /** Archspec Id */
+            archspec_id?: string | null;
+            /**
+             * Autonomous
+             * @description Lanzar con el agente autónomo
+             */
+            autonomous?: boolean | null;
+            /** Dataset Version Id */
+            dataset_version_id?: string | null;
+            /** Device */
+            device?: ("cpu" | "cuda" | "rocm" | "xpu" | "mps") | null;
+            /** Goal */
+            goal?: string | null;
+            /** Llm Budget Usd */
+            llm_budget_usd?: number | null;
+            /** Max Epochs Per Trial */
+            max_epochs_per_trial?: number | null;
+            /** Max Time S */
+            max_time_s?: number | null;
+            /** Max Trials */
+            max_trials?: number | null;
+            /** Pipeline Id */
+            pipeline_id?: string | null;
+            /**
+             * Strategy
+             * @description HPOStrategy elegida
+             */
+            strategy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Success Threshold
+             * @description Umbral de éxito del negocio traducido a la métrica técnica
+             */
+            success_threshold?: number | null;
+            /** Target */
+            target?: string | null;
+            /**
+             * Target Metric
+             * @description p. ej. val_roc_auc, val_f1_macro
+             */
+            target_metric?: string | null;
+            task?: components["schemas"]["TaskType"] | null;
+        };
+        /** DraftView */
+        DraftView: {
+            draft: components["schemas"]["ProjectDraft"];
+            /** Steps */
+            steps: string[];
+            values: components["schemas"]["DraftValues"];
+        };
         /** EarlyStopping */
         EarlyStopping: {
             /** Mode */
@@ -2653,6 +2750,51 @@ export interface components {
             task?: components["schemas"]["TaskType"] | null;
             /** Template */
             template?: string | null;
+        };
+        /**
+         * ProjectDraft
+         * @description Estado del wizard de un proyecto (RF-WIZ-04): versionado, se retoma donde quedó.
+         */
+        ProjectDraft: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /**
+             * History
+             * @description Cambios con su origen (usuario o copiloto)
+             */
+            history?: {
+                [key: string]: unknown;
+            }[];
+            /** Id */
+            id?: string;
+            /** Project Id */
+            project_id: string;
+            /**
+             * Step
+             * @default goal
+             */
+            step: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Values
+             * @description DraftValues (services.wizard)
+             */
+            values?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
         };
         /** ProjectPatch */
         ProjectPatch: {
@@ -4531,6 +4673,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DatasetVersion"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftView"];
                 };
             };
             /** @description Validation Error */

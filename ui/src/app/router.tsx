@@ -6,6 +6,7 @@ import {
   type RouterHistory,
 } from "@tanstack/react-router";
 
+import { AgentPage } from "@/features/agent/AgentPage";
 import { AuditPage } from "@/features/audit/AuditPage";
 import { DataPage } from "@/features/data/DataPage";
 import { ExperimentsPage } from "@/features/experiments/ExperimentsPage";
@@ -16,6 +17,7 @@ import { ProjectLayout } from "@/features/projects/ProjectLayout";
 import { RunPage } from "@/features/runs/RunPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { TrainPage } from "@/features/train/TrainPage";
+import { WizardPage } from "@/features/wizard/WizardPage";
 
 import { Layout } from "./Layout";
 
@@ -64,6 +66,18 @@ const auditRoute = createRoute({
   path: "audit",
   component: AuditPage,
 });
+const wizardRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "wizard",
+  component: WizardPage,
+});
+const agentRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "agent",
+  component: AgentPage,
+  validateSearch: (search: Record<string, unknown>): { agent?: string } =>
+    typeof search.agent === "string" ? { agent: search.agent } : {},
+});
 export const runRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "runs/$runId",
@@ -80,6 +94,8 @@ const routeTree = rootRoute.addChildren([
     experimentsRoute,
     modelsRoute,
     auditRoute,
+    wizardRoute,
+    agentRoute,
     runRoute,
   ]),
 ]);

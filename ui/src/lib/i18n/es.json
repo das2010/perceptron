@@ -48,7 +48,23 @@
   "copilot": {
     "title": "Copiloto",
     "toggle": "Mostrar u ocultar el copiloto",
-    "soon": "El copiloto conversacional llega con el wizard. Mientras tanto, las propuestas de la IA aparecen en violeta en cada paso y siempre podés aceptarlas o rechazarlas."
+    "openProject": "Abrí un proyecto para conversar con el copiloto.",
+    "intro": "Contame qué querés lograr o preguntame por cualquier paso: te explico y te propongo cambios que vos aceptás o descartás.",
+    "ask": "Preguntale al copiloto…",
+    "send": "Enviar",
+    "unavailable": "No hay un LLM configurado (o la privacidad del proyecto es L0). El wizard sigue funcionando con reglas.",
+    "patchTitle": "Cambios sugeridos al borrador",
+    "field": {
+      "goal": "Objetivo",
+      "target": "Columna objetivo",
+      "task": "Tarea",
+      "target_metric": "Métrica",
+      "success_threshold": "Umbral de éxito",
+      "max_trials": "Intentos",
+      "max_epochs_per_trial": "Épocas por intento",
+      "max_time_s": "Tiempo máximo (s)",
+      "autonomous": "Modo autónomo"
+    }
   },
   "ai": {
     "suggested": "Sugerido por IA",
@@ -88,7 +104,9 @@
       "train": "Entrenar",
       "experiments": "Experimentos",
       "models": "Modelos",
-      "audit": "Auditoría LLM"
+      "audit": "Auditoría LLM",
+      "wizard": "Wizard",
+      "agent": "Agente"
     }
   },
   "privacy": {
@@ -284,5 +302,115 @@
     "agent": "Agente",
     "reporter": "Informe",
     "labeler": "Etiquetado"
+  },
+  "wizard": {
+    "steps": "Pasos del wizard",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "step": {
+      "goal": "Objetivo",
+      "data": "Datos",
+      "quality": "Calidad",
+      "labeling": "Etiquetado",
+      "task": "Tarea y métrica",
+      "architecture": "Arquitectura",
+      "hpo": "Búsqueda de hiperparámetros",
+      "budget": "Presupuesto y hardware",
+      "review": "Revisión y lanzamiento"
+    },
+    "help": {
+      "goal": "Describí en palabras qué querés lograr. El copiloto te ayuda a precisarlo.",
+      "data": "Subí los datos o elegí una versión ya cargada.",
+      "quality": "Revisá el perfil y las alertas de calidad antes de entrenar.",
+      "labeling": "El modelo aprende de ejemplos etiquetados.",
+      "task": "Qué tipo de problema es y con qué métrica se mide el éxito.",
+      "architecture": "Propuestas de red neuronal para tus datos (de la IA o por reglas).",
+      "hpo": "Cómo se buscan los mejores hiperparámetros con tu presupuesto.",
+      "budget": "Tiempo, dispositivo y si querés que el agente itere solo.",
+      "review": "Todo lo elegido, antes de entrenar."
+    },
+    "goal": {
+      "label": "¿Qué querés lograr?",
+      "hint": "Ej.: detectar si un rodamiento está por fallar a partir del sonido.",
+      "placeholder": "Contalo como se lo contarías a un colega…"
+    },
+    "data": {
+      "pick": "Elegí una versión de datos"
+    },
+    "labeling": {
+      "ok": "Tus datos ya traen etiquetas en «{{target}}».",
+      "none": "No se detectó una columna objetivo. El etiquetado asistido llega en la Capa 4; por ahora elegí la columna objetivo en Datos."
+    },
+    "task": {
+      "task": "Tarea",
+      "metric": "Métrica a optimizar",
+      "metricHint": "Si no la elegís, se usa la pérdida de validación.",
+      "metricAuto": "Automática (val_loss)",
+      "threshold": "Umbral de éxito (opcional)"
+    },
+    "arch": {
+      "chosen": "Arquitectura elegida: {{id}}"
+    },
+    "hpo": {
+      "needArch": "Primero elegí una arquitectura."
+    },
+    "budget": {
+      "maxTime": "Tiempo máximo (minutos)",
+      "maxTimeHint": "Lo que ocurra primero corta la búsqueda: tiempo o intentos.",
+      "device": "Dispositivo",
+      "deviceAuto": "El recomendado",
+      "autonomous": "Modo",
+      "autonomousHint": "El agente decide arquitectura, búsqueda e iteraciones dentro de los límites.",
+      "guided": "Guiado (vos decidís)",
+      "agent": "Agente autónomo"
+    },
+    "review": {
+      "arch": "Arquitectura",
+      "summary": "Se van a entrenar hasta {{max_trials}} intentos de hasta {{max_epochs_per_trial}} épocas; el mejor en validación se evalúa luego en el test sellado.",
+      "summaryAgent": "El agente va a iterar con hasta {{max_trials}} intentos en total y cerrará con el mejor modelo, evaluado en el test sellado.",
+      "missing": "Faltan pasos: datos, preparación y arquitectura (o el modo agente)."
+    }
+  },
+  "agent": {
+    "launchTitle": "Agente autónomo",
+    "launchHint": "El LLM actúa como ingeniero de ML: propone, entrena, diagnostica e itera. Los límites los aplica el sistema y el test sellado solo se abre al final.",
+    "maxTrials": "Intentos máximos (total)",
+    "maxIterations": "Iteraciones máximas",
+    "maxCost": "Costo máximo de LLM (USD)",
+    "approval": "Aprobación humana",
+    "approvalMode": {
+      "never": "Nunca",
+      "each_iteration": "Antes de cada iteración",
+      "family_change": "Si cambia de familia de arquitectura",
+      "budget_pct": "Al superar el 50 % del presupuesto"
+    },
+    "launch": "Lanzar agente",
+    "runTitle": "Agente",
+    "state": {
+      "running": "Trabajando",
+      "awaiting_approval": "Esperando aprobación",
+      "finished": "Terminado",
+      "failed": "Falló",
+      "stopped": "Detenido"
+    },
+    "fallback": "Usó reglas",
+    "iterations": "Iteraciones",
+    "trials": "Intentos",
+    "cost": "Costo LLM",
+    "stopReason": "Motivo de cierre",
+    "stop": "Detener",
+    "approvalNeeded": "El agente pide tu aprobación",
+    "result": "Resultado en el test sellado",
+    "openBest": "Ver el mejor run",
+    "log": "Bitácora",
+    "kind": {
+      "decision": "Decisión",
+      "system": "Sistema",
+      "approval": "Aprobación",
+      "fallback": "Reglas",
+      "limit": "Límite",
+      "finish": "Cierre",
+      "suggestion": "Sugerencia"
+    }
   }
 }
