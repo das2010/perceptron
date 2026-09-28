@@ -419,7 +419,8 @@ def uc10_stream(rng: random.Random) -> Files:
             tickets = rng.randint(3, 10) if drift else rng.randint(0, 8)
             plan = rng.choice(plans)
             base = {"básico": 20, "estándar": 45, "premium": 80}[plan]
-            monthly = round(base * rng.uniform(1.1, 1.5 if drift else 1.2), 2)
+            # Sin drift, igual que UC-01 (±20 %); con drift, cargos más altos.
+            monthly = round(base * (rng.uniform(1.1, 1.5) if drift else rng.uniform(0.8, 1.2)), 2)
             region = rng.choice([*regions, "Patagonia"] if drift else regions)
             records.append(
                 {
