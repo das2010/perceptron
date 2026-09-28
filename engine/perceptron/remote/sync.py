@@ -486,12 +486,12 @@ class ProjectSync:
                 downloaded += self._pull_files(entity)
                 self._upsert(entity)
                 pulled += 1
-                progress("pulled", kind=item.kind, id=item.id)
+                progress("pulled", entity=item.kind, entity_id=item.id)
             elif force:
                 self.state.remember(item.id, server[item.id].version)
                 self.push_entity(local[item.id])
                 pushed += 1
-                progress("pushed", kind=item.kind, id=item.id)
+                progress("pushed", entity=item.kind, entity_id=item.id)
         return PullOutcome(pulled=pulled, pushed=pushed, conflicts_left=left, downloaded=downloaded)
 
     def push_changes(self, progress: Progress = _noop) -> PullOutcome:
@@ -514,5 +514,5 @@ class ProjectSync:
                 for file in self._files([folder] if folder else []):
                     self.upload(file, progress)
             pushed += 1
-            progress("pushed", kind=item.kind, id=item.id)
+            progress("pushed", entity=item.kind, entity_id=item.id)
         return PullOutcome(pulled=0, pushed=pushed, conflicts_left=left, downloaded=0)
