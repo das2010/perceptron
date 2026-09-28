@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from perceptron.api.context import EngineContext
 from perceptron.archspec.schema import ArchSpec
 from perceptron.archspec.validate import ValidationReport, offline_mode, validate_archspec
+from perceptron.catalog import define
 from perceptron.catalog.registry import DEFAULT_HF_TEXT_MODEL
 from perceptron.catalog.rules import recommend
 from perceptron.core.errors import NotFoundError, ValidationError
@@ -264,6 +265,33 @@ class Workflow:
         rec = recommend(card, fitted, detect_hardware(self.ctx.settings.workspace_dir))
         record = self.save_archspec(dv.project_id, rec.spec, origin=Origin.RULES)
         return record, rec.rationale
+
+    def define_plan(
+        self, dataset_version_id: str, pipeline_id: str, choices: dict[str, str]
+    ) -> define.DefinePlan:
+        """Opciones del sub-wizard de definición de arquitectura (SPEC §7.6, paso 6)."""
+        dv = self.dataset(dataset_version_id)
+        card = self.profile_card(dv.id)
+        fitted = self.fitted_pipeline(pipeline_id, dv.id)
+        hw = detect_hardware(self.ctx.settings.workspace_dir)
+        try:
+            return define.plan(card, fitted, hw, choices)
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+
+    def define_build(
+        self, dataset_version_id: str, pipeline_id: str, choices: dict[str, str]
+    ) -> ArchSpecRecord:
+        """Arma, valida y guarda la ArchSpec elegida en el sub-wizard (origen manual)."""
+        dv = self.dataset(dataset_version_id)
+        card = self.profile_card(dv.id)
+        fitted = self.fitted_pipeline(pipeline_id, dv.id)
+        hw = detect_hardware(self.ctx.settings.workspace_dir)
+        try:
+            spec = define.build(card, fitted, hw, choices)
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+        return self.save_archspec(dv.project_id, spec, origin=Origin.MANUAL)
 
     def save_archspec(
         self, project_id: str, spec: ArchSpec, *, origin: Origin = Origin.MANUAL

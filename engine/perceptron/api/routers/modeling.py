@@ -15,6 +15,7 @@ from perceptron.api.streaming import stream_events
 from perceptron.archspec.schema import ArchSpec
 from perceptron.archspec.to_code import archspec_to_code
 from perceptron.archspec.validate import ValidationReport
+from perceptron.catalog.define import DefinePlan
 from perceptron.catalog.registry import BLOCKS, blocks_for
 from perceptron.core.errors import NotFoundError, ValidationError
 from perceptron.data.pipeline.pipeline import PipelineSpec, preview_steps, transform_tabular
@@ -265,6 +266,33 @@ def create_archspec(project_id: str, body: ArchSpecCreate, ctx: Ctx) -> ArchSpec
 
     spec = body.spec.model_copy(update={"provenance": Provenance(origin=Origin.MANUAL)})
     return Workflow(ctx).save_archspec(project_id, spec, origin=Origin.MANUAL)
+
+
+class DefineBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dataset_version_id: str
+    pipeline_id: str
+    choices: dict[str, str] = Field(
+        default_factory=dict, description="Paso → opción (family, backbone, head, regularization)"
+    )
+
+
+@router.post("/projects/{project_id}/arch/define", tags=["arch"], operation_id="planArchDefinition")
+def plan_arch_definition(project_id: str, body: DefineBody, ctx: Ctx) -> DefinePlan:
+    """Sub-wizard de definición: opciones explicadas de cada paso según lo ya elegido."""
+    ctx.projects.get(project_id)
+    return Workflow(ctx).define_plan(body.dataset_version_id, body.pipeline_id, body.choices)
+
+
+@router.post(
+    "/projects/{project_id}/arch/define/build",
+    status_code=status.HTTP_201_CREATED,
+    tags=["arch"],
+    operation_id="buildArchDefinition",
+)
+def build_arch_definition(project_id: str, body: DefineBody, ctx: Ctx) -> ArchSpecRecord:
+    ctx.projects.get(project_id)
+    return Workflow(ctx).define_build(body.dataset_version_id, body.pipeline_id, body.choices)
 
 
 @router.post("/arch/validate", tags=["arch"], operation_id="validateArchitecture")
