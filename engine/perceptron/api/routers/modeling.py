@@ -356,6 +356,18 @@ def get_run(run_id: str, ctx: Ctx) -> Run:
     return ctx.repo(Run).get(run_id)
 
 
+@router.get("/runs/{run_id}/history", tags=["runs"], operation_id="getRunHistory")
+def get_run_history(run_id: str, ctx: Ctx) -> list[dict[str, float]]:
+    """Métricas por época de un run terminado (para las curvas de la UI, RF-TRK-02)."""
+    from perceptron.training.config import RESULT_FILE, RunResult
+
+    run = ctx.repo(Run).get(run_id)
+    path = ctx.settings.paths.project(run.project_id).run(run.id) / RESULT_FILE
+    if not path.is_file():
+        return []
+    return RunResult.model_validate_json(path.read_text(encoding="utf-8")).history
+
+
 @router.post("/runs/compare", tags=["runs"], operation_id="compareRuns")
 def compare_runs(body: CompareBody, ctx: Ctx) -> list[dict[str, Any]]:
     runs = [ctx.repo(Run).get(r) for r in body.run_ids]

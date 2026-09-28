@@ -31,6 +31,10 @@ def test_providers_key_is_write_only(client: TestClient, fake_llm: FakeLLMProvid
     assert updated["anthropic"]["has_key"] is True
     assert updated["anthropic"]["api_key_ref"] == "ANTHROPIC_API_KEY"
     assert updated["anthropic"]["models"], "conserva los modelos del catálogo"
+    from perceptron.api.context import EngineContext  # noqa: F401 - solo tipos
+
+    timeout = client.app.state.ctx.llm.config.providers()["anthropic"].timeout_s  # type: ignore[attr-defined]
+    assert timeout == 600, "un PUT sin timeout conserva el del catálogo"
 
 
 def test_profiles_get_put(client: TestClient, fake_llm: FakeLLMProvider) -> None:

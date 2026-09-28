@@ -591,6 +591,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Source
+         * @description Sube un archivo (CSV, Parquet, ZIP…) o una carpeta (nombres con ruta relativa, p. ej.
+         *     `clase/img.png`) al proyecto y la registra como fuente (RF-ING-01, UI web).
+         */
+        post: operations["uploadSource"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/compare": {
         parameters: {
             query?: never;
@@ -688,6 +709,26 @@ export interface paths {
         };
         /** List Evaluations */
         get: operations["listEvaluations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Run History
+         * @description Métricas por época de un run terminado (para las curvas de la UI, RF-TRK-02).
+         */
+        get: operations["getRunHistory"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1308,6 +1349,11 @@ export interface components {
             params?: {
                 [key: string]: unknown;
             };
+        };
+        /** Body_uploadSource */
+        Body_uploadSource: {
+            /** Files */
+            files: string[];
         };
         /** Budget */
         Budget: {
@@ -2704,9 +2750,9 @@ export interface components {
             } | null;
             /**
              * Timeout S
-             * @default 120
+             * @description None = conservar
              */
-            timeout_s: number;
+            timeout_s?: number | null;
         };
         /** ProviderView */
         ProviderView: {
@@ -4737,6 +4783,41 @@ export interface operations {
             };
         };
     };
+    uploadSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_uploadSource"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     compareRuns: {
         parameters: {
             query?: never;
@@ -4917,6 +4998,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Evaluation"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getRunHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    }[];
                 };
             };
             /** @description Validation Error */

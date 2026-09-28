@@ -136,6 +136,8 @@ def test_full_flow_uc01(client: TestClient, fixtures_dir: Path) -> None:
     assert all(r["mlflow_run_id"] for r in runs)
     run_id = best["run_id"]
     assert _ok(client.get(f"{API}/runs/{run_id}"))["status"] == "succeeded"
+    history = _ok(client.get(f"{API}/runs/{run_id}/history"))
+    assert history and "val_loss" in history[0]
 
     report = _ok(client.post(f"{API}/runs/{run_id}/evaluate"))
     assert report["split"] == "test" and "accuracy" in report["metrics"]

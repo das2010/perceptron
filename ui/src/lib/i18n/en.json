@@ -16,6 +16,273 @@
     "theme": "Theme",
     "themeLight": "Light",
     "themeDark": "Dark",
-    "themeSystem": "System"
+    "themeSystem": "System",
+    "description": "LLM providers, per-purpose profiles and keys (stored in the OS keychain).",
+    "llm": {
+      "profile": "LLM profile",
+      "active": "Active profile",
+      "activeHint": "Which model serves each purpose (architect, agent, report…).",
+      "test": "Test connection",
+      "testOk": "Connected: {{provider}}/{{model}} in {{seconds}} s",
+      "testFail": "The LLM could not be used: {{error}}",
+      "providers": "Providers",
+      "provider": "Provider",
+      "where": "Runs on",
+      "models": "Catalog models",
+      "key": "Key",
+      "local": "Local",
+      "cloud": "Cloud",
+      "noKey": "No key needed",
+      "hasKey": "Key stored",
+      "missingKey": "No key",
+      "keyPlaceholder": "Paste the key (it is never shown again)",
+      "keyFor": "{{name}} key"
+    }
+  },
+  "nav": {
+    "main": "Main navigation",
+    "home": "Home",
+    "settings": "Settings",
+    "projects": "Projects"
+  },
+  "copilot": {
+    "title": "Copilot",
+    "toggle": "Show or hide the copilot",
+    "soon": "The conversational copilot arrives with the wizard. Meanwhile, AI proposals show up in violet at each step and you can always accept or reject them."
+  },
+  "ai": {
+    "suggested": "Suggested by AI",
+    "accept": "Accept",
+    "accepted": "Accepted",
+    "reject": "Dismiss"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "close": "Close",
+    "create": "Create",
+    "save": "Save"
+  },
+  "home": {
+    "newProject": "New project",
+    "hardware": "Hardware",
+    "device": "Recommended device",
+    "cpu": "CPU",
+    "cores_one": "{{count}} core",
+    "cores_other": "{{count}} cores",
+    "ram": "Memory",
+    "gpus": "GPU",
+    "noGpu": "No GPU (training on CPU)",
+    "recent": "Recent projects",
+    "empty": "No projects yet. Create one to get started."
+  },
+  "project": {
+    "name": "Name",
+    "goal": "Goal",
+    "goalHint": "Describe what you want to achieve; the AI uses it to make proposals.",
+    "privacy": "Privacy towards the LLM",
+    "sections": "Project sections",
+    "tabs": {
+      "overview": "Overview",
+      "data": "Data",
+      "train": "Train",
+      "experiments": "Experiments",
+      "models": "Models",
+      "audit": "LLM audit"
+    }
+  },
+  "privacy": {
+    "L0": "L0 — No LLM: rules only.",
+    "L1": "L1 — Aggregated metadata only (never individual values).",
+    "L2": "L2 — Metadata + a few samples with personal data masked.",
+    "L3": "L3 — Raw samples (non-sensitive data or a local LLM)."
+  },
+  "modality": {
+    "tabular": "Tabular",
+    "image": "Images",
+    "text": "Text",
+    "timeseries": "Time series",
+    "audio": "Audio"
+  },
+  "task": {
+    "classification": "Classification",
+    "regression": "Regression",
+    "forecasting": "Forecasting",
+    "anomaly_detection": "Anomalies",
+    "object_detection": "Object detection",
+    "segmentation": "Segmentation",
+    "ocr": "OCR",
+    "sound_event_detection": "Sound events"
+  },
+  "overview": {
+    "noGoal": "No goal stated.",
+    "datasets": "Data versions",
+    "runs": "Training runs",
+    "models": "Registered models",
+    "nextData": "Load data",
+    "nextTrain": "Train a model",
+    "nextResults": "See results"
+  },
+  "data": {
+    "addTitle": "Add data",
+    "addHint": "Upload a file (CSV, Excel, Parquet, JSONL, ZIP) or a folder with one subfolder per class (images, audio, text).",
+    "uploadFile": "Upload file",
+    "uploadFolder": "Upload folder",
+    "previewOf": "Preview of {{name}}",
+    "target": "Target column",
+    "targetHint": "What the model must predict. If you don't pick it, it is inferred.",
+    "targetAuto": "Detect automatically",
+    "ingest": "Create data version",
+    "versions": "Data versions",
+    "empty": "No data in this project yet.",
+    "version": "Version",
+    "modality": "Modality",
+    "samples": "Samples",
+    "created": "Created",
+    "showProfile": "Show profile",
+    "goTrain": "Next: train"
+  },
+  "sourceKind": {
+    "table": "Table",
+    "image_folder": "Image folder",
+    "text_folder": "Text folder",
+    "audio_folder": "Audio folder",
+    "segmentation_folder": "Images with masks",
+    "ocr_folder": "Images with text"
+  },
+  "profile": {
+    "title": "Dataset profile",
+    "computing": "Analyzing the data…",
+    "splits": "Splits",
+    "alerts": "Quality alerts",
+    "classes": "Class distribution",
+    "imbalance": "Minority/majority ratio: {{ratio}}",
+    "columns": "Columns",
+    "column": "Column",
+    "type": "Type",
+    "nulls": "Nulls",
+    "unique": "Distinct",
+    "summary": "Summary",
+    "numericSummary": "mean {{mean}} · std {{std}}"
+  },
+  "split": {
+    "train": "train",
+    "val": "validation",
+    "test": "test"
+  },
+  "severity": {
+    "info": "Info",
+    "warning": "Warning",
+    "high": "Important"
+  },
+  "semantic": {
+    "numeric": "Numeric",
+    "categorical": "Categorical",
+    "boolean": "Yes/No",
+    "datetime": "Date",
+    "text": "Text",
+    "id": "Identifier",
+    "filepath": "File"
+  },
+  "train": {
+    "noData": "Load data in the Data tab first.",
+    "step": {
+      "data": "Data and preparation",
+      "arch": "Architecture",
+      "hpo": "Budget and hyperparameter search",
+      "launch": "Train"
+    },
+    "dataset": "Data version",
+    "proposePipeline": "Propose preparation",
+    "proposeArch": "Propose architectures",
+    "fallback": "Rules were used: {{reason}}",
+    "byRules": "By rules",
+    "choose": "Choose",
+    "estimates": "{{params}} parameters · ~{{memory}} MB · ~{{time}} s per epoch",
+    "trials": "Trials",
+    "epochs": "Max epochs per trial",
+    "recommend": "Recommend strategy",
+    "strategy": "Search strategy",
+    "pruner": "pruning",
+    "trialsN_one": "{{count}} trial",
+    "trialsN_other": "{{count}} trials",
+    "searchSpace": "Hyperparameters to tune",
+    "launch": "Train now"
+  },
+  "experiments": {
+    "live": "Live training",
+    "connected": "connected",
+    "waiting": "Waiting for the first epoch…",
+    "curves": "Validation curves per trial",
+    "epoch": "Epoch",
+    "runs": "Training runs",
+    "empty": "No model has been trained yet.",
+    "run": "Run",
+    "status": "Status",
+    "started": "Started"
+  },
+  "status": {
+    "queued": "Queued",
+    "running": "Training",
+    "paused": "Paused",
+    "succeeded": "Finished",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "run": {
+    "title": "Run",
+    "failed": "Training failed",
+    "curves": "Training curves",
+    "diagnosis": "Training diagnosis",
+    "byRules": "Rule-based diagnosis (no LLM).",
+    "evaluation": "Evaluation on the sealed test set",
+    "sealedHint": "The sealed test set was not used to pick the model; evaluating it gives an honest estimate of its performance.",
+    "evaluate": "Evaluate on test",
+    "register": "Register model",
+    "registered": "Model registered",
+    "report": "Generate report",
+    "confusion": "Confusion matrix",
+    "predicted": "Predicted",
+    "actual": "Actual",
+    "class": "Class",
+    "support": "Cases"
+  },
+  "models": {
+    "title": "Registered models",
+    "empty": "No registered models yet.",
+    "version": "Version",
+    "stage": "Stage",
+    "metrics": "Test metrics",
+    "run": "Run"
+  },
+  "stage": {
+    "candidate": "Candidate",
+    "staging": "Staging",
+    "production": "Production",
+    "archived": "Archived"
+  },
+  "audit": {
+    "title": "LLM call audit",
+    "summary_one": "{{count}} call · total cost ${{cost}}",
+    "summary_other": "{{count}} calls · total cost ${{cost}}",
+    "empty": "This project made no LLM calls.",
+    "when": "When",
+    "purpose": "Purpose",
+    "model": "Provider/model",
+    "privacy": "Level",
+    "status": "Status",
+    "cost": "Cost",
+    "payload": "Show what was sent",
+    "payloadOf": "What was sent in {{id}}",
+    "redactions": "Privacy filtering"
+  },
+  "purpose": {
+    "copilot": "Copilot",
+    "architect": "Architect",
+    "hpo_strategist": "HPO strategist",
+    "diagnostician": "Diagnosis",
+    "agent": "Agent",
+    "reporter": "Report",
+    "labeler": "Labeling"
   }
 }
