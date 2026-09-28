@@ -1,0 +1,86 @@
+# Guía de usuario de Perceptron (es/en). Requiere solo mkdocs-material (MIT):
+#   pip install mkdocs-material && mkdocs serve
+site_name: Perceptron — Guía de usuario
+site_description: Guía de usuario de Perceptron (desktop y Team Server) / Perceptron user guide
+site_author: Preteco
+copyright: Copyright © Preteco
+docs_dir: docs/user
+site_dir: site
+
+theme:
+  name: material
+  language: es
+  font:
+    text: Titillium Web
+    code: Roboto Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Tema oscuro / Dark theme
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Tema claro / Light theme
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+extra_css:
+  - stylesheets/preteco.css
+
+plugins:
+  - search:
+      lang:
+        - es
+        - en
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+
+# Los enlaces a docs/ops y server/deploy apuntan fuera de docs_dir (funcionan al navegar el repo).
+validation:
+  links:
+    not_found: info
+
+not_in_nav: |
+  /index.md
+
+nav:
+  - Español:
+      - Inicio: es/index.md
+      - Instalación: es/instalacion.md
+      - Tu primer modelo: es/primer-modelo.md
+      - Datos: es/datos.md
+      - Entrenamiento: es/entrenamiento.md
+      - Evaluación y uso: es/evaluacion-y-uso.md
+      - Monitoreo: es/monitoreo.md
+      - LLM y privacidad: es/llm-y-privacidad.md
+      - Team Server: es/team-server.md
+      - Glosario: es/glosario.md
+  - English:
+      - Home: en/index.md
+      - Installation: en/instalacion.md
+      - Your first model: en/primer-modelo.md
+      - Data: en/datos.md
+      - Training: en/entrenamiento.md
+      - Evaluation and use: en/evaluacion-y-uso.md
+      - Monitoring: en/monitoreo.md
+      - LLM and privacy: en/llm-y-privacidad.md
+      - Team Server: en/team-server.md
+      - Glossary: en/glosario.md

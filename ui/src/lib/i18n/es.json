@@ -374,7 +374,7 @@
     },
     "labeling": {
       "ok": "Tus datos ya traen etiquetas en «{{target}}».",
-      "none": "No se detectó una columna objetivo. El etiquetado asistido llega en la Capa 4; por ahora elegí la columna objetivo en Datos."
+      "none": "No se detectó una columna objetivo: elegila en Datos o etiquetá los datos en la pestaña Etiquetado."
     },
     "task": {
       "task": "Tarea",

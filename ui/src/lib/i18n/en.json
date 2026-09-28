@@ -374,7 +374,7 @@
     },
     "labeling": {
       "ok": "Your data already has labels in “{{target}}”.",
-      "none": "No target column was detected. Assisted labeling arrives in Layer 4; for now pick the target in Data."
+      "none": "No target column was detected: pick it in Data or label your data in the Labeling tab."
     },
     "task": {
       "task": "Task",

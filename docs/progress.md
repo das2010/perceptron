@@ -232,7 +232,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Telemetría opt-in con vista previa, sin endpoint de fábrica | ✅ (D7: destino a definir) |
 | Actualización N → N+1 sin pérdida de proyectos (CI) | ✅ |
 | Firma Authenticode e instaladores firmados, updater firmado | ⬜ (certificado y claves de Preteco) |
-| Documentación de usuario es/en | ⬜ |
+| Documentación de usuario es/en (MkDocs, compilada en CI) | ✅ |
 
 ## Requisitos funcionales
 

@@ -21,6 +21,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/license": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * License Usage
+         * @description Uso real contra los topes de la licencia. Sin enforcement en v1 (RF-LIC-03).
+         */
+        get: operations["getLicenseUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/memberships": {
         parameters: {
             query?: never;
@@ -2647,6 +2667,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/license": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get License */
+        get: operations["getLicense"];
+        /**
+         * Put License
+         * @description Instala una licencia: solo si la firma y la vigencia son válidas.
+         */
+        put: operations["putLicense"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/telemetry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Telemetry Status
+         * @description Estado del consentimiento y exactamente lo que se enviaría.
+         */
+        get: operations["getTelemetry"];
+        /** Telemetry Consent */
+        put: operations["putTelemetry"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/version": {
         parameters: {
             query?: never;
@@ -4890,6 +4952,76 @@ export interface components {
             /** Updates */
             updates: components["schemas"]["LabelUpdate"][];
         };
+        /** LicenseUpload */
+        LicenseUpload: {
+            /** Content */
+            content: string;
+        };
+        /** LicenseUsage */
+        LicenseUsage: {
+            /** Edition */
+            edition?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Gpus */
+            gpus?: number | null;
+            /** Gpus Used */
+            gpus_used: number;
+            /** Licensee */
+            licensee?: string | null;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /**
+             * Over Limit
+             * @description Solo se informa (v1)
+             */
+            over_limit?: string[];
+            /** Seats */
+            seats?: number | null;
+            /** Seats Used */
+            seats_used: number;
+            /** Servers */
+            servers?: number | null;
+            /**
+             * Servers Used
+             * @default 1
+             */
+            servers_used: number;
+            /** Status */
+            status: string;
+        };
+        /** LicenseView */
+        LicenseView: {
+            /** Edition */
+            edition?: string | null;
+            /** Enforce */
+            enforce: boolean;
+            /** Expires At */
+            expires_at?: string | null;
+            /**
+             * Features
+             * @default []
+             */
+            features: string[];
+            /** Gpus */
+            gpus?: number | null;
+            /** Licensee */
+            licensee?: string | null;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Seats */
+            seats?: number | null;
+            /** Servers */
+            servers?: number | null;
+            /** Status */
+            status: string;
+        };
         /** LineageNode */
         LineageNode: {
             /** Content Hash */
@@ -6737,6 +6869,24 @@ export interface components {
          * @enum {string}
          */
         TaskType: "classification" | "regression" | "forecasting" | "anomaly_detection" | "object_detection" | "segmentation" | "ocr" | "sound_event_detection";
+        /** TelemetryConsent */
+        TelemetryConsent: {
+            /** Opt In */
+            opt_in: boolean;
+        };
+        /** TelemetryStatus */
+        TelemetryStatus: {
+            /** Asked */
+            asked: boolean;
+            /** Endpoint Configured */
+            endpoint_configured: boolean;
+            /** Opt In */
+            opt_in: boolean;
+            /** Preview */
+            preview: {
+                [key: string]: unknown;
+            };
+        };
         /**
          * TextProfile
          * @description Texto (RF-PRF-03): solo agregados; el vocabulario no se expone.
@@ -7350,6 +7500,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getLicenseUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicenseUsage"];
                 };
             };
         };
@@ -12487,6 +12657,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    getLicense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicenseView"];
+                };
+            };
+        };
+    };
+    putLicense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LicenseUpload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicenseView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getTelemetry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryStatus"];
+                };
+            };
+        };
+    };
+    putTelemetry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelemetryConsent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

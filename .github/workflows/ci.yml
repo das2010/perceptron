@@ -299,8 +299,10 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - name: pip-audit del runtime Python
         run: |
-          uv export --no-dev --all-packages --no-hashes --no-emit-workspace --format requirements-txt > req.txt
-          uvx pip-audit==2.9.0 -r req.txt --progress-spinner off
+          # Versiones fijadas del lock, sin instalar (torch +cpu no está en PyPI: se audita la base).
+          uv export --no-dev --all-packages --no-hashes --no-emit-workspace --format requirements-txt \
+            | sed -E 's/\+(cpu|cu[0-9]+)//' > req.txt
+          uvx pip-audit==2.9.0 -r req.txt --no-deps --disable-pip --progress-spinner off
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -309,6 +311,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: pnpm audit (producción, altas y críticas)
         run: pnpm audit --prod --audit-level high
+
+  docs:
+    name: documentación de usuario (MkDocs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Compilar el sitio (es/en)
+        run: uvx --with mkdocs-material==9.6.* mkdocs build --strict --site-dir build/site
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guia-de-usuario
+          path: build/site
 
   upgrade:
     name: actualización N → N+1 (sin pérdida de proyectos)

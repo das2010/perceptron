@@ -79,8 +79,8 @@ class Scheduler:
         from perceptron.services.streams import pull_source
 
         now = now or utcnow()
-        interval = timedelta(seconds=self.ctx.settings.telemetry.interval_s)
-        if self._last_flush is None or now - self._last_flush >= interval:
+        flush_every = timedelta(seconds=self.ctx.settings.telemetry.interval_s)
+        if self._last_flush is None or now - self._last_flush >= flush_every:
             self._last_flush = now
             self.ctx.telemetry.flush()
         for src in self.ctx.repo(DataSource).list(limit=1000):
