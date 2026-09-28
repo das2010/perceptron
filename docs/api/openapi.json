@@ -681,6 +681,19 @@
         "title": "ArchSpec",
         "type": "object"
       },
+      "ArchSpecCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "spec": {
+            "$ref": "#/components/schemas/ArchSpec"
+          }
+        },
+        "required": [
+          "spec"
+        ],
+        "title": "ArchSpecCreate",
+        "type": "object"
+      },
       "ArchSpecRecord": {
         "additionalProperties": false,
         "description": "Referencia persistida a una ArchSpec (§9) o a código experto (RF-ARC-06).",
@@ -1620,6 +1633,144 @@
         "title": "DatasetVersion",
         "type": "object"
       },
+      "DefineBody": {
+        "additionalProperties": false,
+        "properties": {
+          "choices": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Paso → opción (family, backbone, head, regularization)",
+            "title": "Choices",
+            "type": "object"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "pipeline_id"
+        ],
+        "title": "DefineBody",
+        "type": "object"
+      },
+      "DefineOption": {
+        "properties": {
+          "available": {
+            "default": true,
+            "title": "Available",
+            "type": "boolean"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por qué no está disponible",
+            "title": "Reason"
+          },
+          "recommended": {
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description"
+        ],
+        "title": "DefineOption",
+        "type": "object"
+      },
+      "DefinePlan": {
+        "properties": {
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "modality": {
+            "$ref": "#/components/schemas/Modality"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/DefineStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TaskType"
+          }
+        },
+        "required": [
+          "modality",
+          "task",
+          "steps",
+          "complete"
+        ],
+        "title": "DefinePlan",
+        "type": "object"
+      },
+      "DefineStep": {
+        "properties": {
+          "choice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choice"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/DefineOption"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "step": {
+            "title": "Step",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "title",
+          "options"
+        ],
+        "title": "DefineStep",
+        "type": "object"
+      },
       "Device": {
         "enum": [
           "cuda",
@@ -1675,6 +1826,263 @@
           "summary"
         ],
         "title": "Diagnosis",
+        "type": "object"
+      },
+      "DraftUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "origin": {
+            "default": "user",
+            "enum": [
+              "user",
+              "copilot"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
+          },
+          "values": {
+            "additionalProperties": true,
+            "description": "Campos de DraftValues",
+            "title": "Values",
+            "type": "object"
+          },
+          "version": {
+            "description": "Versión conocida (bloqueo optimista)",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "DraftUpdate",
+        "type": "object"
+      },
+      "DraftValues": {
+        "additionalProperties": false,
+        "description": "Lo que el wizard va definiendo. Todo opcional: se completa paso a paso.",
+        "properties": {
+          "archspec_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archspec Id"
+          },
+          "autonomous": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Lanzar con el agente autónomo",
+            "title": "Autonomous"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version Id"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "enum": [
+                  "cpu",
+                  "cuda",
+                  "rocm",
+                  "xpu",
+                  "mps"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "llm_budget_usd": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Budget Usd"
+          },
+          "max_epochs_per_trial": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Epochs Per Trial"
+          },
+          "max_time_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Time S"
+          },
+          "max_trials": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Trials"
+          },
+          "pipeline_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pipeline Id"
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "HPOStrategy elegida",
+            "title": "Strategy"
+          },
+          "success_threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Umbral de éxito del negocio traducido a la métrica técnica",
+            "title": "Success Threshold"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "target_metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "p. ej. val_roc_auc, val_f1_macro",
+            "title": "Target Metric"
+          },
+          "task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "DraftValues",
+        "type": "object"
+      },
+      "DraftView": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/ProjectDraft"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "values": {
+            "$ref": "#/components/schemas/DraftValues"
+          }
+        },
+        "required": [
+          "draft",
+          "steps",
+          "values"
+        ],
+        "title": "DraftView",
         "type": "object"
       },
       "EarlyStopping": {
@@ -4175,6 +4583,62 @@
         "title": "ProjectCreate",
         "type": "object"
       },
+      "ProjectDraft": {
+        "additionalProperties": false,
+        "description": "Estado del wizard de un proyecto (RF-WIZ-04): versionado, se retoma donde quedó.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "history": {
+            "description": "Cambios con su origen (usuario o copiloto)",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "step": {
+            "default": "goal",
+            "title": "Step",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": true,
+            "description": "DraftValues (services.wizard)",
+            "title": "Values",
+            "type": "object"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "title": "ProjectDraft",
+        "type": "object"
+      },
       "ProjectPatch": {
         "additionalProperties": false,
         "properties": {
@@ -5553,6 +6017,87 @@
         "title": "StepSpec",
         "type": "object"
       },
+      "StepsPreview": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "dtypes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dtypes",
+            "type": "array"
+          },
+          "rows": {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "step_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Id"
+          }
+        },
+        "required": [
+          "step_id",
+          "columns",
+          "dtypes",
+          "rows"
+        ],
+        "title": "StepsPreview",
+        "type": "object"
+      },
+      "StepsPreviewBody": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "graph": {
+            "$ref": "#/components/schemas/PipelineSpec"
+          },
+          "rows": {
+            "default": 10,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Rows",
+            "type": "integer"
+          },
+          "upto_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upto Step"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "graph"
+        ],
+        "title": "StepsPreviewBody",
+        "type": "object"
+      },
       "StrategyBody": {
         "additionalProperties": false,
         "properties": {
@@ -6893,6 +7438,48 @@
         ]
       }
     },
+    "/api/v1/archspecs/{archspec_id}": {
+      "get": {
+        "operationId": "getArchSpec",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "archspec_id",
+            "required": true,
+            "schema": {
+              "title": "Archspec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchSpecRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Archspec",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
     "/api/v1/catalog/blocks": {
       "get": {
         "operationId": "listCatalogBlocks",
@@ -7546,6 +8133,46 @@
       }
     },
     "/api/v1/pipelines/{pipeline_id}": {
+      "get": {
+        "operationId": "getPipeline",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pipeline_id",
+            "required": true,
+            "schema": {
+              "title": "Pipeline Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pipeline"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Pipeline",
+        "tags": [
+          "pipelines"
+        ]
+      },
       "put": {
         "operationId": "updatePipeline",
         "parameters": [
@@ -7926,6 +8553,111 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/arch/define": {
+      "post": {
+        "description": "Sub-wizard de definición: opciones explicadas de cada paso según lo ya elegido.",
+        "operationId": "planArchDefinition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefineBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefinePlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plan Arch Definition",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/arch/define/build": {
+      "post": {
+        "operationId": "buildArchDefinition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefineBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchSpecRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Build Arch Definition",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/arch/propose": {
       "post": {
         "description": "2–4 propuestas del LLM validadas, o la de reglas como fallback (RF-ARC-01..04).\n\nCada propuesta ya queda guardada como ArchSpec (origin llm/rules): el usuario elige una\npor `archspec.id`, la edita o las descarta.",
@@ -8032,6 +8764,103 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/archspecs": {
+      "get": {
+        "operationId": "listArchSpecs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ArchSpecRecord"
+                  },
+                  "title": "Response Listarchspecs",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Archspecs",
+        "tags": [
+          "arch"
+        ]
+      },
+      "post": {
+        "description": "Guarda una ArchSpec editada por el usuario (editor visual, RF-ARC-05): valida primero.",
+        "operationId": "createArchSpec",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchSpecCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchSpecRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Archspec",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/datasets": {
       "get": {
         "operationId": "listDatasets",
@@ -8075,6 +8904,98 @@
         "summary": "List Datasets",
         "tags": [
           "data"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/draft": {
+      "get": {
+        "operationId": "getDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Draft",
+        "tags": [
+          "wizard"
+        ]
+      },
+      "patch": {
+        "operationId": "updateDraft",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Draft",
+        "tags": [
+          "wizard"
         ]
       }
     },
@@ -8225,6 +9146,105 @@
         "summary": "List Models",
         "tags": [
           "models"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/pipelines": {
+      "get": {
+        "operationId": "listPipelines",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Pipeline"
+                  },
+                  "title": "Response Listpipelines",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Pipelines",
+        "tags": [
+          "pipelines"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/pipelines/preview-steps": {
+      "post": {
+        "description": "Vista previa de un grafo (guardado o no) tras un paso, sobre filas de train (RF-PIP-02).",
+        "operationId": "previewPipelineSteps",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepsPreviewBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepsPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Pipeline Steps",
+        "tags": [
+          "pipelines"
         ]
       }
     },

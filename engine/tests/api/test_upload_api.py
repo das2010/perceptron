@@ -50,3 +50,22 @@ def test_upload_folder_keeps_structure_and_blocks_traversal(
     only_folder = files[:-1]
     src2 = _ok(client.post(f"{API}/projects/{pid}/uploads", files=only_folder), 201)
     assert Path(src2["config"]["path"]).name == "uc04_defects"
+
+
+def test_upload_folder_with_root_file_uses_chosen_folder(
+    client: TestClient, fixtures_dir: Path
+) -> None:
+    """UC-04 desde el navegador: subcarpetas por clase + `annotations_coco.json` en la raíz."""
+    pid = _ok(client.post(f"{API}/projects", json={"name": "carpeta"}), 201)["id"]
+    base = fixtures_dir / "uc04_defects"
+    images = sorted(base.rglob("*.png"))[:4]
+    files = [
+        ("files", (f"uc04_defects/{p.parent.name}/{p.name}", p.read_bytes(), "image/png"))
+        for p in images
+    ]
+    coco = (base / "annotations_coco.json").read_bytes()
+    files.append(("files", ("uc04_defects/annotations_coco.json", coco, "application/json")))
+    src = _ok(client.post(f"{API}/projects/{pid}/uploads", files=files), 201)
+    root = Path(src["config"]["path"])
+    assert root.name == "uc04_defects" and src["name"] == "uc04_defects"
+    assert (root / "annotations_coco.json").is_file()

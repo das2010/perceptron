@@ -106,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/archspecs/{archspec_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Archspec */
+        get: operations["getArchSpec"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog/blocks": {
         parameters: {
             query?: never;
@@ -328,7 +345,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Pipeline */
+        get: operations["getPipeline"];
         /** Update Pipeline */
         put: operations["updatePipeline"];
         post?: never;
@@ -412,6 +430,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/arch/define": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Plan Arch Definition
+         * @description Sub-wizard de definición: opciones explicadas de cada paso según lo ya elegido.
+         */
+        post: operations["planArchDefinition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/arch/define/build": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Build Arch Definition */
+        post: operations["buildArchDefinition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/arch/propose": {
         parameters: {
             query?: never;
@@ -455,6 +510,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/archspecs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Archspecs */
+        get: operations["listArchSpecs"];
+        put?: never;
+        /**
+         * Create Archspec
+         * @description Guarda una ArchSpec editada por el usuario (editor visual, RF-ARC-05): valida primero.
+         */
+        post: operations["createArchSpec"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/datasets": {
         parameters: {
             query?: never;
@@ -470,6 +546,24 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Draft */
+        get: operations["getDraft"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Draft */
+        patch: operations["updateDraft"];
         trace?: never;
     };
     "/api/v1/projects/{project_id}/hpo/strategy": {
@@ -517,6 +611,43 @@ export interface paths {
         get: operations["listModels"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/pipelines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Pipelines */
+        get: operations["listPipelines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/pipelines/preview-steps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Pipeline Steps
+         * @description Vista previa de un grafo (guardado o no) tras un paso, sobre filas de train (RF-PIP-02).
+         */
+        post: operations["previewPipelineSteps"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1223,6 +1354,10 @@ export interface components {
             task: components["schemas"]["TaskSpec"];
             training?: components["schemas"]["TrainingSpec"];
         };
+        /** ArchSpecCreate */
+        ArchSpecCreate: {
+            spec: components["schemas"]["ArchSpec"];
+        };
         /**
          * ArchSpecRecord
          * @description Referencia persistida a una ArchSpec (§9) o a código experto (RF-ARC-06).
@@ -1601,6 +1736,64 @@ export interface components {
              */
             version: number;
         };
+        /** DefineBody */
+        DefineBody: {
+            /**
+             * Choices
+             * @description Paso → opción (family, backbone, head, regularization)
+             */
+            choices?: {
+                [key: string]: string;
+            };
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /** Pipeline Id */
+            pipeline_id: string;
+        };
+        /** DefineOption */
+        DefineOption: {
+            /**
+             * Available
+             * @default true
+             */
+            available: boolean;
+            /** Description */
+            description: string;
+            /** Id */
+            id: string;
+            /**
+             * Reason
+             * @description Por qué no está disponible
+             */
+            reason?: string | null;
+            /**
+             * Recommended
+             * @default false
+             */
+            recommended: boolean;
+            /** Title */
+            title: string;
+        };
+        /** DefinePlan */
+        DefinePlan: {
+            /** Complete */
+            complete: boolean;
+            modality: components["schemas"]["Modality"];
+            /** Steps */
+            steps: components["schemas"]["DefineStep"][];
+            task: components["schemas"]["TaskType"];
+        };
+        /** DefineStep */
+        DefineStep: {
+            /** Choice */
+            choice?: string | null;
+            /** Options */
+            options: components["schemas"]["DefineOption"][];
+            /** Step */
+            step: string;
+            /** Title */
+            title: string;
+        };
         /**
          * Device
          * @enum {string}
@@ -1622,6 +1815,85 @@ export interface components {
             problems?: components["schemas"]["Problem"][];
             /** Summary */
             summary: string;
+        };
+        /** DraftUpdate */
+        DraftUpdate: {
+            /**
+             * Origin
+             * @default user
+             * @enum {string}
+             */
+            origin: "user" | "copilot";
+            /** Step */
+            step?: string | null;
+            /**
+             * Values
+             * @description Campos de DraftValues
+             */
+            values?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Version
+             * @description Versión conocida (bloqueo optimista)
+             */
+            version: number;
+        };
+        /**
+         * DraftValues
+         * @description Lo que el wizard va definiendo. Todo opcional: se completa paso a paso.
+         */
+        DraftValues: {
+            /** Archspec Id */
+            archspec_id?: string | null;
+            /**
+             * Autonomous
+             * @description Lanzar con el agente autónomo
+             */
+            autonomous?: boolean | null;
+            /** Dataset Version Id */
+            dataset_version_id?: string | null;
+            /** Device */
+            device?: ("cpu" | "cuda" | "rocm" | "xpu" | "mps") | null;
+            /** Goal */
+            goal?: string | null;
+            /** Llm Budget Usd */
+            llm_budget_usd?: number | null;
+            /** Max Epochs Per Trial */
+            max_epochs_per_trial?: number | null;
+            /** Max Time S */
+            max_time_s?: number | null;
+            /** Max Trials */
+            max_trials?: number | null;
+            /** Pipeline Id */
+            pipeline_id?: string | null;
+            /**
+             * Strategy
+             * @description HPOStrategy elegida
+             */
+            strategy?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Success Threshold
+             * @description Umbral de éxito del negocio traducido a la métrica técnica
+             */
+            success_threshold?: number | null;
+            /** Target */
+            target?: string | null;
+            /**
+             * Target Metric
+             * @description p. ej. val_roc_auc, val_f1_macro
+             */
+            target_metric?: string | null;
+            task?: components["schemas"]["TaskType"] | null;
+        };
+        /** DraftView */
+        DraftView: {
+            draft: components["schemas"]["ProjectDraft"];
+            /** Steps */
+            steps: string[];
+            values: components["schemas"]["DraftValues"];
         };
         /** EarlyStopping */
         EarlyStopping: {
@@ -2654,6 +2926,51 @@ export interface components {
             /** Template */
             template?: string | null;
         };
+        /**
+         * ProjectDraft
+         * @description Estado del wizard de un proyecto (RF-WIZ-04): versionado, se retoma donde quedó.
+         */
+        ProjectDraft: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /**
+             * History
+             * @description Cambios con su origen (usuario o copiloto)
+             */
+            history?: {
+                [key: string]: unknown;
+            }[];
+            /** Id */
+            id?: string;
+            /** Project Id */
+            project_id: string;
+            /**
+             * Step
+             * @default goal
+             */
+            step: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Values
+             * @description DraftValues (services.wizard)
+             */
+            values?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+        };
         /** ProjectPatch */
         ProjectPatch: {
             /** Description */
@@ -3150,6 +3467,30 @@ export interface components {
             params?: {
                 [key: string]: unknown;
             };
+        };
+        /** StepsPreview */
+        StepsPreview: {
+            /** Columns */
+            columns: string[];
+            /** Dtypes */
+            dtypes: string[];
+            /** Rows */
+            rows: unknown[][];
+            /** Step Id */
+            step_id: string | null;
+        };
+        /** StepsPreviewBody */
+        StepsPreviewBody: {
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            graph: components["schemas"]["PipelineSpec"];
+            /**
+             * Rows
+             * @default 10
+             */
+            rows: number;
+            /** Upto Step */
+            upto_step?: string | null;
         };
         /** StrategyBody */
         StrategyBody: {
@@ -3755,6 +4096,37 @@ export interface operations {
             };
         };
     };
+    getArchSpec: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                archspec_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchSpecRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listCatalogBlocks: {
         parameters: {
             query?: {
@@ -4178,6 +4550,37 @@ export interface operations {
             };
         };
     };
+    getPipeline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pipeline_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pipeline"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     updatePipeline: {
         parameters: {
             query?: never;
@@ -4443,6 +4846,76 @@ export interface operations {
             };
         };
     };
+    planArchDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefineBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DefinePlan"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    buildArchDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefineBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchSpecRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     proposeArchitecture: {
         parameters: {
             query?: never;
@@ -4513,6 +4986,72 @@ export interface operations {
             };
         };
     };
+    listArchSpecs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchSpecRecord"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createArchSpec: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArchSpecCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchSpecRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listDatasets: {
         parameters: {
             query?: never;
@@ -4531,6 +5070,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DatasetVersion"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftView"];
                 };
             };
             /** @description Validation Error */
@@ -4632,6 +5237,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelVersion"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listPipelines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pipeline"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previewPipelineSteps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StepsPreviewBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StepsPreview"];
                 };
             };
             /** @description Validation Error */

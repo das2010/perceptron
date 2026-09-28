@@ -75,6 +75,23 @@ def test_full_flow_uc01(client: TestClient, fixtures_dir: Path) -> None:
         )
     )
     assert len(prev["x_num"]) == 4 and prev["classes"] == ["0", "1"]
+    # Vista previa por paso de un grafo sin guardar (RF-PIP-02): la salida intermedia.
+    graph = pipe["graph"]
+    first = graph["steps"][0]["id"]
+    step = _ok(
+        client.post(
+            f"{API}/projects/{pid}/pipelines/preview-steps",
+            json={"dataset_version_id": dv["id"], "graph": graph, "upto_step": first, "rows": 3},
+        )
+    )
+    assert step["step_id"] == first and len(step["rows"]) == 3
+    assert "churn" not in step["columns"] and len(step["dtypes"]) == len(step["columns"])
+    broken = {**graph, "steps": [{**graph["steps"][0], "kind": "no_existe"}]}
+    r = client.post(
+        f"{API}/projects/{pid}/pipelines/preview-steps",
+        json={"dataset_version_id": dv["id"], "graph": broken},
+    )
+    assert r.status_code == 422, r.text
 
     proposals = _ok(
         client.post(
@@ -90,6 +107,42 @@ def test_full_flow_uc01(client: TestClient, fixtures_dir: Path) -> None:
     assert prop["estimates"]["num_params"] > 0
     spec = prop["archspec"]["spec"]
     assert _ok(client.post(f"{API}/arch/validate", json=spec))["valid"]
+    # Editor visual (RF-ARC-05): listar, leer y guardar una ArchSpec editada.
+    assert any(
+        a["id"] == prop["archspec"]["id"]
+        for a in _ok(client.get(f"{API}/projects/{pid}/archspecs"))
+    )
+    assert _ok(client.get(f"{API}/archspecs/{prop['archspec']['id']}"))["name"] == spec["name"]
+    edited = {**spec, "name": "mlp-editada"}
+    saved = _ok(client.post(f"{API}/projects/{pid}/archspecs", json={"spec": edited}), 201)
+    assert saved["origin"] == "manual" and saved["name"] == "mlp-editada"
+    broken = {**spec, "nodes": [{**spec["nodes"][0], "block": "no.existe"}, *spec["nodes"][1:]]}
+    assert client.post(f"{API}/projects/{pid}/archspecs", json={"spec": broken}).status_code == 422
+    assert any(p["id"] == pipe["id"] for p in _ok(client.get(f"{API}/projects/{pid}/pipelines")))
+    # Sub-wizard de definición (§7.6, paso 6): opciones por paso y ArchSpec armada.
+    body = {"dataset_version_id": dv["id"], "pipeline_id": pipe["id"]}
+    plan = _ok(client.post(f"{API}/projects/{pid}/arch/define", json=body))
+    assert [s["step"] for s in plan["steps"]] == ["family", "backbone", "head", "regularization"]
+    assert not plan["complete"]
+    rec = {
+        s["step"]: next(o["id"] for o in s["options"] if o["recommended"]) for s in plan["steps"]
+    }
+    choices = {**rec, "family": "resnet_mlp", "backbone": "large", "head": "ce_smooth"}
+    plan = _ok(client.post(f"{API}/projects/{pid}/arch/define", json={**body, "choices": choices}))
+    assert plan["complete"]
+    built = _ok(
+        client.post(f"{API}/projects/{pid}/arch/define/build", json={**body, "choices": choices}),
+        201,
+    )
+    assert built["origin"] == "manual" and built["name"].endswith("-asistente")
+    nodes = {n["id"]: n for n in built["spec"]["nodes"]}
+    assert nodes["resmlp"]["params"]["d"] == {"hp": "d", "default": 256}
+    assert built["spec"]["loss"]["label_smoothing"]["default"] == 0.1
+    incomplete = client.post(
+        f"{API}/projects/{pid}/arch/define/build", json={**body, "choices": {"family": "mlp"}}
+    )
+    assert incomplete.status_code == 422, incomplete.text
+    assert _ok(client.get(f"{API}/pipelines/{pipe['id']}"))["id"] == pipe["id"]
     code = _ok(client.post(f"{API}/arch/to-code", json=spec))["code"]
     assert "class Model(nn.Module)" in code
     blocks = _ok(client.get(f"{API}/catalog/blocks?modality=tabular"))

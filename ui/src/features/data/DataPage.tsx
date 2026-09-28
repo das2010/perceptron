@@ -30,7 +30,7 @@ import { formatDate } from "@/lib/format";
 
 import { ProfileView } from "./ProfileView";
 
-function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) => void }) {
+export function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) => void }) {
   const { t } = useTranslation();
   const projectId = useProjectId();
   const upload = useUpload(projectId);
@@ -84,6 +84,7 @@ function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) => void 
           type="file"
           className="hidden"
           multiple
+          data-testid="folder-input"
           {...{ webkitdirectory: "", directory: "" }}
           onChange={(e) => onFiles(e.target.files)}
         />

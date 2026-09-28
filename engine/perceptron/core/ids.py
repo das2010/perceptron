@@ -32,6 +32,7 @@ class IdPrefix(StrEnum):
     LLM_SESSION = "lls"
     LLM_CALL = "llc"
     AGENT_RUN = "agr"
+    PROJECT_DRAFT = "dft"
     JOB = "job"
 
 

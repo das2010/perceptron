@@ -231,6 +231,34 @@ def fit_pipeline(
     )
 
 
+def preview_steps(
+    spec: PipelineSpec,
+    train: pl.DataFrame,
+    *,
+    upto: str | None = None,
+    rows: int = 10,
+    fit_rows: int = 50_000,
+) -> pl.DataFrame:
+    """Salida intermedia del pipeline tabular tras el paso `upto` (vista previa, RF-PIP-02).
+
+    Cada paso se ajusta con train (a lo sumo `fit_rows` filas) igual que en `fit_pipeline`,
+    pero sin exigir que la salida ya esté codificada: se ve cómo queda cada columna en cada paso.
+    """
+    if spec.modality is not Modality.TABULAR:
+        raise ValueError("la vista previa por paso es para pipelines tabulares")
+    if upto is not None and upto not in {st.id for st in spec.steps}:
+        raise ValueError(f"no existe el paso {upto!r}")
+    target_name = spec.target.name if spec.target else None
+    df = train.head(fit_rows)
+    df = df.drop([c for c in (*_INTERNAL, target_name) if c and c in df.columns])
+    for step_spec in spec.steps:
+        step = build_step(step_spec)
+        df = step.transform(df, step.fit(df))
+        if step_spec.id == upto:
+            break
+    return df.head(rows)
+
+
 def transform_tabular(fitted: FittedPipeline, df: pl.DataFrame) -> TabularArrays:
     target = fitted.spec.target
     y = encode_target(fitted, df[target.name]) if target and target.name in df.columns else None

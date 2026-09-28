@@ -1,15 +1,9 @@
 import { Link, Outlet } from "@tanstack/react-router";
-import {
-  FolderKanban,
-  Home,
-  PanelRightClose,
-  PanelRightOpen,
-  Settings,
-  Sparkles,
-} from "lucide-react";
+import { FolderKanban, Home, PanelRightClose, PanelRightOpen, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui";
+import { CopilotPanel } from "@/features/copilot/CopilotPanel";
 import { useProjects } from "@/lib/api/hooks";
 import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 
@@ -40,22 +34,6 @@ function ProjectNav() {
         ))}
       </ul>
     </div>
-  );
-}
-
-function CopilotPanel() {
-  const { t } = useTranslation();
-  return (
-    <aside
-      aria-label={t("copilot.title")}
-      className="hidden w-80 shrink-0 border-l border-line bg-card p-4 lg:block"
-    >
-      <h2 className="flex items-center gap-2 font-semibold">
-        <Sparkles className="h-4 w-4 text-copilot" aria-hidden="true" />
-        {t("copilot.title")}
-      </h2>
-      <p className="mt-3 rounded-pt bg-copilot-bg/50 p-3 text-sm">{t("copilot.soon")}</p>
-    </aside>
   );
 }
 

@@ -3,32 +3,12 @@ import { fileURLToPath } from "node:url";
 
 import { expect, test } from "@playwright/test";
 
+import { withDiagnostics } from "./diagnostics";
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const CHURN = path.resolve(here, "../../fixtures/uc01_churn/churn.csv");
 
-test.beforeEach(({ page }) => {
-  page.on("pageerror", (e) =>
-    console.log(`[pageerror] ${e.message}
-${e.stack ?? ""}`),
-  );
-  page.on("console", (m) => {
-    if (m.type() === "error") console.log(`[console] ${m.text()}`);
-  });
-});
-
-test.afterEach(async ({ page }, info) => {
-  if (info.status !== info.expectedStatus) {
-    console.log(`[url] ${page.url()}`);
-    console.log(
-      `[main] ${(
-        await page
-          .locator("body")
-          .innerText()
-          .catch(() => "")
-      ).slice(0, 3000)}`,
-    );
-  }
-});
+withDiagnostics();
 
 /** UC-01 guiado sin código (SPEC §14, Capa 3): datos → perfil → entrenar → evaluar → registrar. */
 test("UC-01: de un CSV a un modelo registrado desde la UI", async ({ page }) => {

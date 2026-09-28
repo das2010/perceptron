@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import math
 from typing import Annotated, Any, Literal
 
+import polars as pl
 from fastapi import APIRouter, Depends, WebSocket, status
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -13,9 +15,10 @@ from perceptron.api.streaming import stream_events
 from perceptron.archspec.schema import ArchSpec
 from perceptron.archspec.to_code import archspec_to_code
 from perceptron.archspec.validate import ValidationReport
+from perceptron.catalog.define import DefinePlan
 from perceptron.catalog.registry import BLOCKS, blocks_for
-from perceptron.core.errors import NotFoundError
-from perceptron.data.pipeline.pipeline import PipelineSpec, transform_tabular
+from perceptron.core.errors import NotFoundError, ValidationError
+from perceptron.data.pipeline.pipeline import PipelineSpec, preview_steps, transform_tabular
 from perceptron.domain.enums import Device, Modality, Origin, TaskType
 from perceptron.domain.models import ArchSpecRecord, Evaluation, ModelVersion, Pipeline, Run, Study
 from perceptron.evaluation.evaluate import EvaluationReport
@@ -68,6 +71,16 @@ def propose_pipeline(project_id: str, body: ProposePipelineBody, ctx: Ctx) -> Pi
     return Workflow(ctx).propose_pipeline(body.dataset_version_id, pretrained=body.pretrained)
 
 
+@router.get("/projects/{project_id}/pipelines", tags=["pipelines"], operation_id="listPipelines")
+def list_pipelines(project_id: str, ctx: Ctx) -> list[Pipeline]:
+    return list(ctx.repo(Pipeline).list(filters={"project_id": project_id}, limit=500))
+
+
+@router.get("/pipelines/{pipeline_id}", tags=["pipelines"], operation_id="getPipeline")
+def get_pipeline(pipeline_id: str, ctx: Ctx) -> Pipeline:
+    return ctx.repo(Pipeline).get(pipeline_id)
+
+
 @router.put("/pipelines/{pipeline_id}", tags=["pipelines"], operation_id="updatePipeline")
 def update_pipeline(pipeline_id: str, body: PipelineUpdate, ctx: Ctx) -> Pipeline:
     return Workflow(ctx).update_pipeline(pipeline_id, body.graph, body.version)
@@ -90,6 +103,51 @@ def preview_pipeline(pipeline_id: str, body: PipelinePreviewBody, ctx: Ctx) -> P
         x_num=arr.x_num.round(6).tolist(),
         x_cat=arr.x_cat.tolist(),
         classes=fitted.classes,
+    )
+
+
+class StepsPreviewBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dataset_version_id: str
+    graph: PipelineSpec
+    upto_step: str | None = None
+    rows: int = Field(default=10, ge=1, le=100)
+
+
+class StepsPreview(BaseModel):
+    step_id: str | None
+    columns: list[str]
+    dtypes: list[str]
+    rows: list[list[Any]]
+
+
+def _json_cell(value: Any) -> Any:
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
+
+
+@router.post(
+    "/projects/{project_id}/pipelines/preview-steps",
+    tags=["pipelines"],
+    operation_id="previewPipelineSteps",
+)
+def preview_pipeline_steps(project_id: str, body: StepsPreviewBody, ctx: Ctx) -> StepsPreview:
+    """Vista previa de un grafo (guardado o no) tras un paso, sobre filas de train (RF-PIP-02)."""
+    ctx.projects.get(project_id)
+    wf = Workflow(ctx)
+    train = wf.view(wf.dataset(body.dataset_version_id)).read("train")
+    try:
+        df = preview_steps(body.graph, train, upto=body.upto_step, rows=body.rows)
+    except (ValueError, KeyError, TypeError, pl.exceptions.PolarsError) as exc:
+        raise ValidationError(f"no se pudo aplicar el pipeline: {exc}") from exc
+    return StepsPreview(
+        step_id=body.upto_step,
+        columns=df.columns,
+        dtypes=[str(t) for t in df.dtypes],
+        rows=[[_json_cell(v) for v in row] for row in df.rows()],
     )
 
 
@@ -177,6 +235,64 @@ def propose_architecture(project_id: str, body: ProposeArchBody, ctx: Ctx) -> Ar
         llm_call_id=out.llm_call_id,
         fallback_reason=out.fallback_reason,
     )
+
+
+class ArchSpecCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    spec: ArchSpec
+
+
+@router.get("/projects/{project_id}/archspecs", tags=["arch"], operation_id="listArchSpecs")
+def list_archspecs(project_id: str, ctx: Ctx) -> list[ArchSpecRecord]:
+    return list(ctx.repo(ArchSpecRecord).list(filters={"project_id": project_id}, limit=500))
+
+
+@router.get("/archspecs/{archspec_id}", tags=["arch"], operation_id="getArchSpec")
+def get_archspec(archspec_id: str, ctx: Ctx) -> ArchSpecRecord:
+    return ctx.repo(ArchSpecRecord).get(archspec_id)
+
+
+@router.post(
+    "/projects/{project_id}/archspecs",
+    status_code=status.HTTP_201_CREATED,
+    tags=["arch"],
+    operation_id="createArchSpec",
+)
+def create_archspec(project_id: str, body: ArchSpecCreate, ctx: Ctx) -> ArchSpecRecord:
+    """Guarda una ArchSpec editada por el usuario (editor visual, RF-ARC-05): valida primero."""
+    ctx.projects.get(project_id)
+    from perceptron.archspec.schema import Provenance
+
+    spec = body.spec.model_copy(update={"provenance": Provenance(origin=Origin.MANUAL)})
+    return Workflow(ctx).save_archspec(project_id, spec, origin=Origin.MANUAL)
+
+
+class DefineBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dataset_version_id: str
+    pipeline_id: str
+    choices: dict[str, str] = Field(
+        default_factory=dict, description="Paso → opción (family, backbone, head, regularization)"
+    )
+
+
+@router.post("/projects/{project_id}/arch/define", tags=["arch"], operation_id="planArchDefinition")
+def plan_arch_definition(project_id: str, body: DefineBody, ctx: Ctx) -> DefinePlan:
+    """Sub-wizard de definición: opciones explicadas de cada paso según lo ya elegido."""
+    ctx.projects.get(project_id)
+    return Workflow(ctx).define_plan(body.dataset_version_id, body.pipeline_id, body.choices)
+
+
+@router.post(
+    "/projects/{project_id}/arch/define/build",
+    status_code=status.HTTP_201_CREATED,
+    tags=["arch"],
+    operation_id="buildArchDefinition",
+)
+def build_arch_definition(project_id: str, body: DefineBody, ctx: Ctx) -> ArchSpecRecord:
+    ctx.projects.get(project_id)
+    return Workflow(ctx).define_build(body.dataset_version_id, body.pipeline_id, body.choices)
 
 
 @router.post("/arch/validate", tags=["arch"], operation_id="validateArchitecture")

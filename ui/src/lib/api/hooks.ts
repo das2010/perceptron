@@ -469,3 +469,261 @@ export function useAudit(projectId: string) {
       ) as LLMCall[],
   });
 }
+
+// ---------------------------------------------------------------- wizard (RF-WIZ-04)
+
+export type DraftView = Schemas["DraftView"];
+export type DraftValues = Schemas["DraftValues"];
+
+export function useDraft(projectId: string | undefined) {
+  return useQuery({
+    queryKey: ["projects", projectId ?? "", "draft"],
+    enabled: Boolean(projectId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/draft", {
+          params: { path: { project_id: projectId ?? "" } },
+        }),
+      ),
+  });
+}
+
+/** Guarda cambios del borrador con bloqueo optimista (usa la versión en caché). */
+export function useUpdateDraft(projectId: string) {
+  const qc = useQueryClient();
+  const key = ["projects", projectId, "draft"];
+  return useMutation({
+    // En serie: cada guardado lee la versión que dejó el anterior (si no, el blur de un campo
+    // y el "Siguiente" salen con la misma versión y el segundo choca con 409).
+    scope: { id: `draft:${projectId}` },
+    mutationFn: async ({
+      values,
+      step,
+      origin = "user",
+    }: {
+      values?: Partial<DraftValues>;
+      step?: string;
+      origin?: "user" | "copilot";
+    }) => {
+      const current = qc.getQueryData<DraftView>(key);
+      return unwrap(
+        await (
+          await getApiClient()
+        ).PATCH("/api/v1/projects/{project_id}/draft", {
+          params: { path: { project_id: projectId } },
+          body: {
+            version: current?.draft.version ?? 1,
+            values: (values ?? {}) as Record<string, unknown>,
+            ...(step ? { step } : {}),
+            origin,
+          },
+        }),
+      );
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(key, data);
+      void qc.invalidateQueries({ queryKey: keys.project(projectId) });
+    },
+    // Si otro cliente (o el copiloto) cambió el borrador, recargarlo para el próximo intento.
+    onError: () => void qc.invalidateQueries({ queryKey: key }),
+  });
+}
+
+// ---------------------------------------------------------------- editores (RF-ARC-05, RF-PIP-02)
+
+export type ArchSpecRecord = WithId<Schemas["ArchSpecRecord"]>;
+export type ValidationReport = Awaited<ReturnType<typeof validateArchSpec>>;
+export type PipelineSpec = Schemas["PipelineSpec"];
+
+export function useArchSpecs(projectId: string) {
+  return useQuery({
+    queryKey: ["projects", projectId, "archspecs"],
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/archspecs", {
+          params: { path: { project_id: projectId } },
+        }),
+      ) as ArchSpecRecord[],
+  });
+}
+
+export function useArchSpec(archspecId: string) {
+  return useQuery({
+    queryKey: ["archspecs", archspecId],
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/archspecs/{archspec_id}", {
+          params: { path: { archspec_id: archspecId } },
+        }),
+      ) as ArchSpecRecord,
+  });
+}
+
+export function useSaveArchSpec(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (spec: Record<string, unknown>) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/archspecs", {
+          params: { path: { project_id: projectId } },
+          body: { spec: spec as Schemas["ArchSpec"] },
+        }),
+      ) as ArchSpecRecord,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["projects", projectId, "archspecs"] }),
+  });
+}
+
+export function useCatalogBlocks(modality: string | undefined) {
+  return useQuery({
+    queryKey: ["catalog", "blocks", modality],
+    enabled: Boolean(modality),
+    staleTime: Infinity,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/catalog/blocks", {
+          params: { query: { modality: modality as Schemas["Modality"] } },
+        }),
+      ),
+  });
+}
+
+export async function validateArchSpec(spec: Record<string, unknown>) {
+  return unwrap(await (await getApiClient()).POST("/api/v1/arch/validate", { body: spec }));
+}
+
+export function useArchCode(spec: Record<string, unknown> | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ["arch", "code", spec],
+    enabled: enabled && spec !== null,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/arch/to-code", { body: spec as Schemas["ArchSpec"] }),
+      ).code,
+  });
+}
+
+export function usePipelines(projectId: string) {
+  return useQuery({
+    queryKey: ["projects", projectId, "pipelines"],
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/pipelines", {
+          params: { path: { project_id: projectId } },
+        }),
+      ),
+  });
+}
+
+export function usePipeline(pipelineId: string) {
+  return useQuery({
+    queryKey: ["pipelines", pipelineId],
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/pipelines/{pipeline_id}", {
+          params: { path: { pipeline_id: pipelineId } },
+        }),
+      ),
+  });
+}
+
+/** Guarda el grafo del pipeline con bloqueo optimista (versión de la caché). */
+export function useUpdatePipeline(pipelineId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (graph: PipelineSpec) => {
+      const current = qc.getQueryData<Pipeline>(["pipelines", pipelineId]);
+      return unwrap(
+        await (
+          await getApiClient()
+        ).PUT("/api/v1/pipelines/{pipeline_id}", {
+          params: { path: { pipeline_id: pipelineId } },
+          body: { graph, version: current?.version ?? 1 },
+        }),
+      );
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(["pipelines", pipelineId], data);
+      void qc.invalidateQueries({ queryKey: ["projects", data.project_id, "pipelines"] });
+    },
+  });
+}
+
+/** Salida intermedia de un grafo (guardado o no) tras un paso, sobre train (RF-PIP-02). */
+export function usePreviewSteps(projectId: string) {
+  return useMutation({
+    mutationFn: async (body: {
+      dataset_version_id: string;
+      graph: PipelineSpec;
+      upto_step: string | null;
+    }) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/pipelines/preview-steps", {
+          params: { path: { project_id: projectId } },
+          body: { ...body, rows: 10 },
+        }),
+      ),
+  });
+}
+
+// ---------------------------------------------------------------- sub-wizard de definición (§7.6)
+
+export type DefinePlan = Schemas["DefinePlan"];
+
+export function useDefinitionPlan(
+  projectId: string,
+  datasetVersionId: string,
+  pipelineId: string,
+  choices: Record<string, string>,
+) {
+  return useQuery({
+    queryKey: ["projects", projectId, "arch-define", datasetVersionId, pipelineId, choices],
+    placeholderData: (prev) => prev,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/arch/define", {
+          params: { path: { project_id: projectId } },
+          body: { dataset_version_id: datasetVersionId, pipeline_id: pipelineId, choices },
+        }),
+      ),
+  });
+}
+
+export function useBuildDefinition(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      dataset_version_id: string;
+      pipeline_id: string;
+      choices: Record<string, string>;
+    }) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/arch/define/build", {
+          params: { path: { project_id: projectId } },
+          body,
+        }),
+      ) as ArchSpecRecord,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["projects", projectId, "archspecs"] }),
+  });
+}
