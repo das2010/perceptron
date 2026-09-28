@@ -6,6 +6,30 @@ import { expect, test } from "@playwright/test";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const CHURN = path.resolve(here, "../../fixtures/uc01_churn/churn.csv");
 
+test.beforeEach(({ page }) => {
+  page.on("pageerror", (e) =>
+    console.log(`[pageerror] ${e.message}
+${e.stack ?? ""}`),
+  );
+  page.on("console", (m) => {
+    if (m.type() === "error") console.log(`[console] ${m.text()}`);
+  });
+});
+
+test.afterEach(async ({ page }, info) => {
+  if (info.status !== info.expectedStatus) {
+    console.log(`[url] ${page.url()}`);
+    console.log(
+      `[main] ${(
+        await page
+          .locator("body")
+          .innerText()
+          .catch(() => "")
+      ).slice(0, 3000)}`,
+    );
+  }
+});
+
 /** UC-01 guiado sin código (SPEC §14, Capa 3): datos → perfil → entrenar → evaluar → registrar. */
 test("UC-01: de un CSV a un modelo registrado desde la UI", async ({ page }) => {
   const started = Date.now();
@@ -34,13 +58,17 @@ test("UC-01: de un CSV a un modelo registrado desde la UI", async ({ page }) => 
   await page.getByRole("button", { name: "Entrenar ahora" }).click();
 
   await expect(page.getByText("Entrenamiento en vivo")).toBeVisible();
-  await expect(page.getByText("Terminado").first()).toBeVisible({ timeout: 10 * 60_000 });
+  // El estado del job (badge del panel en vivo) es la señal de que terminaron todos los trials.
+  const live = page.locator("div", { has: page.getByText("Entrenamiento en vivo") }).last();
+  await expect(live.getByText("Terminado")).toBeVisible({ timeout: 10 * 60_000 });
 
   await page
     .getByRole("link", { name: /^t\d{3}$/ })
     .first()
     .click();
-  await page.getByRole("button", { name: "Evaluar en test" }).click();
+  const evaluate = page.getByRole("button", { name: "Evaluar en test" });
+  await expect(evaluate).toBeVisible({ timeout: 60_000 });
+  await evaluate.click();
   await expect(page.getByText("roc_auc", { exact: true })).toBeVisible({ timeout: 120_000 });
   await page.getByRole("button", { name: "Registrar modelo" }).click();
   await expect(page.getByRole("button", { name: "Modelo registrado" })).toBeVisible();

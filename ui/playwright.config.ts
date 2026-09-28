@@ -27,6 +27,7 @@ export default defineConfig({
       url: "http://127.0.0.1:8765/api/v1/system/health",
       timeout: 300_000,
       reuseExistingServer: !process.env.CI,
+      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
       env: { PERCEPTRON_OFFLINE: "1", PERCEPTRON_LLM__ENABLED: "false" },
     },
     {
@@ -34,6 +35,7 @@ export default defineConfig({
       url: "http://127.0.0.1:5173",
       timeout: 120_000,
       reuseExistingServer: !process.env.CI,
+      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
     },
   ],
 });

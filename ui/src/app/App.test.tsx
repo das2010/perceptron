@@ -47,7 +47,10 @@ describe("App", () => {
       vi.fn(() => Promise.reject(new TypeError("network"))),
     );
     renderApp();
-    expect(await screen.findByText("No se pudo conectar con el Engine")).toBeInTheDocument();
+    // El estado del Engine y la lista de proyectos muestran el mismo aviso de conexión.
+    expect(
+      (await screen.findAllByText("No se pudo conectar con el Engine")).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
   });
 
