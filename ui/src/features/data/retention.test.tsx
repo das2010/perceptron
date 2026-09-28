@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -34,8 +34,7 @@ describe("retención de versiones (RF-MON-07)", () => {
         <RetentionCard projectId="prj_1" versions={3} />
       </Providers>,
     );
-    await userEvent.clear(screen.getByLabelText("Conservar las últimas"));
-    await userEvent.type(screen.getByLabelText("Conservar las últimas"), "1");
+    fireEvent.change(screen.getByLabelText("Conservar las últimas"), { target: { value: "1" } });
     await userEvent.click(screen.getByRole("button", { name: "Ver qué se borraría" }));
     expect(await screen.findByText(/Se borraría 1 versión \(5\.0 MB\)/)).toBeInTheDocument();
     expect(calls).toEqual([{ keep_last: 1, dry_run: true }]);
