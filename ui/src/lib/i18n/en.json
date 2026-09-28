@@ -879,7 +879,9 @@
     "save": "Save",
     "sso": "SSO",
     "noSso": "No SSO providers configured.",
-    "ssoHint": "Configured on the server (PERCEPTRON_SERVER__OIDC); see docs/ops/sso.md."
+    "ssoHint": "Configured on the server (PERCEPTRON_SERVER__OIDC); see docs/ops/sso.md.",
+    "budget": "Monthly LLM quota (USD)",
+    "budgetHint": "Empty = no quota. When reached, AI features fall back to rules."
   },
   "monitoring": {
     "window": "Window {{from}} → {{to}} ({{n}} predictions)",

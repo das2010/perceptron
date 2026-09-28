@@ -879,7 +879,9 @@
     "save": "Guardar",
     "sso": "SSO",
     "noSso": "No hay proveedores SSO configurados.",
-    "ssoHint": "Se configuran en el servidor (PERCEPTRON_SERVER__OIDC); ver docs/ops/sso.md."
+    "ssoHint": "Se configuran en el servidor (PERCEPTRON_SERVER__OIDC); ver docs/ops/sso.md.",
+    "budget": "Cuota LLM mensual (USD)",
+    "budgetHint": "Vacío = sin cuota. Al llegar, las funciones con IA siguen con reglas."
   },
   "monitoring": {
     "window": "Ventana {{from}} → {{to}} ({{n}} predicciones)",

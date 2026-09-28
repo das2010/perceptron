@@ -93,6 +93,10 @@ class WorkspacePolicy(BaseModel):
     clear_allowed_providers: bool = Field(
         default=False, description="Quita la restricción de proveedores (todos permitidos)"
     )
+    llm_monthly_budget_usd: float | None = Field(
+        default=None, ge=0, description="Cuota mensual de gasto LLM (RF-LLM-06)"
+    )
+    clear_llm_budget: bool = Field(default=False, description="Quita la cuota mensual")
 
 
 class MembershipCreate(BaseModel):
@@ -191,9 +195,13 @@ def update_workspace(
     _require_workspace_admin(who, workspace_id)
     repo = state.accounts.workspaces
     ws = repo.get(workspace_id)
-    changes = body.model_dump(exclude_none=True, exclude={"clear_allowed_providers"})
+    changes = body.model_dump(
+        exclude_none=True, exclude={"clear_allowed_providers", "clear_llm_budget"}
+    )
     if body.clear_allowed_providers:
         changes["allowed_llm_providers"] = None
+    if body.clear_llm_budget:
+        changes["llm_monthly_budget_usd"] = None
     updated = repo.update(ws.model_copy(update=changes))
     state.audit.record(
         "admin.workspace_policy",

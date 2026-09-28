@@ -102,7 +102,7 @@ class Gateway:
         self.calls: SqlRepository[LLMCall] = SqlRepository(db, LLMCall)
         self.workspaces: SqlRepository[Workspace] = SqlRepository(db, Workspace)
         self.cache = LLMCache(db)
-        self.ledger = BudgetLedger(self.calls)
+        self.ledger = BudgetLedger(self.calls, SqlRepository(db, Project))
         self._factory = provider_factory or self._default_factory
         self._custom_factory = provider_factory is not None
         self._providers: dict[str, LLMProvider] = {}
@@ -135,13 +135,18 @@ class Gateway:
 
     # ------------------------------------------------------------------ política
 
-    def workspace(self) -> Workspace:
+    def workspace(self, project: Project | None = None) -> Workspace:
+        """El workspace del proyecto (Team Server con varios) o el único del desktop."""
+        if project is not None and project.workspace_id:
+            ws = self.workspaces.find(project.workspace_id)
+            if ws is not None:
+                return ws
         found = list(self.workspaces.list(limit=1))
         return found[0] if found else Workspace(name="local")
 
     def effective_level(self, project: Project, *, local: bool) -> PrivacyLevel:
         """Nivel del proyecto acotado por la política del workspace (RF-PRV-02, RF-PRV-04)."""
-        ws = self.workspace()
+        ws = self.workspace(project)
         cap = ws.max_privacy_level
         if local and ws.local_llm_max_privacy is not None:
             cap = ws.local_llm_max_privacy if ws.local_llm_max_privacy.rank > cap.rank else cap
@@ -160,7 +165,7 @@ class Gateway:
                 f"El perfil no cubre el propósito {purpose.value}",
                 details={"reason": "no_profile", "profile": project.llm_profile_id},
             )
-        allowed = self.workspace().allowed_llm_providers
+        allowed = self.workspace(project).allowed_llm_providers
         if allowed is not None and res.provider_name not in allowed:
             raise LLMUnavailableError(
                 f"El Admin no permite el proveedor {res.provider_name}",
@@ -279,6 +284,7 @@ class Gateway:
                     scope=scope,
                     scope_limit=scope_budget_usd,
                 )
+                self.ledger.check_workspace(self.workspace(project), estimate)
                 try:
                     response = provider.complete(request, res.model)
                 except LLMProviderError as e:
@@ -463,6 +469,12 @@ class Gateway:
                 estimate_tokens(system + user), int(request.max_tokens * OUTPUT_FRACTION)
             ),
             project_limit=self.settings.project_budget_usd,
+        )
+        self.ledger.check_workspace(
+            self.workspace(project),
+            res.model.cost(
+                estimate_tokens(system + user), int(request.max_tokens * OUTPUT_FRACTION)
+            ),
         )
         started = time.perf_counter()
         pieces: list[str] = []
