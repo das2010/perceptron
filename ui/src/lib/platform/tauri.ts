@@ -5,10 +5,13 @@ import { open } from "@tauri-apps/plugin-dialog";
 
 import type {
   DesktopRuntime,
+  DesktopUpdater,
   EngineConnection,
   PlatformBridge,
   RuntimeProgress,
   RuntimeState,
+  UpdateInfo,
+  UpdateProgress,
 } from "./bridge";
 
 const runtime: DesktopRuntime = {
@@ -22,9 +25,18 @@ const runtime: DesktopRuntime = {
   },
 };
 
+const updater: DesktopUpdater = {
+  check: () => invoke<UpdateInfo | null>("check_update"),
+  onProgress: (cb) => listen<UpdateProgress>("updater://progress", (e) => cb(e.payload)),
+  install: async () => {
+    await invoke("install_update");
+  },
+};
+
 export class TauriPlatformBridge implements PlatformBridge {
   readonly kind = "desktop" as const;
   readonly runtime = runtime;
+  readonly updater = updater;
 
   /** Espera a que el runtime esté listo y el Engine haya emitido su línea `ready`. */
   engine(): Promise<EngineConnection> {

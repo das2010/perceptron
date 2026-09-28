@@ -2,7 +2,9 @@ name: Desktop
 
 # App Tauri 2 + runtime embebido (ADR-0026). Corre en PRs que tocan el desktop, en tags y a
 # mano: compila en Windows y Ubuntu, genera los instaladores y los prueba desde cero
-# (instalación silenciosa → aprovisionamiento → Engine → /system/health).
+# (instalación silenciosa → aprovisionamiento → Engine → /system/health). Con la clave del updater
+# (secret TAURI_SIGNING_PRIVATE_KEY) firma los paquetes de actualización y en tags publica el
+# release con latest.json (ADR-0037). `update` prueba N → N+1 con una clave efímera.
 on:
   pull_request:
     paths:
@@ -54,7 +56,21 @@ jobs:
           pnpm -C ../../ui build
           cargo test --locked
       - name: Build de instaladores
-        run: pnpm -C desktop tauri build
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            pnpm -C desktop tauri build --config "$GITHUB_WORKSPACE/desktop/src-tauri/release.conf.json"
+          elif [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "::error::falta el secret TAURI_SIGNING_PRIVATE_KEY para publicar un release"
+            exit 1
+          else
+            echo "::warning::sin TAURI_SIGNING_PRIVATE_KEY: instaladores sin paquetes de actualización"
+            unset TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+            pnpm -C desktop tauri build
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: installers-${{ runner.os }}
@@ -63,6 +79,7 @@ jobs:
             desktop/src-tauri/target/release/bundle/msi/*.msi
             desktop/src-tauri/target/release/bundle/deb/*.deb
             desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+            desktop/src-tauri/target/release/bundle/*/*.sig
           if-no-files-found: error
 
       - name: Smoke test (Windows, NSIS silencioso)
@@ -101,3 +118,142 @@ jobs:
           for d in "$LOCALAPPDATA/com.preteco.perceptron/runtime/logs" "$HOME/.local/share/com.preteco.perceptron/runtime/logs"; do
             [ -d "$d" ] && tail -n 200 "$d"/* || true
           done
+
+  # Actualización N → N+1 con el updater real (aceptación de la Capa 7): instala N, crea un
+  # proyecto, publica N+1 firmado en un servidor local, actualiza en modo headless y verifica
+  # versión instalada, runtime reaprovisionado y proyecto conservado.
+  update:
+    name: actualización N → N+1 (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "desktop/src-tauri -> target"
+      - run: pnpm install --frozen-lockfile
+      - name: Recursos del instalador
+        run: pnpm -C desktop prepare:runtime
+      - name: Clave efímera y configuraciones de N y N+1
+        shell: bash
+        run: |
+          pnpm -C desktop tauri signer generate --ci -p e2e -w "$RUNNER_TEMP/upd.key"
+          node desktop/scripts/update-test-config.mjs "$RUNNER_TEMP" "$RUNNER_TEMP/upd.key.pub" \
+            http://127.0.0.1:8765/latest.json
+      - name: Build de N y N+1
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: e2e
+        run: |
+          export TAURI_SIGNING_PRIVATE_KEY="$RUNNER_TEMP/upd.key"
+          nsis=desktop/src-tauri/target/release/bundle/nsis
+          mkdir -p "$RUNNER_TEMP/n" "$RUNNER_TEMP/serve"
+          pnpm -C desktop tauri build --bundles nsis --config "$RUNNER_TEMP/n.conf.json"
+          cp "$nsis"/*_"$V_N"_*-setup.exe "$RUNNER_TEMP/n/"
+          pnpm -C desktop tauri build --bundles nsis --config "$RUNNER_TEMP/n1.conf.json"
+          cp "$nsis"/*_"$V_N1"_*-setup.exe "$nsis"/*_"$V_N1"_*-setup.exe.sig "$RUNNER_TEMP/serve/"
+          echo "Versión de prueba del updater." > "$RUNNER_TEMP/notas.md"
+          node desktop/scripts/latest-json.mjs --version "$V_N1" --base-url http://127.0.0.1:8765 \
+            --notes-file "$RUNNER_TEMP/notas.md" --out "$RUNNER_TEMP/serve/latest.json" "$RUNNER_TEMP/serve"
+          cat "$RUNNER_TEMP/serve/latest.json"
+      - name: Instalar N y crear un proyecto
+        shell: pwsh
+        run: |
+          # CLI y PowerShell en UTF-8: el nombre del proyecto lleva acentos.
+          $env:PYTHONUTF8 = "1"; [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
+          $setup = Get-ChildItem "$env:RUNNER_TEMP/n/*-setup.exe" | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait
+          $exe = Get-ChildItem (Join-Path $env:LOCALAPPDATA "Perceptron") -Filter *.exe |
+            Where-Object { $_.Name -notmatch "uninstall" } | Select-Object -First 1
+          "APP_EXE=$($exe.FullName)" >> $env:GITHUB_ENV
+          $report = Join-Path $env:RUNNER_TEMP "p-n.json"
+          $p = Start-Process -FilePath $exe.FullName -ArgumentList "--provision-only","--report",$report -Wait -PassThru
+          Get-Content $report
+          if ($p.ExitCode -ne 0) { throw "aprovisionamiento de N falló" }
+          if ((Get-Content $report | ConvertFrom-Json).runtime.app_version -ne $env:V_N) { throw "el runtime no es N" }
+          $cli = Join-Path $env:LOCALAPPDATA "com.preteco.perceptron/runtime/venv/Scripts/perceptron.exe"
+          "PERCEPTRON_CLI=$cli" >> $env:GITHUB_ENV
+          & $cli project create "Proyecto previo a la actualización" --goal "sobrevivir N → N+1" --json
+          if ($LASTEXITCODE -ne 0) { throw "no se pudo crear el proyecto" }
+      - name: Actualizar con el updater (N → N+1)
+        shell: pwsh
+        run: |
+          $server = Start-Process -FilePath python -PassThru -ArgumentList "-m","http.server","8765","--bind","127.0.0.1","--directory","$env:RUNNER_TEMP/serve"
+          Start-Sleep -Seconds 3
+          $report = Join-Path $env:RUNNER_TEMP "update.json"
+          $p = Start-Process -FilePath $env:APP_EXE -ArgumentList "--update-only","--report",$report -Wait -PassThru
+          Get-Content $report
+          $r = Get-Content $report | ConvertFrom-Json
+          if (-not $r.ok) { throw "el updater falló: $($r.error)" }
+          if ($r.available.version -ne $env:V_N1) { throw "el updater no encontró $env:V_N1" }
+          if ($r.available.notes -notmatch "prueba") { throw "faltan las notas del release" }
+          # el instalador sigue en segundo plano: esperar a que registre la versión nueva
+          $deadline = (Get-Date).AddMinutes(10)
+          do {
+            Start-Sleep -Seconds 5
+            $entry = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" |
+              Get-ItemProperty | Where-Object { $_.DisplayName -eq "Perceptron" } | Select-Object -First 1
+            $running = Get-Process | Where-Object { $_.Path -like "*-setup.exe" }
+          } until (($entry.DisplayVersion -eq $env:V_N1 -and -not $running) -or (Get-Date) -gt $deadline)
+          Stop-Process -Id $server.Id -Force
+          if ($entry.DisplayVersion -ne $env:V_N1) { throw "versión instalada: $($entry.DisplayVersion)" }
+      - name: Verificar N+1 sin pérdida de proyectos
+        shell: pwsh
+        run: |
+          $env:PYTHONUTF8 = "1"; [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
+          $report = Join-Path $env:RUNNER_TEMP "p-n1.json"
+          $p = Start-Process -FilePath $env:APP_EXE -ArgumentList "--provision-only","--report",$report -Wait -PassThru
+          Get-Content $report
+          if ($p.ExitCode -ne 0) { throw "aprovisionamiento de N+1 falló" }
+          $r = Get-Content $report | ConvertFrom-Json
+          if ($r.runtime.app_version -ne $env:V_N1) { throw "el runtime no se actualizó a N+1" }
+          if ($null -eq $r.health.version) { throw "sin /system/health" }
+          $projects = & $env:PERCEPTRON_CLI project list --json | ConvertFrom-Json
+          if (-not ($projects | Where-Object { $_.name -eq "Proyecto previo a la actualización" })) {
+            throw "el proyecto de N no está después de actualizar"
+          }
+          Write-Host "N=$env:V_N → N+1=$env:V_N1 con el proyecto conservado"
+      - name: Logs del runtime
+        if: failure()
+        shell: bash
+        run: tail -n 200 "$LOCALAPPDATA/com.preteco.perceptron/runtime/logs"/* || true
+
+  # Tag vX.Y.Z → release de GitHub con los instaladores firmados y latest.json, que es lo que
+  # consulta el updater (releases/latest/download/latest.json).
+  release:
+    name: release
+    if: github.ref_type == 'tag'
+    needs: [bundle, update]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: dist
+      - name: Versión del tag = versión de la app
+        run: |
+          app=$(node -p "require('./desktop/src-tauri/tauri.conf.json').version")
+          [ "v$app" = "$GITHUB_REF_NAME" ] || { echo "::error::tag $GITHUB_REF_NAME ≠ versión $app"; exit 1; }
+      - name: Notas y latest.json
+        run: |
+          notes="docs/releases/$GITHUB_REF_NAME.md"
+          if [ -f "$notes" ]; then cp "$notes" notas.md; else echo "Perceptron $GITHUB_REF_NAME" > notas.md; fi
+          node desktop/scripts/latest-json.mjs --version "$GITHUB_REF_NAME" \
+            --base-url "https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME" \
+            --notes-file notas.md --out latest.json dist
+      - name: Publicar el release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --title "Perceptron $GITHUB_REF_NAME" \
+            --notes-file notas.md --verify-tag latest.json $(find dist -type f)

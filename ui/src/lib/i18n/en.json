@@ -53,6 +53,21 @@
       },
       "apply": "Apply",
       "applying": "Reinstalling PyTorch and restarting the engine… it can take several minutes."
+    },
+    "updates": {
+      "title": "Updates",
+      "current": "Installed version",
+      "check": "Check for updates",
+      "upToDate": "You have the latest version.",
+      "available": "A new version is available: {{version}}",
+      "published": "Published on {{date}}",
+      "install": "Install and restart",
+      "installing": "Downloading and installing… the app restarts when done.",
+      "downloaded": "{{done}} of {{total}} MB",
+      "safe": "Your projects and data are not changed: only the app is updated.",
+      "notice": "Perceptron {{version}} is available.",
+      "see": "See update",
+      "dismiss": "Dismiss notice"
     }
   },
   "nav": {

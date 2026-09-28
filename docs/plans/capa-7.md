@@ -39,6 +39,6 @@ SPEC §14:
 
 ## Lo que necesito de vos
 1. ~~D1~~ **Decidido** (2026-09-28): archivo firmado Ed25519 offline con topes de usuarios, servidores y GPUs (ADR-0035). Falta que Preteco genere su par de claves.
-2. **Firma de código de Windows:** un certificado Authenticode de Preteco (OV/EV, idealmente en un HSM/servicio de firma en la nube) y el mecanismo para usarlo desde CI (Azure Trusted Signing, SignPath, o un runner con el token).
-3. **Auto-update:** el par de claves del updater de Tauri (la privada como secret del repo) y dónde publicar los releases (GitHub Releases del repo privado u otro servidor).
+2. **Firma de código de Windows** (postergada por decisión del usuario, 2026-09-28): un certificado Authenticode de Preteco (OV/EV, idealmente en un HSM/servicio de firma en la nube) y el mecanismo para usarlo desde CI (Azure Trusted Signing, SignPath, o un runner con el token).
+3. ~~Auto-update~~ **Decidido** (2026-09-28): claves del updater generadas por Preteco y releases en GitHub Releases del repo público (ADR-0037). Faltan los secrets `TAURI_SIGNING_PRIVATE_KEY` y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
 4. **D7, telemetría:** ¿se quiere? ¿A qué endpoint? ¿Qué contenido aprueba Preteco?
