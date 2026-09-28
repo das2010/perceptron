@@ -92,7 +92,7 @@ test("UC-07 desde el navegador con roles Editor y Viewer", async ({ page }) => {
 
   // El Viewer ve el mismo proyecto y su modelo, en solo lectura.
   await login(page, viewer, PASSWORD);
-  await page.getByRole("link", { name: projectName }).click();
+  await page.getByRole("link", { name: projectName }).first().click();
   await expect(page.getByText("Solo lectura")).toBeVisible();
   await page.getByRole("link", { name: "Modelos", exact: true }).click();
   await expect(page.getByRole("cell", { name: /^mdl_/ }).first()).toBeVisible();
