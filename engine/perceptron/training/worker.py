@@ -108,6 +108,7 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         make_loader,
     )
     from perceptron.training.module import PerceptronModule, monitor_mode
+    from perceptron.training.tuning import find_lr, tune_batch_size
 
     L.seed_everything(cfg.seed, workers=True, verbose=False)
     spec = ArchSpec.model_validate(cfg.archspec)
@@ -181,6 +182,49 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         callbacks.append(FreezeBackboneCallback(freeze))
 
     precision = _precision(spec.training.precision, cfg.device.value)
+    tuner_kwargs = {"accelerator": _accelerator(cfg.device.value), "precision": precision}
+
+    def tuning_loader(size: int, train: bool) -> Any:
+        ds = train_ds if train else val_ds
+        return make_loader(ds, size, shuffle=train, num_workers=0, seed=cfg.seed)
+
+    tuned: dict[str, Any] = {}
+    if bs_cfg in (None, "auto") and cfg.device.value != "cpu" and cfg.resume_from is None:
+        # En GPU el mayor batch que entra (búsqueda binaria contra OOM), con techo por datos.
+        found = tune_batch_size(
+            module,
+            tuning_loader,
+            start=batch_size,
+            n_train=n_train,
+            trainer_kwargs=tuner_kwargs,
+            root=run_dir / "tuning",
+        )
+        if found != batch_size:
+            batch_size = found
+            tuned["batch_size"] = found
+            train_dl = make_loader(
+                train_ds,
+                batch_size,
+                shuffle=True,
+                num_workers=workers,
+                seed=cfg.seed,
+                oversample=spec.training.oversample,
+            )
+            val_dl = make_loader(
+                val_ds, batch_size, shuffle=False, num_workers=workers, seed=cfg.seed
+            )
+    if spec.training.lr_finder and cfg.resume_from is None:
+        lr = find_lr(
+            module,
+            tuning_loader,
+            batch_size=batch_size,
+            trainer_kwargs=tuner_kwargs,
+            root=run_dir / "tuning",
+        )
+        if lr is not None:
+            module.lr_override = lr
+            tuned["lr"] = lr
+
     trainer = L.Trainer(
         accelerator=_accelerator(cfg.device.value),
         devices=1,
@@ -210,6 +254,7 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
             "n_val": len(val_ds),  # type: ignore[arg-type]
             "num_params": sum(p.numel() for p in module.parameters()),
             "environment": env,
+            "tuned": tuned,
         },
     )
     trainer.fit(

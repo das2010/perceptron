@@ -128,3 +128,54 @@ def test_worker_error_is_reported(workspace_dir: Path, fixtures_dir: Path) -> No
     assert result.error is not None
     assert result.error["code"] == "exception"
     assert "hidden" in result.error["message"]
+
+
+def test_lr_finder_suggests_the_learning_rate(workspace_dir: Path, fixtures_dir: Path) -> None:
+    """RF-TRN-04: con `training.lr_finder` el run usa el LR sugerido y lo informa."""
+    cfg = _config(workspace_dir, fixtures_dir / "uc01_churn" / "churn.csv", "run_lr", max_epochs=1)
+    spec = dict(cfg.archspec)
+    spec["training"] = {**spec["training"], "lr_finder": True}
+    cfg = cfg.model_copy(update={"archspec": spec})
+    seen: list[RunEvent] = []
+    result = run_sync(cfg, EventBus(), on_event=seen.append, timeout=300)
+    assert result.status == "succeeded", result.error
+    started = next(e for e in seen if e.event == "started")
+    lr = started.data["tuned"]["lr"]
+    assert isinstance(lr, float) and 0 < lr < 1
+    assert [e.event for e in seen].count("epoch") == 1  # el barrido no emite épocas del run
+
+
+def test_batch_size_search_grows_until_the_data_cap(
+    workspace_dir: Path, fixtures_dir: Path
+) -> None:
+    """La búsqueda binaria contra OOM (en GPU) se prueba en CPU: sin OOM crece hasta el techo."""
+    from perceptron.archspec.schema import ArchSpec
+    from perceptron.data.pipeline.pipeline import FittedPipeline
+    from perceptron.training.data import make_loader
+    from perceptron.training.module import PerceptronModule
+    from perceptron.training.tuning import batch_size_cap, tune_batch_size
+
+    cfg = _config(workspace_dir, fixtures_dir / "uc01_churn" / "churn.csv", "run_bs")
+    view = DatasetView(cfg.dataset_dir)
+    fitted = FittedPipeline.model_validate(cfg.pipeline)
+    train_ds = make_dataset(view, fitted, "train", train=True)
+    val_ds = make_dataset(view, fitted, "val", train=False)
+    n_train = len(train_ds)  # type: ignore[arg-type]
+    module = PerceptronModule(ArchSpec.model_validate(cfg.archspec), pretrained_allowed=False)
+
+    def loader(size: int, train: bool) -> object:
+        return make_loader(
+            train_ds if train else val_ds, size, shuffle=train, num_workers=0, seed=1
+        )
+
+    found = tune_batch_size(
+        module,
+        loader,  # type: ignore[arg-type]
+        start=8,
+        n_train=n_train,
+        trainer_kwargs={"accelerator": "cpu", "precision": "32-true"},
+        root=workspace_dir / "tuning",
+        max_trials=3,
+    )
+    assert 8 < found <= batch_size_cap(8, n_train)
+    assert batch_size_cap(32, 100) == 32  # con pocos datos no se busca más grande

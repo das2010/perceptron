@@ -376,7 +376,7 @@ def auto_num_workers(modality: Modality, n_train: int) -> int:
 
 
 def auto_batch_size(modality: Modality, n_train: int) -> int:
-    """Batch por defecto en CPU (en GPU se ajusta contra OOM en la Capa 3).
+    """Batch de partida (en GPU, `tuning.tune_batch_size` busca el mayor que entra).
 
     Con pocos datos conviene un batch chico: más pasos de optimización por época y
     estadísticas de BatchNorm que llegan a converger (con 1 paso por época la

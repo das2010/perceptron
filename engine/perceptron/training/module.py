@@ -47,6 +47,7 @@ class PerceptronModule(L.LightningModule):
         self.loss_fn = self.adapter.build_loss(spec, self._r, class_weights)
         self.train_metrics = self.adapter.build_metrics(spec).clone(prefix="train_")
         self.val_metrics = self.adapter.build_metrics(spec).clone(prefix="val_")
+        self.lr_override: float | None = None  # LR finder (RF-TRN-04)
 
     # ---------------------------------------------------------------- loss
 
@@ -91,7 +92,7 @@ class PerceptronModule(L.LightningModule):
 
     def configure_optimizers(self) -> Any:
         opt = self.spec.optimizer
-        lr = float(self._r(opt.lr))
+        lr = self.lr_override or float(self._r(opt.lr))
         wd = float(self._r(opt.weight_decay))
         params = [p for p in self.parameters() if p.requires_grad] or list(self.parameters())
         if opt.type == "sgd":
