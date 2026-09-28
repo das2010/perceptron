@@ -226,7 +226,8 @@
     "trialsN_one": "{{count}} trial",
     "trialsN_other": "{{count}} trials",
     "searchSpace": "Hyperparameters to tune",
-    "launch": "Train now"
+    "launch": "Train now",
+    "editVisually": "Open in the visual editor"
   },
   "experiments": {
     "live": "Live training",

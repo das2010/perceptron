@@ -5,7 +5,14 @@
  * manual: la original (reglas/LLM/agente) queda intacta como procedencia.
  */
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { Background, Controls, ReactFlow, type Connection, type Edge, type Node } from "@xyflow/react";
+import {
+  Background,
+  Controls,
+  ReactFlow,
+  type Connection,
+  type Edge,
+  type Node,
+} from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { ArrowLeft, Code2, Plus, Save, Trash2 } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -55,7 +62,8 @@ interface BlockInfo {
 function layout(spec: Spec, selected: string | null): { nodes: Node[]; edges: Edge[] } {
   const order = [INPUT_NODE, ...spec.nodes.map((n) => n.id)];
   const nodes: Node[] = order.map((id, i) => {
-    const block = id === INPUT_NODE ? spec.modality : (spec.nodes.find((n) => n.id === id)?.block ?? "");
+    const block =
+      id === INPUT_NODE ? spec.modality : (spec.nodes.find((n) => n.id === id)?.block ?? "");
     return {
       id,
       position: { x: 0, y: i * 100 },
@@ -138,7 +146,11 @@ function ParamEditor({
             </Field>
             {info.tunable && (
               <label className="mt-2 flex items-center gap-2 text-xs">
-                <input type="checkbox" checked={tuned} onChange={(e) => set(value, e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={tuned}
+                  onChange={(e) => set(value, e.target.checked)}
+                />
                 {t("arch.tunable")}
                 {(info.low != null || info.high != null) && (
                   <span className="text-muted">
@@ -197,7 +209,10 @@ function ArchEditor({ record, projectId }: { record: ArchSpecRecord; projectId: 
   const blocks = useCatalogBlocks(spec.modality);
   const catalog = (blocks.data ?? []) as unknown as BlockInfo[];
   const { report, error } = useLiveValidation(spec);
-  const code = useArchCode(spec as unknown as Record<string, unknown>, showCode && Boolean(report?.valid));
+  const code = useArchCode(
+    spec as unknown as Record<string, unknown>,
+    showCode && Boolean(report?.valid),
+  );
   const save = useSaveArchSpec(projectId);
   const graph = useMemo(() => layout(spec, selected), [spec, selected]);
   const node = spec.nodes.find((n) => n.id === selected);
@@ -216,7 +231,9 @@ function ArchEditor({ record, projectId }: { record: ArchSpecRecord; projectId: 
           variant="ghost"
           size="icon"
           aria-label={t("arch.back")}
-          onClick={() => void navigate({ to: "/projects/$projectId/design", params: { projectId } })}
+          onClick={() =>
+            void navigate({ to: "/projects/$projectId/design", params: { projectId } })
+          }
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -240,7 +257,11 @@ function ArchEditor({ record, projectId }: { record: ArchSpecRecord; projectId: 
           </span>
         )}
         <div className="ml-auto flex gap-2">
-          <Button variant="secondary" onClick={() => setShowCode((v) => !v)} aria-pressed={showCode}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowCode((v) => !v)}
+            aria-pressed={showCode}
+          >
             <Code2 className="h-4 w-4" aria-hidden="true" />
             {t("arch.code")}
           </Button>
@@ -279,7 +300,9 @@ function ArchEditor({ record, projectId }: { record: ArchSpecRecord; projectId: 
             onEdgesDelete={(es) =>
               setSpec({
                 ...spec,
-                edges: spec.edges.filter(([a, b]) => !es.some((e) => e.source === a && e.target === b)),
+                edges: spec.edges.filter(
+                  ([a, b]) => !es.some((e) => e.source === a && e.target === b),
+                ),
               })
             }
           >
@@ -388,7 +411,9 @@ function ArchEditor({ record, projectId }: { record: ArchSpecRecord; projectId: 
 }
 
 export function ArchEditorPage() {
-  const { projectId, archspecId } = useParams({ from: "/projects/$projectId/archspecs/$archspecId" });
+  const { projectId, archspecId } = useParams({
+    from: "/projects/$projectId/archspecs/$archspecId",
+  });
   const record = useArchSpec(archspecId);
   if (record.error) return <ErrorNote error={record.error} />;
   if (!record.data?.spec) return <Spinner />;

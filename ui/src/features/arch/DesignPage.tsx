@@ -1,7 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
-import { Badge, Card, CardTitle, EmptyState, ErrorNote, Spinner, Table, Td, Th } from "@/components/ui";
+import {
+  Badge,
+  Card,
+  CardTitle,
+  EmptyState,
+  ErrorNote,
+  Spinner,
+  Table,
+  Td,
+  Th,
+} from "@/components/ui";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import { useArchSpecs, usePipelines } from "@/lib/api/hooks";
 import { formatDate } from "@/lib/format";
@@ -22,7 +32,9 @@ export function DesignPage() {
         <CardTitle>{t("pipeline.title")}</CardTitle>
         {pipelines.isPending && <Spinner />}
         <ErrorNote error={pipelines.error} />
-        {!pipelines.isPending && pipes.length === 0 && <EmptyState>{t("pipeline.empty")}</EmptyState>}
+        {!pipelines.isPending && pipes.length === 0 && (
+          <EmptyState>{t("pipeline.empty")}</EmptyState>
+        )}
         {pipes.length > 0 && (
           <Table>
             <thead>

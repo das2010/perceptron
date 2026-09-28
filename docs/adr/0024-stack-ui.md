@@ -11,3 +11,9 @@
   - Licencias: MIT (React, TanStack, Zustand, Radix, cva, clsx, tailwind-merge, Tailwind, RHF, Zod), ISC (lucide), Apache-2.0 (ECharts, Playwright).
 - Consecuencias: el frontend se valida también localmente (node/pnpm), a diferencia del Engine. React Flow y Monaco se agregan en la 3b, con los editores. El bundle inicial supera 1 MB por ECharts: se dividirá por ruta cuando entren los editores.
 - Alternativas consideradas: mantener CSS Modules (contradice §5.2); chart.js/recharts (el SPEC elige ECharts por rendimiento en vivo).
+
+## Adenda (Capa 3b) — editores
+
+- `@xyflow/react` (React Flow 12, MIT) para los editores de ArchSpec y pipeline, y `@monaco-editor/react` + `monaco-editor` (MIT) para "ver como código".
+- Monaco se empaqueta con la app (`loader.config({ monaco })` y worker de Vite): nada se baja de un CDN, porque el desktop funciona sin conexión. Solo se importan el núcleo del editor y Python: el paquete completo trae unos 80 lenguajes.
+- Los editores son rutas con carga diferida (`lazyRouteComponent`), y Monaco es un `lazy()` aparte: el bundle inicial no crece. Monaco queda en un chunk de unos 2,7 MB (700 kB gzip) que solo se descarga al abrir "ver como código".

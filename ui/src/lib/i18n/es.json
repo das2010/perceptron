@@ -226,7 +226,8 @@
     "trialsN_one": "{{count}} intento",
     "trialsN_other": "{{count}} intentos",
     "searchSpace": "Hiperparámetros a ajustar",
-    "launch": "Entrenar ahora"
+    "launch": "Entrenar ahora",
+    "editVisually": "Abrir en el editor visual"
   },
   "experiments": {
     "live": "Entrenamiento en vivo",

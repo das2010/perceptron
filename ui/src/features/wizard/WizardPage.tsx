@@ -207,8 +207,8 @@ function StepHpo({ values, save }: { values: DraftValues; save: Save }) {
   const { t } = useTranslation();
   const projectId = useProjectId();
   const recommend = useHpoStrategy(projectId);
-  const trials = values.max_trials ?? 10;
-  const epochs = values.max_epochs_per_trial ?? 15;
+  const [trials, setTrials] = useState(values.max_trials ?? 10);
+  const [epochs, setEpochs] = useState(values.max_epochs_per_trial ?? 15);
   if (!values.archspec_id) return <EmptyState>{t("wizard.hpo.needArch")}</EmptyState>;
   const s = values.strategy as {
     strategy?: string;
@@ -223,16 +223,20 @@ function StepHpo({ values, save }: { values: DraftValues; save: Save }) {
           <Input
             type="number"
             min={1}
-            defaultValue={trials}
-            onBlur={(e) => save({ max_trials: Number(e.target.value) })}
+            value={trials}
+            onChange={(e) => setTrials(Number(e.target.value))}
+            onBlur={() => trials !== values.max_trials && save({ max_trials: trials })}
           />
         </Field>
         <Field label={t("train.epochs")}>
           <Input
             type="number"
             min={1}
-            defaultValue={epochs}
-            onBlur={(e) => save({ max_epochs_per_trial: Number(e.target.value) })}
+            value={epochs}
+            onChange={(e) => setEpochs(Number(e.target.value))}
+            onBlur={() =>
+              epochs !== values.max_epochs_per_trial && save({ max_epochs_per_trial: epochs })
+            }
           />
         </Field>
         <Button

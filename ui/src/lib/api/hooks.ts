@@ -495,6 +495,9 @@ export function useUpdateDraft(projectId: string) {
   const qc = useQueryClient();
   const key = ["projects", projectId, "draft"];
   return useMutation({
+    // En serie: cada guardado lee la versión que dejó el anterior (si no, el blur de un campo
+    // y el "Siguiente" salen con la misma versión y el segundo choca con 409).
+    scope: { id: `draft:${projectId}` },
     mutationFn: async ({
       values,
       step,
@@ -523,6 +526,8 @@ export function useUpdateDraft(projectId: string) {
       qc.setQueryData(key, data);
       void qc.invalidateQueries({ queryKey: keys.project(projectId) });
     },
+    // Si otro cliente (o el copiloto) cambió el borrador, recargarlo para el próximo intento.
+    onError: () => void qc.invalidateQueries({ queryKey: key }),
   });
 }
 

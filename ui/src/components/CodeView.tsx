@@ -28,7 +28,12 @@ export default function CodeView({
       language={language}
       value={code}
       theme={dark ? "vs-dark" : "vs"}
-      options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false }}
+      options={{
+        readOnly: true,
+        minimap: { enabled: false },
+        fontSize: 13,
+        scrollBeyondLastLine: false,
+      }}
     />
   );
 }

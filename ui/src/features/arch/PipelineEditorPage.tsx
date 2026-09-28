@@ -99,7 +99,8 @@ function StepPanel({ step, onChange }: { step: Step; onChange: (s: Step) => void
           onBlur={() => {
             try {
               const parsed: unknown = JSON.parse(paramsText || "{}");
-              if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) throw new Error();
+              if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
+                throw new Error();
               setParamsError(false);
               onChange({ ...step, params: parsed as Record<string, unknown> });
             } catch {
@@ -125,7 +126,11 @@ function Preview({ pipeline, dirty }: { pipeline: Pipeline; dirty: boolean }) {
     <Card>
       <CardTitle>{t("pipeline.preview")}</CardTitle>
       <div className="flex flex-wrap items-end gap-2">
-        <Select value={chosen} onChange={(e) => setDv(e.target.value)} aria-label={t("wizard.data.pick")}>
+        <Select
+          value={chosen}
+          onChange={(e) => setDv(e.target.value)}
+          aria-label={t("wizard.data.pick")}
+        >
           {(datasets.data ?? []).map((d) => (
             <option key={d.id} value={d.id}>
               {d.content_hash.slice(0, 10)} · {d.num_samples} · {d.target ?? "—"}
@@ -168,7 +173,9 @@ function Preview({ pipeline, dirty }: { pipeline: Pipeline; dirty: boolean }) {
           </Table>
         </div>
       )}
-      {data && headers.length === 0 && <p className="mt-2 text-sm text-muted">{t("pipeline.noTabularPreview")}</p>}
+      {data && headers.length === 0 && (
+        <p className="mt-2 text-sm text-muted">{t("pipeline.noTabularPreview")}</p>
+      )}
     </Card>
   );
 }
@@ -201,7 +208,10 @@ function PipelineEditor({ pipeline }: { pipeline: Pipeline }) {
           size="icon"
           aria-label={t("arch.back")}
           onClick={() =>
-            void navigate({ to: "/projects/$projectId/design", params: { projectId: pipeline.project_id } })
+            void navigate({
+              to: "/projects/$projectId/design",
+              params: { projectId: pipeline.project_id },
+            })
           }
         >
           <ArrowLeft className="h-4 w-4" />

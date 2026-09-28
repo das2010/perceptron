@@ -37,7 +37,11 @@ const spec = (): Spec => ({
   modality: "tabular",
   nodes: [
     { id: "embed", block: "tabular.embed", params: {} },
-    { id: "mlp", block: "tabular.mlp", params: { hidden: [128, 64], dropout: { hp: "dropout", default: 0.1 } } },
+    {
+      id: "mlp",
+      block: "tabular.mlp",
+      params: { hidden: [128, 64], dropout: { hp: "dropout", default: 0.1 } },
+    },
     { id: "head", block: "head.classification", params: {} },
   ],
   edges: [
@@ -87,7 +91,7 @@ describe("editor visual de ArchSpec (RF-ARC-05)", () => {
 
   it("valida en vivo, edita parámetros y guarda como nueva", async () => {
     const validated: Spec[] = [];
-    let saved: { spec: Spec } | null = null;
+    let saved = null as { spec: Spec } | null;
     mockEngine({
       "GET /api/v1/projects": () => [project()],
       "GET /api/v1/projects/prj_1": () => project(),
@@ -117,7 +121,15 @@ describe("editor visual de ArchSpec (RF-ARC-05)", () => {
       "POST /api/v1/projects/prj_1/archspecs": async (req) => {
         saved = (await req.json()) as { spec: Spec };
         return new Response(
-          JSON.stringify({ id: "arc_2", project_id: "prj_1", name: saved.spec.name, origin: "manual", content_hash: "x", spec: saved.spec, version: 1 }),
+          JSON.stringify({
+            id: "arc_2",
+            project_id: "prj_1",
+            name: saved.spec.name,
+            origin: "manual",
+            content_hash: "x",
+            spec: saved.spec,
+            version: 1,
+          }),
           { status: 201, headers: { "Content-Type": "application/json" } },
         );
       },
@@ -147,10 +159,12 @@ describe("editor visual de ArchSpec (RF-ARC-05)", () => {
     await userEvent.clear(name);
     await userEvent.type(name, "mlp-editada");
     await waitFor(() => expect(validated.at(-1)?.name).toBe("mlp-editada"), { timeout: 3000 });
-    await waitFor(() => expect(screen.getByRole("button", { name: /Guardar como nueva/ })).toBeEnabled());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Guardar como nueva/ })).toBeEnabled(),
+    );
     await userEvent.click(screen.getByRole("button", { name: /Guardar como nueva/ }));
     await waitFor(() => expect(saved?.spec.name).toBe("mlp-editada"));
-    expect(saved!.spec.nodes.map((n) => n.id)).toEqual(["embed", "mlp", "head"]);
+    expect(saved?.spec.nodes.map((n) => n.id)).toEqual(["embed", "mlp", "head"]);
   });
 });
 
@@ -158,7 +172,8 @@ describe("editor visual de pipeline (RF-PIP-02)", () => {
   beforeEach(() => resetApiClient());
 
   it("reordena pasos y guarda con la versión", async () => {
-    let put: { graph: { steps: { id: string }[] }; version: number } | null = null;
+    type Put = { graph: { steps: { id: string }[] }; version: number };
+    let put = null as Put | null;
     const graph = {
       modality: "tabular",
       pipeline_version: "1.0",
@@ -182,8 +197,16 @@ describe("editor visual de pipeline (RF-PIP-02)", () => {
         version: put ? 4 : 3,
       }),
       "PUT /api/v1/pipelines/pip_1": async (req) => {
-        put = (await req.json()) as typeof put;
-        return { id: "pip_1", project_id: "prj_1", name: "tabular", origin: "rules", graph: put!.graph, version: 4 };
+        const body = (await req.json()) as Put;
+        put = body;
+        return {
+          id: "pip_1",
+          project_id: "prj_1",
+          name: "tabular",
+          origin: "rules",
+          graph: body.graph,
+          version: 4,
+        };
       },
     });
     renderAt("/projects/prj_1/pipelines/pip_1");
@@ -193,6 +216,6 @@ describe("editor visual de pipeline (RF-PIP-02)", () => {
     expect(screen.getByText("Sin guardar")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /^Guardar$/ }));
     await waitFor(() => expect(put?.version).toBe(3));
-    expect(put!.graph.steps.map((s) => s.id)).toEqual(["esc", "imp"]);
+    expect(put?.graph.steps.map((s) => s.id)).toEqual(["esc", "imp"]);
   });
 });

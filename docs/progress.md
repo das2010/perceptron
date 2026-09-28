@@ -113,6 +113,18 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Subida de archivos/carpetas desde el navegador (`POST /projects/{id}/uploads`), historia por época (`GET /runs/{rid}/history`) | ✅ |
 | E2E Playwright UC-01 guiado contra el Engine real (job `e2e-ui`) | ✅ 32 s de punta a punta (O1: < 15 min) |
 
+## Capa 3b — wizard, copiloto, agente y editores visuales
+
+| Entregable | Estado |
+|---|---|
+| `ProjectDraft` versionado (`GET/PATCH /projects/{id}/draft`, bloqueo optimista, historial con origen) | ✅ |
+| Wizard de 9 pasos (§7.6) para tabular e imagen, sin LLM por reglas | ✅ |
+| Copiloto en streaming (`WS /projects/{id}/copilot`) con `DraftPatch` validado, aceptable o rechazable | ✅ |
+| Vista del agente: lanzamiento con límites y aprobaciones, bitácora en vivo, aprobar/rechazar/detener | ✅ |
+| Editor visual de ArchSpec (React Flow) con validación en vivo y "ver como código" (Monaco empaquetado, sin CDN) | ✅ |
+| Editor visual de pipeline (React Flow): agregar, quitar, reordenar, parametrizar, vista previa | ✅ |
+| E2E Playwright UC-04 guiado por el wizard (incluye editor visual y código) | 🟡 en CI |
+
 ## Requisitos funcionales
 
 | RF | MVP | Capa | Descripción | Estado |
@@ -140,7 +152,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-PRF-07 | sí | 1 | Genera un Dataset Profile Card (JSON + vista) que es la entrada principal del LLM en… | ✅ `ProfileCard` sin valores individuales (test de propiedad) |
 | RF-PRF-08 |  | 1 | Estimación de complejidad y costo: tamaño efectivo, memoria estimada por batch, tiempo… | ⬜ pendiente |
 | RF-PIP-01 | sí | 1/3 | El sistema propone automáticamente un pipeline según profiling (imputación, encoding,… | ✅ `pipeline.propose` con justificación por paso |
-| RF-PIP-02 |  | 1/3 | Editor visual (React Flow) de un DAG de pasos: agregar, quitar, reordenar,… | ⬜ pendiente |
+| RF-PIP-02 |  | 1/3 | Editor visual (React Flow) de un DAG de pasos: agregar, quitar, reordenar,… | 🟡 editor React Flow (agregar, quitar, reordenar, parametrizar, guardar con versión) y vista previa del pipeline completo sobre train; vista previa por nodo pendiente |
 | RF-PIP-03 |  | 1/3 | Catálogo de pasos por modalidad (extensible por plugins): | ✅ tabular, imagen, texto, series, audio (augmentations incluidas) |
 | RF-PIP-04 | sí | 1/3 | El pipeline se serializa (JSON) y se ajusta solo con train (fit/transform separado)… | ✅ fit solo con train, estado JSON empaquetable |
 | RF-PIP-05 |  | 1/3 | El LLM puede sugerir cambios al pipeline con justificación; el usuario acepta/rechaza… | ⬜ pendiente |
@@ -150,15 +162,15 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-LBL-04 |  | 4 | Guía de etiquetado: el usuario describe las clases en lenguaje natural; el LLM genera… | ✅ guía de etiquetado por LLM (`POST /projects/{id}/labels/guide`); sin LLM, las definiciones del usuario |
 | RF-LBL-05 |  | 4 | Métricas de calidad del etiquetado: acuerdo humano-modelo, clases confusas, posibles… | ⬜ pendiente |
 | RF-LBL-06 |  | 4 | Importar/exportar etiquetas en COCO, YOLO, VOC, CSV, JSONL. | ⬜ pendiente |
-| RF-WIZ-01 | sí | 3 | Pasos 1, 2, 3, 5, 6, 7, 8, 9 para tabular e imagen. | ⬜ pendiente |
-| RF-WIZ-02 |  | 3 | Cada paso muestra "¿Por qué?" con la explicación del LLM y permite rechazar/editar. | ⬜ pendiente |
-| RF-WIZ-03 |  | 3 | Sin LLM configurado (o privacidad L0) el wizard funciona con recomendaciones por… | ⬜ pendiente |
-| RF-WIZ-04 |  | 3 | El estado del wizard es un documento ProjectDraft versionado. | ⬜ pendiente |
+| RF-WIZ-01 | sí | 3 | Pasos 1, 2, 3, 5, 6, 7, 8, 9 para tabular e imagen. | ✅ los 9 pasos para tabular e imagen (UI + `ProjectDraft`) |
+| RF-WIZ-02 |  | 3 | Cada paso muestra "¿Por qué?" con la explicación del LLM y permite rechazar/editar. | 🟡 propuestas del LLM con justificación, aceptables o rechazables (arquitectura, HPO, copiloto); "¿Por qué?" en todos los pasos pendiente |
+| RF-WIZ-03 |  | 3 | Sin LLM configurado (o privacidad L0) el wizard funciona con recomendaciones por… | ✅ sin LLM (o L0) cada paso usa las recomendaciones por reglas |
+| RF-WIZ-04 |  | 3 | El estado del wizard es un documento ProjectDraft versionado. | ✅ `ProjectDraft` versionado con bloqueo optimista e historial de cambios (usuario/copiloto) |
 | RF-LLM-01 | sí | 2 | Interfaz única LLMProvider con adaptadores: Anthropic, OpenAI, Google Gemini, Kimi /… | ✅ `llm.providers`: Anthropic, OpenAI, Gemini, Kimi/Moonshot, OpenAI-compatible, Ollama |
 | RF-LLM-02 | sí | 2 | Capacidades declaradas por modelo: structured_output, tool_use, vision,… | ✅ capacidades en `llm/catalog.yaml`; sin `structured_output` → JSON en texto; sin `vision` no salen imágenes |
 | RF-LLM-03 | sí | 2 | Perfiles LLM configurables: qué modelo se usa para cada *propósito* (copilot,… | ✅ perfiles por propósito (catálogo + `PUT /llm/profiles`), `Project.llm_profile_id` |
 | RF-LLM-04 | sí | 2 | Salida estructurada: toda respuesta que alimenta al sistema se pide como JSON contra… | ✅ JSON Schema por proveedor + Pydantic + validador de dominio, 3 intentos con feedback |
-| RF-LLM-05 |  | 2 | Streaming de respuestas al panel de copiloto. | 🟡 `Gateway.stream_chat` y `stream()` en todos los adaptadores; WS del copiloto en Capa 3 |
+| RF-LLM-05 |  | 2 | Streaming de respuestas al panel de copiloto. | ✅ `Gateway.stream_chat` + `WS /projects/{id}/copilot` al panel del copiloto |
 | RF-LLM-06 |  | 2 | Control de costos: presupuesto por proyecto/run/usuario, conteo de tokens, estimación… | 🟡 costo por llamada (catálogo), presupuesto por proyecto y por ámbito (run/agente) con corte previo; cuotas por usuario/workspace en Capa 5 |
 | RF-LLM-07 |  | 2 | Caché de respuestas por hash de (prompt, modelo, parámetros) para reproducibilidad y… | ✅ tabla `llm_cache` por hash de proveedor + request |
 | RF-LLM-08 |  | 2 | Claves API: en desktop, keychain del SO; en servidor, cifradas (AES-GCM, clave maestra… | ✅ keychain (`keyring`), archivo AES-GCM en servidor, entorno como último recurso; `allowed_llm_providers` |
@@ -170,9 +182,9 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-ARC-02 | sí | 1/2 | Validación de cada propuesta: schema, compatibilidad de shapes (construcción en meta… | ✅ `archspec.validate` (6 etapas de §9.3) sobre cada propuesta del LLM, con feedback al reintento |
 | RF-ARC-03 |  | 2 | Mini-torneo opcional: entrenar cada propuesta con un presupuesto corto (p. ej. 10 %… | ✅ `services.tournament` (fracción de épocas + subconjunto de train por época); gana la mejor en validación |
 | RF-ARC-04 | sí | 1/2 | Fallback por reglas si el LLM no está disponible o falla la validación 3 veces. | ✅ `catalog.rules` como fallback (L0, sin LLM, presupuesto, 3 fallos) con motivo informado |
-| RF-ARC-05 |  | 3 | Editor visual de ArchSpec (React Flow): bloques del catálogo como nodos, parámetros en… | ⬜ pendiente |
+| RF-ARC-05 |  | 3 | Editor visual de ArchSpec (React Flow): bloques del catálogo como nodos, parámetros en… | ✅ editor React Flow: bloques del catálogo, parámetros e HP ajustables, validación en vivo, resumen de parámetros y memoria; guarda como ArchSpec nueva (origen manual) |
 | RF-ARC-06 |  | 3 | Modo experto — código libre: el LLM (o el usuario) escribe un… | ⬜ pendiente |
-| RF-ARC-07 |  | 1/2 | Conversión ArchSpec → código PyTorch legible ("ver como código") para aprendizaje y… | ✅ `archspec.to_code` (equivalencia verificada con pesos) |
+| RF-ARC-07 |  | 1/2 | Conversión ArchSpec → código PyTorch legible ("ver como código") para aprendizaje y… | ✅ `archspec.to_code` (equivalencia verificada con pesos) y "ver como código" en la UI (Monaco) |
 | RF-HPO-01 | sí | 1 | Estrategias soportadas: | ✅ single/random/grid/TPE/CMA-ES/NSGA-II + median/ASHA/Hyperband |
 | RF-HPO-02 | sí | 1 | El LLM estratega recibe el escenario (tamaño de datos, costo por trial, presupuesto,… | ✅ estratega LLM validado contra la ArchSpec, rangos del catálogo y presupuesto; fallback por reglas |
 | RF-HPO-03 | sí | 1 | Presupuesto configurable en el wizard: tiempo total, n.º de trials, preset, métrica… | ✅ corte por trials, tiempo y métrica objetivo |

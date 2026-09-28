@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -87,6 +87,15 @@ export function ProposalCard({
           ))}
         </ul>
       ) : null}
+      {p.archspec.id && (
+        <Link
+          to="/projects/$projectId/archspecs/$archspecId"
+          params={{ projectId: p.archspec.project_id, archspecId: p.archspec.id }}
+          className="mt-2 inline-block text-xs font-semibold underline"
+        >
+          {t("train.editVisually")}
+        </Link>
+      )}
     </>
   );
   if (origin === "llm") {

@@ -94,7 +94,10 @@ const archEditorRoute = createRoute({
 const pipelineEditorRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "pipelines/$pipelineId",
-  component: lazyRouteComponent(() => import("@/features/arch/PipelineEditorPage"), "PipelineEditorPage"),
+  component: lazyRouteComponent(
+    () => import("@/features/arch/PipelineEditorPage"),
+    "PipelineEditorPage",
+  ),
 });
 export const runRoute = createRoute({
   getParentRoute: () => projectRoute,

@@ -81,10 +81,10 @@ jobs:
         run: uv run pytest -m e2e -s -v engine/tests/e2e -k ${{ matrix.uc }}
 
   e2e-ui:
-    name: e2e ui (UC-01 guiado)
+    name: e2e ui (UC-01 y UC-04 guiados)
     # Playwright contra el Engine real (perceptron serve) + Vite; LLM apagado (reglas).
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6

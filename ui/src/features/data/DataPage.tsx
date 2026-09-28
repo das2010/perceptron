@@ -84,6 +84,7 @@ export function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) =
           type="file"
           className="hidden"
           multiple
+          data-testid="folder-input"
           {...{ webkitdirectory: "", directory: "" }}
           onChange={(e) => onFiles(e.target.files)}
         />

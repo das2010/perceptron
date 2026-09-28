@@ -112,9 +112,11 @@ async def upload_source(
     if (
         not single
         and len({r.parts[0] for r in written}) == 1
-        and all(len(r.parts) > 2 for r in written)
+        and all(len(r.parts) > 1 for r in written)
     ):
-        path = root / written[0].parts[0]  # carpeta raíz elegida en el navegador
+        # Carpeta raíz elegida en el navegador (webkitdirectory antepone su nombre); puede
+        # traer archivos sueltos en la raíz además de las subcarpetas (p. ej. anotaciones COCO).
+        path = root / written[0].parts[0]
     src = DataSource(
         project_id=project_id,
         name=written[0].name if single else path.name,
