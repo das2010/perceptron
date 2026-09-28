@@ -30,8 +30,18 @@ Antes de desplegar:
    modelo registrado.
 2. Tiene que tener un export **ONNX** verificado (página del run → **Exportar el modelo**).
 
-Por ahora los deployments monitoreados son para modelos **tabulares**; para imagen, texto, series y
-audio llegan **próximamente**.
+Los deployments monitoreados sirven modelos **tabulares**, de **texto**, de **imagen** y de
+**audio** (las series llegan **próximamente**):
+
+- Tabla y texto: filas en JSON (`POST /api/v1/deployments/{id}/predict`); en texto, cada fila trae
+  la columna de texto con la que se entrenó.
+- Imagen y audio: archivos (`POST /api/v1/deployments/{id}/predict/file`, hasta 64 por pedido). De
+  cada archivo se guarda solo la predicción y el *embedding* interno del modelo, no el archivo.
+
+Además del drift por variable, el chequeo compara los **embeddings internos** del modelo (la
+representación que entra a la última capa) con los de una muestra de entrenamiento: si las
+entradas nuevas "se ven distintas" para el modelo (fotos con otra iluminación, textos de otro
+tema, otro micrófono), el drift aparece aunque no haya variables que comparar.
 
 - Las aplicaciones piden predicciones al deployment (`POST /api/v1/deployments/{id}/predict`).
 - Cada predicción se **registra** por muestreo. Solo se guardan las variables que usa el modelo (y una

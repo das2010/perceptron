@@ -59,6 +59,14 @@ function Report({ report }: { report: DriftReport }) {
   const { t, i18n } = useTranslation();
   const metrics = report.metrics as {
     data?: { features?: FeatureRow[]; share_drifted?: number; n_current?: number };
+    embedding?: {
+      severity: Sev;
+      domain_auc?: number;
+      mmd_pvalue?: number | null;
+      centroid_distance?: number;
+      n_current?: number;
+      note?: string;
+    } | null;
     performance?: {
       metric: string;
       current: number | null;
@@ -75,6 +83,7 @@ function Report({ report }: { report: DriftReport }) {
   const n = (v: number | null | undefined, d = 3) =>
     v === null || v === undefined ? "—" : formatNumber(v, i18n.language, d);
   const perf = metrics.performance;
+  const emb = metrics.embedding;
   return (
     <div className="space-y-4">
       <p className="flex flex-wrap items-center gap-2 text-sm">
@@ -82,9 +91,21 @@ function Report({ report }: { report: DriftReport }) {
         {t("monitoring.window", {
           from: formatDate(report.window_start, i18n.language),
           to: formatDate(report.window_end, i18n.language),
-          n: metrics.data?.n_current ?? 0,
+          n: metrics.data?.n_current ?? emb?.n_current ?? 0,
         })}
       </p>
+      {emb && (
+        <p className="text-sm" data-testid="embedding-drift">
+          <SeverityBadge value={emb.severity} />{" "}
+          {emb.note
+            ? t("monitoring.embeddingFew")
+            : t("monitoring.embedding", {
+                auc: n(emb.domain_auc, 2),
+                p: n(emb.mmd_pvalue, 3),
+                d: n(emb.centroid_distance, 2),
+              })}
+        </p>
+      )}
       {perf && (
         <p className="text-sm">
           <SeverityBadge value={perf.severity} />{" "}
@@ -96,40 +117,42 @@ function Report({ report }: { report: DriftReport }) {
           })}
         </p>
       )}
-      <Table>
-        <thead>
-          <tr>
-            <Th>{t("monitoring.feature")}</Th>
-            <Th>{t("monitoring.severity")}</Th>
-            <Th>PSI</Th>
-            <Th>JS</Th>
-            <Th>{t("monitoring.pvalue")}</Th>
-            <Th>{t("monitoring.change")}</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {features.map((f) => (
-            <tr key={f.feature}>
-              <Td className="font-mono text-xs">{f.feature}</Td>
-              <Td>
-                <SeverityBadge value={f.severity} />
-              </Td>
-              <Td className="text-xs">{n(f.psi)}</Td>
-              <Td className="text-xs">{n(f.js)}</Td>
-              <Td className="text-xs">
-                {n(f.kind === "numeric" ? f.ks_pvalue : f.chi2_pvalue, 4)}
-              </Td>
-              <Td className="text-xs">
-                {f.kind === "numeric"
-                  ? `${n(f.reference_mean, 2)} → ${n(f.current_mean, 2)}`
-                  : f.unseen_fraction
-                    ? t("monitoring.unseen", { pct: n((f.unseen_fraction ?? 0) * 100, 1) })
-                    : "—"}
-              </Td>
+      {features.length > 0 && (
+        <Table>
+          <thead>
+            <tr>
+              <Th>{t("monitoring.feature")}</Th>
+              <Th>{t("monitoring.severity")}</Th>
+              <Th>PSI</Th>
+              <Th>JS</Th>
+              <Th>{t("monitoring.pvalue")}</Th>
+              <Th>{t("monitoring.change")}</Th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {features.map((f) => (
+              <tr key={f.feature}>
+                <Td className="font-mono text-xs">{f.feature}</Td>
+                <Td>
+                  <SeverityBadge value={f.severity} />
+                </Td>
+                <Td className="text-xs">{n(f.psi)}</Td>
+                <Td className="text-xs">{n(f.js)}</Td>
+                <Td className="text-xs">
+                  {n(f.kind === "numeric" ? f.ks_pvalue : f.chi2_pvalue, 4)}
+                </Td>
+                <Td className="text-xs">
+                  {f.kind === "numeric"
+                    ? `${n(f.reference_mean, 2)} → ${n(f.current_mean, 2)}`
+                    : f.unseen_fraction
+                      ? t("monitoring.unseen", { pct: n((f.unseen_fraction ?? 0) * 100, 1) })
+                      : "—"}
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
     </div>
   );
 }

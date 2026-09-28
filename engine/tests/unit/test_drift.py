@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import polars as pl
+import pytest
 
 from perceptron.domain.enums import Severity
 from perceptron.monitoring.drift import (
@@ -65,3 +66,48 @@ def test_embedding_drift() -> None:
     assert same.severity.rank <= Severity.LOW.rank and 0.35 < same.domain_auc < 0.65
     assert moved.severity is Severity.HIGH and moved.domain_auc > 0.8
     assert moved.mmd > same.mmd and moved.mmd_pvalue is not None and moved.mmd_pvalue < 0.05
+
+
+def test_embedding_drift_high_dimensional() -> None:
+    """Embeddings de 256 dimensiones (RF-MON-02): se reducen con PCA antes de comparar."""
+    rng = np.random.default_rng(3)
+    basis = rng.normal(0, 1, (8, 256))
+    ref = rng.normal(0, 1, (300, 8)) @ basis
+    same = embedding_drift(ref, rng.normal(0, 1, (200, 8)) @ basis, permutations=20)
+    moved = embedding_drift(ref, rng.normal(1.5, 1, (200, 8)) @ basis, permutations=20)
+    assert same.severity.rank <= Severity.LOW.rank
+    assert moved.severity is Severity.HIGH
+
+
+def test_penultimate_tensor_finds_head_input() -> None:
+    """La entrada de la cabeza lineal: sube por bias, activación y reshape desde la salida."""
+    onnx = pytest.importorskip("onnx")
+    from onnx import TensorProto, helper, numpy_helper
+
+    from perceptron.serving.runtime import penultimate_tensor
+
+    w1 = numpy_helper.from_array(np.ones((4, 8), dtype=np.float32), "w1")
+    w2 = numpy_helper.from_array(np.ones((8, 3), dtype=np.float32), "w2")
+    b2 = numpy_helper.from_array(np.zeros(3, dtype=np.float32), "b2")
+    graph = helper.make_graph(
+        [
+            helper.make_node("Gemm", ["x", "w1"], ["h"]),
+            helper.make_node("Relu", ["h"], ["feat"]),
+            helper.make_node("MatMul", ["feat", "w2"], ["z"]),
+            helper.make_node("Add", ["z", "b2"], ["logits"]),
+        ],
+        "g",
+        [helper.make_tensor_value_info("x", TensorProto.FLOAT, [None, 4])],
+        [helper.make_tensor_value_info("logits", TensorProto.FLOAT, [None, 3])],
+        initializer=[w1, w2, b2],
+    )
+    assert penultimate_tensor(graph) == "feat"
+    # Sin capa lineal (p. ej. una identidad): no hay embedding.
+    flat = helper.make_graph(
+        [helper.make_node("Relu", ["x"], ["y"])],
+        "g",
+        [helper.make_tensor_value_info("x", TensorProto.FLOAT, [None, 4])],
+        [helper.make_tensor_value_info("y", TensorProto.FLOAT, [None, 4])],
+    )
+    assert penultimate_tensor(flat) is None
+    assert onnx.checker is not None

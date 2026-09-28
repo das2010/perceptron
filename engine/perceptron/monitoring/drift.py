@@ -243,6 +243,11 @@ def embedding_drift(
     y = np.asarray(current, dtype=float)
     x = x[rng.permutation(len(x))[:500]]
     y = y[rng.permutation(len(y))[:500]]
+    if x.shape[1] > 32:
+        # Embeddings de alta dimensión: PCA ajustado en la referencia (32 componentes).
+        center = x.mean(0)
+        _, _, vt = np.linalg.svd(x - center, full_matrices=False)
+        x, y = (x - center) @ vt[:32].T, (y - center) @ vt[:32].T
     both = np.vstack([x, y])
     mu, sd = both.mean(0), both.std(0) + _EPS
     x, y, both = (x - mu) / sd, (y - mu) / sd, (both - mu) / sd

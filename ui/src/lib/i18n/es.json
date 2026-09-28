@@ -934,7 +934,9 @@
     "noAlerts": "No hay alertas.",
     "acknowledge": "Reconocer",
     "resolve": "Resolver",
-    "noDeployments": "No hay modelos en uso. Desplegá el champion desde Modelos."
+    "noDeployments": "No hay modelos en uso. Desplegá el champion desde Modelos.",
+    "embedding": "Embeddings internos del modelo: AUC de dominio {{auc}} (0,5 = sin cambio) · p del MMD {{p}} · distancia de centroides {{d}}",
+    "embeddingFew": "Embeddings internos: todavía hay pocas predicciones para compararlos."
   },
   "driftSeverity": {
     "none": "Sin drift",

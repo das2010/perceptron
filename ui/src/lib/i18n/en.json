@@ -934,7 +934,9 @@
     "noAlerts": "No alerts.",
     "acknowledge": "Acknowledge",
     "resolve": "Resolve",
-    "noDeployments": "No models in use. Deploy the champion from Models."
+    "noDeployments": "No models in use. Deploy the champion from Models.",
+    "embedding": "Model internal embeddings: domain AUC {{auc}} (0.5 = no change) · MMD p {{p}} · centroid distance {{d}}",
+    "embeddingFew": "Internal embeddings: not enough predictions to compare yet."
   },
   "driftSeverity": {
     "none": "No drift",

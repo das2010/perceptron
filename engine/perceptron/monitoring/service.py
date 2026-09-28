@@ -5,14 +5,21 @@
 - **Chequeo** por ventana: drift de datos (features de la firma contra el split de
   entrenamiento del champion), drift de salida del modelo y de performance (feedback contra
   el test del champion). Deja un `DriftReport` y levanta alertas según los umbrales.
+- **Embeddings internos** (RF-MON-02): en imagen, texto y audio (y también en tabular) se
+  registra el embedding de la cabeza del modelo en cada predicción muestreada, y se compara con
+  el de una muestra de train (MMD, centroides y clasificador de dominio). De imágenes y audios
+  no se guarda el archivo, solo el embedding.
 - **Champion/challenger**: el challenger se compara con el champion sobre el mismo holdout
   reciente y se promueve solo si mejora; rollback al champion anterior en un paso.
 """
 
 from __future__ import annotations
 
+import io
 import json
 import random
+import tempfile
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -50,6 +57,8 @@ if TYPE_CHECKING:
 
 DRIFT_TOPIC = "drift.report"
 REFERENCE_ROWS = 5000
+REFERENCE_FILES = 300  # imágenes/audios de train para la referencia de embeddings
+MONITORED_KINDS = ("tabular", "tokens", "image", "spectrogram")
 LOWER_IS_BETTER = frozenset({"mae", "rmse", "mape", "smape", "median_abs_error", "log_loss", "ece"})
 DEFAULT_MONITORING: dict[str, Any] = {
     "window": 200,  # predicciones por chequeo automático
@@ -92,7 +101,13 @@ def score_rows(
     """Métricas del modelo ONNX sobre filas etiquetadas (misma lógica que la evaluación)."""
     from perceptron.evaluation.metrics import classification_metrics, regression_metrics
 
-    preds = model.predict_rows(rows)
+    if model.kind == "tokens":
+        col = model.text_column or ""
+        preds = model.predict_texts([str(r.get(col) or "") for r in rows])
+    elif model.kind == "tabular":
+        preds = model.predict_rows(rows)
+    else:
+        raise ValidationError("champion/challenger compara modelos de tabla o texto")
     if model.task == "regression":
         y = np.array([float(v) for v in labels])
         p = np.array([float(x.prediction) for x in preds])
@@ -155,8 +170,8 @@ class Monitoring:
     ) -> Deployment:
         mv = self.models.get(model_version_id)
         model = self.model(mv)  # exige el export ONNX
-        if model.kind != "tabular":
-            raise ValidationError("por ahora los deployments monitoreados son tabulares")
+        if model.kind not in MONITORED_KINDS:
+            raise ValidationError(f"no hay monitoreo para modelos de entrada {model.kind}")
         dep_id = new_id(IdPrefix.DEPLOYMENT)
         server = self.ctx.settings.mode is RuntimeMode.SERVER
         dep = Deployment(
@@ -179,17 +194,78 @@ class Monitoring:
         return self.deployments.get(deployment_id)
 
     def predict(self, deployment_id: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        dep = self._active(deployment_id)
+        mv = self.models.get(dep.model_version_id)
+        model = self.model(mv)
+        if not rows:
+            return []
+        if model.kind == "tokens":
+            col = model.text_column or ""
+            if any(col not in r for r in rows):
+                raise ValidationError(f"cada fila necesita la columna de texto «{col}»")
+            feed = model.feed_texts([str(r[col] or "") for r in rows])
+            cols = [col]
+        elif model.kind == "tabular":
+            feed, cols = model.feed_rows(rows), model.required_columns
+        else:
+            raise ValidationError("este modelo recibe archivos: usá /predict/file")
+        return self._log(dep, mv, model, feed, rows, cols)
+
+    def predict_files(
+        self, deployment_id: str, files: list[tuple[str, bytes]]
+    ) -> list[dict[str, Any]]:
+        """Imagen o audio (RF-MON-02): se registran predicción y embedding, no el archivo."""
+        dep = self._active(deployment_id)
+        mv = self.models.get(dep.model_version_id)
+        model = self.model(mv)
+        if not files:
+            return []
+        if model.kind == "image":
+            from PIL import Image, UnidentifiedImageError
+
+            try:
+                feed = model.feed_images([Image.open(io.BytesIO(data)) for _, data in files])
+            except UnidentifiedImageError as e:
+                raise ValidationError("no se pudo leer la imagen") from e
+        elif model.kind == "spectrogram":
+            with tempfile.TemporaryDirectory() as tmp:
+                paths = []
+                for i, (name, data) in enumerate(files):
+                    path = Path(tmp) / f"{i:04d}{Path(name).suffix.lower() or '.wav'}"
+                    path.write_bytes(data)
+                    paths.append(path)
+                from perceptron.serving.runtime import InputError
+
+                try:
+                    feed = model.feed_audio(paths)
+                except InputError as e:
+                    raise ValidationError(str(e)) from e
+        else:
+            raise ValidationError("este modelo recibe filas: usá /predict")
+        rows = [{"file_name": name} for name, _ in files]
+        return self._log(dep, mv, model, feed, rows, [])
+
+    def _active(self, deployment_id: str) -> Deployment:
         dep = self.get(deployment_id)
         if dep.status is not DeploymentStatus.ACTIVE:
             raise ConflictError("el deployment está detenido")
-        mv = self.models.get(dep.model_version_id)
-        model = self.model(mv)
-        preds = [p.to_dict() for p in model.predict_rows(rows)]
+        return dep
+
+    def _log(
+        self,
+        dep: Deployment,
+        mv: ModelVersion,
+        model: InferenceModel,
+        feed: dict[str, np.ndarray],
+        rows: list[dict[str, Any]],
+        cols: list[str],
+    ) -> list[dict[str, Any]]:
+        results, emb = model.infer(feed, embeddings=True)
+        preds = [p.to_dict() for p in results]
         ids = [new_id(IdPrefix.PREDICTION) for _ in rows]
         rng = random.Random()  # noqa: S311 - muestreo, no criptografía
         chosen = [i for i in range(len(rows)) if rng.random() < dep.sample_rate]
         if chosen:
-            cols = model.required_columns
             self.store(dep).log_predictions(
                 mv.id,
                 [{c: rows[i].get(c) for c in cols} for i in chosen],
@@ -201,6 +277,7 @@ class Monitoring:
                     for i in chosen
                 ],
                 [ids[i] for i in chosen],
+                embeddings=[emb[i].tolist() for i in chosen] if emb is not None else None,
             )
             self._maybe_check(dep)
         return [{"prediction_id": pid, **p} for pid, p in zip(ids, preds, strict=True)]
@@ -249,10 +326,13 @@ class Monitoring:
         ref = self.reference(mv)
         cur = store.features(preds)
         data = data_drift(ref, cur, numeric, categorical)
-        output = self._output_drift(model, ref, preds)
+        ref_out = self._reference_outputs(dep, mv, model, ref)
+        output = self._output_drift(model, ref_out, preds)
+        embedding = self._embedding_drift(ref_out, preds)
+        emb_sev = Severity(embedding["severity"]) if embedding else Severity.NONE
         perf = self.performance(dep, mv=mv)
         perf_sev = Severity(perf["severity"]) if perf else Severity.NONE
-        severity = _sev_max(data.severity, perf_sev)
+        severity = _sev_max(data.severity, emb_sev, perf_sev)
         report = DriftReport(
             deployment_id=dep.id,
             window_start=min(preds["ts"].to_list()),
@@ -261,6 +341,7 @@ class Monitoring:
                 "model_version_id": mv.id,
                 "data": data.model_dump(mode="json"),
                 "output": output,
+                "embedding": embedding,
                 "performance": perf,
             },
             severity=severity,
@@ -277,6 +358,21 @@ class Monitoring:
                 message="Features con drift: " + ", ".join(f.feature for f in top),
                 deployment=dep,
                 details={"report_id": report.id, "features": [f.feature for f in top]},
+            )
+            if alert:
+                actions.append(f"alert:{alert.id}")
+        elif embedding and emb_sev.rank >= threshold.rank:
+            alert = self.alerts.raise_alert(
+                project_id=dep.project_id,
+                kind=AlertKind.DATA_DRIFT,
+                severity=emb_sev,
+                title=f"Drift de datos en {dep.name}",
+                message=(
+                    "Los embeddings internos del modelo se alejan de los de entrenamiento "
+                    f"(AUC de dominio {embedding['domain_auc']:.2f})"
+                ),
+                deployment=dep,
+                details={"report_id": report.id, "embedding": embedding},
             )
             if alert:
                 actions.append(f"alert:{alert.id}")
@@ -308,27 +404,78 @@ class Monitoring:
         )
         return report
 
+    def _reference_outputs(
+        self, dep: Deployment, mv: ModelVersion, model: InferenceModel, ref: pl.DataFrame
+    ) -> dict[str, np.ndarray]:
+        """Salidas y embeddings del modelo sobre la muestra de train (caché por versión)."""
+        cache = self.store(dep).root / f"reference-{mv.id}.npz"
+        if cache.is_file():
+            with np.load(cache) as z:
+                return {k: z[k] for k in z.files}
+        if model.kind == "tabular":
+            sample = ref.head(1000)
+            cols = [c for c in model.required_columns if c in sample.columns]
+            feed = model.feed_rows(sample.select(cols).to_dicts())
+        elif model.kind == "tokens":
+            col = model.text_column or ""
+            feed = model.feed_texts([str(v or "") for v in ref.head(1000)[col].to_list()])
+        else:
+            run = self.ctx.repo(Run).get(mv.run_id)
+            view = self.wf.view(self.ctx.repo(DatasetVersion).get(run.dataset_version_id))
+            sample = ref.filter(~pl.col("corrupt")) if "corrupt" in ref.columns else ref
+            paths = [view.files_dir / str(p) for p in sample.head(REFERENCE_FILES)["path"]]
+            if model.kind == "image":
+                from PIL import Image
+
+                images = []
+                for path in paths:
+                    with Image.open(path) as im:
+                        images.append(im.copy())
+                feed = model.feed_images(images)
+            else:
+                feed = model.feed_audio(paths)
+        preds, emb = model.infer(feed, embeddings=True)
+        out: dict[str, np.ndarray] = {}
+        if model.task == "regression":
+            out["values"] = np.array([float(p.prediction) for p in preds])
+        else:
+            classes = [str(c) for c in (model.pipeline.classes or [])]
+            out["proba"] = np.array([[p.probabilities.get(c, 0.0) for c in classes] for p in preds])
+        if emb is not None:
+            out["embedding"] = emb
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(cache, **out)
+        return out
+
     def _output_drift(
-        self, model: InferenceModel, ref: pl.DataFrame, preds: pl.DataFrame
+        self, model: InferenceModel, ref: dict[str, np.ndarray], preds: pl.DataFrame
     ) -> dict[str, Any]:
         """Drift en el espacio de salida del modelo (probabilidades o valor predicho)."""
-        sample = ref.head(1000)
-        cols = model.required_columns
-        ref_preds = model.predict_rows(
-            sample.select([c for c in cols if c in sample.columns]).to_dicts()
-        )
         if model.task == "regression":
-            ref_v = np.array([float(p.prediction) for p in ref_preds])
             cur_v = preds["prediction"].cast(pl.Float64, strict=False).to_numpy()
-            return numeric_drift("prediction", ref_v, cur_v.astype(float)).model_dump(mode="json")
+            return numeric_drift("prediction", ref["values"], cur_v.astype(float)).model_dump(
+                mode="json"
+            )
         classes = [str(c) for c in (model.pipeline.classes or [])]
-        ref_m = np.array([[p.probabilities.get(c, 0.0) for c in classes] for p in ref_preds])
         cur_m = np.array(
             [[json.loads(s).get(c, 0.0) for c in classes] for s in preds["probabilities"].to_list()]
         )
         if len(cur_m) < 10:
             return {"severity": Severity.NONE.value, "note": "pocas predicciones"}
-        return embedding_drift(ref_m, cur_m).model_dump(mode="json")
+        return embedding_drift(ref["proba"], cur_m).model_dump(mode="json")
+
+    @staticmethod
+    def _embedding_drift(ref: dict[str, np.ndarray], preds: pl.DataFrame) -> dict[str, Any] | None:
+        """Drift de los embeddings internos (RF-MON-02); None si el modelo no los expone."""
+        if "embedding" not in ref or "embedding" not in preds.columns:
+            return None
+        vectors = [v for v in preds["embedding"].to_list() if v is not None]
+        if len(vectors) < 10:
+            return {"severity": Severity.NONE.value, "note": "pocas predicciones"}
+        cur = np.asarray(vectors, dtype=np.float32)
+        if cur.shape[1] != ref["embedding"].shape[1]:
+            return None  # otra versión del modelo
+        return embedding_drift(ref["embedding"], cur).model_dump(mode="json")
 
     def performance(
         self, dep: Deployment, *, mv: ModelVersion | None = None

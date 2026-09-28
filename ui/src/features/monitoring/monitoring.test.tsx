@@ -39,6 +39,13 @@ const report = {
         },
       ],
     },
+    embedding: {
+      severity: "medium",
+      domain_auc: 0.74,
+      mmd_pvalue: 0.02,
+      centroid_distance: 1.3,
+      n_current: 100,
+    },
     performance: {
       metric: "roc_auc",
       current: 0.71,
@@ -101,6 +108,7 @@ describe("monitoreo (Capa 6a)", () => {
     expect(row && within(row).getByText("Alto")).toBeInTheDocument();
     expect(row && within(row).getByText(/36,2\d* → 3,4/)).toBeInTheDocument();
     expect(screen.getByText(/roc_auc con feedback: 0,71/)).toBeInTheDocument();
+    expect(screen.getByTestId("embedding-drift")).toHaveTextContent(/AUC de dominio 0,74/);
     expect(screen.getByText("Drift de datos en churn-api")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Resolver" }));
     expect(actions).toEqual(["resolve"]);

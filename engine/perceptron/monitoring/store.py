@@ -2,7 +2,8 @@
 
 Parquet por lote bajo `projects/<id>/monitoring/<deployment>/`. Se guardan solo las features
 que usa el modelo (columnas de la firma), con prefijo `x:`, más la clave de negocio si el
-deployment la configuró para asociar el feedback. Nada de otras columnas del request.
+deployment la configuró para asociar el feedback. Nada de otras columnas del request. Si el
+modelo los expone, también el embedding interno (de imágenes y audios, solo eso).
 """
 
 from __future__ import annotations
@@ -52,10 +53,13 @@ class PredictionStore:
         outputs: list[dict[str, Any]],
         keys: list[str | None],
         ids: list[str],
+        *,
+        embeddings: list[list[float]] | None = None,
     ) -> None:
         now = utcnow()
         rows = []
-        for pid, feats, out, key in zip(ids, features, outputs, keys, strict=True):
+        vectors: list[list[float] | None] = list(embeddings) if embeddings else [None] * len(ids)
+        for pid, feats, out, key, vec in zip(ids, features, outputs, keys, vectors, strict=True):
             row: dict[str, Any] = {
                 "prediction_id": pid,
                 "ts": now,
@@ -65,6 +69,8 @@ class PredictionStore:
                 "confidence": out.get("confidence"),
                 "probabilities": json.dumps(out.get("probabilities") or {}),
             }
+            if vec is not None:
+                row["embedding"] = vec  # RF-MON-02: embedding interno del modelo
             row.update({f"{FEATURE_PREFIX}{k}": v for k, v in feats.items()})
             rows.append(row)
         self._write(self.predictions_dir, rows)

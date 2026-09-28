@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.api.context import EngineContext, get_context
+from perceptron.api.security import MB, read_limited
 from perceptron.core.errors import NotFoundError, ValidationError
 from perceptron.domain.enums import AlertStatus, DataSourceType, DeploymentStatus, Severity
 from perceptron.domain.models import (
@@ -148,6 +149,17 @@ def update_deployment(deployment_id: str, body: DeploymentPatch, ctx: Ctx) -> De
 @router.post("/deployments/{deployment_id}/predict", operation_id="predictDeployment")
 def predict(deployment_id: str, body: PredictBody, ctx: Ctx) -> Predictions:
     return Predictions(predictions=Monitoring(ctx).predict(deployment_id, body.rows))
+
+
+@router.post("/deployments/{deployment_id}/predict/file", operation_id="predictDeploymentFiles")
+async def predict_files(
+    deployment_id: str, ctx: Ctx, files: Annotated[list[UploadFile], File()]
+) -> Predictions:
+    """Imágenes o audios (hasta 64 por pedido): se registra el embedding, no el archivo."""
+    if len(files) > 64:
+        raise ValidationError("hasta 64 archivos por pedido")
+    data = [(f.filename or "archivo", await read_limited(f, 64 * MB)) for f in files]
+    return Predictions(predictions=Monitoring(ctx).predict_files(deployment_id, data))
 
 
 @router.post("/deployments/{deployment_id}/feedback", operation_id="sendFeedback")
