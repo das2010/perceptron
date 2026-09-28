@@ -1266,6 +1266,164 @@
         "title": "ClassificationMetrics",
         "type": "object"
       },
+      "CodeArchSpecCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "acknowledge_risk": {
+            "default": false,
+            "description": "Confirmación explícita: el código no es declarativo (§13.2)",
+            "title": "Acknowledge Risk",
+            "type": "boolean"
+          },
+          "base_archspec_id": {
+            "description": "ArchSpec de la que se toman entrada, tarea y ajuste",
+            "title": "Base Archspec Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_archspec_id",
+          "source"
+        ],
+        "title": "CodeArchSpecCreate",
+        "type": "object"
+      },
+      "CodeArchSpecResult": {
+        "properties": {
+          "check": {
+            "$ref": "#/components/schemas/CodeCheck"
+          },
+          "record": {
+            "$ref": "#/components/schemas/ArchSpecRecord"
+          }
+        },
+        "required": [
+          "record",
+          "check"
+        ],
+        "title": "CodeArchSpecResult",
+        "type": "object"
+      },
+      "CodeCheck": {
+        "description": "Resultado de construir el modelo de código y probarlo con un batch sintético.",
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "num_params": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Params"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "output_shape": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Shape"
+          },
+          "trainable_params": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainable Params"
+          },
+          "violations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Violations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "title": "CodeCheck",
+        "type": "object"
+      },
+      "CodeIssue": {
+        "properties": {
+          "col": {
+            "title": "Col",
+            "type": "integer"
+          },
+          "line": {
+            "title": "Line",
+            "type": "integer"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "line",
+          "col",
+          "message"
+        ],
+        "title": "CodeIssue",
+        "type": "object"
+      },
+      "CodeLintBody": {
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "CodeLintBody",
+        "type": "object"
+      },
       "CodeResponse": {
         "properties": {
           "code": {
@@ -5986,6 +6144,26 @@
         "title": "Stage",
         "type": "string"
       },
+      "StaticReport": {
+        "properties": {
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/CodeIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "title": "StaticReport",
+        "type": "object"
+      },
       "StepSpec": {
         "properties": {
           "columns": {
@@ -7354,6 +7532,48 @@
         ]
       }
     },
+    "/api/v1/arch/code/lint": {
+      "post": {
+        "description": "Validación estática del código experto, sin ejecutarlo (RF-ARC-06).",
+        "operationId": "lintArchCode",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeLintBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaticReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lint Arch Code",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
     "/api/v1/arch/to-code": {
       "post": {
         "operationId": "archToCode",
@@ -7475,6 +7695,91 @@
           }
         },
         "summary": "Get Archspec",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/archspecs/{archspec_id}/code": {
+      "get": {
+        "operationId": "getArchCode",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "archspec_id",
+            "required": true,
+            "schema": {
+              "title": "Archspec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Arch Code",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/archspecs/{archspec_id}/code/starter": {
+      "get": {
+        "description": "Código inicial del modo experto para la entrada de esta ArchSpec.",
+        "operationId": "getArchCodeStarter",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "archspec_id",
+            "required": true,
+            "schema": {
+              "title": "Archspec Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Arch Code Starter",
         "tags": [
           "arch"
         ]
@@ -8856,6 +9161,59 @@
           }
         },
         "summary": "Create Archspec",
+        "tags": [
+          "arch"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/archspecs/code": {
+      "post": {
+        "description": "Modo experto (RF-ARC-06): valida el código, lo prueba en el sandbox y lo guarda.",
+        "operationId": "createCodeArchSpec",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeArchSpecCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeArchSpecResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Code Archspec",
         "tags": [
           "arch"
         ]

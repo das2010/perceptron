@@ -493,5 +493,23 @@
     "explain": "Estoy definiendo la arquitectura, paso «{{step}}». Las opciones son: {{options}}. ¿Cuál conviene para mis datos y por qué?",
     "useRecommended": "Completar con lo recomendado",
     "build": "Crear esta arquitectura"
+  },
+  "expert": {
+    "open": "Modo experto (código)",
+    "title": "Modo experto: el modelo como código",
+    "warning": "El código no es declarativo: Perceptron no puede explicarlo ni validarlo como una ArchSpec. Se ejecuta en un sandbox sin red, sin procesos y sin acceso a archivos fuera del run, con límites de memoria y tiempo. Revisá el código antes de guardarlo, sobre todo si lo propuso el LLM.",
+    "editor": "Código del modelo",
+    "issues_one": "{{count}} problema",
+    "issues_other": "{{count}} problemas",
+    "lintOk": "Sin problemas",
+    "line": "línea {{line}}:",
+    "saveTitle": "Probar en el sandbox y guardar",
+    "acknowledge": "Entiendo que el código no es declarativo y corre en un sandbox",
+    "save": "Probar y guardar",
+    "checking": "Construyendo el modelo en el sandbox…",
+    "checked": "Modelo construido en el sandbox: {{params}} parámetros.",
+    "notDeclarative": "Código experto (no declarativo)",
+    "editCopy": "Editar como nueva",
+    "sandboxNote": "Se entrena y evalúa dentro del sandbox. Para cambiarla, editá una copia: la original queda como procedencia."
   }
 }

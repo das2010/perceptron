@@ -751,3 +751,60 @@ export function useRunHistories(runIds: string[]) {
     })),
   });
 }
+
+// ---------------------------------------------------------------- modo experto (RF-ARC-06)
+
+export function useArchCodeStarter(archspecId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["archspecs", archspecId, "code", "starter"],
+    enabled,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/archspecs/{archspec_id}/code/starter", {
+          params: { path: { archspec_id: archspecId } },
+        }),
+      ).code,
+  });
+}
+
+export function useArchSource(archspecId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["archspecs", archspecId, "code"],
+    enabled,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/archspecs/{archspec_id}/code", {
+          params: { path: { archspec_id: archspecId } },
+        }),
+      ).code,
+  });
+}
+
+export async function lintArchCode(source: string) {
+  return unwrap(await (await getApiClient()).POST("/api/v1/arch/code/lint", { body: { source } }));
+}
+
+export function useCreateCodeArchSpec(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: {
+      base_archspec_id: string;
+      source: string;
+      name: string | null;
+      acknowledge_risk: boolean;
+    }) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/archspecs/code", {
+          params: { path: { project_id: projectId } },
+          body,
+        }),
+      ),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["projects", projectId, "archspecs"] }),
+  });
+}
