@@ -17,6 +17,7 @@ from perceptron.data.schema import SemanticType, TableSchema, infer_schema
 from perceptron.data.sources.files import SourceKind, open_source, scan_table
 from perceptron.data.sources.remote import DbConfig, download_hf, download_kaggle, materialize_db
 from perceptron.data.splits import SPLIT_COLUMN, SplitRequest
+from perceptron.data.versioning.diff import DatasetDiff, LineageNode, dataset_diff, lineage
 from perceptron.domain.enums import DataSourceType, Modality
 from perceptron.domain.models import DatasetVersion, DataSource
 from perceptron.services.workflow import Workflow
@@ -306,3 +307,26 @@ def profile(dataset_version_id: str, ctx: Ctx) -> ProfileCard:
 @router.get("/datasets/{dataset_version_id}/profile", operation_id="getProfile")
 def get_profile(dataset_version_id: str, ctx: Ctx) -> ProfileCard:
     return Workflow(ctx).profile_card(dataset_version_id)
+
+
+# ------------------------------------------------------------------ diff y linaje (RF-MON-07)
+
+
+@router.get("/datasets/{dataset_version_id}/diff/{other_id}", operation_id="diffDatasets")
+def diff_datasets(dataset_version_id: str, other_id: str, ctx: Ctx) -> DatasetDiff:
+    """Qué cambió de la versión A a la B: filas, esquema, distribución y archivos."""
+    wf = Workflow(ctx)
+    a, b = wf.dataset(dataset_version_id), wf.dataset(other_id)
+    if a.project_id != b.project_id:
+        raise ValidationError("las dos versiones tienen que ser del mismo proyecto")
+    return dataset_diff(a, wf.view(a), b, wf.view(b))
+
+
+@router.get("/datasets/{dataset_version_id}/lineage", operation_id="getLineage")
+def dataset_lineage(dataset_version_id: str, ctx: Ctx) -> list[LineageNode]:
+    dv = ctx.repo(DatasetVersion).get(dataset_version_id)
+    versions = {
+        v.id: v
+        for v in ctx.repo(DatasetVersion).list(filters={"project_id": dv.project_id}, limit=10_000)
+    }
+    return lineage(versions, dv.id)

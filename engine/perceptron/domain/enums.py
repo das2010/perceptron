@@ -70,6 +70,8 @@ class SplitStrategy(StrEnum):
     GROUP = "group"
     TEMPORAL = "temporal"
     KFOLD = "kfold"
+    # La partición viene en una columna (reentrenamiento: el test del champion no se mueve).
+    PREDEFINED = "predefined"
 
 
 class LabelKind(StrEnum):
@@ -146,6 +148,28 @@ class Severity(StrEnum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
+
+    @property
+    def rank(self) -> int:
+        return ["none", "low", "medium", "high"].index(self.value)
+
+
+class DeploymentStatus(StrEnum):
+    ACTIVE = "active"
+    STOPPED = "stopped"
+
+
+class AlertKind(StrEnum):
+    DATA_DRIFT = "data_drift"
+    PERFORMANCE = "performance"
+    RETRAIN = "retrain"
+    PROMOTION = "promotion"
+
+
+class AlertStatus(StrEnum):
+    OPEN = "open"
+    ACKNOWLEDGED = "acknowledged"
+    RESOLVED = "resolved"
 
 
 class LLMPurpose(StrEnum):

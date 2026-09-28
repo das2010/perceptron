@@ -126,7 +126,8 @@
       "wizard": "Wizard",
       "agent": "Agent",
       "design": "Design",
-      "labeling": "Labeling"
+      "labeling": "Labeling",
+      "monitoring": "Monitoring"
     }
   },
   "privacy": {
@@ -299,7 +300,13 @@
     "version": "Version",
     "stage": "Stage",
     "metrics": "Test metrics",
-    "run": "Run"
+    "run": "Run",
+    "rollback": "Roll back to previous champion",
+    "deploy": "Deploy",
+    "challenge": "Challenge the champion",
+    "promote": "Promote",
+    "challengeWon": "The challenger won ({{metric}}: {{challenger}} vs {{champion}} on {{n}} cases) and is the new champion.",
+    "challengeLost": "The challenger did not improve ({{metric}}: {{challenger}} vs {{champion}} on {{n}} cases): the champion stays."
   },
   "stage": {
     "candidate": "Candidate",
@@ -824,5 +831,45 @@
     "sso": "SSO",
     "noSso": "No SSO providers configured.",
     "ssoHint": "Configured on the server (PERCEPTRON_SERVER__OIDC); see docs/ops/sso.md."
+  },
+  "monitoring": {
+    "window": "Window {{from}} → {{to}} ({{n}} predictions)",
+    "performance": "{{metric}} with feedback: {{current}} (champion test: {{baseline}}, {{n}} labeled cases)",
+    "feature": "Feature",
+    "severity": "Severity",
+    "pvalue": "p-value",
+    "change": "Change",
+    "unseen": "{{pct}} % new categories",
+    "status": {
+      "active": "Active",
+      "stopped": "Stopped"
+    },
+    "checkNow": "Check now",
+    "stop": "Stop",
+    "start": "Resume",
+    "noReports": "No checks yet: they run every N predictions or on demand.",
+    "email": "Email alerts",
+    "emailHint": "Comma-separated recipients (requires SMTP on the server).",
+    "webhook": "Webhook (Teams / Slack)",
+    "webhookHint": "Write-only: stored in the keychain.",
+    "saveChannels": "Save channels",
+    "alerts": "Alerts",
+    "filter": "Filter alerts",
+    "alertStatus": {
+      "open": "Open",
+      "acknowledged": "Acknowledged",
+      "resolved": "Resolved"
+    },
+    "all": "All",
+    "noAlerts": "No alerts.",
+    "acknowledge": "Acknowledge",
+    "resolve": "Resolve",
+    "noDeployments": "No models in use. Deploy the champion from Models."
+  },
+  "driftSeverity": {
+    "none": "No drift",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
   }
 }

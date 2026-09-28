@@ -272,6 +272,10 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
             df = assign_splits(df, split_req, None)
         else:
             df = assign_splits(df, split_req, schema.target)
+        if split_req.strategy is SplitStrategy.PREDEFINED:  # la columna de split no es feature
+            schema = schema.model_copy(
+                update={"columns": [c for c in schema.columns if c.name != split_req.split_column]}
+            )
         df.write_parquet(staging / data_file, compression="zstd", statistics=True)
         write_json(staging / SCHEMA_FILE, schema.model_dump(mode="json"))
         write_json(

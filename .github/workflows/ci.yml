@@ -302,6 +302,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: python fixtures/generate.py --check
+      # Si cambió un generador: se publican los fixtures regenerados en Windows para commitearlos.
+      - name: Regenerar fixtures
+        if: failure()
+        run: python fixtures/generate.py
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: fixtures-regenerados
+          path: fixtures
 
   export-o5:
     name: export O5 (proyecto y servidor en contenedores limpios)

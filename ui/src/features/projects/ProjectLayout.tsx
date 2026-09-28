@@ -15,6 +15,7 @@ const TABS = [
   { to: "/projects/$projectId/experiments", key: "experiments" },
   { to: "/projects/$projectId/agent", key: "agent" },
   { to: "/projects/$projectId/models", key: "models" },
+  { to: "/projects/$projectId/monitoring", key: "monitoring" },
   { to: "/projects/$projectId/audit", key: "audit" },
 ] as const;
 

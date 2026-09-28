@@ -57,6 +57,7 @@ VIEW_WRITES = frozenset(
         "validateArchitecture",
         "lintArchCode",
         "archToCode",
+        "predictDeployment",  # usar el modelo en uso (como el playground)
     }
 )
 # Lecturas reservadas a Editor: descargas de exportaciones y la auditoría LLM del proyecto.

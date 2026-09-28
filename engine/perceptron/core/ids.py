@@ -36,6 +36,8 @@ class IdPrefix(StrEnum):
     JOB = "job"
     SESSION = "ses"
     REFRESH_TOKEN = "rtk"  # noqa: S105 - prefijo de ID, no un secreto
+    ALERT = "alr"
+    PREDICTION = "prd"
 
 
 _SEP = "_"

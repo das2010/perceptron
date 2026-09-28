@@ -126,7 +126,8 @@
       "wizard": "Wizard",
       "agent": "Agente",
       "design": "Diseño",
-      "labeling": "Etiquetado"
+      "labeling": "Etiquetado",
+      "monitoring": "Monitoreo"
     }
   },
   "privacy": {
@@ -299,7 +300,13 @@
     "version": "Versión",
     "stage": "Etapa",
     "metrics": "Métricas en test",
-    "run": "Run"
+    "run": "Run",
+    "rollback": "Volver al champion anterior",
+    "deploy": "Desplegar",
+    "challenge": "Retar al champion",
+    "promote": "Promover",
+    "challengeWon": "El challenger ganó ({{metric}}: {{challenger}} contra {{champion}} en {{n}} casos) y es el nuevo champion.",
+    "challengeLost": "El challenger no mejoró ({{metric}}: {{challenger}} contra {{champion}} en {{n}} casos): sigue el champion."
   },
   "stage": {
     "candidate": "Candidato",
@@ -824,5 +831,45 @@
     "sso": "SSO",
     "noSso": "No hay proveedores SSO configurados.",
     "ssoHint": "Se configuran en el servidor (PERCEPTRON_SERVER__OIDC); ver docs/ops/sso.md."
+  },
+  "monitoring": {
+    "window": "Ventana {{from}} → {{to}} ({{n}} predicciones)",
+    "performance": "{{metric}} con feedback: {{current}} (test del champion: {{baseline}}, {{n}} casos etiquetados)",
+    "feature": "Variable",
+    "severity": "Severidad",
+    "pvalue": "p-valor",
+    "change": "Cambio",
+    "unseen": "{{pct}} % de categorías nuevas",
+    "status": {
+      "active": "Activo",
+      "stopped": "Detenido"
+    },
+    "checkNow": "Chequear ahora",
+    "stop": "Detener",
+    "start": "Reanudar",
+    "noReports": "Todavía no hay chequeos: se hacen cada N predicciones o a pedido.",
+    "email": "Alertas por email",
+    "emailHint": "Destinatarios separados por coma (requiere SMTP en el servidor).",
+    "webhook": "Webhook (Teams / Slack)",
+    "webhookHint": "Solo de escritura: se guarda en el llavero.",
+    "saveChannels": "Guardar canales",
+    "alerts": "Alertas",
+    "filter": "Filtrar alertas",
+    "alertStatus": {
+      "open": "Abiertas",
+      "acknowledged": "Reconocidas",
+      "resolved": "Resueltas"
+    },
+    "all": "Todas",
+    "noAlerts": "No hay alertas.",
+    "acknowledge": "Reconocer",
+    "resolve": "Resolver",
+    "noDeployments": "No hay modelos en uso. Desplegá el champion desde Modelos."
+  },
+  "driftSeverity": {
+    "none": "Sin drift",
+    "low": "Leve",
+    "medium": "Medio",
+    "high": "Alto"
   }
 }

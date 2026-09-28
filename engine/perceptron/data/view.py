@@ -38,9 +38,13 @@ class Purpose(StrEnum):
     PRIVACY_AUDIT = "privacy_audit"
     # Etiquetado (RF-LBL, ADR-0029): una persona anota todas las muestras; no entrena ni elige.
     LABELING = "labeling"
+    # Diff y linaje de versiones (RF-MON-07): compara todas las filas; no entrena ni elige.
+    VERSIONING = "versioning"
 
 
-_READS_TEST = frozenset({Purpose.FINAL_EVALUATION, Purpose.PRIVACY_AUDIT, Purpose.LABELING})
+_READS_TEST = frozenset(
+    {Purpose.FINAL_EVALUATION, Purpose.PRIVACY_AUDIT, Purpose.LABELING, Purpose.VERSIONING}
+)
 
 
 class SealedTestSetError(PerceptronError):

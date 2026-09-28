@@ -340,58 +340,6 @@
         "title": "AgentState",
         "type": "string"
       },
-      "Alert": {
-        "properties": {
-          "code": {
-            "$ref": "#/components/schemas/AlertCode"
-          },
-          "column": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Column"
-          },
-          "evidence": {
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "title": "Evidence",
-            "type": "object"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "severity": {
-            "$ref": "#/components/schemas/AlertSeverity"
-          }
-        },
-        "required": [
-          "code",
-          "severity",
-          "message"
-        ],
-        "title": "Alert",
-        "type": "object"
-      },
       "AlertCode": {
         "enum": [
           "class_imbalance",
@@ -416,6 +364,16 @@
         "title": "AlertCode",
         "type": "string"
       },
+      "AlertKind": {
+        "enum": [
+          "data_drift",
+          "performance",
+          "retrain",
+          "promotion"
+        ],
+        "title": "AlertKind",
+        "type": "string"
+      },
       "AlertSeverity": {
         "enum": [
           "info",
@@ -423,6 +381,15 @@
           "high"
         ],
         "title": "AlertSeverity",
+        "type": "string"
+      },
+      "AlertStatus": {
+        "enum": [
+          "open",
+          "acknowledged",
+          "resolved"
+        ],
+        "title": "AlertStatus",
         "type": "string"
       },
       "ApprovalBody": {
@@ -1325,6 +1292,132 @@
         "title": "CategoryCount",
         "type": "object"
       },
+      "ChallengeBody": {
+        "additionalProperties": false,
+        "properties": {
+          "holdout": {
+            "default": "feedback",
+            "description": "`feedback` o un dataset_version_id",
+            "title": "Holdout",
+            "type": "string"
+          },
+          "metric": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metric"
+          },
+          "min_improvement": {
+            "default": 0.0,
+            "minimum": 0.0,
+            "title": "Min Improvement",
+            "type": "number"
+          },
+          "promote": {
+            "default": true,
+            "title": "Promote",
+            "type": "boolean"
+          }
+        },
+        "title": "ChallengeBody",
+        "type": "object"
+      },
+      "ChallengeResult": {
+        "properties": {
+          "challenger_id": {
+            "title": "Challenger Id",
+            "type": "string"
+          },
+          "challenger_metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Challenger Metrics",
+            "type": "object"
+          },
+          "challenger_value": {
+            "title": "Challenger Value",
+            "type": "number"
+          },
+          "champion_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Champion Id"
+          },
+          "champion_metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Champion Metrics",
+            "type": "object"
+          },
+          "champion_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Champion Value"
+          },
+          "higher_is_better": {
+            "title": "Higher Is Better",
+            "type": "boolean"
+          },
+          "holdout": {
+            "title": "Holdout",
+            "type": "string"
+          },
+          "improvement": {
+            "title": "Improvement",
+            "type": "number"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "min_improvement": {
+            "title": "Min Improvement",
+            "type": "number"
+          },
+          "n_samples": {
+            "title": "N Samples",
+            "type": "integer"
+          },
+          "promoted": {
+            "title": "Promoted",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "champion_id",
+          "challenger_id",
+          "metric",
+          "higher_is_better",
+          "champion_value",
+          "challenger_value",
+          "improvement",
+          "min_improvement",
+          "promoted",
+          "holdout",
+          "n_samples"
+        ],
+        "title": "ChallengeResult",
+        "type": "object"
+      },
       "ClassGuide": {
         "properties": {
           "definition": {
@@ -1889,6 +1982,41 @@
         "title": "Credentials",
         "type": "object"
       },
+      "DataDrift": {
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureDrift"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "n_current": {
+            "title": "N Current",
+            "type": "integer"
+          },
+          "n_reference": {
+            "title": "N Reference",
+            "type": "integer"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/perceptron__domain__enums__Severity"
+          },
+          "share_drifted": {
+            "title": "Share Drifted",
+            "type": "number"
+          }
+        },
+        "required": [
+          "severity",
+          "share_drifted",
+          "n_reference",
+          "n_current",
+          "features"
+        ],
+        "title": "DataDrift",
+        "type": "object"
+      },
       "DataSource": {
         "additionalProperties": false,
         "properties": {
@@ -1970,6 +2098,86 @@
         ],
         "title": "DataSourceType",
         "type": "string"
+      },
+      "DatasetDiff": {
+        "properties": {
+          "a": {
+            "title": "A",
+            "type": "string"
+          },
+          "b": {
+            "title": "B",
+            "type": "string"
+          },
+          "distribution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataDrift"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "files": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Files",
+            "type": "object"
+          },
+          "rows_a": {
+            "title": "Rows A",
+            "type": "integer"
+          },
+          "rows_added": {
+            "title": "Rows Added",
+            "type": "integer"
+          },
+          "rows_b": {
+            "title": "Rows B",
+            "type": "integer"
+          },
+          "rows_common": {
+            "title": "Rows Common",
+            "type": "integer"
+          },
+          "rows_removed": {
+            "title": "Rows Removed",
+            "type": "integer"
+          },
+          "sample_added": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Sample Added",
+            "type": "array"
+          },
+          "schema_change": {
+            "$ref": "#/components/schemas/SchemaChange"
+          },
+          "target_changed": {
+            "default": false,
+            "title": "Target Changed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "a",
+          "b",
+          "rows_a",
+          "rows_b",
+          "rows_added",
+          "rows_removed",
+          "rows_common",
+          "schema_change"
+        ],
+        "title": "DatasetDiff",
+        "type": "object"
       },
       "DatasetVersion": {
         "additionalProperties": false,
@@ -2348,6 +2556,213 @@
         "title": "DefineStep",
         "type": "object"
       },
+      "Deployment": {
+        "additionalProperties": false,
+        "description": "Modelo en uso con monitoreo (RF-MON-01..04). Sigue al champion del proyecto.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "endpoint": {
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "follow_champion": {
+            "default": true,
+            "description": "Al promover, pasa al champion",
+            "title": "Follow Champion",
+            "type": "boolean"
+          },
+          "host": {
+            "$ref": "#/components/schemas/DeploymentHost",
+            "default": "desktop"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "key_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Columna para asociar el feedback",
+            "title": "Key Column"
+          },
+          "model_version_id": {
+            "title": "Model Version Id",
+            "type": "string"
+          },
+          "monitoring": {
+            "additionalProperties": true,
+            "description": "Ventana, umbrales y canales de alerta",
+            "title": "Monitoring",
+            "type": "object"
+          },
+          "name": {
+            "default": "default",
+            "title": "Name",
+            "type": "string"
+          },
+          "project_id": {
+            "default": "",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "sample_rate": {
+            "default": 1.0,
+            "description": "Fracción de predicciones registradas",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Sample Rate",
+            "type": "number"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeploymentStatus",
+            "default": "active"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_version_id",
+          "endpoint"
+        ],
+        "title": "Deployment",
+        "type": "object"
+      },
+      "DeploymentCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "key_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Column"
+          },
+          "monitoring": {
+            "$ref": "#/components/schemas/MonitoringConfig"
+          },
+          "name": {
+            "default": "default",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "sample_rate": {
+            "default": 1.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Sample Rate",
+            "type": "number"
+          },
+          "webhook_url": {
+            "anyOf": [
+              {
+                "pattern": "^https?://",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo de escritura: va al keychain",
+            "title": "Webhook Url"
+          }
+        },
+        "title": "DeploymentCreate",
+        "type": "object"
+      },
+      "DeploymentHost": {
+        "enum": [
+          "desktop",
+          "server"
+        ],
+        "title": "DeploymentHost",
+        "type": "string"
+      },
+      "DeploymentPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "monitoring": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MonitoringConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sample_rate": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Rate"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeploymentStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "webhook_url": {
+            "anyOf": [
+              {
+                "pattern": "^(https?://.*)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Webhook Url"
+          }
+        },
+        "title": "DeploymentPatch",
+        "type": "object"
+      },
+      "DeploymentStatus": {
+        "enum": [
+          "active",
+          "stopped"
+        ],
+        "title": "DeploymentStatus",
+        "type": "string"
+      },
       "Device": {
         "enum": [
           "cuda",
@@ -2662,6 +3077,73 @@
         "title": "DraftView",
         "type": "object"
       },
+      "DriftReport": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "deployment_id": {
+            "title": "Deployment Id",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": true,
+            "title": "Metrics",
+            "type": "object"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/perceptron__domain__enums__Severity",
+            "default": "none"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "window_end": {
+            "format": "date-time",
+            "title": "Window End",
+            "type": "string"
+          },
+          "window_start": {
+            "format": "date-time",
+            "title": "Window Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deployment_id",
+          "window_start",
+          "window_end"
+        ],
+        "title": "DriftReport",
+        "type": "object"
+      },
       "EarlyStopping": {
         "additionalProperties": false,
         "properties": {
@@ -2839,6 +3321,18 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Otra versión de datos (holdout de champion/challenger)",
+            "title": "Dataset Version Id"
           },
           "id": {
             "title": "Id",
@@ -3243,6 +3737,127 @@
         "title": "FairnessReport",
         "type": "object"
       },
+      "FeatureDrift": {
+        "properties": {
+          "chi2_pvalue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chi2 Pvalue"
+          },
+          "current_mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Mean"
+          },
+          "feature": {
+            "title": "Feature",
+            "type": "string"
+          },
+          "js": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Js"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "ks": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ks"
+          },
+          "ks_pvalue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ks Pvalue"
+          },
+          "psi": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Psi"
+          },
+          "reference_mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Mean"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/perceptron__domain__enums__Severity"
+          },
+          "top_changes": {
+            "additionalProperties": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "description": "Categoría → [share referencia, share actual]",
+            "title": "Top Changes",
+            "type": "object"
+          },
+          "unseen_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unseen Fraction"
+          }
+        },
+        "required": [
+          "feature",
+          "kind",
+          "severity"
+        ],
+        "title": "FeatureDrift",
+        "type": "object"
+      },
       "FeatureImportance": {
         "properties": {
           "feature": {
@@ -3264,6 +3879,84 @@
           "mean_attribution"
         ],
         "title": "FeatureImportance",
+        "type": "object"
+      },
+      "FeedbackBody": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FeedbackItem"
+            },
+            "maxItems": 10000,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "FeedbackBody",
+        "type": "object"
+      },
+      "FeedbackItem": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Label"
+          },
+          "prediction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prediction Id"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "FeedbackItem",
+        "type": "object"
+      },
+      "FeedbackResult": {
+        "properties": {
+          "received": {
+            "title": "Received",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "received"
+        ],
+        "title": "FeedbackResult",
         "type": "object"
       },
       "GPUInfo": {
@@ -4053,7 +4746,7 @@
             "type": "string"
           },
           "severity": {
-            "$ref": "#/components/schemas/Severity"
+            "$ref": "#/components/schemas/perceptron__archspec__validate__Severity"
           },
           "stage": {
             "$ref": "#/components/schemas/Stage"
@@ -4855,6 +5548,58 @@
         "title": "LabelsBody",
         "type": "object"
       },
+      "LineageNode": {
+        "properties": {
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "num_samples": {
+            "title": "Num Samples",
+            "type": "integer"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "transformation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transformation"
+          }
+        },
+        "required": [
+          "id",
+          "parent_id",
+          "transformation",
+          "content_hash",
+          "num_samples",
+          "created_at"
+        ],
+        "title": "LineageNode",
+        "type": "object"
+      },
       "LocalExplanation": {
         "properties": {
           "contributions": {
@@ -5235,6 +5980,32 @@
             "title": "Project Id",
             "type": "string"
           },
+          "promoted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Última vez que fue champion",
+            "title": "Promoted At"
+          },
+          "retired_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cuándo dejó de ser champion",
+            "title": "Retired At"
+          },
           "run_id": {
             "title": "Run Id",
             "type": "string"
@@ -5266,6 +6037,49 @@
           "run_id"
         ],
         "title": "ModelVersion",
+        "type": "object"
+      },
+      "MonitoringConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "drift_alert": {
+            "$ref": "#/components/schemas/Severity-Input",
+            "default": "medium",
+            "description": "Severidad que alerta"
+          },
+          "email": {
+            "description": "Destinatarios de alertas",
+            "items": {
+              "type": "string"
+            },
+            "title": "Email",
+            "type": "array"
+          },
+          "min_labels": {
+            "default": 30,
+            "description": "Feedback mínimo para performance",
+            "minimum": 5.0,
+            "title": "Min Labels",
+            "type": "integer"
+          },
+          "performance_drop": {
+            "default": 0.05,
+            "description": "Caída relativa",
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Performance Drop",
+            "type": "number"
+          },
+          "window": {
+            "default": 200,
+            "description": "Predicciones por chequeo",
+            "maximum": 100000.0,
+            "minimum": 10.0,
+            "title": "Window",
+            "type": "integer"
+          }
+        },
+        "title": "MonitoringConfig",
         "type": "object"
       },
       "Node": {
@@ -5846,6 +6660,43 @@
         "title": "PlaygroundRows",
         "type": "object"
       },
+      "PredictBody": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "maxItems": 5000,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "title": "PredictBody",
+        "type": "object"
+      },
+      "Predictions": {
+        "properties": {
+          "predictions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Predictions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "predictions"
+        ],
+        "title": "Predictions",
+        "type": "object"
+      },
       "PrivacyLevel": {
         "description": "Qué puede recibir el LLM (SPEC §7.7.3).",
         "enum": [
@@ -5907,7 +6758,7 @@
         "properties": {
           "alerts": {
             "items": {
-              "$ref": "#/components/schemas/Alert"
+              "$ref": "#/components/schemas/perceptron__data__profiling__card__Alert"
             },
             "title": "Alerts",
             "type": "array"
@@ -7485,6 +8336,37 @@
         "title": "SchedulerSpec",
         "type": "object"
       },
+      "SchemaChange": {
+        "properties": {
+          "added": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Added",
+            "type": "array"
+          },
+          "removed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Removed",
+            "type": "array"
+          },
+          "retyped": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "description": "Columna → [tipo en A, tipo en B]",
+            "title": "Retyped",
+            "type": "object"
+          }
+        },
+        "title": "SchemaChange",
+        "type": "object"
+      },
       "SearchParam": {
         "properties": {
           "choices": {
@@ -7914,10 +8796,12 @@
         "title": "ServerSourceRoot",
         "type": "object"
       },
-      "Severity": {
+      "Severity-Input": {
         "enum": [
-          "error",
-          "warning"
+          "none",
+          "low",
+          "medium",
+          "high"
         ],
         "title": "Severity",
         "type": "string"
@@ -8144,6 +9028,18 @@
             "title": "Seed",
             "type": "integer"
           },
+          "split_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "predefined: columna con train/val/test (se quita después)",
+            "title": "Split Column"
+          },
           "strategy": {
             "$ref": "#/components/schemas/SplitStrategy",
             "default": "stratified"
@@ -8183,7 +9079,8 @@
           "stratified",
           "group",
           "temporal",
-          "kfold"
+          "kfold",
+          "predefined"
         ],
         "title": "SplitStrategy",
         "type": "string"
@@ -10087,6 +10984,158 @@
         ],
         "title": "PrelabelBody",
         "type": "object"
+      },
+      "perceptron__archspec__validate__Severity": {
+        "enum": [
+          "error",
+          "warning"
+        ],
+        "title": "Severity",
+        "type": "string"
+      },
+      "perceptron__data__profiling__card__Alert": {
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/AlertCode"
+          },
+          "column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Column"
+          },
+          "evidence": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Evidence",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/AlertSeverity"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "message"
+        ],
+        "title": "Alert",
+        "type": "object"
+      },
+      "perceptron__domain__enums__Severity": {
+        "enum": [
+          "none",
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "Severity",
+        "type": "string"
+      },
+      "perceptron__domain__models__Alert": {
+        "additionalProperties": false,
+        "description": "Alerta del monitoreo (RF-MON-04): en la app y, si hay canales, por email o webhook.",
+        "properties": {
+          "channels": {
+            "description": "Por dónde salió",
+            "items": {
+              "type": "string"
+            },
+            "title": "Channels",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "deployment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deployment Id"
+          },
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AlertKind"
+          },
+          "message": {
+            "default": "",
+            "title": "Message",
+            "type": "string"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/perceptron__domain__enums__Severity"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus",
+            "default": "open"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "kind",
+          "severity",
+          "title"
+        ],
+        "title": "Alert",
+        "type": "object"
       }
     }
   },
@@ -10782,6 +11831,90 @@
         "summary": "Stop Agent Run",
         "tags": [
           "agent"
+        ]
+      }
+    },
+    "/api/v1/alerts/{alert_id}/acknowledge": {
+      "post": {
+        "operationId": "acknowledgeAlert",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/perceptron__domain__models__Alert"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Acknowledge",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/alerts/{alert_id}/resolve": {
+      "post": {
+        "operationId": "resolveAlert",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "title": "Alert Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/perceptron__domain__models__Alert"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve",
+        "tags": [
+          "monitoring"
         ]
       }
     },
@@ -11500,6 +12633,58 @@
         ]
       }
     },
+    "/api/v1/datasets/{dataset_version_id}/diff/{other_id}": {
+      "get": {
+        "description": "Qué cambió de la versión A a la B: filas, esquema, distribución y archivos.",
+        "operationId": "diffDatasets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_version_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "other_id",
+            "required": true,
+            "schema": {
+              "title": "Other Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDiff"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Diff Datasets",
+        "tags": [
+          "data"
+        ]
+      }
+    },
     "/api/v1/datasets/{dataset_version_id}/labelsets": {
       "get": {
         "operationId": "listLabelSets",
@@ -11593,6 +12778,52 @@
         "summary": "Create Labelset",
         "tags": [
           "labeling"
+        ]
+      }
+    },
+    "/api/v1/datasets/{dataset_version_id}/lineage": {
+      "get": {
+        "operationId": "getLineage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_version_id",
+            "required": true,
+            "schema": {
+              "title": "Dataset Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LineageNode"
+                  },
+                  "title": "Response Getlineage",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dataset Lineage",
+        "tags": [
+          "data"
         ]
       }
     },
@@ -11756,6 +12987,417 @@
         "summary": "Dataset Samples",
         "tags": [
           "data"
+        ]
+      }
+    },
+    "/api/v1/deployments/{deployment_id}": {
+      "get": {
+        "operationId": "getDeployment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deployment_id",
+            "required": true,
+            "schema": {
+              "title": "Deployment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deployment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Deployment",
+        "tags": [
+          "monitoring"
+        ]
+      },
+      "patch": {
+        "operationId": "updateDeployment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deployment_id",
+            "required": true,
+            "schema": {
+              "title": "Deployment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeploymentPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deployment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Deployment",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/deployments/{deployment_id}/check": {
+      "post": {
+        "operationId": "checkDeployment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deployment_id",
+            "required": true,
+            "schema": {
+              "title": "Deployment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "last",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 10,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriftReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Check",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/deployments/{deployment_id}/drift": {
+      "get": {
+        "operationId": "listDriftReports",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deployment_id",
+            "required": true,
+            "schema": {
+              "title": "Deployment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DriftReport"
+                  },
+                  "title": "Response Listdriftreports",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Drift",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/deployments/{deployment_id}/feedback": {
+      "post": {
+        "operationId": "sendFeedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deployment_id",
+            "required": true,
+            "schema": {
+              "title": "Deployment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Feedback",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/deployments/{deployment_id}/performance": {
+      "get": {
+        "operationId": "getPerformance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deployment_id",
+            "required": true,
+            "schema": {
+              "title": "Deployment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": true,
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Getperformance"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Performance",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/deployments/{deployment_id}/predict": {
+      "post": {
+        "operationId": "predictDeployment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deployment_id",
+            "required": true,
+            "schema": {
+              "title": "Deployment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PredictBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Predictions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/deployments/{deployment_id}/predictions": {
+      "get": {
+        "operationId": "listPredictions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deployment_id",
+            "required": true,
+            "schema": {
+              "title": "Deployment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "title": "Response Listpredictions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predictions",
+        "tags": [
+          "monitoring"
         ]
       }
     },
@@ -12722,6 +14364,152 @@
         ]
       }
     },
+    "/api/v1/models/{model_version_id}/challenge": {
+      "post": {
+        "operationId": "challengeModel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_version_id",
+            "required": true,
+            "schema": {
+              "title": "Model Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChallengeBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Challenge",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/models/{model_version_id}/deployments": {
+      "post": {
+        "operationId": "createDeployment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_version_id",
+            "required": true,
+            "schema": {
+              "title": "Model Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeploymentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deployment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Deployment",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
+    "/api/v1/models/{model_version_id}/promote": {
+      "post": {
+        "operationId": "promoteModel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_version_id",
+            "required": true,
+            "schema": {
+              "title": "Model Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelVersion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Promote",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
     "/api/v1/pipelines/{pipeline_id}": {
       "get": {
         "operationId": "getPipeline",
@@ -13143,6 +14931,68 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/alerts": {
+      "get": {
+        "operationId": "listAlerts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AlertStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/perceptron__domain__models__Alert"
+                  },
+                  "title": "Response Listalerts",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Alerts",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/arch/define": {
       "post": {
         "description": "Sub-wizard de definición: opciones explicadas de cada paso según lo ya elegido.",
@@ -13550,6 +15400,52 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/deployments": {
+      "get": {
+        "operationId": "listDeployments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Deployment"
+                  },
+                  "title": "Response Listdeployments",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Deployments",
+        "tags": [
+          "monitoring"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/draft": {
       "get": {
         "operationId": "getDraft",
@@ -13789,6 +15685,48 @@
         "summary": "List Models",
         "tags": [
           "models"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/models/rollback": {
+      "post": {
+        "operationId": "rollbackModel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelVersion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rollback",
+        "tags": [
+          "monitoring"
         ]
       }
     },

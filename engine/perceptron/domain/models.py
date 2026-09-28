@@ -17,8 +17,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from perceptron.core.ids import IdPrefix, new_id
 from perceptron.domain.enums import (
     AgentState,
+    AlertKind,
+    AlertStatus,
     DataSourceType,
     DeploymentHost,
+    DeploymentStatus,
     Device,
     ExportFormat,
     LabelKind,
@@ -237,6 +240,9 @@ class Evaluation(Entity):
     split: str = "test"
     metrics: dict[str, float] = Field(default_factory=dict)
     artifacts: dict[str, str] = Field(default_factory=dict)
+    dataset_version_id: str | None = Field(
+        default=None, description="Otra versión de datos (holdout de champion/challenger)"
+    )
 
 
 class ModelVersion(Entity):
@@ -246,6 +252,8 @@ class ModelVersion(Entity):
     stage: ModelStage = ModelStage.CANDIDATE
     signature: JsonDict = Field(default_factory=dict)
     model_card: JsonDict = Field(default_factory=dict)
+    promoted_at: datetime | None = Field(default=None, description="Última vez que fue champion")
+    retired_at: datetime | None = Field(default=None, description="Cuándo dejó de ser champion")
 
 
 class Export(Entity):
@@ -257,11 +265,23 @@ class Export(Entity):
 
 
 class Deployment(Entity):
+    """Modelo en uso con monitoreo (RF-MON-01..04). Sigue al champion del proyecto."""
+
     id: str = Field(default_factory=_id_factory(IdPrefix.DEPLOYMENT))
+    project_id: str = ""
+    name: str = "default"
     model_version_id: str
     endpoint: str
     host: DeploymentHost = DeploymentHost.DESKTOP
-    monitoring: JsonDict = Field(default_factory=dict)
+    status: DeploymentStatus = DeploymentStatus.ACTIVE
+    follow_champion: bool = Field(default=True, description="Al promover, pasa al champion")
+    sample_rate: float = Field(
+        default=1.0, ge=0, le=1, description="Fracción de predicciones registradas"
+    )
+    key_column: str | None = Field(default=None, description="Columna para asociar el feedback")
+    monitoring: JsonDict = Field(
+        default_factory=dict, description="Ventana, umbrales y canales de alerta"
+    )
 
 
 class DriftReport(Entity):
@@ -272,6 +292,21 @@ class DriftReport(Entity):
     metrics: JsonDict = Field(default_factory=dict)
     severity: Severity = Severity.NONE
     action: str | None = None
+
+
+class Alert(Entity):
+    """Alerta del monitoreo (RF-MON-04): en la app y, si hay canales, por email o webhook."""
+
+    id: str = Field(default_factory=_id_factory(IdPrefix.ALERT))
+    project_id: str
+    deployment_id: str | None = None
+    kind: AlertKind
+    severity: Severity
+    title: str
+    message: str = ""
+    details: JsonDict = Field(default_factory=dict)
+    status: AlertStatus = AlertStatus.OPEN
+    channels: list[str] = Field(default_factory=list, description="Por dónde salió")
 
 
 class RetrainPolicy(Entity):
@@ -380,6 +415,7 @@ ALL_ENTITIES: tuple[type[Entity], ...] = (
     Export,
     Deployment,
     DriftReport,
+    Alert,
     RetrainPolicy,
     LLMSession,
     LLMCall,
