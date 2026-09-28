@@ -207,6 +207,68 @@ def project_create(
         ctx.close()
 
 
+@project_app.command("duplicate")
+def project_duplicate(
+    project_id: Annotated[str, typer.Argument(help="Proyecto a duplicar")],
+    name: Annotated[str | None, typer.Option(help="Nombre del nuevo proyecto")] = None,
+    workspace: WorkspaceOpt = None,
+    as_json: JsonOpt = False,
+) -> None:
+    """Proyecto nuevo con la misma configuración, sin datos ni runs (RF-PRJ-01)."""
+    from perceptron.api.context import EngineContext
+    from perceptron.services.projects import duplicate_project
+
+    ctx = EngineContext.create(_settings(workspace))
+    try:
+        project = ctx.projects.add(duplicate_project(ctx, project_id, name))
+        ctx.files.init_project(project)
+        typer.echo(project.model_dump_json() if as_json else f"Proyecto creado: {project.id}")
+    finally:
+        ctx.close()
+
+
+@project_app.command("archive")
+def project_archive(
+    project_id: Annotated[str, typer.Argument(help="Proyecto")],
+    restore: Annotated[bool, typer.Option("--restore", help="Sacarlo del archivo")] = False,
+    workspace: WorkspaceOpt = None,
+) -> None:
+    """Archiva (o restaura) un proyecto: se conserva todo y deja de aparecer en la lista."""
+    from perceptron.api.context import EngineContext
+    from perceptron.domain.enums import ProjectStatus
+
+    ctx = EngineContext.create(_settings(workspace))
+    try:
+        current = ctx.projects.get(project_id)
+        status = ProjectStatus.ACTIVE if restore else ProjectStatus.ARCHIVED
+        updated = ctx.projects.update(current.model_copy(update={"status": status}))
+        ctx.files.write_project(updated)
+        typer.echo(f"{updated.id}  [{updated.status.value}]")
+    finally:
+        ctx.close()
+
+
+@project_app.command("delete")
+def project_delete(
+    project_id: Annotated[str, typer.Argument(help="Proyecto")],
+    yes: Annotated[bool, typer.Option("--yes", help="Confirmar el borrado (irreversible)")] = False,
+    workspace: WorkspaceOpt = None,
+) -> None:
+    """Elimina el proyecto con sus datos, runs, modelos y carpeta. Irreversible."""
+    from perceptron.api.context import EngineContext
+    from perceptron.services.projects import purge_project
+
+    if not yes:
+        typer.echo("El borrado es irreversible: repetí el comando con --yes para confirmar.")
+        raise typer.Exit(code=2)
+    ctx = EngineContext.create(_settings(workspace))
+    try:
+        removed = purge_project(ctx, project_id)
+        typer.echo(f"Proyecto eliminado ({removed['entities']} entidades)")
+    finally:
+        ctx.close()
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()
 

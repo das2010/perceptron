@@ -125,6 +125,57 @@ export function useCreateProject() {
   });
 }
 
+/** Archivar/restaurar (y otros cambios) con bloqueo optimista por `version`. */
+export function useUpdateProject(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: Schemas["ProjectPatch"]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).PATCH("/api/v1/projects/{project_id}", {
+          params: { path: { project_id: projectId } },
+          body,
+        }),
+      ) as Project,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.projects }),
+  });
+}
+
+export function useDuplicateProject(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (name?: string) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/duplicate", {
+          params: { path: { project_id: projectId } },
+          body: { name: name || null },
+        }),
+      ) as Project,
+    onSuccess: () => void qc.invalidateQueries({ queryKey: keys.projects }),
+  });
+}
+
+export function useDeleteProject(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await (
+        await getApiClient()
+      ).DELETE("/api/v1/projects/{project_id}", {
+        params: { path: { project_id: projectId } },
+      });
+      if (res.error) unwrap(res);
+    },
+    onSuccess: () => {
+      qc.removeQueries({ queryKey: keys.project(projectId) });
+      void qc.invalidateQueries({ queryKey: keys.projects });
+    },
+  });
+}
+
 // ---------------------------------------------------------------- datos
 
 export function useDatasets(projectId: string) {

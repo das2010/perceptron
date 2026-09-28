@@ -123,7 +123,9 @@
     "gpus": "GPU",
     "noGpu": "Sin GPU (se entrena en CPU)",
     "recent": "Proyectos recientes",
-    "empty": "Todavía no hay proyectos. Creá uno para empezar."
+    "empty": "Todavía no hay proyectos. Creá uno para empezar.",
+    "showArchived_one": "Mostrar el archivado ({{count}})",
+    "showArchived_other": "Mostrar archivados ({{count}})"
   },
   "project": {
     "name": "Nombre",
@@ -147,7 +149,20 @@
     "template": "Plantilla",
     "noTemplate": "Sin plantilla",
     "noTemplateHint": "Elegí un caso de uso para preconfigurar modalidad, tarea y métrica.",
-    "templateHint": "{{modalities}} · {{task}} · optimiza {{metric}}"
+    "templateHint": "{{modalities}} · {{task}} · optimiza {{metric}}",
+    "archived": "Archivado",
+    "actions": {
+      "title": "Proyecto",
+      "duplicate": "Duplicar",
+      "archive": "Archivar",
+      "restore": "Restaurar",
+      "delete": "Eliminar",
+      "hint": "Duplicar copia la configuración (objetivo, tarea, métrica, privacidad), sin datos ni runs. Archivar conserva todo y lo saca de la lista.",
+      "deleteTitle": "Eliminar «{{name}}»",
+      "deleteWarning": "Se borran para siempre los datos, versiones, runs, modelos y la carpeta del proyecto. No se puede deshacer; si solo querés sacarlo de la vista, archivalo.",
+      "typeName": "Escribí «{{name}}» para confirmar",
+      "deleteConfirm": "Eliminar definitivamente"
+    }
   },
   "privacy": {
     "L0": "L0 — Sin LLM: se usan solo reglas.",

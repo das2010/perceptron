@@ -30,7 +30,7 @@ const navLink =
 function ProjectNav() {
   const { t } = useTranslation();
   const { data } = useProjects();
-  const projects = Array.isArray(data) ? data : [];
+  const projects = (Array.isArray(data) ? data : []).filter((p) => p.status !== "archived");
   return (
     <div className="mt-6">
       <p className="px-3 text-xs font-semibold uppercase text-muted">{t("nav.projects")}</p>

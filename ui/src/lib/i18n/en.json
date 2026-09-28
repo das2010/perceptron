@@ -123,7 +123,9 @@
     "gpus": "GPU",
     "noGpu": "No GPU (training on CPU)",
     "recent": "Recent projects",
-    "empty": "No projects yet. Create one to get started."
+    "empty": "No projects yet. Create one to get started.",
+    "showArchived_one": "Show archived ({{count}})",
+    "showArchived_other": "Show archived ({{count}})"
   },
   "project": {
     "name": "Name",
@@ -147,7 +149,20 @@
     "template": "Template",
     "noTemplate": "No template",
     "noTemplateHint": "Pick a use case to preconfigure modality, task and metric.",
-    "templateHint": "{{modalities}} · {{task}} · optimizes {{metric}}"
+    "templateHint": "{{modalities}} · {{task}} · optimizes {{metric}}",
+    "archived": "Archived",
+    "actions": {
+      "title": "Project",
+      "duplicate": "Duplicate",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete",
+      "hint": "Duplicate copies the configuration (goal, task, metric, privacy), without data or runs. Archive keeps everything and hides it from the list.",
+      "deleteTitle": "Delete “{{name}}”",
+      "deleteWarning": "Data, versions, runs, models and the project folder are deleted permanently. This cannot be undone; to just hide it, archive it.",
+      "typeName": "Type “{{name}}” to confirm",
+      "deleteConfirm": "Delete permanently"
+    }
   },
   "privacy": {
     "L0": "L0 — No LLM: rules only.",

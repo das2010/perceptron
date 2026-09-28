@@ -12,6 +12,7 @@ from perceptron.api.context import EngineContext, get_context
 from perceptron.catalog.project_templates import PROJECT_TEMPLATES, ProjectTemplate, get_template
 from perceptron.domain.enums import Modality, PrivacyLevel, ProjectStatus, TaskType
 from perceptron.domain.models import Project
+from perceptron.services.projects import duplicate_project, purge_project
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -114,6 +115,26 @@ def update_project(project_id: str, body: ProjectPatch, ctx: Ctx) -> Project:
     "/{project_id}", status_code=status.HTTP_204_NO_CONTENT, operation_id="deleteProject"
 )
 def delete_project(project_id: str, ctx: Ctx) -> None:
-    # Borra la metadata; los archivos se conservan (borrado físico con confirmación: Capa 3).
-    ctx.projects.delete(project_id)
+    """Elimina el proyecto con sus datos, runs, modelos y carpeta (RF-PRJ-01). Irreversible:
+    la UI pide confirmar escribiendo el nombre; para conservarlo, archivarlo (PATCH status)."""
+    purge_project(ctx, project_id)
     ctx.events.publish("project.deleted", project_id=project_id)
+
+
+class ProjectDuplicate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+
+
+@router.post(
+    "/{project_id}/duplicate", status_code=status.HTTP_201_CREATED, operation_id="duplicateProject"
+)
+def duplicate(project_id: str, body: ProjectDuplicate, ctx: Ctx, request: Request) -> Project:
+    """Proyecto nuevo con la misma configuración; sin datos ni runs (RF-PRJ-01)."""
+    draft = get_access(request).prepare_project(
+        request, duplicate_project(ctx, project_id, body.name)
+    )
+    project = ctx.projects.add(draft)
+    ctx.files.init_project(project)
+    ctx.events.publish("project.created", project_id=project.id)
+    return project
