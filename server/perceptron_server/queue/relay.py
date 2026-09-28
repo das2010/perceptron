@@ -104,7 +104,7 @@ class RedisRelay:
             logger.exception("no se pudo publicar en el relay", extra={"channel": channel})
 
     def listen(self, channel: str, listener: Listener) -> Callable[[], None]:
-        pubsub = self._client.pubsub(ignore_subscribe_messages=True)
+        pubsub = self._client.pubsub(ignore_subscribe_messages=True)  # type: ignore[no-untyped-call]
 
         def handle(raw: dict[str, Any]) -> None:
             try:
