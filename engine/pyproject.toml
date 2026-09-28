@@ -65,6 +65,13 @@ export = [
   "onnxconverter-common>=1.14",
   "prometheus-client>=0.20",
 ]
+# Capa 4b (ADR-0028): explicabilidad con Captum (BSD; Shapley/KernelSHAP, Integrated Gradients,
+# Grad-CAM) e informe PDF con reportlab (BSD, sin dependencias del sistema).
+eval = [
+  "captum>=0.7",
+  "reportlab>=4.2",
+  "markdown-it-py>=3",
+]
 # NER para PII en texto libre (L2, ADR-0022): `presidio-analyzer` y `presidio-anonymizer` se
 # instalan aparte junto con un modelo NER de licencia compatible. No es un extra: spaCy
 # restringe numpy y el lock resuelve todos los extras juntos.

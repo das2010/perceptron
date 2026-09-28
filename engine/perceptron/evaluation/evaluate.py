@@ -79,6 +79,10 @@ def evaluate_run(run_dir: Path, dataset_dir: Path, *, split: str = "test") -> Ev
         checkpoint=trained.checkpoint.name,
     )
     write_json(run_dir / EVALUATION_DIR / EVALUATION_FILE, report.model_dump(mode="json"))
+    # Por muestra, para el análisis de errores y de fairness (RF-EVL-03/04).
+    from perceptron.evaluation.predictions import save_predictions
+
+    save_predictions(run_dir / EVALUATION_DIR, preds, trained.pipeline, trained.task)
     return report
 
 

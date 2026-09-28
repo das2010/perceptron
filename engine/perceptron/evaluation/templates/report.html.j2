@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ report.title }}</title>
+<style>
+@font-face { font-family: "Titillium Web"; font-weight: 400; src: url(data:font/woff2;base64,{{ font400 }}) format("woff2"); }
+@font-face { font-family: "Titillium Web"; font-weight: 600; src: url(data:font/woff2;base64,{{ font600 }}) format("woff2"); }
+:root { --lime: #cbff00; --dark: #334000; --black: #263000; --light: #f4f7e8; --muted: #5a6330; --line: #d9dfc2; --bad: #a1261b; --ok: #2e6b00; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Titillium Web", system-ui, sans-serif; color: var(--black); background: #fff; line-height: 1.5; }
+header { background: var(--dark); color: var(--light); padding: 32px 48px; }
+header .brand { color: var(--lime); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; }
+header h1 { margin: 8px 0 4px; font-size: 30px; font-weight: 600; }
+header p { margin: 0; opacity: .85; }
+main { max-width: 960px; margin: 0 auto; padding: 32px 48px 64px; }
+h2 { font-size: 20px; font-weight: 600; border-bottom: 3px solid var(--lime); padding-bottom: 4px; margin-top: 36px; }
+h3 { font-size: 16px; font-weight: 600; }
+.summary { background: var(--light); border-left: 6px solid var(--lime); padding: 16px 20px; border-radius: 8px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.kpi { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.kpi span { display: block; color: var(--muted); font-size: 12px; }
+.kpi strong { font-size: 22px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 8px 0; }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+th { background: var(--light); font-weight: 600; }
+.bar { fill: var(--dark); } .bar.neg { fill: var(--bad); } .label { font-size: 11px; fill: var(--black); }
+.alert { color: var(--bad); }
+.muted { color: var(--muted); font-size: 12px; }
+footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 48px; }
+@media print { header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } main { padding: 16px 0; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Preteco · Perceptron</div>
+  <h1>{{ report.title }}</h1>
+  <p>{{ project }} · run {{ run_id }} · {{ created }}{% if report.origin == "llm" %} · redactado con IA{% endif %}</p>
+</header>
+<main>
+  <section class="summary"><strong>Resumen.</strong> {{ report.summary }}</section>
+
+  <h2>Métricas en el test sellado</h2>
+  <div class="kpis">
+  {% for k, v in metrics %}<div class="kpi"><span>{{ k }}</span><strong>{{ "%.4g"|format(v) }}</strong></div>{% endfor %}
+  </div>
+
+  {% if confusion %}
+  <h3>Matriz de confusión</h3>
+  <table>
+    <tr><th>Real \ Predicho</th>{% for c in confusion.labels %}<th>{{ c }}</th>{% endfor %}</tr>
+    {% for row in confusion.rows %}<tr><th>{{ row.label }}</th>{% for cell in row.cells %}<td style="background: rgba(203,255,0,{{ cell.alpha }})">{{ cell.value }}</td>{% endfor %}</tr>{% endfor %}
+  </table>
+  {% endif %}
+
+  {{ body | safe }}
+
+  {% if explanation %}
+  <h2>Qué variables pesan más</h2>
+  <p class="muted">Importancia global (valores de Shapley por muestreo sobre {{ explanation.samples }} filas de validación).</p>
+  <svg width="100%" viewBox="0 0 640 {{ 24 * explanation.top|length + 8 }}" role="img" aria-label="Importancia de variables">
+  {% for f in explanation.top %}
+    <text class="label" x="0" y="{{ 24 * loop.index0 + 16 }}">{{ f.feature[:28] }}</text>
+    <rect class="bar" x="200" y="{{ 24 * loop.index0 + 4 }}" height="16" width="{{ 420 * f.importance / explanation.max }}" rx="3"></rect>
+    <text class="label" x="{{ 206 + 420 * f.importance / explanation.max }}" y="{{ 24 * loop.index0 + 16 }}">{{ "%.3g"|format(f.importance) }}</text>
+  {% endfor %}
+  </svg>
+  {% endif %}
+
+  {% if fairness %}
+  <h2>Equidad entre grupos</h2>
+  {% for f in fairness %}
+  <h3>{{ f.attribute }}</h3>
+  <table>
+    <tr><th>Grupo</th><th>Casos</th>{% if f.task == "regression" %}<th>MAE</th>{% else %}<th>Tasa «{{ f.positive_class }}»</th><th>Accuracy</th><th>TPR</th><th>FPR</th>{% endif %}</tr>
+    {% for g in f.groups %}<tr><td>{{ g.group }}</td><td>{{ g.support }}</td>{% if f.task == "regression" %}<td>{{ "%.4g"|format(g.mae) }}</td>{% else %}<td>{{ "%.3f"|format(g.selection_rate or 0) }}</td><td>{{ "%.3f"|format(g.accuracy or 0) }}</td><td>{{ "%.3f"|format(g.tpr or 0) }}</td><td>{{ "%.3f"|format(g.fpr or 0) }}</td>{% endif %}</tr>{% endfor %}
+  </table>
+  {% for a in f.alerts %}<p class="alert">⚠ {{ a }}</p>{% endfor %}
+  {% endfor %}
+  {% endif %}
+
+  {% if robustness %}
+  <h2>Robustez ante perturbaciones</h2>
+  <p class="muted">{{ robustness.metric }} sin perturbar: {{ "%.4g"|format(robustness.baseline) }} ({{ robustness.samples }} muestras del test).</p>
+  <table>
+    <tr><th>Perturbación</th><th>Severidad</th><th>{{ robustness.metric }}</th><th>Degradación</th></tr>
+    {% for r in robustness.results %}<tr><td>{{ r.kind }}</td><td>{{ r.severity }}</td><td>{{ "%.4g"|format(r.metric) }}</td><td{% if r.degradation > 0.05 %} class="alert"{% endif %}>{{ "%+.4g"|format(-r.degradation if robustness.higher_is_better else r.degradation) }}</td></tr>{% endfor %}
+  </table>
+  {% endif %}
+
+  <h2>Model card</h2>
+  <table>
+    <tr><th>Uso previsto</th><td>{{ report.model_card.intended_use }}</td></tr>
+    <tr><th>Datos</th><td>{{ report.model_card.data }}</td></tr>
+    <tr><th>Entrenamiento</th><td>{{ report.model_card.training }}</td></tr>
+    {% if report.model_card.limitations %}<tr><th>Limitaciones</th><td><ul>{% for l in report.model_card.limitations %}<li>{{ l }}</li>{% endfor %}</ul></td></tr>{% endif %}
+    {% if report.model_card.ethical_considerations %}<tr><th>Consideraciones éticas</th><td><ul>{% for l in report.model_card.ethical_considerations %}<li>{{ l }}</li>{% endfor %}</ul></td></tr>{% endif %}
+  </table>
+
+  <footer>Generado por Perceptron {{ version }} el {{ created }}. Las métricas se midieron sobre el test sellado, que no se usó para elegir el modelo.</footer>
+</main>
+</body>
+</html>
