@@ -71,7 +71,7 @@ from perceptron.export.formats import (
 )
 from perceptron.hpo.recommend import objective_metric, recommend_strategy
 from perceptron.hpo.strategy import Budget, HPOStrategy
-from perceptron.hpo.study import StudyControl, StudyResult, TrialRecord, run_study
+from perceptron.hpo.study import StudyControl, StudyResult, TrialRecord, gpu_plan, run_study
 from perceptron.llm.schemas import Report
 from perceptron.sandbox.code import CODE_FILE
 from perceptron.sandbox.expert import build_code_spec, is_code_spec
@@ -520,6 +520,7 @@ class Workflow:
             # Varias GPUs del mismo tipo: un trial en paralelo por GPU (RF-HPO-04).
             hardware = detect_hardware(self.ctx.settings.workspace_dir)
             gpus = [g.index for g in hardware.gpus if g.backend == base.device] or None
+        base, gpus = gpu_plan(base, strategy, gpus)
         with log_context(project_id=project.id, job_id=st.id):
             result = run_study(
                 strategy,
@@ -530,7 +531,7 @@ class Workflow:
                 bus=self.ctx.events,
                 on_run_event=on_run_event,
                 on_trial_end=on_trial_end,
-                gpus=gpus if gpus and len(gpus) > 1 else None,
+                gpus=gpus,
             )
         summary = result.model_dump(mode="json")
         current = self.ctx.repo(Study).get(st.id)

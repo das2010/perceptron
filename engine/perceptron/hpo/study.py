@@ -429,3 +429,16 @@ def _summarize(
         pareto_front=pareto,
         duration_s=round(duration, 3),
     )
+
+
+def gpu_plan(
+    base: RunConfig, strategy: HPOStrategy, gpus: list[int] | None
+) -> tuple[RunConfig, list[int] | None]:
+    """Cómo usar varias GPUs: un estudio de un solo trial entrena ese run con DDP en todas
+    (RF-TRN-08); con varios trials, un trial por GPU (RF-HPO-04). Una o ninguna: como siempre."""
+    if not gpus or len(gpus) < 2:
+        return base, None
+    single = strategy.strategy == "single" or strategy.budget.max_trials == 1
+    if single and strategy.parallelism <= 1:
+        return base.model_copy(update={"devices": len(gpus)}), None
+    return base, gpus

@@ -355,3 +355,34 @@ def test_parallel_cancel_stops_every_running_trial(tmp_path: Path) -> None:
     assert res.stop_reason == "cancelled"
     assert len(started) == 3  # no se lanzaron más
     assert all(t.state == "fail" and t.error == "cancelado" for t in res.trials)
+
+
+def test_gpu_plan_ddp_for_one_run_and_one_trial_per_gpu_otherwise(tmp_path: Path) -> None:
+    """RF-TRN-08 / RF-HPO-04: cómo se reparten varias GPUs."""
+    from perceptron.hpo.study import gpu_plan
+
+    base = _base(tmp_path)
+    single = HPOStrategy(strategy="single", pruner="none", budget=Budget(max_trials=1))
+    cfg, gpus = gpu_plan(base, single, [0, 1, 2])
+    assert cfg.devices == 3 and gpus is None  # un run con DDP en las tres
+    many = HPOStrategy(
+        strategy="tpe", pruner="none", search_space=SPACE, budget=Budget(max_trials=9)
+    )
+    cfg, gpus = gpu_plan(base, many, [0, 1, 2])
+    assert cfg.devices == 1 and gpus == [0, 1, 2]  # un trial por GPU
+    assert gpu_plan(base, many, [0]) == (base, None)  # una sola GPU: como siempre
+
+
+def test_only_rank_zero_emits_events(monkeypatch: pytest.MonkeyPatch) -> None:
+    import io
+
+    from perceptron.training.callbacks import EventEmitter
+
+    monkeypatch.setenv("LOCAL_RANK", "1")
+    silent = io.StringIO()
+    EventEmitter("run", silent).emit("started")
+    assert silent.getvalue() == ""
+    monkeypatch.setenv("LOCAL_RANK", "0")
+    loud = io.StringIO()
+    EventEmitter("run", loud).emit("started")
+    assert '"event":"started"' in loud.getvalue()

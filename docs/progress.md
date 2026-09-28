@@ -323,7 +323,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-TRN-05 | sí | 1 | Cada run corre en un proceso separado; el Engine supervisa, captura OOM/crashes y los… | ✅ subproceso por run con diagnóstico de OOM/crash (ADR-0015) |
 | RF-TRN-06 | sí | 1 | Progreso en vivo por WebSocket: época, batch, loss, métricas, LR, throughput, uso de… | ✅ eventos JSONL → EventBus → `WS /runs/{rid}/live` |
 | RF-TRN-07 |  | 1 | Pausar, reanudar (desde checkpoint), cancelar. | ✅ cancelar, pausar y reanudar desde checkpoint |
-| RF-TRN-08 |  | 1 | Multi-GPU en un nodo (DDP vía Lightning) cuando hay >1 GPU. | ⬜ pendiente |
+| RF-TRN-08 |  | 1 | Multi-GPU en un nodo (DDP vía Lightning) cuando hay >1 GPU. | 🟡 DDP de Lightning en un nodo cuando un estudio de un solo trial tiene varias GPUs (eventos y resultado solo desde rank 0); lógica probada en CI, falta validarlo en un worker con varias GPUs reales |
 | RF-TRN-09 |  | 1 | Técnicas de fine-tuning: congelar backbone, descongelado progresivo, LR… | ✅ congelado del backbone, descongelado progresivo (un grupo de capas por época desde la salida), LR discriminativo (`backbone_lr_mult`) y LoRA con peft para encoders de texto de HF |
 | RF-TRN-10 |  | 1 | Manejo de desbalance: pesos de clase, focal loss, sobremuestreo, umbral óptimo… | ✅ pesos de clase, focal, oversampling, umbral óptimo en el reporte |
 | RF-TRN-11 |  | 1 | Caché de modelos preentrenados: descarga única, verificación de checksum, uso offline,… | ✅ caché única en el workspace (HF Hub y torch hub; `PERCEPTRON_MODELS_CACHE` para una compartida; en el Team Server, el volumen compartido con los workers), modo offline, verificación de checksums, borrado y predescarga del catálogo curado desde Configuración |
