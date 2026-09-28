@@ -707,6 +707,16 @@ class Workflow:
 
         return local_image(self._run_dir(self.ctx.repo(Run).get(run_id)), image)
 
+    def explain_text(self, run_id: str, text: str) -> Any:
+        from perceptron.evaluation.explain import local_text
+
+        return local_text(self._run_dir(self.ctx.repo(Run).get(run_id)), text)
+
+    def explain_audio(self, run_id: str, path: Path) -> Any:
+        from perceptron.evaluation.explain import local_audio
+
+        return local_audio(self._run_dir(self.ctx.repo(Run).get(run_id)), path)
+
     def robustness(self, run_id: str) -> Any:
         """Degradación ante perturbaciones (RF-EVL-05), cacheada junto a la evaluación."""
         from perceptron.evaluation.robustness import RobustnessReport, robustness_report

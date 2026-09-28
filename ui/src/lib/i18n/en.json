@@ -629,7 +629,9 @@
     "textHint": "Normalized and tokenized exactly as in training.",
     "textFile": "or a .txt (one sample per line):",
     "audio": "Audio to classify",
-    "audioHint": "WAV, FLAC, OGG or MP3; resampled as in training."
+    "audioHint": "WAV, FLAC, OGG or MP3; resampled as in training.",
+    "tokens": "Contribution of each word to the prediction",
+    "spectrogram": "Spectrogram: the moments and frequencies that weighed most"
   },
   "analysis": {
     "title": "Advanced evaluation",

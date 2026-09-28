@@ -57,6 +57,8 @@ VIEW_WRITES = frozenset(
         "predictTexts",
         "explainRow",
         "explainImage",
+        "explainText",
+        "explainAudio",
         "validateArchitecture",
         "lintArchCode",
         "archToCode",

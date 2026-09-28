@@ -86,6 +86,9 @@ def test_text_playground(client: TestClient, fixtures_dir: Path) -> None:
     ]
     rows = client.post(f"{API}/runs/{run_id}/predict", json={"rows": [{"texto": "x"}]})
     assert rows.status_code == 422  # un modelo de texto no recibe filas de tabla
+    why = _ok(client.post(f"{API}/runs/{run_id}/explain/text", json={"text": texts[0]}))
+    assert why["method"] == "occlusion" and why["prediction"] == first["prediction"]
+    assert why["contributions"] and all("attribution" in c for c in why["contributions"])
 
 
 def test_audio_playground(client: TestClient, fixtures_dir: Path) -> None:
@@ -99,3 +102,8 @@ def test_audio_playground(client: TestClient, fixtures_dir: Path) -> None:
     assert pred["prediction"] is not None and pred.get("probabilities")
     bad = [("file", ("clip.xyz", b"no es audio", "application/octet-stream"))]
     assert client.post(f"{API}/runs/{run_id}/predict/file", files=bad).status_code == 422
+    import base64
+
+    why = _ok(client.post(f"{API}/runs/{run_id}/explain/audio", files=files))
+    assert why["method"] == "integrated_gradients"
+    assert base64.b64decode(why["heatmap_png"])[1:4] == b"PNG"

@@ -11,8 +11,10 @@ import {
   type ExportReport,
   type PlaygroundResult,
   useDatasetSample,
+  useExplainAudio,
   useExplainImage,
   useExplainRow,
+  useExplainText,
   usePredictFile,
   usePredictRows,
   usePredictTexts,
@@ -77,15 +79,17 @@ export function PlaygroundPanel({
   const explainRow = useExplainRow(runId);
   const explainImage = useExplainImage(runId);
   const texts = usePredictTexts(runId);
+  const explainText = useExplainText(runId);
+  const explainAudio = useExplainAudio(runId);
   const [text, setText] = useState("");
   const [lastFile, setLastFile] = useState<File | null>(null);
   const result = rows.data ?? file.data ?? texts.data;
-  const explainable = inputs.kind === "tabular" || inputs.kind === "image";
   const upload = (f: File | undefined) => {
     if (!f) return;
     rows.reset();
     texts.reset();
     explainImage.reset();
+    explainAudio.reset();
     setLastFile(f);
     file.mutate(f);
   };
@@ -135,6 +139,7 @@ export function PlaygroundPanel({
           onSubmit={(e) => {
             e.preventDefault();
             file.reset();
+            explainText.reset();
             texts.mutate([text]);
           }}
         >
@@ -176,20 +181,34 @@ export function PlaygroundPanel({
         </Field>
       )}
       <ErrorNote
-        error={rows.error ?? file.error ?? texts.error ?? explainRow.error ?? explainImage.error}
+        error={
+          rows.error ??
+          file.error ??
+          texts.error ??
+          explainRow.error ??
+          explainImage.error ??
+          explainText.error ??
+          explainAudio.error
+        }
       />
       {result && <Result result={result} />}
-      {result && explainable && (
+      {result && (inputs.kind !== "tokens" || texts.data) && (
         <Button
           className="mt-3"
           variant="ai"
           size="sm"
-          loading={explainRow.isPending || explainImage.isPending}
-          onClick={() =>
-            inputs.kind === "tabular"
-              ? explainRow.mutate(currentRow())
-              : lastFile && explainImage.mutate(lastFile)
+          loading={
+            explainRow.isPending ||
+            explainImage.isPending ||
+            explainText.isPending ||
+            explainAudio.isPending
           }
+          onClick={() => {
+            if (inputs.kind === "tabular") explainRow.mutate(currentRow());
+            else if (inputs.kind === "tokens") explainText.mutate(text);
+            else if (inputs.kind === "spectrogram") lastFile && explainAudio.mutate(lastFile);
+            else if (lastFile) explainImage.mutate(lastFile);
+          }}
         >
           {t("playground.explain")}
         </Button>
@@ -216,11 +235,29 @@ export function PlaygroundPanel({
           })}
         </ul>
       )}
-      {explainImage.data?.heatmap_png && (
+      {explainText.data && (
+        <p className="mt-3 text-sm leading-7" aria-label={t("playground.tokens")}>
+          {(() => {
+            const items = explainText.data.contributions;
+            const max = Math.max(...items.map((c) => Math.abs(c.attribution)), 1e-9);
+            return items.map((c) => (
+              <span
+                key={c.feature}
+                title={c.attribution.toFixed(3)}
+                className={`mr-1 rounded px-1 ${c.attribution >= 0 ? "bg-primary" : "bg-bad text-canvas"}`}
+                style={{ opacity: 0.25 + 0.75 * (Math.abs(c.attribution) / max) }}
+              >
+                {String(c.value)}
+              </span>
+            ));
+          })()}
+        </p>
+      )}
+      {(explainImage.data ?? explainAudio.data)?.heatmap_png && (
         <img
           className="mt-3 max-h-80 rounded-pt border border-line"
-          src={`data:image/png;base64,${explainImage.data.heatmap_png}`}
-          alt={t("playground.heatmap")}
+          src={`data:image/png;base64,${(explainImage.data ?? explainAudio.data)?.heatmap_png}`}
+          alt={t(explainAudio.data ? "playground.spectrogram" : "playground.heatmap")}
         />
       )}
     </Card>

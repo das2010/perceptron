@@ -80,6 +80,37 @@ async def explain_image(
     return result
 
 
+class ExplainText(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    text: str = Field(min_length=1, max_length=20_000)
+
+
+@router.post("/runs/{run_id}/explain/text", operation_id="explainText")
+def explain_text(run_id: str, body: ExplainText, ctx: Ctx) -> LocalExplanation:
+    """Oclusión por token: cuánto aporta cada palabra a la clase predicha."""
+    result: LocalExplanation = Workflow(ctx).explain_text(run_id, body.text)
+    return result
+
+
+@router.post("/runs/{run_id}/explain/audio", operation_id="explainAudio")
+async def explain_audio(
+    run_id: str, ctx: Ctx, file: Annotated[UploadFile, File()]
+) -> LocalExplanation:
+    """Integrated Gradients sobre el espectrograma: qué momentos y frecuencias pesaron."""
+    import tempfile
+    from pathlib import Path
+
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in (".wav", ".flac", ".ogg", ".mp3"):
+        raise ValidationError(f"formato de audio no soportado: {suffix or '(sin extensión)'}")
+    data = await read_limited(file, 64 * MB)
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / f"audio{suffix}"
+        path.write_bytes(data)
+        result: LocalExplanation = Workflow(ctx).explain_audio(run_id, path)
+    return result
+
+
 @router.get("/runs/{run_id}/robustness", operation_id="getRobustness")
 def robustness(run_id: str, ctx: Ctx) -> RobustnessReport:
     """Métrica del test con entradas perturbadas a tres severidades (RF-EVL-05)."""

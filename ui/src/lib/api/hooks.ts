@@ -1071,6 +1071,38 @@ export function useExplainImage(runId: string) {
   });
 }
 
+export function useExplainText(runId: string) {
+  return useMutation({
+    mutationFn: async (text: string) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/explain/text", {
+          params: { path: { run_id: runId } },
+          body: { text },
+        }),
+      ),
+  });
+}
+
+export function useExplainAudio(runId: string) {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      return unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/explain/audio", {
+          params: { path: { run_id: runId } },
+          body: form as unknown as Schemas["Body_explainAudio"],
+          bodySerializer: (b) => b as unknown as FormData,
+        }),
+      );
+    },
+  });
+}
+
 // ---------------------------------------------------------------- etiquetado (Capa 4c)
 
 export type LabelSet = WithId<Schemas["LabelSet"]> & { classes: string[] };
