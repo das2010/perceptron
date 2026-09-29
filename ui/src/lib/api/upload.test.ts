@@ -35,6 +35,9 @@ class FakeXhr {
   }
 }
 
+/** Sin narrowing de TS: `last` lo asigna el constructor, no el test. */
+const current = (): FakeXhr | null => FakeXhr.last;
+
 describe("postForm (subida con progreso)", () => {
   afterEach(() => vi.unstubAllGlobals());
 
@@ -44,20 +47,20 @@ describe("postForm (subida con progreso)", () => {
     const pending = postForm<{ id: string }>("/api/v1/projects/p/uploads", new FormData(), (f) =>
       seen.push(f),
     );
-    await vi.waitFor(() => expect(FakeXhr.last).not.toBeNull());
-    FakeXhr.last?.respond(201, { id: "src_1" });
+    await vi.waitFor(() => expect(current()).not.toBeNull());
+    current()?.respond(201, { id: "src_1" });
     await expect(pending).resolves.toEqual({ id: "src_1" });
     expect(seen).toEqual([0.25, 1]);
-    expect(FakeXhr.last?.url).toContain("/api/v1/projects/p/uploads");
-    expect(FakeXhr.last?.withCredentials).toBe(true);
+    expect(current()?.url).toContain("/api/v1/projects/p/uploads");
+    expect(current()?.withCredentials).toBe(true);
   });
 
   it("convierte los errores del Engine en ApiError", async () => {
     FakeXhr.last = null;
     vi.stubGlobal("XMLHttpRequest", FakeXhr);
     const pending = postForm("/api/v1/projects/p/uploads", new FormData());
-    await vi.waitFor(() => expect(FakeXhr.last).not.toBeNull());
-    FakeXhr.last?.respond(413, { code: "too_large", message: "archivo demasiado grande" });
+    await vi.waitFor(() => expect(current()).not.toBeNull());
+    current()?.respond(413, { code: "too_large", message: "archivo demasiado grande" });
     const err = await pending.catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect((err as ApiError).message).toBe("archivo demasiado grande");
