@@ -7433,6 +7433,13 @@ export interface components {
         SourceKind: "table" | "image_folder" | "text_folder" | "audio_folder" | "segmentation_folder" | "ocr_folder";
         /** SourcePreview */
         SourcePreview: {
+            /**
+             * Classes
+             * @description Carpetas: archivos por clase (primer nivel de carpeta)
+             */
+            classes?: {
+                [key: string]: number;
+            } | null;
             /** Columns */
             columns: string[];
             kind: components["schemas"]["SourceKind"];
@@ -7441,13 +7448,6 @@ export interface components {
                 [key: string]: unknown;
             }[];
             schema?: components["schemas"]["TableSchema"] | null;
-            /**
-             * Classes
-             * @description Carpetas: archivos por clase (primer nivel de carpeta)
-             */
-            classes?: {
-                [key: string]: number;
-            } | null;
             /**
              * Total
              * @description Carpetas: cantidad de archivos
