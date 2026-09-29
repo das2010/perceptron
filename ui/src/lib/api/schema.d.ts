@@ -7441,6 +7441,18 @@ export interface components {
                 [key: string]: unknown;
             }[];
             schema?: components["schemas"]["TableSchema"] | null;
+            /**
+             * Classes
+             * @description Carpetas: archivos por clase (primer nivel de carpeta)
+             */
+            classes?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * Total
+             * @description Carpetas: cantidad de archivos
+             */
+            total?: number | null;
         };
         /** Split */
         Split: {

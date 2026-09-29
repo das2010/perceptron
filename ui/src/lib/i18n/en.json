@@ -217,7 +217,12 @@
     "created": "Created",
     "showProfile": "Show profile",
     "goTrain": "Next: train",
-    "dvcHint": "Download this version with its .dvc file (DVC 3)"
+    "dvcHint": "Download this version with its .dvc file (DVC 3)",
+    "uploading": "Uploading {{pct}}% ({{sent}} of {{total}} MB)…",
+    "analyzing": "Analyzing the content…",
+    "folderSummary_one": "{{total}} files in {{count}} class.",
+    "folderSummary_other": "{{total}} files in {{count}} classes.",
+    "ingesting": "Creating the data version: with thousands of files it can take a few minutes."
   },
   "sourceKind": {
     "table": "Table",
@@ -285,7 +290,8 @@
     "trialsN_other": "{{count}} trials",
     "searchSpace": "Hyperparameters to tune",
     "launch": "Train now",
-    "editVisually": "Open in the visual editor"
+    "editVisually": "Open in the visual editor",
+    "proposeArchWait": "The architect proposes options and the time per epoch is measured on this machine; it can take a couple of minutes."
   },
   "experiments": {
     "live": "Live training",

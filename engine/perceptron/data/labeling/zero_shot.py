@@ -72,15 +72,16 @@ Backend = Callable[[str, Modality, Sequence[Any], list[str], bool], list[dict[st
 
 
 def _pipeline(task: str, model: str) -> Any:
-    from perceptron.catalog.weights_cache import offline
-
+    # Sin conexión no hace falta nada acá: `weights_cache.configure` ya fijó HF_HUB_OFFLINE.
+    # (`model_kwargs={"local_files_only": …}` choca con el mismo argumento que transformers le
+    # pasa a AutoConfig y rompía la carga.)
     try:
         from transformers import pipeline
     except ImportError:
         raise ValidationError("el zero-shot necesita el extra `ml` (transformers)") from None
     factory: Any = pipeline  # la tarea llega como str: sin sobrecarga tipada
     try:
-        return factory(task, model=model, model_kwargs={"local_files_only": offline()})
+        return factory(task, model=model)
     except OSError as e:
         raise ValidationError(
             f"el modelo {model} no está descargado: bajalo desde la caché de modelos"

@@ -13,6 +13,7 @@ import {
   Field,
   Input,
   Select,
+  PendingHint,
 } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { useProjectId } from "@/features/projects/ProjectLayout";
@@ -220,6 +221,7 @@ export function TrainPage() {
           >
             {t("train.proposeArch")}
           </Button>
+          <PendingHint active={proposeArch.isPending}>{t("train.proposeArchWait")}</PendingHint>
           <ErrorNote error={proposeArch.error} />
           {proposals?.fallback_reason && (
             <p className="mt-3 text-xs text-muted">

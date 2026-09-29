@@ -50,6 +50,10 @@ def test_upload_folder_keeps_structure_and_blocks_traversal(
     only_folder = files[:-1]
     src2 = _ok(client.post(f"{API}/projects/{pid}/uploads", files=only_folder), 201)
     assert Path(src2["config"]["path"]).name == "uc04_defects"
+    # Vista previa con clases y muestra, sin leer las imágenes.
+    prev = _ok(client.post(f"{API}/sources/{src2['id']}/preview"))
+    assert prev["kind"] == "image_folder" and prev["total"] == 6
+    assert sum(prev["classes"].values()) == 6 and prev["rows"][0]["label"] in prev["classes"]
 
 
 def test_upload_folder_with_root_file_uses_chosen_folder(

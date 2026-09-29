@@ -107,6 +107,33 @@ export function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) =
           setTarget(res.preview.columns.includes("target") ? "target" : "");
         }}
       />
+      {upload.progress && (
+        <div className="mt-3 space-y-1" role="status" aria-live="polite">
+          <div
+            className="h-2 rounded bg-canvas"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round((upload.progress.sent / (upload.progress.total || 1)) * 100)}
+          >
+            <div
+              className="h-2 rounded bg-primary transition-all"
+              style={{
+                width: `${Math.round((upload.progress.sent / (upload.progress.total || 1)) * 100)}%`,
+              }}
+            />
+          </div>
+          <p className="text-xs text-muted">
+            {upload.progress.phase === "upload"
+              ? t("data.uploading", {
+                  pct: Math.round((upload.progress.sent / (upload.progress.total || 1)) * 100),
+                  sent: (upload.progress.sent / 2 ** 20).toFixed(0),
+                  total: (upload.progress.total / 2 ** 20).toFixed(0),
+                })
+              : t("data.analyzing")}
+          </p>
+        </div>
+      )}
       <ErrorNote error={upload.error ?? ingest.error} />
 
       {state && (
@@ -115,6 +142,23 @@ export function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) =
             {t("data.previewOf", { name: state.source.name })}{" "}
             <Badge>{t(`sourceKind.${state.preview.kind}`)}</Badge>
           </p>
+          {state.preview.classes && (
+            <div className="text-sm">
+              <p>
+                {t("data.folderSummary", {
+                  total: state.preview.total ?? 0,
+                  count: Object.keys(state.preview.classes).length,
+                })}
+              </p>
+              <p className="mt-1 flex flex-wrap gap-1">
+                {Object.entries(state.preview.classes).map(([name, n]) => (
+                  <Badge key={name}>
+                    {name}: {n}
+                  </Badge>
+                ))}
+              </p>
+            </div>
+          )}
           {state.preview.rows.length > 0 && (
             <Table>
               <thead>
@@ -152,6 +196,11 @@ export function UploadPanel({ onIngested }: { onIngested: (dv: DatasetVersion) =
                 ))}
               </Select>
             </Field>
+          )}
+          {ingest.isPending && (
+            <p className="text-xs text-muted" role="status">
+              {t("data.ingesting")}
+            </p>
           )}
           <Button
             loading={ingest.isPending}

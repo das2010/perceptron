@@ -425,3 +425,31 @@ def test_zero_shot_catalog() -> None:
         resolve_model(Modality.TABULAR, None)
     with pytest.raises(ValidationError):
         classify(Modality.TEXT, ["hola"], ["una"])
+
+
+def test_zero_shot_calls_transformers_pipeline_with_supported_arguments(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """El backend real arma el pipeline como lo acepta transformers (bug visto en el e2e)."""
+    import transformers
+
+    from perceptron.data.labeling import zero_shot
+    from perceptron.domain.enums import Modality
+
+    seen: dict[str, Any] = {}
+
+    def fake_pipeline(task: str, **kwargs: Any) -> Any:
+        seen.update(task=task, **kwargs)
+
+        def clf(texts: list[str], **kw: Any) -> list[dict[str, Any]]:
+            labels = kw["candidate_labels"]
+            return [{"labels": labels, "scores": [0.9] + [0.1] * (len(labels) - 1)} for _ in texts]
+
+        return clf
+
+    monkeypatch.setattr(transformers, "pipeline", fake_pipeline)
+    out = zero_shot.transformers_backend(
+        "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli", Modality.TEXT, ["hola"], ["a", "b"], False
+    )
+    assert out == [{"a": 0.9, "b": 0.1}]
+    assert seen["task"] == "zero-shot-classification" and "model_kwargs" not in seen

@@ -20,6 +20,7 @@ import {
   Select,
   Spinner,
   Textarea,
+  PendingHint,
 } from "@/components/ui";
 import { useUiStore } from "@/app/store";
 import { DefineWizard } from "@/features/arch/DefineWizard";
@@ -195,6 +196,9 @@ function StepArchitecture({ values, save }: { values: DraftValues; save: Save })
           {defining ? t("define.close") : t("define.open")}
         </Button>
       </div>
+      <PendingHint active={pipeline.isPending || propose.isPending}>
+        {t("train.proposeArchWait")}
+      </PendingHint>
       {defining && values.pipeline_id && (
         <DefineWizard
           projectId={projectId}
