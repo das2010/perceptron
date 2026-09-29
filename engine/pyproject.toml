@@ -44,6 +44,7 @@ ml = [
   "psutil>=6.0",
   "jinja2>=3.1",
   "transformers>=4.45",
+  "sentencepiece>=0.2",  # tokenizadores de SigLIP y mDeBERTa (zero-shot, RF-LBL-02), Apache-2.0
   "peft>=0.13",  # LoRA para encoders de texto (RF-TRN-09), Apache-2.0
   "tokenizers>=0.20",
   "soundfile>=0.12",

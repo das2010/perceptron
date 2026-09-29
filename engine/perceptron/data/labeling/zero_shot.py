@@ -86,6 +86,8 @@ def _pipeline(task: str, model: str) -> Any:
         raise ValidationError(
             f"el modelo {model} no está descargado: bajalo desde la caché de modelos"
         ) from e
+    except ImportError as e:  # p. ej. tokenizadores que necesitan sentencepiece
+        raise ValidationError(f"falta una dependencia para {model}: {e}".strip()[:300]) from e
 
 
 def transformers_backend(
