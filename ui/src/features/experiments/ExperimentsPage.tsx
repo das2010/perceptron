@@ -1,5 +1,6 @@
 import { Link, useSearch } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { EChart } from "@/components/charts/EChart";
@@ -18,7 +19,7 @@ import { useProjectId } from "@/features/projects/ProjectLayout";
 
 import { CompareRuns } from "./CompareRuns";
 import { StudyInsights } from "./StudyInsights";
-import { useJob, useRuns, type Run } from "@/lib/api/hooks";
+import { keys, useJob, useRuns, type Run } from "@/lib/api/hooks";
 import { useEngineSocket } from "@/lib/api/ws";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -125,6 +126,13 @@ export function ExperimentsPage() {
   const running =
     jobState.data && !["succeeded", "failed", "cancelled"].includes(jobState.data.status);
   const { data, isPending, error } = useRuns(projectId, running ? 4000 : undefined);
+  // Al terminar el job, una última lectura: el sondeo se corta y el último trial quedaba
+  // «Entrenando» en la tabla aunque ya había terminado.
+  const qc = useQueryClient();
+  const finished = Boolean(jobState.data) && !running;
+  useEffect(() => {
+    if (finished) void qc.invalidateQueries({ queryKey: keys.runs(projectId) });
+  }, [finished, qc, projectId]);
   const runs = useMemo(() => [...(data ?? [])].reverse(), [data]);
   const cols = metricCols(runs);
   const [compare, setCompare] = useState<string[]>([]);

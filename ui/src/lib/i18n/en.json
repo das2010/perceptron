@@ -355,7 +355,8 @@
     "challenge": "Challenge the champion",
     "promote": "Promote",
     "challengeWon": "The challenger won ({{metric}}: {{challenger}} vs {{champion}} on {{n}} cases) and is the new champion.",
-    "challengeLost": "The challenger did not improve ({{metric}}: {{challenger}} vs {{champion}} on {{n}} cases): the champion stays."
+    "challengeLost": "The challenger did not improve ({{metric}}: {{challenger}} vs {{champion}} on {{n}} cases): the champion stays.",
+    "deployed": "Already deployed · see monitoring"
   },
   "stage": {
     "candidate": "Candidate",

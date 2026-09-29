@@ -19,6 +19,7 @@ import {
   type ChallengeResult,
   useChallenge,
   useCreateDeployment,
+  useDeployments,
   usePromote,
   useRollback,
 } from "@/features/monitoring/hooks";
@@ -36,6 +37,11 @@ export function ModelsPage() {
   const rollback = useRollback(projectId);
   const challenge = useChallenge(projectId);
   const deploy = useCreateDeployment(projectId);
+  const deployments = useDeployments(projectId);
+  // Un modelo ya desplegado no se vuelve a desplegar: se va a su monitoreo.
+  const deployed = new Set(
+    (deployments.data ?? []).filter((d) => d.status === "active").map((d) => d.model_version_id),
+  );
   const [result, setResult] = useState<ChallengeResult | null>(null);
   const models = data ?? [];
   const champion = models.find((m) => m.stage === "production");
@@ -118,7 +124,15 @@ export function ModelsPage() {
                   </Td>
                   <Td className="text-xs text-muted">{formatDate(m.created_at, i18n.language)}</Td>
                   <Td className="space-x-1 whitespace-nowrap text-right">
-                    {isChampion ? (
+                    {isChampion && deployed.has(m.id) ? (
+                      <Link
+                        to="/projects/$projectId/monitoring"
+                        params={{ projectId }}
+                        className="text-sm underline"
+                      >
+                        {t("models.deployed")}
+                      </Link>
+                    ) : isChampion ? (
                       <Button
                         size="sm"
                         variant="ghost"
