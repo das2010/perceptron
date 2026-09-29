@@ -230,7 +230,7 @@ export function DataPage() {
   const { data, isPending, error } = useDatasets(projectId);
   const datasets = data ?? [];
   const [selected, setSelected] = useState<string | undefined>();
-  const current = selected ?? datasets.at(-1)?.id;
+  const current = selected ?? datasets[0]?.id; // la más nueva
 
   return (
     <div className="space-y-6">

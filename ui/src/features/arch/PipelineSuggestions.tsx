@@ -36,7 +36,7 @@ export function PipelineSuggestions({
   const qc = useQueryClient();
   const datasets = useDatasets(projectId);
   const [dv, setDv] = useState("");
-  const chosen = dv || datasets.data?.at(-1)?.id || "";
+  const chosen = dv || datasets.data?.[0]?.id || "";
   const [decisions, setDecisions] = useState<Record<number, boolean>>({});
   const suggest = useMutation({
     mutationFn: async () =>
