@@ -43,7 +43,7 @@ import {
   useRuns,
   useSetLabels,
 } from "@/lib/api/hooks";
-import { formatNumber } from "@/lib/format";
+import { formatDate, formatNumber } from "@/lib/format";
 
 const AUDIO = /\.(wav|flac|ogg|mp3)$/i;
 
@@ -548,17 +548,17 @@ function LabelSetPanel({ labelset, projectId }: { labelset: LabelSet; projectId:
 }
 
 export function LabelingPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const projectId = useProjectId();
   const datasets = useDatasets(projectId);
   const [dvId, setDvId] = useState("");
-  const chosen = dvId || datasets.data?.at(-1)?.id || "";
+  const chosen = dvId || datasets.data?.[0]?.id || "";
   const sets = useLabelSets(chosen || undefined);
   const create = useCreateLabelSet(chosen);
   const [selected, setSelected] = useState<string>("");
   const [kind, setKind] = useState<LabelSet["kind"]>("class");
   const [classes, setClasses] = useState("");
-  const current = (sets.data ?? []).find((s) => s.id === selected) ?? sets.data?.at(-1);
+  const current = (sets.data ?? []).find((s) => s.id === selected) ?? sets.data?.[0];
 
   if (datasets.isPending) return <Spinner />;
   if (!datasets.data?.length) return <EmptyState>{t("train.noData")}</EmptyState>;
@@ -585,7 +585,8 @@ export function LabelingPage() {
               >
                 {(sets.data ?? []).map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name ?? s.id}
+                    {s.name ??
+                      `${t(`labeling.kinds.${s.kind}`)} · ${s.classes.length} · ${formatDate(s.created_at ?? "", i18n.language)}`}
                   </option>
                 ))}
               </Select>

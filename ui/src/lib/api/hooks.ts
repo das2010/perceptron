@@ -3,8 +3,10 @@
  * Ninguna lógica de ML vive en la UI (CLAUDE.md): solo llamadas al Engine.
  */
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { getApiClient } from "./client";
+import { postForm } from "./upload";
 import type { components } from "./schema";
 import { getPlatform } from "@/lib/platform/bridge";
 
@@ -235,20 +237,28 @@ export function useProfile(datasetVersionId: string | undefined) {
 }
 
 /** Sube archivos o una carpeta (rutas relativas) y la previsualiza (RF-ING-01). */
+/** Avance de una subida: bytes enviados y luego el análisis del contenido (vista previa). */
+export interface UploadProgress {
+  phase: "upload" | "preview";
+  sent: number;
+  total: number;
+}
+
 export function useUpload(projectId: string) {
-  return useMutation({
+  const [progress, setProgress] = useState<UploadProgress | null>(null);
+  const mutation = useMutation({
     mutationFn: async (files: File[]) => {
-      const api = await getApiClient();
       const form = new FormData();
       for (const f of files) form.append("files", f, f.webkitRelativePath || f.name);
-      const source = unwrap(
-        await api.POST("/api/v1/projects/{project_id}/uploads", {
-          params: { path: { project_id: projectId } },
-          // openapi-fetch serializa JSON por defecto: el FormData va tal cual.
-          body: form as unknown as Schemas["Body_uploadSource"],
-          bodySerializer: (b) => b as unknown as FormData,
-        }),
-      ) as DataSource;
+      const total = files.reduce((n, f) => n + f.size, 0);
+      setProgress({ phase: "upload", sent: 0, total });
+      const source = await postForm<DataSource>(
+        `/api/v1/projects/${projectId}/uploads`,
+        form,
+        (fraction) => setProgress({ phase: "upload", sent: Math.round(fraction * total), total }),
+      );
+      setProgress({ phase: "preview", sent: total, total });
+      const api = await getApiClient();
       const preview = unwrap(
         await api.POST("/api/v1/sources/{source_id}/preview", {
           params: { path: { source_id: source.id } },
@@ -256,7 +266,9 @@ export function useUpload(projectId: string) {
       );
       return { source, preview };
     },
+    onSettled: () => setProgress(null),
   });
+  return Object.assign(mutation, { progress });
 }
 
 export function useIngest(projectId: string) {

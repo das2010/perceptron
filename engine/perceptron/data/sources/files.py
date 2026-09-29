@@ -13,7 +13,7 @@ import os
 import shutil
 import tempfile
 import zipfile
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum
@@ -175,6 +175,66 @@ def _safe_extract(zf: zipfile.ZipFile, root: Path) -> None:
         if not dest.is_relative_to(root):
             raise ValidationError("ZIP con rutas inválidas", details={"member": member.filename})
     zf.extractall(root)  # rutas validadas arriba (zip slip)
+
+
+PREVIEW_ANNOTATIONS = {".csv", ".json", ".xml"}  # anotaciones: se decide con la detección completa
+
+
+@dataclass
+class FolderPreview:
+    kind: SourceKind
+    total: int
+    classes: dict[str, int]
+    samples: list[dict[str, str | None]]
+
+
+def folder_preview(
+    names: Iterable[str], limit: int = 20, *, zipped: bool = False
+) -> FolderPreview | None:
+    """Vista previa de una carpeta (o zip) de imágenes/audio a partir de las rutas relativas,
+    sin leer ni extraer archivos: clases (primer nivel de carpeta) con su cantidad y una muestra
+    repartida entre clases. None si hace falta la detección completa (anotaciones, máscaras,
+    tablas): la decide `open_source`."""
+    from perceptron.data.audio import AUDIO_EXTENSIONS
+
+    files = [
+        n.replace("\\", "/")
+        for n in names
+        if n
+        and not n.endswith("/")
+        and not any(p.startswith((".", "__MACOSX")) for p in n.replace("\\", "/").split("/"))
+    ]
+    if not files:
+        return None
+    tops = {f.split("/")[0] for f in files}
+    # Un zip con una sola carpeta adentro se ingiere desde esa carpeta (como `open_source`).
+    if zipped and len(tops) == 1 and all("/" in f for f in files):
+        prefix = next(iter(tops)) + "/"
+        files = [f[len(prefix) :] for f in files]
+    suffixes = {Path(f).suffix.lower() for f in files}
+    if suffixes & PREVIEW_ANNOTATIONS or {"images", "masks"} <= {f.split("/")[0] for f in files}:
+        return None
+    images = [f for f in files if Path(f).suffix.lower() in IMAGE_EXTENSIONS]
+    audio = [f for f in files if Path(f).suffix.lower() in AUDIO_EXTENSIONS]
+    chosen, kind = (images, SourceKind.IMAGE_FOLDER) if images else (audio, SourceKind.AUDIO_FOLDER)
+    if not chosen:
+        return None
+    by_class: dict[str, list[str]] = {}
+    for f in sorted(chosen):
+        by_class.setdefault(f.split("/")[0] if "/" in f else "", []).append(f)
+    samples: list[dict[str, str | None]] = []
+    depth = 0
+    while len(samples) < limit and any(depth < len(v) for v in by_class.values()):
+        for label, items in by_class.items():
+            if depth < len(items) and len(samples) < limit:
+                samples.append({"path": items[depth], "label": label or None})
+        depth += 1
+    return FolderPreview(
+        kind=kind,
+        total=len(chosen),
+        classes={k or "(sin etiqueta)": len(v) for k, v in sorted(by_class.items())},
+        samples=samples,
+    )
 
 
 def _iter_images(root: Path) -> Iterator[Path]:

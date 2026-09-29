@@ -13,6 +13,7 @@ import {
   Field,
   Input,
   Select,
+  PendingHint,
 } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { useProjectId } from "@/features/projects/ProjectLayout";
@@ -132,7 +133,7 @@ export function TrainPage() {
   const { data: datasetList } = useDatasets(projectId);
   const datasets = datasetList ?? [];
   const [picked, setDvId] = useState<string>("");
-  const dvId = picked || datasets.at(-1)?.id || "";
+  const dvId = picked || datasets[0]?.id || ""; // la lista viene de la más nueva a la más vieja
   const [pipeline, setPipeline] = useState<Pipeline | null>(null);
   const [proposals, setProposals] = useState<ArchProposals | null>(null);
   const [archspecId, setArchspecId] = useState<string>("");
@@ -220,6 +221,7 @@ export function TrainPage() {
           >
             {t("train.proposeArch")}
           </Button>
+          <PendingHint active={proposeArch.isPending}>{t("train.proposeArchWait")}</PendingHint>
           <ErrorNote error={proposeArch.error} />
           {proposals?.fallback_reason && (
             <p className="mt-3 text-xs text-muted">

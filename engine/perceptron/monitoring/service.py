@@ -19,6 +19,8 @@ import io
 import json
 import random
 import tempfile
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -58,6 +60,7 @@ if TYPE_CHECKING:
 DRIFT_TOPIC = "drift.report"
 REFERENCE_ROWS = 5000
 REFERENCE_FILES = 300  # imágenes/audios de train para la referencia de embeddings
+REFERENCE_BATCH = 16  # archivos por pasada del modelo al armar la referencia
 MONITORED_KINDS = ("tabular", "tokens", "image", "spectrogram")
 LOWER_IS_BETTER = frozenset({"mae", "rmse", "mape", "smape", "median_abs_error", "log_loss", "ece"})
 DEFAULT_MONITORING: dict[str, Any] = {
@@ -126,6 +129,17 @@ def score_rows(
         for k, v in cls.model_dump().items()
         if isinstance(v, int | float) and v is not None
     }
+
+
+def _image_feed(model: InferenceModel, paths: list[Path]) -> dict[str, np.ndarray]:
+    """Abre, transforma y cierra cada imagen del lote (no quedan decodificadas en memoria)."""
+    from PIL import Image
+
+    images = []
+    for path in paths:
+        with Image.open(path) as im:
+            images.append(im.convert("RGB"))
+    return model.feed_images(images)
 
 
 class Monitoring:
@@ -305,10 +319,15 @@ class Monitoring:
 
     # ------------------------------------------------------------------ chequeos
 
-    def reference(self, mv: ModelVersion) -> pl.DataFrame:
+    def reference(self, mv: ModelVersion, split: str = "train") -> pl.DataFrame:
+        """Muestra de referencia. Features: train. Salidas y embeddings del modelo: validación,
+        porque sobre lo que ya vio el modelo está más seguro que sobre datos nuevos y eso solo
+        parecería drift."""
         run = self.ctx.repo(Run).get(mv.run_id)
         dv = self.ctx.repo(DatasetVersion).get(run.dataset_version_id)
-        df = self.wf.view(dv).scan("train").collect()
+        df = self.wf.view(dv).scan(split).collect()
+        if df.is_empty() and split != "train":
+            df = self.wf.view(dv).scan("train").collect()
         return df.sample(n=REFERENCE_ROWS, seed=0) if df.height > REFERENCE_ROWS else df
 
     def check(self, deployment_id: str, *, last: int | None = None) -> DriftReport:
@@ -326,7 +345,7 @@ class Monitoring:
         ref = self.reference(mv)
         cur = store.features(preds)
         data = data_drift(ref, cur, numeric, categorical)
-        ref_out = self._reference_outputs(dep, mv, model, ref)
+        ref_out = self._reference_outputs(dep, mv, model, self.reference(mv, "val"))
         output = self._output_drift(model, ref_out, preds)
         embedding = self._embedding_drift(ref_out, preds)
         emb_sev = Severity(embedding["severity"]) if embedding else Severity.NONE
@@ -408,33 +427,46 @@ class Monitoring:
         self, dep: Deployment, mv: ModelVersion, model: InferenceModel, ref: pl.DataFrame
     ) -> dict[str, np.ndarray]:
         """Salidas y embeddings del modelo sobre la muestra de train (caché por versión)."""
-        cache = self.store(dep).root / f"reference-{mv.id}.npz"
+        cache = self.store(dep).root / f"reference-{mv.id}-val.npz"
         if cache.is_file():
             with np.load(cache) as z:
                 return {k: z[k] for k in z.files}
+        # Por lotes chicos: 300 imágenes de una vez (decodificadas + activaciones de la red)
+        # son varios GB y tiraban el proceso del servidor por falta de memoria.
+        feeds: list[Callable[[], dict[str, np.ndarray]]] = []
         if model.kind == "tabular":
             sample = ref.head(1000)
             cols = [c for c in model.required_columns if c in sample.columns]
-            feed = model.feed_rows(sample.select(cols).to_dicts())
+            rows = sample.select(cols).to_dicts()
+            for i in range(0, len(rows), REFERENCE_BATCH * 8):
+                feeds.append(partial(model.feed_rows, rows[i : i + REFERENCE_BATCH * 8]))
         elif model.kind == "tokens":
             col = model.text_column or ""
-            feed = model.feed_texts([str(v or "") for v in ref.head(1000)[col].to_list()])
+            texts = [str(v or "") for v in ref.head(1000)[col].to_list()]
+            for i in range(0, len(texts), REFERENCE_BATCH * 4):
+                feeds.append(partial(model.feed_texts, texts[i : i + REFERENCE_BATCH * 4]))
         else:
             run = self.ctx.repo(Run).get(mv.run_id)
             view = self.wf.view(self.ctx.repo(DatasetVersion).get(run.dataset_version_id))
             sample = ref.filter(~pl.col("corrupt")) if "corrupt" in ref.columns else ref
             paths = [view.files_dir / str(p) for p in sample.head(REFERENCE_FILES)["path"]]
-            if model.kind == "image":
-                from PIL import Image
-
-                images = []
-                for path in paths:
-                    with Image.open(path) as im:
-                        images.append(im.copy())
-                feed = model.feed_images(images)
+            for i in range(0, len(paths), REFERENCE_BATCH):
+                chunk = paths[i : i + REFERENCE_BATCH]
+                if model.kind == "image":
+                    feeds.append(partial(_image_feed, model, chunk))
+                else:
+                    feeds.append(partial(model.feed_audio, chunk))
+        preds: list[Any] = []
+        vectors: list[np.ndarray] = []
+        has_emb = True
+        for make in feeds:
+            batch_preds, emb = model.infer(make(), embeddings=True)
+            preds.extend(batch_preds)
+            if emb is None:
+                has_emb = False
             else:
-                feed = model.feed_audio(paths)
-        preds, emb = model.infer(feed, embeddings=True)
+                vectors.append(emb)
+        emb = np.concatenate(vectors) if has_emb and vectors else None
         out: dict[str, np.ndarray] = {}
         if model.task == "regression":
             out["values"] = np.array([float(p.prediction) for p in preds])

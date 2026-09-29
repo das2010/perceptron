@@ -125,6 +125,23 @@ describe("pantallas", () => {
     ).toBeInTheDocument();
   });
 
+  it("Entrenar elige por defecto la versión de datos más nueva (la API lista de nueva a vieja)", async () => {
+    const newer = { ...dataset, id: "dsv_2", content_hash: "ffff00001111", num_samples: 16938 };
+    const bodies: unknown[] = [];
+    mockEngine({
+      ...base,
+      "GET /api/v1/projects/prj_1/datasets": () => [newer, dataset],
+      "POST /api/v1/projects/prj_1/pipelines/propose": async (req) => {
+        bodies.push(await req.json());
+        return { id: "pip_1", project_id: "prj_1", name: "p", graph: { steps: [] }, version: 1 };
+      },
+    });
+    renderAt("/projects/prj_1/train");
+    await userEvent.click(await screen.findByRole("button", { name: "Proponer preparación" }));
+    await vi.waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toMatchObject({ dataset_version_id: "dsv_2" });
+  });
+
   it("Configuración: la clave se envía una vez y no se muestra", async () => {
     let sent: Record<string, unknown> = {};
     const providers = [

@@ -217,7 +217,12 @@
     "created": "Creada",
     "showProfile": "Ver perfil",
     "goTrain": "Seguir: entrenar",
-    "dvcHint": "Descargar esta versión con su archivo .dvc (DVC 3)"
+    "dvcHint": "Descargar esta versión con su archivo .dvc (DVC 3)",
+    "uploading": "Subiendo {{pct}} % ({{sent}} de {{total}} MB)…",
+    "analyzing": "Analizando el contenido…",
+    "folderSummary_one": "{{total}} archivos en {{count}} clase.",
+    "folderSummary_other": "{{total}} archivos en {{count}} clases.",
+    "ingesting": "Creando la versión de datos: con miles de archivos puede tardar unos minutos."
   },
   "sourceKind": {
     "table": "Tabla",
@@ -285,7 +290,8 @@
     "trialsN_other": "{{count}} intentos",
     "searchSpace": "Hiperparámetros a ajustar",
     "launch": "Entrenar ahora",
-    "editVisually": "Abrir en el editor visual"
+    "editVisually": "Abrir en el editor visual",
+    "proposeArchWait": "El arquitecto propone opciones y se mide el tiempo por época en este equipo; puede tardar un par de minutos."
   },
   "experiments": {
     "live": "Entrenamiento en vivo",
@@ -349,7 +355,8 @@
     "challenge": "Retar al champion",
     "promote": "Promover",
     "challengeWon": "El challenger ganó ({{metric}}: {{challenger}} contra {{champion}} en {{n}} casos) y es el nuevo champion.",
-    "challengeLost": "El challenger no mejoró ({{metric}}: {{challenger}} contra {{champion}} en {{n}} casos): sigue el champion."
+    "challengeLost": "El challenger no mejoró ({{metric}}: {{challenger}} contra {{champion}} en {{n}} casos): sigue el champion.",
+    "deployed": "Ya desplegado · ver monitoreo"
   },
   "stage": {
     "candidate": "Candidato",

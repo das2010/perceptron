@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 import tempfile
+import zipfile
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -19,7 +20,7 @@ from perceptron.core.netguard import check_host
 from perceptron.core.paths import ensure_within, safe_parts, within_roots
 from perceptron.data.profiling.card import ProfileCard
 from perceptron.data.schema import SemanticType, TableSchema, infer_schema
-from perceptron.data.sources.files import SourceKind, open_source, scan_table
+from perceptron.data.sources.files import SourceKind, folder_preview, open_source, scan_table
 from perceptron.data.sources.remote import DbConfig, download_hf, download_kaggle, materialize_db
 from perceptron.data.splits import SPLIT_COLUMN, SplitRequest
 from perceptron.data.versioning.diff import DatasetDiff, LineageNode, dataset_diff, lineage
@@ -45,6 +46,10 @@ class SourcePreview(BaseModel):
     columns: list[str]
     rows: list[dict[str, Any]]
     schema_: TableSchema | None = Field(default=None, alias="schema")
+    total: int | None = Field(default=None, description="Carpetas: cantidad de archivos")
+    classes: dict[str, int] | None = Field(
+        default=None, description="Carpetas: archivos por clase (primer nivel de carpeta)"
+    )
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -271,7 +276,26 @@ def preview_source(
     source_id: str, ctx: Ctx, limit: Annotated[int, Query(ge=1, le=200)] = 20
 ) -> SourcePreview:
     src = ctx.repo(DataSource).get(source_id)
-    with open_source(_source_path(ctx, src)) as detected:
+    path = _source_path(ctx, src)
+    # Carpetas y zips de imágenes/audio: se previsualiza con la lista de archivos (un zip de
+    # cientos de MB no se extrae para esto).
+    fast = None
+    if path.is_file() and path.suffix.lower() == ".zip":
+        with zipfile.ZipFile(path) as zf:
+            fast = folder_preview(zf.namelist(), limit, zipped=True)
+    elif path.is_dir():
+        fast = folder_preview(
+            (p.relative_to(path).as_posix() for p in path.rglob("*") if p.is_file()), limit
+        )
+    if fast is not None:
+        return SourcePreview(
+            kind=fast.kind,
+            columns=["path", "label"],
+            rows=list(fast.samples),
+            total=fast.total,
+            classes=fast.classes,
+        )
+    with open_source(path) as detected:
         if detected.kind is SourceKind.TABLE:
             df = scan_table(detected.path).head(max(limit, 500)).collect()
             return SourcePreview(

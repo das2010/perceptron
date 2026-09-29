@@ -92,7 +92,7 @@ function Report({ report }: { report: DriftReport }) {
         {t("monitoring.window", {
           from: formatDate(report.window_start, i18n.language),
           to: formatDate(report.window_end, i18n.language),
-          n: metrics.data?.n_current ?? emb?.n_current ?? 0,
+          n: metrics.data?.n_current || emb?.n_current || 0,
         })}
       </p>
       {emb && (

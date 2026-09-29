@@ -128,7 +128,7 @@ function Preview({
   const datasets = useDatasets(projectId);
   const [dv, setDv] = useState("");
   const preview = usePreviewSteps(projectId);
-  const chosen = dv || datasets.data?.at(-1)?.id || "";
+  const chosen = dv || datasets.data?.[0]?.id || "";
   const data = preview.data;
   const cell = (v: unknown) =>
     v === null ? "∅" : typeof v === "number" && !Number.isInteger(v) ? v.toFixed(3) : String(v);

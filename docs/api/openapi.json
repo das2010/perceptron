@@ -10492,6 +10492,21 @@
       },
       "SourcePreview": {
         "properties": {
+          "classes": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Carpetas: archivos por clase (primer nivel de carpeta)",
+            "title": "Classes"
+          },
           "columns": {
             "items": {
               "type": "string"
@@ -10519,6 +10534,18 @@
                 "type": "null"
               }
             ]
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Carpetas: cantidad de archivos",
+            "title": "Total"
           }
         },
         "required": [

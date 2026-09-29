@@ -15,6 +15,7 @@ import type {
   ReactNode,
   SelectHTMLAttributes,
 } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/cn";
@@ -343,5 +344,25 @@ export function AiSuggestion({
         </div>
       )}
     </div>
+  );
+}
+
+/** Aviso para esperas largas (LLM, mediciones): qué está pasando y cuánto lleva. */
+export function PendingHint({ active, children }: { active: boolean; children: ReactNode }) {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const start = Date.now();
+    const id = window.setInterval(() => setSeconds(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => {
+      window.clearInterval(id);
+      setSeconds(0);
+    };
+  }, [active]);
+  if (!active) return null;
+  return (
+    <p className="mt-2 text-xs text-muted" role="status" aria-live="polite">
+      {children} <span className="font-mono">{seconds} s</span>
+    </p>
   );
 }
