@@ -431,7 +431,8 @@ def test_zero_shot_calls_transformers_pipeline_with_supported_arguments(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """El backend real arma el pipeline como lo acepta transformers (bug visto en el e2e)."""
-    import transformers
+    import sys
+    import types
 
     from perceptron.data.labeling import zero_shot
     from perceptron.domain.enums import Modality
@@ -447,7 +448,8 @@ def test_zero_shot_calls_transformers_pipeline_with_supported_arguments(
 
         return clf
 
-    monkeypatch.setattr(transformers, "pipeline", fake_pipeline)
+    # Módulo falso completo: el de verdad es perezoso y bajaría el modelo.
+    monkeypatch.setitem(sys.modules, "transformers", types.SimpleNamespace(pipeline=fake_pipeline))
     out = zero_shot.transformers_backend(
         "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli", Modality.TEXT, ["hola"], ["a", "b"], False
     )

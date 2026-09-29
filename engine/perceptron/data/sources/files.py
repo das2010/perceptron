@@ -188,7 +188,9 @@ class FolderPreview:
     samples: list[dict[str, str | None]]
 
 
-def folder_preview(names: Iterable[str], limit: int = 20) -> FolderPreview | None:
+def folder_preview(
+    names: Iterable[str], limit: int = 20, *, zipped: bool = False
+) -> FolderPreview | None:
     """Vista previa de una carpeta (o zip) de imágenes/audio a partir de las rutas relativas,
     sin leer ni extraer archivos: clases (primer nivel de carpeta) con su cantidad y una muestra
     repartida entre clases. None si hace falta la detección completa (anotaciones, máscaras,
@@ -205,7 +207,8 @@ def folder_preview(names: Iterable[str], limit: int = 20) -> FolderPreview | Non
     if not files:
         return None
     tops = {f.split("/")[0] for f in files}
-    if len(tops) == 1 and all("/" in f for f in files):  # un zip con una sola carpeta adentro
+    # Un zip con una sola carpeta adentro se ingiere desde esa carpeta (como `open_source`).
+    if zipped and len(tops) == 1 and all("/" in f for f in files):
         prefix = next(iter(tops)) + "/"
         files = [f[len(prefix) :] for f in files]
     suffixes = {Path(f).suffix.lower() for f in files}

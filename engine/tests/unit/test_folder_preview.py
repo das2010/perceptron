@@ -12,12 +12,18 @@ def test_zip_with_one_root_folder_and_nested_class_dirs() -> None:
         names += [f"Dataset Of animal Images/{cls}/train/images/{i}.jpg" for i in range(n)]
         names += [f"Dataset Of animal Images/{cls}/train/labels/{i}.txt" for i in range(n)]
     names += ["__MACOSX/Dataset Of animal Images/Cat/._0.jpg", "Dataset Of animal Images/.DS_Store"]
-    prev = folder_preview(names, limit=4)
+    prev = folder_preview(names, limit=4, zipped=True)
     assert prev is not None and prev.kind is SourceKind.IMAGE_FOLDER
     assert prev.total == 9 and prev.classes == {"Cat": 5, "Dog": 3, "Hen": 1}
     # La muestra recorre las clases antes de repetir una.
     assert [s["label"] for s in prev.samples] == ["Cat", "Dog", "Hen", "Cat"]
     assert prev.samples[0]["path"] == "Cat/train/images/0.jpg"
+
+
+def test_folder_with_one_class_keeps_the_label() -> None:
+    """Una carpeta (no zip) con una sola subcarpeta: esa subcarpeta es la clase."""
+    prev = folder_preview(["defect/a.png", "defect/b.png"])
+    assert prev is not None and prev.classes == {"defect": 2}
 
 
 def test_audio_and_unlabeled_root_files() -> None:

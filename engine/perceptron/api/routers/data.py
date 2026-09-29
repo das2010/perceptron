@@ -282,7 +282,7 @@ def preview_source(
     fast = None
     if path.is_file() and path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as zf:
-            fast = folder_preview(zf.namelist(), limit)
+            fast = folder_preview(zf.namelist(), limit, zipped=True)
     elif path.is_dir():
         fast = folder_preview(
             (p.relative_to(path).as_posix() for p in path.rglob("*") if p.is_file()), limit
