@@ -124,8 +124,17 @@ def test_image_deployment_files_and_embedding_drift(client: TestClient, fixtures
     assert len(out["predictions"]) == 40 and out["predictions"][0]["prediction"] is not None
     rows = client.post(f"{API}/deployments/{dep}/predict", json={"rows": [{"a": 1}]})
     assert rows.status_code == 422  # el modelo de imagen recibe archivos
+    # Feedback con la clase real (la carpeta): la performance se mide con lo que respondió el
+    # modelo, porque la imagen no se guarda (antes el chequeo fallaba con 422).
+    feedback = [
+        {"prediction_id": pred["prediction_id"], "label": img.parent.name}
+        for pred, img in zip(out["predictions"], images, strict=True)
+    ]
+    _ok(client.post(f"{API}/deployments/{dep}/feedback", json={"items": feedback}))
     stable = _ok(client.post(f"{API}/deployments/{dep}/check", params={"last": 40}))
     assert stable["metrics"]["embedding"]["n_current"] == 40, stable["metrics"]
+    perf = stable["metrics"]["performance"]
+    assert perf and perf["n_labeled"] == 40 and perf["current"] is not None, perf
     recent = _ok(client.get(f"{API}/deployments/{dep}/predictions", params={"limit": 3}))
     # De la imagen solo queda el embedding: ni el archivo ni su nombre.
     assert recent[0]["embedding"] and not any(k.startswith("x:") for k in recent[0])

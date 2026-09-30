@@ -118,7 +118,9 @@ class ModelCard(BaseModel):
     intended_use: str
     data: str
     training: str
-    metrics: dict[str, float] = Field(default_factory=dict)
+    # Métricas globales (número) o por clase (clase → número): con muchas clases el LLM las
+    # detalla y un schema solo numérico hacía fallar el informe tres veces seguidas.
+    metrics: dict[str, float | dict[str, float]] = Field(default_factory=dict)
     limitations: list[str] = Field(default_factory=list)
     ethical_considerations: list[str] = Field(default_factory=list)
 

@@ -131,6 +131,32 @@ def score_rows(
     }
 
 
+def score_logged(model: InferenceModel, labeled: pl.DataFrame) -> dict[str, float]:
+    """Métricas de las predicciones registradas contra la etiqueta real del feedback."""
+    from perceptron.evaluation.metrics import classification_metrics, regression_metrics
+
+    labels = [str(v) for v in labeled["label"].to_list()]
+    if model.task == "regression":
+        y = np.array([float(v) for v in labels])
+        p = labeled["prediction"].cast(pl.Float64, strict=False).to_numpy()
+        reg, _ = regression_metrics(y, p.astype(float))
+        return {k: v for k, v in reg.model_dump().items() if isinstance(v, float)}
+    classes = [str(c) for c in (model.pipeline.classes or [])]
+    index = {c: i for i, c in enumerate(classes)}
+    keep = [i for i, v in enumerate(labels) if v in index]
+    if not keep:
+        raise ValidationError("ninguna etiqueta coincide con las clases del modelo")
+    probs = labeled["probabilities"].to_list()
+    proba = np.array([[json.loads(probs[i] or "{}").get(c, 0.0) for c in classes] for i in keep])
+    y = np.array([index[labels[i]] for i in keep])
+    cls, _ = classification_metrics(y, proba, classes)
+    return {
+        k: float(v)
+        for k, v in cls.model_dump().items()
+        if isinstance(v, int | float) and v is not None
+    }
+
+
 def _image_feed(model: InferenceModel, paths: list[Path]) -> dict[str, np.ndarray]:
     """Abre, transforma y cierra cada imagen del lote (no quedan decodificadas en memoria)."""
     from PIL import Image
@@ -522,8 +548,9 @@ class Monitoring:
         if labeled.height < int(cfg["min_labels"]):
             return None
         model = self.model(mv)
-        rows = self.store(dep).features(labeled).to_dicts()
-        current = score_rows(model, rows, labeled["label"].to_list())
+        # Con lo que el modelo respondió en su momento (sirve para cualquier modalidad: de
+        # imágenes y audios no se guarda el archivo, así que no se puede volver a predecir).
+        current = score_logged(model, labeled)
         project = self.ctx.projects.get(dep.project_id)
         metric = primary_metric(model.task, project.target_metric)
         baseline = mv.model_card.get("test_metrics", {}).get(metric)
