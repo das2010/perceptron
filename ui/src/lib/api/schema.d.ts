@@ -5874,7 +5874,7 @@ export interface components {
             limitations?: string[];
             /** Metrics */
             metrics?: {
-                [key: string]: number;
+                [key: string]: unknown;
             };
             /** Training */
             training: string;

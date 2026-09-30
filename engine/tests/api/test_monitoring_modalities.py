@@ -118,7 +118,12 @@ def test_image_deployment_files_and_embedding_drift(client: TestClient, fixtures
 
     root = fixtures_dir / "uc04_defects"
     dep = _deployment(client, root, None, epochs=2)
-    images = sorted(root.rglob("*.png"))[:40]
+    # 20 de cada clase: con una sola clase no hay ROC-AUC para la performance con feedback.
+    images = [
+        p
+        for d in sorted(x for x in root.iterdir() if x.is_dir())
+        for p in sorted(d.glob("*.png"))[:20]
+    ]
     files = [("files", (p.name, p.read_bytes(), "image/png")) for p in images]
     out = _ok(client.post(f"{API}/deployments/{dep}/predict/file", files=files))
     assert len(out["predictions"]) == 40 and out["predictions"][0]["prediction"] is not None
