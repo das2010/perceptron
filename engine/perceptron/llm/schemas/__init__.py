@@ -118,7 +118,10 @@ class ModelCard(BaseModel):
     intended_use: str
     data: str
     training: str
-    metrics: dict[str, float] = Field(default_factory=dict)
+    # Forma libre: el sistema la reemplaza por las métricas reales de la evaluación. Con muchas
+    # clases el LLM agrega métricas por clase (dict o lista) y un schema solo numérico hacía
+    # fallar el informe tres veces seguidas.
+    metrics: dict[str, Any] = Field(default_factory=dict)
     limitations: list[str] = Field(default_factory=list)
     ethical_considerations: list[str] = Field(default_factory=list)
 

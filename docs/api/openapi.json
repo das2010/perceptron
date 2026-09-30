@@ -6641,9 +6641,7 @@
             "type": "array"
           },
           "metrics": {
-            "additionalProperties": {
-              "type": "number"
-            },
+            "additionalProperties": true,
             "title": "Metrics",
             "type": "object"
           },
