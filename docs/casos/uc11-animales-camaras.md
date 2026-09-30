@@ -44,7 +44,7 @@ En el Team Server local, `fixtures/` se monta como fuente del servidor: los conj
 3. **Diseño.** *Entrenar* → *Proponer preparación* (224×224, normalización, augmentations) →
    *Proponer arquitecturas*: el arquitecto (LLM) propone 2–3 redes preentrenadas livianas y el sistema mide
    el tiempo por época en el equipo. Elegí una.
-4. **Búsqueda de hiperparámetros.** 3 intentos × 3 épocas → *Recomendar estrategia* (LLM) → *Entrenar ahora*.
+4. **Búsqueda de hiperparámetros.** 3 intentos × 6 épocas → *Recomendar estrategia* (LLM) → *Entrenar ahora*.
    En *Experimentos* se ven las curvas en vivo y el worker que entrena.
 5. **Evaluación.** En el mejor run: *Evaluar* (test sellado), matriz de confusión, recall por especie,
    *Explicación* con una foto (mapa de calor sobre el animal), *Robustez* e *Informe*.
@@ -83,7 +83,25 @@ python scripts/casos/animales/validar_caso.py --url http://localhost:8080 --caso
 
 ## Resultado de referencia
 
-<!-- resultado -->
+Corrida del 29/09/2026 en un Team Server local **solo con CPU** (8 núcleos, 7,7 GB), LLM gpt-5,
+privacidad L1. El arquitecto propuso EfficientNet-B0 preentrenada (con descongelado progresivo) y la
+estrategia *single* (con este presupuesto no conviene buscar hiperparámetros); 6 épocas.
+
+| Criterio | Resultado | Objetivo |
+|---|---|---|
+| Accuracy en el test sellado (300 fotos) | **0,94** (F1 macro 0,94, ROC-AUC 0,99) | ≥ 0,85 |
+| Recall de la peor especie (Dog) | **0,87** | ≥ 0,70 |
+| Accuracy en producción de día (200 fotos) | **0,95** | ≥ 0,85 |
+| Drift con fotos de día | **ninguno** (AUC de dominio 0,46) | bajo o ninguno |
+| Drift con fotos de noche | **alto** (AUC de dominio 0,93) y alerta | medio o alto |
+| Acierto del zero-shot (SigLIP, 200 fotos) | **0,91** | ≥ 0,85 |
+| Gasto del LLM | **USD 0,15** (10 llamadas) | ≤ USD 1 |
+
+Tiempos en CPU: datos y perfil 50 s, propuestas del LLM 81 s, entrenamiento 40 min, evaluación 28 s,
+zero-shot de 200 fotos 3 min (la primera vez baja el modelo, ~800 MB).
+
+Con 3 épocas el modelo queda en 0,82 y no aprueba: el presupuesto del caso es 6 épocas
+(`validar_caso.py --epocas 6`, el valor por defecto).
 
 ## Qué mirar en la demo
 

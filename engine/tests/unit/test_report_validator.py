@@ -32,7 +32,11 @@ def test_model_card_accepts_per_class_metrics() -> None:
             "intended_use": "clasificar especies",
             "data": "fotos",
             "training": "EfficientNet-B0",
-            "metrics": {"accuracy": 0.82, "per_class": {"Cat": 0.86, "Dog": 0.68}},
+            "metrics": {
+                "accuracy": 0.82,
+                "per_class": [{"label": "Cat", "recall": 0.86}, {"label": "Dog", "recall": 0.68}],
+                "recall_por_clase": {"Cat": 0.86},
+            },
         }
     )
-    assert card.metrics["per_class"] == {"Cat": 0.86, "Dog": 0.68}
+    assert card.metrics["per_class"][1] == {"label": "Dog", "recall": 0.68}
