@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from perceptron.api.jobs import TERMINAL, JobContext, JobManager
+from perceptron.api.jobs import TERMINAL, Job, JobContext, JobManager
 from perceptron.core.events import EventBus
 
 
@@ -28,5 +28,36 @@ def test_waiting_jobs_do_not_starve_the_pool() -> None:
     try:
         assert [jobs.get(p.id).status for p in parents] == ["succeeded"] * 3  # type: ignore[union-attr]
         assert [jobs.get(p.id).result for p in parents] == ["succeeded"] * 3  # type: ignore[union-attr]
+    finally:
+        jobs.shutdown()
+
+
+def test_remote_jobs_are_persisted_and_restored() -> None:
+    """Team Server: los jobs remotos se guardan en cada cambio y se retoman tras reiniciar."""
+    saved: list[tuple[str, str]] = []
+
+    class Store:
+        def save(self, job: Job) -> None:
+            saved.append((job.id, job.status))
+
+    jobs = JobManager(EventBus())
+    jobs.store = Store()
+    try:
+        local = jobs.submit("study", lambda _: "ok")
+        remote = jobs.track("study", runner="queue:cpu", refs={"study_id": "std_1"})
+        jobs.apply(remote.id, "started", {"worker": "w1"})
+        jobs.apply(remote.id, "epoch", {"epoch": 1})  # el progreso no se guarda
+        jobs.apply(remote.id, "finished", {"status": "succeeded", "result": {"a": 1}})
+        assert saved == [(remote.id, "queued"), (remote.id, "running"), (remote.id, "succeeded")]
+        assert all(job_id != local.id for job_id, _ in saved)  # los locales mueren con el proceso
+
+        cancelled: list[str] = []
+        fresh = JobManager(EventBus())
+        fresh.restore(
+            remote.model_copy(update={"status": "running"}), cancel=lambda: cancelled.append("x")
+        )
+        assert fresh.get(remote.id) is not None and fresh.list()[0].refs == {"study_id": "std_1"}
+        assert fresh.cancel(remote.id) is not None and cancelled == ["x"]
+        fresh.shutdown()
     finally:
         jobs.shutdown()

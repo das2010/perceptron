@@ -10,7 +10,7 @@ from collections import deque
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, Field
 
@@ -42,6 +42,12 @@ class Job(BaseModel):
     worker: str | None = Field(default=None, description="Worker remoto que lo ejecuta")
 
 
+class JobStore(Protocol):
+    """Dónde se guardan los jobs remotos para que sobrevivan a un reinicio (Team Server)."""
+
+    def save(self, job: Job) -> None: ...
+
+
 class JobContext:
     def __init__(self, manager: JobManager, job: Job) -> None:
         self._manager = manager
@@ -68,6 +74,16 @@ class JobManager:
         self._contexts: dict[str, JobContext] = {}
         self._history: dict[str, deque[dict[str, Any]]] = {}
         self._lock = threading.Lock()
+        # Solo para jobs remotos: los locales mueren con el proceso y no hay qué retomar.
+        self.store: JobStore | None = None
+
+    def _persist(self, job: Job) -> None:
+        if self.store is None or job.runner == "local":
+            return
+        try:
+            self.store.save(job)
+        except Exception:
+            logger.exception("no se pudo guardar el job", extra={"job_id": job.id})
 
     def submit(
         self,
@@ -125,12 +141,17 @@ class JobManager:
     ) -> Job:
         """Job que corre en otro proceso (worker del Team Server); su progreso llega por `apply`."""
         job = Job(id=new_id(IdPrefix.JOB), kind=kind, refs=refs or {}, runner=runner)
+        self.restore(job, cancel=cancel)
+        self._persist(job)
+        return job
+
+    def restore(self, job: Job, *, cancel: Callable[[], None] | None = None) -> None:
+        """Vuelve a seguir un job remoto guardado (el servidor se reinició mientras corría)."""
         ctx = JobContext(self, job)
         ctx.cancel_callback = cancel
         with self._lock:
             self._jobs[job.id] = job
             self._contexts[job.id] = ctx
-        return job
 
     def apply(self, job_id: str, kind: str, data: dict[str, Any]) -> None:
         """Evento de un job remoto: actualiza el estado y lo publica como si fuera local."""
@@ -143,12 +164,14 @@ class JobManager:
                 job.status = "running"
             job.started_at = utcnow()
             job.worker = data.get("worker")
+            self._persist(job)
         elif kind == "finished":
             if job.status != "cancelled":
                 job.status = data.get("status", "failed")
             job.result = data.get("result")
             job.error = data.get("error")
             job.finished_at = utcnow()
+            self._persist(job)
             ctx.emit("finished", status=job.status)
             return
         ctx.emit(kind, **data)
@@ -177,6 +200,7 @@ class JobManager:
             ctx.job.status = "cancelled"
             if ctx.cancel_callback is not None:
                 ctx.cancel_callback()
+            self._persist(ctx.job)
         return ctx.job
 
     def shutdown(self) -> None:
