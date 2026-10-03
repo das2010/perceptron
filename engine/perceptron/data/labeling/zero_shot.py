@@ -11,6 +11,7 @@ descargados de antemano. El backend es reemplazable (tests, otros runtimes).
 
 from __future__ import annotations
 
+import math
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
@@ -164,4 +165,28 @@ def classify(
         out.extend(
             _BACKEND["active"](info.model, modality, inputs[i : i + batch], labels, multi_label)
         )
-    return out
+    # Una sola clase por muestra: la confianza es entre las clases pedidas (suma 1), como la de
+    # un modelo entrenado. Multi-etiqueta: cada clase se decide por separado y queda igual.
+    return out if multi_label else [normalize_scores(sc) for sc in out]
+
+
+def normalize_scores(scores: dict[str, float]) -> dict[str, float]:
+    """Puntajes por clase → distribución que suma 1.
+
+    SigLIP puntúa cada clase por separado (sigmoide): con las fotos del caso UC-11 el puntaje
+    de la clase correcta tiene mediana 0,035, así que la confianza nunca llegaba al umbral de
+    «aceptar sugerencias confiables». Se aplica softmax a los logits (log(p / (1 - p))), que
+    para puntajes chicos equivale a repartir p entre las clases y no se apaga si todos son
+    ínfimos. Los modelos que ya devuelven una distribución (NLI, CLAP) no cambian.
+    """
+    if not scores:
+        return scores
+    total = sum(scores.values())
+    if math.isclose(total, 1.0, abs_tol=1e-3):
+        return scores
+    eps = 1e-12
+    logits = {k: math.log(max(v, eps) / max(1.0 - v, eps)) for k, v in scores.items()}
+    top = max(logits.values())
+    exps = {k: math.exp(v - top) for k, v in logits.items()}
+    norm = sum(exps.values())
+    return {k: v / norm for k, v in exps.items()}

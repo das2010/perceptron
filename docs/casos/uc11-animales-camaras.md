@@ -110,6 +110,7 @@ Con 3 épocas el modelo queda en 0,82 y no aprueba: el presupuesto del caso es 6
 - **El drift no necesita etiquetas:** la alerta de noche aparece antes de tener feedback, porque se mide
   sobre los embeddings internos del modelo.
 - **El zero-shot ahorra etiquetado:** con los nombres de las especies alcanza para pre-etiquetar el lote
-  nuevo. La persona solo revisa las dudosas.
+  nuevo. Con *Aceptar sugerencias confiables* (confianza ≥ 0,9) se aceptaron 150 de 200 fotos con 98 % de
+  acierto; la persona revisa solo las 50 dudosas, que la cola muestra primero.
 - **Lo que sigue:** etiquetar fotos nocturnas (zero-shot + revisión) y reentrenar. El challenger se compara
   con el champion sobre datos que ninguno vio y se promueve solo si mejora.
