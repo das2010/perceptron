@@ -187,7 +187,7 @@ def test_labelsets_travel_with_the_project(client: TestClient, fixtures_dir: Pat
         ),
         201,
     )
-    package = client.get(f"{API}/projects/{pid}/package").content
+    package = client.get(f"{API}/projects/{pid}/package", params={"include_data": True}).content
     assert client.delete(f"{API}/projects/{pid}").status_code == 204
     assert client.get(f"{API}/labelsets/{ls['id']}").status_code == 404  # se borró con el proyecto
     _ok(_import(client, package), 201)
