@@ -483,3 +483,17 @@ ALL_ENTITIES: tuple[type[Entity], ...] = (
     LLMCall,
     ActivityEntry,
 )
+
+
+# Identidad y permisos: nunca viajan dentro de un proyecto (paquetes, sincronización).
+IDENTITY_ENTITIES: tuple[type[Entity], ...] = (Workspace, User, Membership)
+
+# Entidades sin `project_id` que pertenecen a un proyecto a través de su padre:
+# (hijo, campo que apunta al padre, padre). Las usan export, import y borrado del proyecto.
+PROJECT_CHILDREN: tuple[tuple[type[Entity], str, type[Entity]], ...] = (
+    (Profile, "dataset_version_id", DatasetVersion),
+    (LabelSet, "dataset_version_id", DatasetVersion),
+    (Evaluation, "run_id", Run),
+    (Export, "model_version_id", ModelVersion),
+    (DriftReport, "deployment_id", Deployment),
+)

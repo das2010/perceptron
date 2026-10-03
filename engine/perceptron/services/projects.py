@@ -9,7 +9,7 @@ from sqlalchemy import delete, select
 
 from perceptron.core.errors import ConflictError
 from perceptron.core.paths import ensure_within
-from perceptron.domain.models import DatasetVersion, Evaluation, Profile, Project, Run
+from perceptron.domain.models import PROJECT_CHILDREN, Entity, Project
 from perceptron.storage.db import EntityRow
 
 if TYPE_CHECKING:
@@ -51,7 +51,7 @@ def purge_project(ctx: EngineContext, project_id: str) -> dict[str, int]:
     if _running_jobs(ctx, project.id):
         raise ConflictError("hay tareas en curso en el proyecto: cancelalas antes de eliminarlo")
 
-    def ids_of(model: type[DatasetVersion] | type[Run]) -> list[str]:
+    def ids_of(model: type[Entity]) -> list[str]:
         with ctx.db.session() as s:
             return list(
                 s.scalars(
@@ -61,11 +61,9 @@ def purge_project(ctx: EngineContext, project_id: str) -> dict[str, int]:
                 )
             )
 
-    # Perfiles y evaluaciones no tienen project_id: cuelgan de un dataset o de un run.
-    linked = [
-        (Profile.__name__, "dataset_version_id", ids_of(DatasetVersion)),
-        (Evaluation.__name__, "run_id", ids_of(Run)),
-    ]
+    # Perfiles, etiquetas, evaluaciones, exports y reportes de drift no tienen project_id:
+    # cuelgan de un dataset, un run, un modelo o un deployment.
+    linked = [(child.__name__, field, ids_of(parent)) for child, field, parent in PROJECT_CHILDREN]
     removed = 0
     with ctx.db.session() as s:
         for kind, field, parents in linked:

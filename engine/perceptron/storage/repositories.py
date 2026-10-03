@@ -14,6 +14,28 @@ from perceptron.storage.db import Database, EntityRow
 _INDEXED_FILTERS = {"project_id"}
 
 
+def add_entities(db: Database, entities: Sequence[Entity]) -> None:
+    """Alta de varias entidades (de distintos tipos) en una sola transacción: o entran todas o
+    ninguna. Falla si alguna ya existe."""
+    with db.session() as s:
+        for entity in entities:
+            kind = type(entity).__name__
+            if s.get(EntityRow, (kind, entity.id)) is not None:
+                raise ConflictError(f"{kind} {entity.id} ya existe")
+            s.add(
+                EntityRow(
+                    kind=kind,
+                    id=entity.id,
+                    project_id=getattr(entity, "project_id", None),
+                    version=entity.version,
+                    created_at=entity.created_at,
+                    updated_at=entity.updated_at,
+                    data=entity.model_dump(mode="json"),
+                )
+            )
+            s.flush()  # una clave repetida dentro del mismo paquete también falla acá
+
+
 class SqlRepository[E: Entity]:
     def __init__(self, db: Database, model: type[E]) -> None:
         self.db = db
