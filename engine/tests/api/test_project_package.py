@@ -91,3 +91,104 @@ def test_import_rejects_escaping_paths(client: TestClient, ctx: EngineContext) -
     assert client.post(f"{API}/projects/import", files=files).status_code == 422
     assert ctx.projects.find(project["id"]) is None  # sin importaciones a medias
     assert not (ctx.settings.paths.projects_dir.parent / "fuera.txt").exists()
+
+
+def _rebuild(package: bytes, mutate: Any) -> bytes:
+    """Mismo paquete con el manifiesto modificado (simula un .perceptron adulterado)."""
+    src, out = zipfile.ZipFile(io.BytesIO(package)), io.BytesIO()
+    with zipfile.ZipFile(out, "w") as z:
+        for info in src.infolist():
+            data = src.read(info)
+            if info.filename == "manifest.json":
+                manifest = json.loads(data)
+                mutate(manifest)
+                data = json.dumps(manifest).encode("utf-8")
+            z.writestr(info.filename, data)
+    return out.getvalue()
+
+
+def _import(client: TestClient, package: bytes) -> Any:
+    files = [("file", ("p.perceptron", package, "application/zip"))]
+    return client.post(f"{API}/projects/import", files=files)
+
+
+def test_import_never_brings_identity_or_permissions(
+    client: TestClient, ctx: EngineContext, fixtures_dir: Path
+) -> None:
+    """Un paquete con usuarios, workspaces o membresías no crea permisos (hallazgo crítico)."""
+    from perceptron.domain.models import Membership, User, Workspace
+
+    other = _ok(client.post(f"{API}/projects", json={"name": "Ajeno"}), 201)["id"]
+    pid, _, _ = _project(client, fixtures_dir)
+    package = client.get(f"{API}/projects/{pid}/package").content
+    assert client.delete(f"{API}/projects/{pid}").status_code == 204
+
+    def inject(m: dict[str, Any]) -> None:
+        m["entities"]["User"] = [{"id": "usr_01INTRUSO", "email": "x@y.z", "name": "x"}]
+        m["entities"]["Workspace"] = [{"id": "wsp_01INTRUSO", "name": "x"}]
+        m["entities"]["Membership"] = [
+            {
+                "id": "mbr_01INTRUSO",
+                "user_id": "usr_01INTRUSO",
+                "workspace_id": "wsp_01INTRUSO",
+                "project_id": other,
+                "role": "admin",
+            },
+        ]
+
+    _ok(_import(client, _rebuild(package, inject)), 201)
+    assert ctx.repo(Membership).find("mbr_01INTRUSO") is None
+    assert ctx.repo(User).find("usr_01INTRUSO") is None
+    assert ctx.repo(Workspace).find("wsp_01INTRUSO") is None
+
+
+def test_import_rejects_entities_of_other_projects_atomically(
+    client: TestClient, ctx: EngineContext, fixtures_dir: Path
+) -> None:
+    from perceptron.domain.models import Pipeline
+
+    other_pid, _, other_dv = _project(client, fixtures_dir)
+    pid, _, _ = _project(client, fixtures_dir)
+    package = client.get(f"{API}/projects/{pid}/package").content
+    assert client.delete(f"{API}/projects/{pid}").status_code == 204
+
+    # 1) Una entidad con el project_id de otro proyecto.
+    def foreign_owner(m: dict[str, Any]) -> None:
+        m["entities"]["Pipeline"] = [
+            {"id": "pip_01AJENO", "project_id": other_pid, "name": "x", "graph": {}}
+        ]
+
+    assert _import(client, _rebuild(package, foreign_owner)).status_code == 422
+
+    # 2) Una referencia a la versión de datos de otro proyecto (leería sus datos).
+    def foreign_ref(m: dict[str, Any]) -> None:
+        for dv in m["entities"]["DatasetVersion"]:
+            dv["parent_id"] = other_dv
+
+    r = _import(client, _rebuild(package, foreign_ref))
+    assert r.status_code == 422 and r.json()["details"]["id"] == other_dv
+
+    # 3) Un id que ya existe en el servidor: 409 y no queda nada a medias.
+    def clash(m: dict[str, Any]) -> None:
+        m["entities"]["Pipeline"] = [{"id": other_dv, "project_id": pid, "name": "x", "graph": {}}]
+
+    assert _import(client, _rebuild(package, clash)).status_code in (409, 422)
+    assert ctx.projects.find(pid) is None
+    assert not ctx.repo(Pipeline).list(filters={"project_id": pid})
+    # El paquete original sigue importándose bien.
+    _ok(_import(client, package), 201)
+
+
+def test_labelsets_travel_with_the_project(client: TestClient, fixtures_dir: Path) -> None:
+    pid, _, dv_id = _project(client, fixtures_dir)
+    ls = _ok(
+        client.post(
+            f"{API}/datasets/{dv_id}/labelsets", json={"kind": "class", "classes": ["0", "1"]}
+        ),
+        201,
+    )
+    package = client.get(f"{API}/projects/{pid}/package", params={"include_data": True}).content
+    assert client.delete(f"{API}/projects/{pid}").status_code == 204
+    assert client.get(f"{API}/labelsets/{ls['id']}").status_code == 404  # se borró con el proyecto
+    _ok(_import(client, package), 201)
+    assert _ok(client.get(f"{API}/labelsets/{ls['id']}"))["labelset"]["id"] == ls["id"]

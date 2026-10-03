@@ -6,9 +6,16 @@ Un zip con `manifest.json` y la carpeta del proyecto:
 - los datos (versiones de datasets, subidas, fuentes materializadas y buffers) son opcionales:
   sin ellos el paquete es chico y sirve para compartir configuración, runs y modelos.
 
-Al importar se conservan los ids (ULID globales): si el proyecto ya existe en este workspace
-se rechaza. Las rutas absolutas que apuntaban a la carpeta original se reescriben a la nueva.
+Al importar se conservan los ids (ULID globales): si el proyecto o alguna entidad ya existe se
+rechaza. Las rutas absolutas que apuntaban a la carpeta original se reescriben a la nueva.
 El tracking de MLflow no viaja (los runs y métricas sí, en las entidades).
+
+El paquete no es de confianza (en el Team Server lo sube un usuario):
+- usuarios, workspaces y membresías nunca se importan (los permisos los da el servidor);
+- cada entidad tiene que ser del proyecto importado: su `project_id` es el del proyecto o su
+  padre (perfil → versión de datos, evaluación → run, …) viene en el mismo paquete;
+- ninguna referencia (`*_id`) puede apuntar a una entidad de otro proyecto del servidor;
+- todo entra en una sola transacción (o el proyecto entero, o nada).
 """
 
 from __future__ import annotations
@@ -26,8 +33,15 @@ from perceptron import __version__
 from perceptron.core.errors import ConflictError, ValidationError
 from perceptron.core.paths import ensure_within, safe_parts
 from perceptron.data.sources.files import check_zip_limits
-from perceptron.domain.models import ALL_ENTITIES, DatasetVersion, Evaluation, Profile, Project, Run
+from perceptron.domain.models import (
+    ALL_ENTITIES,
+    IDENTITY_ENTITIES,
+    PROJECT_CHILDREN,
+    Entity,
+    Project,
+)
 from perceptron.storage.db import EntityRow
+from perceptron.storage.repositories import add_entities
 
 if TYPE_CHECKING:
     from perceptron.api.context import EngineContext
@@ -44,21 +58,20 @@ def _entities(ctx: EngineContext, project_id: str) -> dict[str, list[dict[str, A
     out: dict[str, list[dict[str, Any]]] = {}
     with ctx.db.session() as s:
         rows = list(s.scalars(select(EntityRow).where(EntityRow.project_id == project_id)))
+        identity = {m.__name__ for m in IDENTITY_ENTITIES}
         for row in rows:
-            out.setdefault(row.kind, []).append(row.data)
-        linked = [
-            (Profile.__name__, "dataset_version_id", DatasetVersion.__name__),
-            (Evaluation.__name__, "run_id", Run.__name__),
-        ]
-        for kind, field, parent in linked:
-            parents = [d["id"] for d in out.get(parent, [])]
+            if row.kind not in identity:  # las membresías del proyecto no viajan
+                out.setdefault(row.kind, []).append(row.data)
+        for child, field, parent in PROJECT_CHILDREN:
+            parents = [d["id"] for d in out.get(parent.__name__, [])]
             if parents:
                 extra = s.scalars(
                     select(EntityRow).where(
-                        EntityRow.kind == kind, EntityRow.data[field].as_string().in_(parents)
+                        EntityRow.kind == child.__name__,
+                        EntityRow.data[field].as_string().in_(parents),
                     )
                 )
-                out.setdefault(kind, []).extend(r.data for r in extra)
+                out.setdefault(child.__name__, []).extend(r.data for r in extra)
     return out
 
 
@@ -121,11 +134,78 @@ def read_manifest(z: zipfile.ZipFile) -> dict[str, Any]:
     return manifest
 
 
+# Campos `*_id` que no son entidades de Perceptron (otros sistemas o datos libres).
+_EXTERNAL_IDS = {"mlflow_run_id", "client_id", "group_id"}
+
+
+def _check_ownership(ctx: EngineContext, project: Project, entities: list[Entity]) -> None:
+    """Cada entidad tiene que ser del proyecto importado y no referenciar otros proyectos."""
+    ids = {e.id for e in entities} | {project.id}
+    by_kind: dict[str, set[str]] = {}
+    for e in entities:
+        by_kind.setdefault(type(e).__name__, set()).add(e.id)
+    children = {
+        child.__name__: (field, parent.__name__) for child, field, parent in PROJECT_CHILDREN
+    }
+    seen: set[tuple[str, str]] = set()
+    for e in entities:
+        kind = type(e).__name__
+        if (kind, e.id) in seen:
+            raise ValidationError(f"{kind} {e.id} aparece dos veces en el paquete")
+        seen.add((kind, e.id))
+        if "project_id" in type(e).model_fields:
+            if getattr(e, "project_id", None) != project.id:
+                raise ValidationError(
+                    f"{kind} {e.id} es de otro proyecto", details={"kind": kind, "id": e.id}
+                )
+        elif kind in children:
+            field, parent = children[kind]
+            if getattr(e, field, None) not in by_kind.get(parent, set()):
+                raise ValidationError(
+                    f"{kind} {e.id} cuelga de un {parent} que no está en el paquete",
+                    details={"kind": kind, "id": e.id},
+                )
+        else:
+            raise ValidationError(
+                f"{kind} no se puede asociar al proyecto importado", details={"kind": kind}
+            )
+    # Referencias a entidades que no vienen en el paquete: se aceptan si no existen (quedaron
+    # colgadas en el origen), nunca si existen en otro proyecto de este servidor.
+    refs: set[str] = set()
+    for e in entities:
+        for name, value in e.model_dump().items():
+            if (
+                name.endswith("_id")
+                and name not in _EXTERNAL_IDS
+                and isinstance(value, str)
+                and value not in ids
+            ):
+                refs.add(value)
+    if refs:
+        with ctx.db.session() as s:
+            foreign = list(
+                s.execute(select(EntityRow.kind, EntityRow.id).where(EntityRow.id.in_(refs)))
+            )
+        if foreign:
+            kind, eid = foreign[0]
+            raise ValidationError(
+                "el paquete referencia entidades de otro proyecto",
+                details={"kind": kind, "id": eid},
+            )
+    with ctx.db.session() as s:
+        existing = list(s.scalars(select(EntityRow.id).where(EntityRow.id.in_(ids))))
+    if existing:
+        raise ConflictError(
+            "el paquete trae entidades que ya existen en este servidor",
+            details={"ids": sorted(existing)[:5]},
+        )
+
+
 def import_project(
     ctx: EngineContext, package: Path, prepare: Callable[[Project], Project] | None = None
 ) -> Project:
     """`prepare`: en el Team Server asigna workspace y alcance según quien importa."""
-    kinds = {m.__name__: m for m in ALL_ENTITIES}
+    kinds = {m.__name__: m for m in ALL_ENTITIES if m not in IDENTITY_ENTITIES}
     with zipfile.ZipFile(package) as z:
         check_zip_limits(z)
         manifest = read_manifest(z)
@@ -144,12 +224,13 @@ def import_project(
         for kind, items in dict(manifest.get("entities", {})).items():
             model = kinds.get(kind)
             if model is None or model is Project:
-                continue  # entidad de una versión futura: se ignora
+                continue  # identidad/permisos o entidad de una versión futura: no se importa
             for item in items:
                 data = item
                 for old in olds:
                     data = _rewrite(data, old, new)
                 entities.append(model.model_validate(data))
+        _check_ownership(ctx, project, entities)
         root.mkdir(parents=True, exist_ok=True)
         try:
             for info in z.infolist():
@@ -160,15 +241,8 @@ def import_project(
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 with z.open(info) as src, dest.open("wb") as out:
                     shutil.copyfileobj(src, out, 1024 * 1024)
-            ctx.projects.add(project)
-            for entity in entities:
-                ctx.repo(type(entity)).add(entity)
+            add_entities(ctx.db, [project, *entities])  # una transacción: todo o nada
         except BaseException:
-            # Sin importaciones a medias: se deshace lo que haya entrado.
-            if ctx.projects.find(project.id) is not None:
-                from perceptron.services.projects import purge_project
-
-                purge_project(ctx, project.id)
             shutil.rmtree(root, ignore_errors=True)
             raise
     ctx.files.write_project(project)
