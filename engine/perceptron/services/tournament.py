@@ -16,6 +16,7 @@ from perceptron.core.ids import new_id
 from perceptron.domain.enums import Device, Origin
 from perceptron.domain.models import ArchSpecRecord, Run
 from perceptron.hpo.strategy import Budget, HPOStrategy, Objective
+from perceptron.services.studies import run_study_managed
 from perceptron.training.module import monitor_mode
 
 if TYPE_CHECKING:
@@ -86,7 +87,9 @@ def mini_tournament(
             origin=Origin.AGENT if record.origin is Origin.AGENT else Origin.RULES,
             rationale=f"Mini-torneo {result.id}: {epochs} épocas, {subset:.0%} de train por época",
         )
-        _, res = wf.run_study(
+        # Por el mismo camino que el lanzamiento normal (en el servidor: cola y cuotas).
+        _, res = run_study_managed(
+            wf,
             project_id,
             dataset_version_id,
             pipeline_id,

@@ -7631,6 +7631,11 @@ export interface components {
                 [key: string]: unknown;
             };
             /**
+             * Cancel Requested At
+             * @description Cancelación pedida (persistida: la respeta un worker que lo tome después)
+             */
+            cancel_requested_at?: string | null;
+            /**
              * Created At
              * Format: date-time
              */

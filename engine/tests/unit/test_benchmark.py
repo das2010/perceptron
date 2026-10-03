@@ -48,6 +48,9 @@ def test_organize_fsdd(tmp_path: Path) -> None:
 def test_gap_and_report() -> None:
     assert gap(0.9, 0.87, "accuracy") == pytest.approx(0.0333, abs=1e-3)
     assert gap(0.5, 0.45, "val_loss") < 0  # menos pérdida: el agente es mejor
+    # Referencia perfecta (error 0): un agente peor no puede quedar con brecha 0.
+    assert gap(0.0, 0.2, "val_loss") == pytest.approx(0.2)
+    assert gap(0.0, 0.0, "val_loss") == 0.0
     r = BenchResult("adult", "Adult", "CC BY 4.0", "roc_auc", 0.9, 0.88, 0.022, True)
     md = markdown([r], "2026-09-27")
     assert "| Adult | CC BY 4.0 | roc_auc | 0.9000 | 0.8800 | +2.2% | ✅ |" in md

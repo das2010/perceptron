@@ -43,9 +43,14 @@ def with_defaults(spec: ArchSpec, values: dict[str, Any]) -> ArchSpec:
 
 
 def gap(reference: float, agent: float, metric: str) -> float:
-    """Brecha relativa (positivo = el agente es peor)."""
+    """Brecha relativa (positivo = el agente es peor).
+
+    Con referencia 0 no hay escala relativa: se usa la diferencia absoluta (antes devolvía 0
+    y un agente peor que una referencia perfecta de error 0 «aprobaba» O2).
+    """
+    worse = agent - reference if monitor_mode(metric) == "min" else reference - agent
     if reference == 0:
-        return 0.0
+        return worse
     if monitor_mode(metric) == "min":
         return (agent - reference) / abs(reference)
     return (reference - agent) / abs(reference)

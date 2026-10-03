@@ -70,14 +70,27 @@ class JobManager:
         self._lock = threading.Lock()
 
     def submit(
-        self, kind: str, fn: Callable[[JobContext], Any], *, refs: dict[str, str] | None = None
+        self,
+        kind: str,
+        fn: Callable[[JobContext], Any],
+        *,
+        refs: dict[str, str] | None = None,
+        dedicated: bool = False,
     ) -> Job:
+        """`dedicated`: hilo propio, fuera del pool. Para jobs que pasan la mayor parte del
+        tiempo esperando a otros jobs (p. ej. un reentrenamiento que espera su estudio): en el
+        pool ocuparían los lugares que necesitan esos jobs y podrían bloquearse entre sí."""
         job = Job(id=new_id(IdPrefix.JOB), kind=kind, refs=refs or {})
         ctx = JobContext(self, job)
         with self._lock:
             self._jobs[job.id] = job
             self._contexts[job.id] = ctx
-        self._executor.submit(self._run, ctx, fn)
+        if dedicated:
+            threading.Thread(
+                target=self._run, args=(ctx, fn), name=f"perceptron-job-{kind}", daemon=True
+            ).start()
+        else:
+            self._executor.submit(self._run, ctx, fn)
         return job
 
     def _run(self, ctx: JobContext, fn: Callable[[JobContext], Any]) -> None:

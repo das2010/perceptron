@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 
 from perceptron.api.jobs import JOB_TOPIC, TERMINAL, Job
 from perceptron.core.errors import RateLimitedError
-from perceptron.domain.models import Study
+from perceptron.domain.models import Study, utcnow
 from perceptron.services.studies import launch_local, needs_gpu
 from perceptron_server.queue.dispatch import Dispatcher
 from perceptron_server.queue.relay import CONTROL_CHANNEL, EVENTS_CHANNEL, Relay
@@ -118,6 +118,12 @@ class QueueLauncher:
         holder: dict[str, str] = {}
 
         def cancel() -> None:
+            # Persistida: si el estudio sigue en la cola, el worker que lo tome no lo entrena
+            # (el mensaje del canal solo llega a un worker que ya lo está ejecutando).
+            repo = ctx.repo(Study)
+            current = repo.find(study.id)
+            if current is not None and current.cancel_requested_at is None:
+                repo.update(current.model_copy(update={"cancel_requested_at": utcnow()}))
             self.relay.publish(CONTROL_CHANNEL, {"cancel": holder["id"]})
 
         refs = {**self.quota.refs(ctx, study, who), "queue": queue}

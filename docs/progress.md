@@ -193,6 +193,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Progreso en vivo de jobs remotos por relay pub/sub (mismos WS que los jobs locales) | ✅ |
 | Cuotas de estudios en curso por usuario y workspace; vista de la cola con hardware de los workers | ✅ |
 | MLflow server (PostgreSQL + artefactos) e imagen GPU (`TORCH_VARIANT`) en Compose | ✅ |
+| Robustez: cancelación persistida (un estudio cancelado en la cola no entrena); agente y mini-torneo por la cola y las cuotas; jobs que esperan estudios en hilo propio (sin deadlock del pool); WS con reconexión | ✅ |
 
 ## Capa 5c — SSO, Helm, backups y sync
 

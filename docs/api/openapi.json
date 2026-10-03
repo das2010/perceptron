@@ -11012,6 +11012,19 @@
             "title": "Budget",
             "type": "object"
           },
+          "cancel_requested_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cancelación pedida (persistida: la respeta un worker que lo tome después)",
+            "title": "Cancel Requested At"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",

@@ -58,6 +58,7 @@ from perceptron.llm.errors import (
     LLMUnavailableError,
 )
 from perceptron.llm.privacy import LLMContext, RunSummary
+from perceptron.services.studies import run_study_managed
 from perceptron.training.config import RESULT_FILE, RunResult
 from perceptron.training.diagnostics import detect
 from perceptron.training.module import monitor_mode
@@ -619,7 +620,10 @@ class AgentRunner:
         control = control_for(ar.id)
         control.study = StudyControl()
         try:
-            study, result = self.wf.run_study(
+            # Mismo camino que un estudio lanzado por la persona: en el Team Server pasa por la
+            # cola y las cuotas (no entrena en el proceso de la API).
+            study, result = run_study_managed(
+                self.wf,
                 ar.project_id,
                 ar.dataset_version_id,
                 ar.pipeline_id,
