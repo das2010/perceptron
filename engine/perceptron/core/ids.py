@@ -31,6 +31,7 @@ class IdPrefix(StrEnum):
     RETRAIN_POLICY = "rtp"
     LLM_SESSION = "lls"
     LLM_CALL = "llc"
+    LLM_RESERVATION = "llr"
     AGENT_RUN = "agr"
     PROJECT_DRAFT = "dft"
     JOB = "job"

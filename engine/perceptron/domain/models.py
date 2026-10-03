@@ -415,6 +415,21 @@ class LLMCall(Entity):
     latency_s: float = Field(default=0.0, ge=0)
 
 
+class LLMReservation(Entity):
+    """Costo reservado por una llamada al LLM en curso (RF-LLM-06).
+
+    Cuenta para el presupuesto hasta que la llamada queda auditada con su costo real, así dos
+    llamadas concurrentes no pasan juntas el control. Interna: no se expone ni se exporta (no
+    lleva `project_id` indexado) y vence sola si el proceso muere a mitad de la llamada.
+    """
+
+    id: str = Field(default_factory=_id_factory(IdPrefix.LLM_RESERVATION))
+    for_project_id: str
+    workspace_id: str | None = None
+    scope: str | None = None
+    amount_usd: float = Field(ge=0)
+
+
 class ProjectDraft(Entity):
     """Estado del wizard de un proyecto (RF-WIZ-04): versionado, se retoma donde quedó."""
 
@@ -481,5 +496,6 @@ ALL_ENTITIES: tuple[type[Entity], ...] = (
     RetrainRun,
     LLMSession,
     LLMCall,
+    LLMReservation,
     ActivityEntry,
 )
