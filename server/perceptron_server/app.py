@@ -19,6 +19,7 @@ from perceptron.storage.db import sqlite_url
 from perceptron_server import __version__
 from perceptron_server.migrate import upgrade
 from perceptron_server.queue.dispatch import CeleryDispatcher, Dispatcher
+from perceptron_server.queue.jobstore import DbJobStore
 from perceptron_server.queue.launcher import (
     LocalLauncher,
     QueueLauncher,
@@ -111,8 +112,11 @@ def create_server_app(
             ctx.study_launcher = LocalLauncher(quota)
         else:
             relay, dispatcher = make_queue(s)
-            ctx.study_launcher = QueueLauncher(quota, relay, dispatcher)
+            launcher = QueueLauncher(quota, relay, dispatcher)
+            ctx.study_launcher = launcher
             ctx.on_close(relay.close)
+            # Primero se retoman los jobs guardados y después llegan los eventos de los workers.
+            launcher.restore(ctx, DbJobStore(ctx.db))
             ctx.on_close(start_event_bridge(ctx, relay, state.workers))
             state.queue_mode = "queue"
         return ctx

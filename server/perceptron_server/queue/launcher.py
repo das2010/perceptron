@@ -21,6 +21,7 @@ from perceptron.core.errors import RateLimitedError
 from perceptron.domain.models import Study, utcnow
 from perceptron.services.studies import launch_local, needs_gpu
 from perceptron_server.queue.dispatch import Dispatcher
+from perceptron_server.queue.jobstore import DbJobStore
 from perceptron_server.queue.relay import CONTROL_CHANNEL, EVENTS_CHANNEL, Relay
 from perceptron_server.queue.worker import HEARTBEAT_TOPIC
 
@@ -117,20 +118,39 @@ class QueueLauncher:
         queue = "gpu" if needs_gpu(study) else "cpu"
         holder: dict[str, str] = {}
 
-        def cancel() -> None:
-            # Persistida: si el estudio sigue en la cola, el worker que lo tome no lo entrena
-            # (el mensaje del canal solo llega a un worker que ya lo está ejecutando).
-            repo = ctx.repo(Study)
-            current = repo.find(study.id)
-            if current is not None and current.cancel_requested_at is None:
-                repo.update(current.model_copy(update={"cancel_requested_at": utcnow()}))
-            self.relay.publish(CONTROL_CHANNEL, {"cancel": holder["id"]})
+        def cancel() -> None:  # el id del job se conoce recién después de `track`
+            self.canceller(ctx, study.id, holder["id"])()
 
         refs = {**self.quota.refs(ctx, study, who), "queue": queue}
         job = ctx.jobs.track("study", refs=refs, runner=f"queue:{queue}", cancel=cancel)
         holder["id"] = job.id
         self.dispatcher.dispatch(job.id, study.id, queue)
         return job
+
+    def canceller(self, ctx: EngineContext, study_id: str, job_id: str) -> Callable[[], None]:
+        def cancel() -> None:
+            # Persistida: si el estudio sigue en la cola, el worker que lo tome no lo entrena
+            # (el mensaje del canal solo llega a un worker que ya lo está ejecutando).
+            repo = ctx.repo(Study)
+            current = repo.find(study_id)
+            if current is not None and current.cancel_requested_at is None:
+                repo.update(current.model_copy(update={"cancel_requested_at": utcnow()}))
+            self.relay.publish(CONTROL_CHANNEL, {"cancel": job_id})
+
+        return cancel
+
+    def restore(self, ctx: EngineContext, store: DbJobStore) -> int:
+        """Al arrancar: vuelve a seguir los jobs que quedaron en la cola o en los workers
+        (se ven, se pueden cancelar y cuentan para las cuotas). Devuelve cuántos retomó."""
+        ctx.jobs.store = store
+        jobs = store.load()
+        for job in jobs:
+            study_id = job.refs.get("study_id")
+            cancel = None
+            if job.status not in TERMINAL and study_id is not None:
+                cancel = self.canceller(ctx, study_id, job.id)
+            ctx.jobs.restore(job, cancel=cancel)
+        return len(jobs)
 
 
 def start_event_bridge(

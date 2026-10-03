@@ -22,6 +22,7 @@ from perceptron.core.events import Event
 from perceptron.domain.models import Study
 from perceptron.hpo.study import StudyControl
 from perceptron.services.studies import execute_study
+from perceptron_server.queue.jobstore import DbJobStore
 from perceptron_server.queue.relay import CONTROL_CHANNEL, EVENTS_CHANNEL, Relay
 
 logger = logging.getLogger(__name__)
@@ -80,6 +81,13 @@ class WorkerRuntime:
 
         threading.Thread(target=loop, name="perceptron-heartbeat", daemon=True).start()
 
+    def _mark(self, job_id: str, **changes: Any) -> None:
+        """Inicio y fin quedan en la base aunque el servidor no esté para recibir el evento."""
+        try:
+            DbJobStore(self.ctx.db).mark(job_id, **changes)
+        except Exception:
+            logger.exception("no se pudo anotar el job", extra={"job_id": job_id})
+
     def stop(self) -> None:
         self._stop.set()
         self.ctx.close()
@@ -106,6 +114,7 @@ class WorkerRuntime:
         status, result, error = "failed", None, None
         try:
             emit("started", worker=self.name)
+            self._mark(job_id, status="running", worker=self.name)
             # Ya suscripto al canal de control: si la cancelación se pidió mientras esperaba en
             # la cola, está persistida en el estudio y no se entrena.
             study = self.ctx.repo(Study).get(study_id)
@@ -129,6 +138,7 @@ class WorkerRuntime:
                 self.heartbeat()
             except Exception:
                 logger.exception("latido del worker falló")
+            self._mark(job_id, status=status, result=result, error=error, worker=self.name)
             emit("finished", status=status, result=result, error=error)
             unsubscribe()
             stop_control()

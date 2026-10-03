@@ -161,6 +161,82 @@ def test_cancel_while_queued_never_trains(cluster: Cluster, fixtures_dir: Path) 
     assert not ctx.repo(Run).list(filters={"study_id": waiting["study"]["id"]})
 
 
+class _SharedRelay:
+    """El relay del cluster visto por un segundo servidor: cerrarlo no lo apaga."""
+
+    def __init__(self, inner: Relay) -> None:
+        self.inner = inner
+
+    def publish(self, channel: str, message: dict[str, Any]) -> None:
+        self.inner.publish(channel, message)
+
+    def listen(self, channel: str, listener: Any) -> Any:
+        return self.inner.listen(channel, listener)
+
+    def close(self) -> None:
+        pass
+
+
+def test_restart_keeps_tracking_running_studies(
+    cluster: Cluster, fixtures_dir: Path, settings: Settings, server_settings: ServerSettings
+) -> None:
+    """Reiniciar el servidor no olvida los estudios que siguen en los workers: se ven, cuentan
+    para las cuotas y se pueden cancelar."""
+    editor = _editor(cluster)
+    pid, body = prepare_study(editor, fixtures_dir, trials=30, epochs=50)
+    first = ok(editor.post(f"{API}/projects/{pid}/studies", json=body), 202)
+    job_id = first["job"]["id"]
+    deadline = time.time() + 120
+    while ok(editor.get(f"{API}/jobs/{job_id}"))["status"] == "queued":
+        assert time.time() < deadline, "el worker no tomó el estudio"
+        time.sleep(0.2)
+    runtime = cluster.runtime
+    assert runtime is not None
+
+    def same_queue(_s: Settings) -> tuple[Any, Dispatcher]:
+        return _SharedRelay(cluster.relay), ThreadDispatcher(runtime)
+
+    # "Reinicio": un servidor nuevo, sin nada en memoria, sobre la misma base y los mismos workers.
+    quota = server_settings.model_copy(update={"max_running_studies_per_user": 1})
+    restarted = create_server_app(settings, quota, queue_factory=same_queue)
+    with TestClient(restarted):
+        again = login(restarted, "cola@preteco.test", PASSWORD)
+        job = ok(again.get(f"{API}/jobs/{job_id}"))
+        assert job["status"] == "running" and job["worker"] == "worker-de-prueba"
+        assert job["refs"]["study_id"] == first["study"]["id"]
+        blocked = again.post(f"{API}/projects/{pid}/studies", json=body)
+        assert blocked.status_code == 429 and blocked.json()["details"]["scope"] == "user"
+        ok(again.post(f"{API}/studies/{first['study']['id']}/cancel"))
+        deadline = time.time() + 300
+        while runtime.last_finished is None or runtime.last_finished[0] != job_id:
+            assert time.time() < deadline, "el worker no recibió la cancelación"
+            time.sleep(0.2)
+        assert runtime.last_finished == (job_id, "cancelled")
+        assert ok(again.get(f"{API}/jobs/{job_id}"))["status"] == "cancelled"
+
+
+def test_job_store_never_goes_back(settings: Settings) -> None:
+    from perceptron.api.context import EngineContext
+    from perceptron.api.jobs import Job
+    from perceptron_server.queue.jobstore import DbJobStore
+
+    ctx = EngineContext.create(settings)
+    try:
+        store = DbJobStore(ctx.db)
+        job = Job(id="job_x", kind="study", runner="queue:cpu", refs={"study_id": "std_x"})
+        store.save(job)
+        store.mark("job_x", status="running", worker="w1")
+        store.save(job.model_copy(update={"status": "cancelled"}))  # se canceló en el servidor
+        store.mark("job_x", status="succeeded", result={"best": 1})  # el worker terminó después
+        store.mark("job_x", status="running")  # un "started" tardío no la revive
+        store.mark("job_otro", status="running")  # de otro servidor: no se inventa
+        [loaded] = store.load()
+        assert loaded.id == "job_x" and loaded.status == "cancelled"
+        assert loaded.result == {"best": 1} and loaded.finished_at is not None
+    finally:
+        ctx.close()
+
+
 def test_gpu_studies_go_to_the_gpu_queue(cluster: Cluster, fixtures_dir: Path) -> None:
     editor = _editor(cluster)
     pid, body = prepare_study(editor, fixtures_dir)
