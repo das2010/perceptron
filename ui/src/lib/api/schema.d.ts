@@ -3491,7 +3491,7 @@ export interface components {
          * AlertCode
          * @enum {string}
          */
-        AlertCode: "class_imbalance" | "target_leakage" | "id_column" | "future_dates" | "constant_column" | "high_nulls" | "duplicate_rows" | "insufficient_data" | "corrupt_files" | "near_duplicates" | "mixed_resolutions" | "mixed_channels" | "missing_target" | "duplicate_texts" | "long_texts" | "clipping" | "mixed_sample_rates" | "silent_audio";
+        AlertCode: "class_imbalance" | "target_leakage" | "id_column" | "future_dates" | "constant_column" | "high_nulls" | "duplicate_rows" | "insufficient_data" | "corrupt_files" | "near_duplicates" | "mixed_resolutions" | "mixed_channels" | "missing_target" | "duplicate_texts" | "long_texts" | "clipping" | "mixed_sample_rates" | "silent_audio" | "id_like_feature" | "no_features";
         /**
          * AlertKind
          * @enum {string}
@@ -4103,6 +4103,12 @@ export interface components {
         ColumnSchema: {
             /** Dtype */
             dtype: string;
+            /**
+             * Id Like
+             * @description Parece un identificador pero se usa como dato: es la única entrada
+             * @default false
+             */
+            id_like: boolean;
             /** N Unique */
             n_unique: number;
             /** Name */
