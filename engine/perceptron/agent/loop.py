@@ -623,7 +623,7 @@ class AgentRunner:
             # Mismo camino que un estudio lanzado por la persona: en el Team Server pasa por la
             # cola y las cuotas (no entrena en el proceso de la API).
             study, result = run_study_managed(
-                self.ctx,
+                self.wf,
                 ar.project_id,
                 ar.dataset_version_id,
                 ar.pipeline_id,

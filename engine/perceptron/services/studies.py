@@ -22,6 +22,7 @@ from perceptron.hpo.study import StudyControl, StudyResult
 if TYPE_CHECKING:
     from perceptron.api.context import EngineContext
     from perceptron.api.jobs import Job, JobContext
+    from perceptron.services.workflow import Workflow
 
 Emit = Callable[..., None]
 StudyLauncher = Callable[["EngineContext", Study], "Job"]
@@ -131,7 +132,7 @@ STUDY_WAIT_S = 24 * 3600  # plazo para un estudio lanzado desde el agente o un m
 
 
 def run_study_managed(
-    ctx: EngineContext,
+    wf: Workflow,
     project_id: str,
     dataset_version_id: str,
     pipeline_id: str,
@@ -145,7 +146,8 @@ def run_study_managed(
 ) -> tuple[Study, StudyResult]:
     """Estudio del agente o de un mini-torneo por el mismo camino que el lanzamiento normal.
 
-    - Desktop (sin `study_launcher`): corre en este hilo, como siempre.
+    - Desktop (sin `study_launcher`): corre en este hilo con el `Workflow` de quien llama
+      (su tracker y su configuración), como siempre.
     - Team Server: pasa por `ctx.launch_study` (cuotas, cola y workers) y se espera el
       resultado; cancelar `control` cancela el job.
     """
@@ -153,6 +155,7 @@ def run_study_managed(
 
     from perceptron.api.jobs import TERMINAL
 
+    ctx = wf.ctx
     study = new_study(
         ctx,
         project_id,
@@ -165,7 +168,17 @@ def run_study_managed(
     )
     control = control or StudyControl()
     if ctx.study_launcher is None:
-        return study, execute_study(ctx, study, control=control, emit=lambda *_a, **_k: None)
+        return wf.run_study(
+            project_id,
+            dataset_version_id,
+            pipeline_id,
+            archspec_id,
+            strategy,
+            device=device,
+            control=control,
+            study=study,
+            limit_train_batches=limit_train_batches,
+        )
     job = ctx.launch_study(study)  # las cuotas del servidor rechazan acá (429)
     deadline = time.monotonic() + timeout_s
     while (current := ctx.jobs.get(job.id)) is not None and current.status not in TERMINAL:

@@ -14,6 +14,7 @@ from perceptron.domain.models import ArchSpecRecord, Study
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.hpo.study import StudyControl, StudyResult
 from perceptron.services.studies import run_study_managed, study_request
+from perceptron.services.workflow import Workflow
 
 STRATEGY = HPOStrategy(strategy="single", pruner="none", budget=Budget(max_trials=1))
 
@@ -39,7 +40,13 @@ def test_managed_study_goes_through_the_launcher(ctx: EngineContext) -> None:
 
     ctx.study_launcher = launcher
     study, result = run_study_managed(
-        ctx, "prj_01X", "dsv_01X", "pip_01X", _arch(ctx), STRATEGY, limit_train_batches=0.25
+        Workflow(ctx),
+        "prj_01X",
+        "dsv_01X",
+        "pip_01X",
+        _arch(ctx),
+        STRATEGY,
+        limit_train_batches=0.25,
     )
     assert [s.id for s in launched] == [study.id]
     assert study_request(launched[0]).limit_train_batches == 0.25  # viaja al worker
@@ -52,7 +59,7 @@ def test_server_quotas_apply_to_agent_and_tournament(ctx: EngineContext) -> None
 
     ctx.study_launcher = full
     with pytest.raises(RateLimitedError):
-        run_study_managed(ctx, "prj_01X", "dsv_01X", "pip_01X", _arch(ctx), STRATEGY)
+        run_study_managed(Workflow(ctx), "prj_01X", "dsv_01X", "pip_01X", _arch(ctx), STRATEGY)
 
 
 def test_stopping_the_agent_cancels_the_queued_job(ctx: EngineContext) -> None:
@@ -67,7 +74,7 @@ def test_stopping_the_agent_cancels_the_queued_job(ctx: EngineContext) -> None:
     control = StudyControl()
     threading.Timer(0.3, control.cancel).start()
     _, result = run_study_managed(
-        ctx, "prj_01X", "dsv_01X", "pip_01X", _arch(ctx), STRATEGY, control=control
+        Workflow(ctx), "prj_01X", "dsv_01X", "pip_01X", _arch(ctx), STRATEGY, control=control
     )
     assert result.stop_reason == "cancelled"
     job = ctx.jobs.get(jobs[0])

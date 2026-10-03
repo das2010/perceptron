@@ -89,7 +89,7 @@ def mini_tournament(
         )
         # Por el mismo camino que el lanzamiento normal (en el servidor: cola y cuotas).
         _, res = run_study_managed(
-            wf.ctx,
+            wf,
             project_id,
             dataset_version_id,
             pipeline_id,
