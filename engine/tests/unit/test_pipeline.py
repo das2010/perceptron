@@ -6,6 +6,7 @@ import numpy as np
 import polars as pl
 import pytest
 
+from perceptron.core.errors import ValidationError
 from perceptron.core.paths import ProjectPaths
 from perceptron.data.pipeline.pipeline import (
     FittedPipeline,
@@ -92,6 +93,21 @@ def test_unencoded_columns_are_rejected() -> None:
     spec = PipelineSpec(modality=Modality.TABULAR, target=None, steps=[])
     with pytest.raises(ValueError, match="sin codificar"):
         fit_pipeline(spec, pl.DataFrame({"c": ["a", "b"]}))
+
+
+def test_pipeline_without_inputs_is_rejected_with_a_hint() -> None:
+    """Caso «Tabla 3»: se descartó la única columna y la red solo aprendía el promedio."""
+    df = pl.DataFrame({"numero": [1, 2, 3, 4], "multiplo": [3, 6, 9, 12]})
+    spec = PipelineSpec(
+        modality=Modality.TABULAR,
+        target=TargetSpec(name="multiplo", task=TaskType.REGRESSION, standardize=True),
+        steps=[_step("drop", ["numero"])],
+    )
+    with pytest.raises(ValidationError, match="ninguna columna de entrada") as exc:
+        fit_pipeline(spec, df)
+    assert exc.value.details == {"reason": "no_features", "dropped": ["numero"]}
+    keep = spec.model_copy(update={"steps": []})
+    assert fit_pipeline(keep, df).numeric_features == ["numero"]
 
 
 def test_regression_target_standardization_roundtrip() -> None:

@@ -82,6 +82,41 @@ describe("pantallas", () => {
     expect(screen.getByText("5 %")).toBeInTheDocument();
   });
 
+  it("Datos: corregir el tipo de una columna crea otra versión (RF-ING-06)", async () => {
+    const withSource = { ...dataset, source_id: "src_1" };
+    const retyped = { ...withSource, id: "dsv_2", content_hash: "ffff000011112222" };
+    let versions = [withSource];
+    const { calls } = mockEngine({
+      ...base,
+      "GET /api/v1/projects/prj_1/datasets": () => versions,
+      "GET /api/v1/datasets/dsv_1/profile": () => card,
+      "GET /api/v1/datasets/dsv_2/profile": () => ({
+        ...card,
+        dataset_version_id: "dsv_2",
+        columns: [{ ...card.columns[0], semantic: "categorical", numeric: null }],
+      }),
+      "POST /api/v1/sources/src_1/ingest": () => {
+        versions = [retyped, withSource];
+        return retyped;
+      },
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/data");
+    const select = await screen.findByLabelText("Tipo de edad");
+    expect(select).toHaveValue("numeric");
+    await user.selectOptions(select, "categorical");
+    await user.click(screen.getByRole("button", { name: "Aplicar 1 cambio de tipo" }));
+
+    const ingest = calls.find((r) => r.url.endsWith("/sources/src_1/ingest"));
+    expect(await ingest?.clone().json()).toEqual({
+      target: "churn",
+      overrides: { edad: "categorical" },
+    });
+    // Queda seleccionada la versión nueva, con el tipo corregido.
+    expect(await screen.findByText("ffff000011")).toBeInTheDocument();
+    expect(await screen.findByLabelText("Tipo de edad")).toHaveValue("categorical");
+  });
+
   it("Entrenar: las propuestas del LLM se marcan como IA y se aceptan", async () => {
     const proposal = (id: string, title: string) => ({
       archspec: {

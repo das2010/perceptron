@@ -11,6 +11,7 @@ from perceptron.core.paths import ProjectPaths
 from perceptron.data.profiling.card import AlertCode, ProfileCard, sig
 from perceptron.data.profiling.images import near_duplicate_pairs
 from perceptron.data.profiling.profile import profile_dataset
+from perceptron.data.schema import SemanticType
 from perceptron.data.versioning.ingest import IngestRequest, ingest
 from perceptron.data.view import DatasetView
 from perceptron.domain.enums import Modality, TaskType
@@ -135,3 +136,33 @@ def test_card_contains_no_individual_values(
         assert s not in card_json
     assert "@empresa.com" not in card_json
     assert str(marker) not in card_json
+
+
+def test_sole_id_like_input_is_used_as_data(paths: ProjectPaths, tmp_path: Path) -> None:
+    """`numero → multiplo` (caso «Tabla 3»): la única entrada parece un id (nombre y 1..n),
+    pero descartarla deja al modelo sin entradas. Se usa como dato y se avisa."""
+    src = tmp_path / "tabla3.csv"
+    pl.DataFrame({"numero": range(1, 398), "multiplo": [3 * i for i in range(1, 398)]}).write_csv(
+        src, separator=";"
+    )
+    card = _profile(paths, src)
+    assert card.target is not None and card.target.name == "multiplo"
+    assert [a.column for a in card.alerts_by(AlertCode.ID_LIKE_FEATURE)] == ["numero"]
+    assert not card.alerts_by(AlertCode.ID_COLUMN)
+    assert not card.alerts_by(AlertCode.NO_FEATURES)
+    assert card.num_features == 1
+
+
+def test_no_features_left_is_flagged(paths: ProjectPaths, tmp_path: Path) -> None:
+    """Si la persona confirma que la única entrada es un id, queda sin entradas: alerta alta."""
+    src = tmp_path / "solo_id.csv"
+    pl.DataFrame({"numero": range(1, 101), "y": [i % 2 for i in range(100)]}).write_csv(src)
+    v = ingest(
+        paths,
+        IngestRequest(
+            project_id="prj_p", source=src, target="y", overrides={"numero": SemanticType.ID}
+        ),
+    )
+    card = profile_dataset(DatasetView(paths.dataset(v.content_hash)), content_hash=v.content_hash)
+    assert card.alerts_by(AlertCode.NO_FEATURES)
+    assert not card.alerts_by(AlertCode.ID_LIKE_FEATURE)

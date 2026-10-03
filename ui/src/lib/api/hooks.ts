@@ -17,6 +17,7 @@ type WithId<T> = T & { id: string };
 export type Project = WithId<Schemas["Project"]>;
 export type ProjectTemplate = Schemas["ProjectTemplate"];
 export type DatasetVersion = WithId<Schemas["DatasetVersion"]>;
+export type SemanticType = Schemas["SemanticType"];
 export type ProfileCard = Schemas["ProfileCard"];
 export type Run = WithId<Schemas["Run"]>;
 export type ModelVersion = WithId<Schemas["ModelVersion"]>;
@@ -274,13 +275,22 @@ export function useUpload(projectId: string) {
 export function useIngest(projectId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ sourceId, target }: { sourceId: string; target?: string | null }) =>
+    mutationFn: async ({
+      sourceId,
+      target,
+      overrides,
+    }: {
+      sourceId: string;
+      target?: string | null;
+      /** Corrección manual de tipos (RF-ING-06): crea otra versión del dataset. */
+      overrides?: Record<string, SemanticType>;
+    }) =>
       unwrap(
         await (
           await getApiClient()
         ).POST("/api/v1/sources/{source_id}/ingest", {
           params: { path: { source_id: sourceId } },
-          body: { target: target || null },
+          body: { target: target || null, overrides: overrides ?? null },
         }),
       ) as DatasetVersion,
     onSuccess: () => void qc.invalidateQueries({ queryKey: keys.datasets(projectId) }),

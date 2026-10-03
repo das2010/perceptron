@@ -68,10 +68,12 @@ def _materialize_table(
     if df.height == 0:
         raise ValidationError("el archivo no tiene filas")
     schema = infer_schema(df, target=req.target)
-    if req.overrides:
-        schema = schema.with_overrides(req.overrides)
     if schema.target is None and schema.target_candidates:
         schema = schema.model_copy(update={"target": schema.target_candidates[0]})
+    if req.modality is not Modality.TIMESERIES and req.series is None:
+        schema = schema.keep_sole_inputs()  # en series el índice entero es el tiempo
+    if req.overrides:
+        schema = schema.with_overrides(req.overrides)  # la corrección manual va al final
     return schema, df
 
 

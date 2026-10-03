@@ -87,7 +87,18 @@ def target_alerts(target: TargetProfile | None, n: int) -> list[Alert]:
 def column_alerts(schema: TableSchema, cols: list[ColumnProfile], df: pl.DataFrame) -> list[Alert]:
     alerts: list[Alert] = []
     now = datetime.now(UTC).replace(tzinfo=None)
+    id_like = {c.name for c in schema.columns if c.id_like}
     for c in cols:
+        if c.name in id_like:
+            alerts.append(
+                _a(
+                    AlertCode.ID_LIKE_FEATURE,
+                    AlertSeverity.WARNING,
+                    "Parece un identificador (valores únicos o nombre de id), pero es la única "
+                    "columna de entrada: se usa como dato. Si es un id, no hay con qué predecir.",
+                    c.name,
+                )
+            )
         if c.semantic is SemanticType.ID:
             alerts.append(
                 _a(
@@ -153,6 +164,15 @@ def column_alerts(schema: TableSchema, cols: list[ColumnProfile], df: pl.DataFra
                         future_fraction=round(future / df.height, 4),
                     )
                 )
+    if schema.target is not None and not schema.feature_columns:
+        alerts.append(
+            _a(
+                AlertCode.NO_FEATURES,
+                AlertSeverity.HIGH,
+                "No queda ninguna columna de entrada (solo el objetivo e identificadores): "
+                "el modelo no tendría con qué predecir. Cambiá el tipo de alguna columna.",
+            )
+        )
     return alerts
 
 

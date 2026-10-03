@@ -47,6 +47,10 @@ class ColumnSchema(BaseModel):
     semantic: SemanticType
     nullable: bool
     n_unique: int
+    id_like: bool = Field(
+        default=False,
+        description="Parece un identificador pero se usa como dato: es la única entrada",
+    )
 
 
 class TableSchema(BaseModel):
@@ -67,8 +71,36 @@ class TableSchema(BaseModel):
         ]
 
     def with_overrides(self, overrides: dict[str, SemanticType]) -> TableSchema:
+        """Corrección manual de tipos (RF-ING-06): la decisión de la persona manda."""
         cols = [
-            c.model_copy(update={"semantic": overrides[c.name]}) if c.name in overrides else c
+            c.model_copy(
+                update={
+                    "semantic": overrides[c.name],
+                    # Confirmar el mismo tipo conserva el aviso; cambiarlo lo resuelve.
+                    "id_like": c.id_like and overrides[c.name] is c.semantic,
+                }
+            )
+            if c.name in overrides
+            else c
+            for c in self.columns
+        ]
+        return self.model_copy(update={"columns": cols})
+
+    def keep_sole_inputs(self, target: str | None = None) -> TableSchema:
+        """Si todas las columnas de entrada parecen ids, las numéricas se usan como dato.
+
+        Un id se descarta para que el modelo no memorice filas, pero si es lo único que hay
+        el modelo se queda sin entradas y solo aprende el promedio (p. ej. `numero → multiplo`).
+        Quedan marcadas `id_like` para avisarlo; se puede corregir a mano.
+        """
+        target = target or self.target
+        inputs = [c for c in self.columns if c.name != target]
+        if target is None or not inputs or any(c.semantic is not SemanticType.ID for c in inputs):
+            return self
+        cols = [
+            c.model_copy(update={"semantic": SemanticType.NUMERIC, "id_like": True})
+            if c.name != target and _numeric_dtype(c.dtype)
+            else c
             for c in self.columns
         ]
         return self.model_copy(update={"columns": cols})
@@ -110,6 +142,10 @@ def series_mean(s: pl.Series) -> float:
     """Media como float (0.0 si la serie está vacía o no es numérica)."""
     m = s.mean()
     return float(m) if isinstance(m, int | float) else 0.0
+
+
+def _numeric_dtype(dtype: str) -> bool:
+    return dtype.startswith(("Int", "UInt", "Float", "Decimal"))
 
 
 def _is_consecutive(s: pl.Series) -> bool:
