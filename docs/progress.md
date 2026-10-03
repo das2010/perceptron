@@ -79,6 +79,7 @@ Los fixtures son sintéticos y chicos: métricas perfectas indican que el flujo 
 | 2. PrivacyFilter L0–L3, PII, auditoría y test de propiedad (ADR-0022) | ✅ |
 | 3. Prompts versionados (`llm/prompts/<propósito>/<nombre>-vN.md`) | ✅ |
 | 4. Roles: arquitecto, estratega de HPO, diagnosticador, informante, etiquetador | ✅ |
+| Presupuesto atómico: cada llamada reserva su costo máximo (salida completa) hasta quedar auditada; llamadas concurrentes no superan el límite (RF-LLM-06) | ✅ |
 
 **Aceptación 2a (CI de cada PR, con `FakeLLMProvider`):** salida válida por rol, reintento con feedback, fallback a reglas (L0, sin clave, presupuesto, 3 fallos), caché gratis en la segunda llamada, auditoría de cada intento y ningún valor individual en payloads L1 (hypothesis). La aceptación con Claude y Ollama es de la Capa 2b.
 

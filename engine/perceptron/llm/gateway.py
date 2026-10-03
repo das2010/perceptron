@@ -20,6 +20,7 @@ import json
 import logging
 import time
 from collections.abc import Callable, Iterator
+from contextlib import ExitStack
 from dataclasses import dataclass, field
 from typing import Any, Literal, TypeVar
 
@@ -29,8 +30,8 @@ from pydantic import ValidationError as PydanticValidationError
 from perceptron.core.config import RuntimeMode, Settings
 from perceptron.core.logging import log_context
 from perceptron.domain.enums import LLMPurpose, PrivacyLevel
-from perceptron.domain.models import LLMCall, Project, Workspace
-from perceptron.llm.budget import OUTPUT_FRACTION, BudgetLedger, estimate_tokens
+from perceptron.domain.models import LLMCall, LLMReservation, Project, Workspace
+from perceptron.llm.budget import BudgetLedger, estimate_input_tokens, estimate_tokens
 from perceptron.llm.cache import LLMCache, cache_key
 from perceptron.llm.compact import compact_payload
 from perceptron.llm.config import LLMConfig, ProviderInfo, Resolved
@@ -82,6 +83,10 @@ def _level_min(a: PrivacyLevel, b: PrivacyLevel) -> PrivacyLevel:
     return a if a.rank <= b.rank else b
 
 
+def _images(request: LLMRequest) -> int:
+    return sum(len(m.images) for m in request.messages)
+
+
 class Gateway:
     def __init__(
         self,
@@ -102,7 +107,9 @@ class Gateway:
         self.calls: SqlRepository[LLMCall] = SqlRepository(db, LLMCall)
         self.workspaces: SqlRepository[Workspace] = SqlRepository(db, Workspace)
         self.cache = LLMCache(db)
-        self.ledger = BudgetLedger(self.calls, SqlRepository(db, Project))
+        self.ledger = BudgetLedger(
+            self.calls, SqlRepository(db, Project), SqlRepository(db, LLMReservation)
+        )
         self._factory = provider_factory or self._default_factory
         self._custom_factory = provider_factory is not None
         self._providers: dict[str, LLMProvider] = {}
@@ -270,58 +277,58 @@ class Gateway:
             key = cache_key(res.provider_name, request)
             cached = self.cache.get(key) if self.settings.cache else None
             started = time.perf_counter()
-            if cached is not None:
-                response, cost = LLMResponse.model_validate(cached), 0.0
-            else:
-                estimate = res.model.cost(
-                    estimate_tokens(system + user),
-                    int(request.max_tokens * OUTPUT_FRACTION),
-                )
-                self.ledger.check(
-                    project.id,
-                    estimate,
-                    project_limit=self.settings.project_budget_usd,
-                    scope=scope,
-                    scope_limit=scope_budget_usd,
-                )
-                self.ledger.check_workspace(self.workspace(project), estimate)
-                try:
-                    response = provider.complete(request, res.model)
-                except LLMProviderError as e:
-                    self._audit(
-                        purpose,
-                        project,
-                        res,
-                        template,
-                        filtered,
-                        request,
-                        None,
-                        attempt,
-                        status="error",
-                        error=e.message,
-                        scope=scope,
-                        latency=time.perf_counter() - started,
+            # La reserva del costo máximo dura hasta que la llamada queda auditada.
+            with ExitStack() as reservation:
+                if cached is not None:
+                    response, cost = LLMResponse.model_validate(cached), 0.0
+                else:
+                    reservation.enter_context(
+                        self.ledger.reserve(
+                            project.id,
+                            self.workspace(project),
+                            self._max_cost(res, request),
+                            project_limit=self.settings.project_budget_usd,
+                            scope=scope,
+                            scope_limit=scope_budget_usd,
+                        )
                     )
-                    raise
-                cost = res.model.cost(response.usage.input_tokens, response.usage.output_tokens)
-            total_cost += cost
-            value, error, raw = self._parse(response, output_model, filtered, validator)
-            call = self._audit(
-                purpose,
-                project,
-                res,
-                template,
-                filtered,
-                request,
-                response,
-                attempt,
-                status="ok" if value is not None and not error else "invalid",
-                error=error or None,
-                scope=scope,
-                cost=cost,
-                cache_hit=cached is not None,
-                latency=time.perf_counter() - started,
-            )
+                    try:
+                        response = provider.complete(request, res.model)
+                    except LLMProviderError as e:
+                        self._audit(
+                            purpose,
+                            project,
+                            res,
+                            template,
+                            filtered,
+                            request,
+                            None,
+                            attempt,
+                            status="error",
+                            error=e.message,
+                            scope=scope,
+                            latency=time.perf_counter() - started,
+                        )
+                        raise
+                    cost = res.model.cost(response.usage.input_tokens, response.usage.output_tokens)
+                total_cost += cost
+                value, error, raw = self._parse(response, output_model, filtered, validator)
+                call = self._audit(
+                    purpose,
+                    project,
+                    res,
+                    template,
+                    filtered,
+                    request,
+                    response,
+                    attempt,
+                    status="ok" if value is not None and not error else "invalid",
+                    error=error or None,
+                    scope=scope,
+                    cost=cost,
+                    cache_hit=cached is not None,
+                    latency=time.perf_counter() - started,
+                )
             last_call = call.id
             if value is not None and not error:
                 if cached is None and self.settings.cache:
@@ -463,38 +470,42 @@ class Gateway:
             max_tokens=res.ref.max_tokens,
             purpose=purpose.value,
         )
-        self.ledger.check(
+        with self.ledger.reserve(
             project.id,
-            res.model.cost(
-                estimate_tokens(system + user), int(request.max_tokens * OUTPUT_FRACTION)
-            ),
-            project_limit=self.settings.project_budget_usd,
-        )
-        self.ledger.check_workspace(
             self.workspace(project),
-            res.model.cost(
-                estimate_tokens(system + user), int(request.max_tokens * OUTPUT_FRACTION)
-            ),
+            self._max_cost(res, request),
+            project_limit=self.settings.project_budget_usd,
+        ):
+            started = time.perf_counter()
+            pieces: list[str] = []
+            for piece in self.provider(res).stream(request, res.model):
+                pieces.append(piece)
+                yield piece
+            text = "".join(pieces)
+            usage_in = estimate_input_tokens(
+                [system, *(m.content for m in request.messages)], _images(request)
+            )
+            usage_out = estimate_tokens(text)
+            response = LLMResponse(text=text, model=res.model_id)
+            response.usage.input_tokens, response.usage.output_tokens = usage_in, usage_out
+            self._audit(
+                purpose,
+                project,
+                res,
+                template,
+                filtered,
+                request,
+                response,
+                1,
+                status="ok",
+                cost=res.model.cost(usage_in, usage_out),
+                latency=time.perf_counter() - started,
+            )
+
+    @staticmethod
+    def _max_cost(res: Resolved, request: LLMRequest) -> float:
+        """Costo máximo de la llamada: entrada estimada con holgura y la salida completa."""
+        tokens_in = estimate_input_tokens(
+            [request.system, *(m.content for m in request.messages)], _images(request)
         )
-        started = time.perf_counter()
-        pieces: list[str] = []
-        for piece in self.provider(res).stream(request, res.model):
-            pieces.append(piece)
-            yield piece
-        text = "".join(pieces)
-        usage_in, usage_out = estimate_tokens(system + user), estimate_tokens(text)
-        response = LLMResponse(text=text, model=res.model_id)
-        response.usage.input_tokens, response.usage.output_tokens = usage_in, usage_out
-        self._audit(
-            purpose,
-            project,
-            res,
-            template,
-            filtered,
-            request,
-            response,
-            1,
-            status="ok",
-            cost=res.model.cost(usage_in, usage_out),
-            latency=time.perf_counter() - started,
-        )
+        return res.model.cost(tokens_in, request.max_tokens)

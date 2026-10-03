@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,8 @@ from pydantic import BaseModel
 from perceptron.api.context import EngineContext
 from perceptron.core.config import LLMProviderSettings, LLMSettings
 from perceptron.domain.enums import LLMPurpose, PrivacyLevel
-from perceptron.domain.models import LLMCall, Project, Workspace
+from perceptron.domain.models import LLMCall, LLMReservation, Project, Workspace, utcnow
+from perceptron.llm.budget import RESERVATION_TTL, BudgetLedger
 from perceptron.llm.config import LLMConfig, load_catalog
 from perceptron.llm.errors import (
     LLMBudgetExceededError,
@@ -27,6 +29,7 @@ from perceptron.llm.prompts.registry import PromptRegistry
 from perceptron.llm.providers.fake import FakeLLMProvider
 from perceptron.llm.secrets import EncryptedFileSecrets, MemorySecrets
 from perceptron.llm.types import LLMRequest, Usage
+from perceptron.storage.repositories import SqlRepository
 
 
 class Answer(BaseModel):
@@ -191,6 +194,66 @@ def test_scope_budget(ctx: EngineContext, project: Project) -> None:
     gw.structured(LLMPurpose.REPORTER, Answer, LLMContext(), **kwargs)
     with pytest.raises(LLMBudgetExceededError):
         gw.structured(LLMPurpose.REPORTER, Answer, LLMContext(goal="otra"), **kwargs)
+
+
+def test_call_in_flight_reserves_its_max_cost(ctx: EngineContext, project: Project) -> None:
+    """RF-LLM-06: dos llamadas concurrentes no pasan juntas el control del presupuesto."""
+    fake = FakeLLMProvider()
+    gw = _gateway(ctx, fake, settings=LLMSettings(enabled=True, cache=False))
+    base: dict[str, Any] = {"project": project, "prompt_vars": {"language": "español"}}
+    reserved: list[float] = []
+
+    def observe(_request: LLMRequest) -> dict[str, Any]:
+        reserved.append(gw.ledger.reserved(project_id=project.id, scope="medir"))
+        return {"value": 1}
+
+    fake.script("reporter", observe)
+    gw.structured(
+        LLMPurpose.REPORTER, Answer, LLMContext(), scope="medir", scope_budget_usd=100.0, **base
+    )
+    [one] = reserved  # costo máximo de una llamada: salida completa, no una fracción
+    assert one > gw.ledger.spent(project.id, "medir") > 0
+
+    # Entra una llamada, no dos: la segunda llega mientras la primera está en curso.
+    limited: dict[str, Any] = {**base, "scope": "agent:1", "scope_budget_usd": 1.5 * one}
+
+    def second_while_first_runs(_request: LLMRequest) -> dict[str, Any]:
+        with pytest.raises(LLMBudgetExceededError):
+            gw.structured(LLMPurpose.REPORTER, Answer, LLMContext(), **limited)
+        return {"value": 2}
+
+    fake.script("reporter", second_while_first_runs)
+    assert gw.structured(LLMPurpose.REPORTER, Answer, LLMContext(), **limited).value.value == 2
+    assert gw.ledger.reserved(project_id=project.id) == 0  # liberadas tras auditar
+    assert len(fake.calls("reporter")) == 2
+
+
+def test_reservation_race_and_expiry(ctx: EngineContext, project: Project) -> None:
+    repo = SqlRepository(ctx.db, LLMReservation)
+    ledger = BudgetLedger(SqlRepository(ctx.db, LLMCall), None, repo)
+    # Otro proceso ya reservó: la reserva propia se graba, ve a la otra y se retira.
+    other = repo.add(LLMReservation(for_project_id=project.id, amount_usd=0.6))
+    with (
+        pytest.raises(LLMBudgetExceededError),
+        ledger.reserve(project.id, None, 0.6, project_limit=1.0),
+    ):
+        pytest.fail("no debía entrar")
+    assert [r.id for r in repo.list()] == [other.id]
+    # Una reserva abandonada (proceso caído) vence y deja de contar.
+    repo.delete(other.id)
+    stale = repo.add(
+        LLMReservation(
+            for_project_id=project.id,
+            amount_usd=0.6,
+            created_at=utcnow() - RESERVATION_TTL - timedelta(minutes=1),
+        )
+    )
+    with ledger.reserve(project.id, None, 0.6, project_limit=1.0):
+        assert ledger.reserved(project_id=project.id) == pytest.approx(0.6)
+    assert [r.id for r in repo.list()] == [stale.id]
+    # Sin límites configurados no se escribe nada.
+    with ledger.reserve(project.id, None, 5.0, project_limit=None):
+        assert len(repo.list()) == 1
 
 
 def test_policy_unavailable_cases(ctx: EngineContext) -> None:
