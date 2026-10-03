@@ -118,6 +118,39 @@ def test_cancel_and_quota(cluster: Cluster, fixtures_dir: Path) -> None:
     wait_job(editor, last["id"], timeout=300)
 
 
+def test_cancel_while_queued_never_trains(cluster: Cluster, fixtures_dir: Path) -> None:
+    """Cancelar un estudio que sigue en la cola: el worker que lo toma después no lo entrena
+    (la cancelación queda persistida en el estudio, no solo en el canal de control)."""
+    from perceptron.domain.models import Run, Study
+
+    editor = _editor(cluster)
+    admin = login(cluster.app, ADMIN_EMAIL, ADMIN_PASSWORD)
+    pid, body = prepare_study(editor, fixtures_dir, trials=30, epochs=50)
+    busy = ok(editor.post(f"{API}/projects/{pid}/studies", json=body), 202)
+    deadline = time.time() + 120
+    while ok(editor.get(f"{API}/jobs/{busy['job']['id']}"))["status"] == "queued":
+        assert time.time() < deadline, "el worker no tomó el estudio"
+        time.sleep(0.2)
+    # El worker (un estudio a la vez) está ocupado: el segundo queda esperando.
+    waiting = ok(admin.post(f"{API}/projects/{pid}/studies", json=body), 202)
+    assert ok(admin.get(f"{API}/jobs/{waiting['job']['id']}"))["status"] == "queued"
+    ok(admin.post(f"{API}/studies/{waiting['study']['id']}/cancel"))
+    ctx = cluster.app.state.server.ctx
+    assert ctx.repo(Study).get(waiting["study"]["id"]).cancel_requested_at is not None
+    # Se libera el worker: toma el estudio cancelado y lo descarta sin entrenar.
+    ok(editor.post(f"{API}/studies/{busy['study']['id']}/cancel"))
+    wait_job(editor, busy["job"]["id"], timeout=300)
+    runtime = cluster.runtime
+    assert runtime is not None
+    deadline = time.time() + 120
+    while time.time() < deadline and (
+        runtime.last_finished is None or runtime.last_finished[0] != waiting["job"]["id"]
+    ):
+        time.sleep(0.2)
+    assert runtime.last_finished == (waiting["job"]["id"], "cancelled")
+    assert not ctx.repo(Run).list(filters={"study_id": waiting["study"]["id"]})
+
+
 def test_gpu_studies_go_to_the_gpu_queue(cluster: Cluster, fixtures_dir: Path) -> None:
     editor = _editor(cluster)
     pid, body = prepare_study(editor, fixtures_dir)

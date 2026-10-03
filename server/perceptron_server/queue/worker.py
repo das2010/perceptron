@@ -42,6 +42,7 @@ class WorkerRuntime:
     name: str = field(default_factory=worker_name)
     heartbeat_s: float = 15.0
     busy: str | None = None
+    last_finished: tuple[str, str] | None = None  # (job, estado) del último estudio
     _stop: threading.Event = field(default_factory=threading.Event)
 
     @classmethod
@@ -105,10 +106,16 @@ class WorkerRuntime:
         status, result, error = "failed", None, None
         try:
             emit("started", worker=self.name)
+            # Ya suscripto al canal de control: si la cancelación se pidió mientras esperaba en
+            # la cola, está persistida en el estudio y no se entrena.
             study = self.ctx.repo(Study).get(study_id)
-            outcome = execute_study(self.ctx, study, control=control, emit=emit)
-            result = outcome.model_dump(mode="json")
-            status = "cancelled" if control.cancelled else "succeeded"
+            if study.cancel_requested_at is not None:
+                control.cancel()
+                status = "cancelled"
+            else:
+                outcome = execute_study(self.ctx, study, control=control, emit=emit)
+                result = outcome.model_dump(mode="json")
+                status = "cancelled" if control.cancelled else "succeeded"
         except Exception as exc:
             logger.exception("el estudio falló en el worker", extra={"job_id": job_id})
             # El traceback queda en el log del worker, no en el job que ve el cliente.
@@ -117,6 +124,7 @@ class WorkerRuntime:
             # Primero el latido "libre" y después el fin: quien vea el job terminado ya ve
             # el worker disponible en la cola.
             self.busy = None
+            self.last_finished = (job_id, status)
             try:
                 self.heartbeat()
             except Exception:

@@ -217,6 +217,10 @@ class Study(Entity):
     budget: JsonDict = Field(default_factory=dict)
     objectives: list[str] = Field(default_factory=list)
     origin: Origin = Origin.MANUAL
+    cancel_requested_at: datetime | None = Field(
+        default=None,
+        description="Cancelación pedida (persistida: la respeta un worker que lo tome después)",
+    )
 
 
 class Run(Entity):

@@ -64,6 +64,11 @@ INTERNAL = (
 )
 
 
+# Plazo máximo para el estudio del challenger (con la cola ocupada o un worker caído, la
+# espera no puede ser infinita).
+STUDY_WAIT_S = 24 * 3600
+
+
 class Retrainer:
     def __init__(self, ctx: EngineContext) -> None:
         self.ctx = ctx
@@ -88,6 +93,7 @@ class Retrainer:
             "retrain",
             lambda job: self.execute(run.id).model_dump(mode="json"),
             refs={"retrain_run_id": run.id, "project_id": policy.project_id},
+            dedicated=True,  # espera a su estudio: no ocupa un lugar del pool que él necesita
         )
         return run
 
@@ -270,7 +276,14 @@ class Retrainer:
         job = self.ctx.launch_study(study)
         run = self.runs.update(self.runs.get(run.id).model_copy(update={"study_id": study.id}))
         self._log(run, "entrenamiento", study_id=study.id, job_id=job.id)
+        deadline = time.monotonic() + STUDY_WAIT_S
         while (current := self.ctx.jobs.get(job.id)) is not None and current.status not in TERMINAL:
+            if time.monotonic() > deadline:
+                self.ctx.jobs.cancel(job.id)
+                raise ValidationError(
+                    f"el entrenamiento del challenger no terminó en {STUDY_WAIT_S / 3600:.0f} h: "
+                    "se canceló"
+                )
             time.sleep(1.0)
         if current is None or current.status != "succeeded" or not current.result:
             state = current.status if current else "?"
