@@ -57,6 +57,16 @@ def cluster(settings: Settings, server_settings: ServerSettings) -> Iterator[Clu
     c = Cluster(settings, server_settings.model_copy(update={"max_running_studies_per_user": 1}))
     with TestClient(c.app):
         yield c
+        # Un job cancelado figura terminado enseguida, pero el worker sigue hasta el próximo
+        # punto de control: si el test siguiente prepara la base mientras tanto, choca con él.
+        # Libre durante 1 s seguido: puede haber otro estudio esperando el turno del worker.
+        deadline, idle_since = time.time() + 300, time.time()
+        while c.runtime is not None and time.time() < deadline:
+            if c.runtime.busy is not None:
+                idle_since = time.time()
+            elif time.time() - idle_since >= 1.0:
+                break
+            time.sleep(0.1)
     if c.runtime is not None:
         c.runtime.stop()
 
