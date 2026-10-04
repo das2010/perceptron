@@ -22,14 +22,17 @@ from perceptron.domain.models import ProjectDraft
 from perceptron.llm.privacy import LLMContext
 from perceptron.llm.types import Message
 from perceptron.services.brief import (
+    PLAN_VERSION,
     STEPS,
     BriefField,
     BriefPatch,
     DataFacts,
+    PlanDiff,
     UseCaseBrief,
     WizardPlan,
     compile_plan,
     data_facts,
+    diff_plans,
     validate_patch,
 )
 
@@ -69,9 +72,12 @@ class DraftValues(BaseModel):
     brief: UseCaseBrief | None = None
     data_facts: DataFacts | None = None
     plan: WizardPlan | None = None
+    plan_diff: PlanDiff | None = Field(
+        default=None, description="Qué cambió en la última recompilación del plan"
+    )
 
 
-SYSTEM_FIELDS = ("data_facts", "plan")
+SYSTEM_FIELDS = ("data_facts", "plan", "plan_diff")
 
 
 # Campos que el copiloto puede proponer cambiar (los ids los fija la UI al elegir).
@@ -130,7 +136,7 @@ class Wizard:
             return found[0]
         values = DraftValues(goal=project.goal or None).model_dump(mode="json", exclude_none=True)
         # El plan nace con el borrador: así no figura como cambio en la primera edición.
-        values["plan"] = compile_plan(None, None).model_dump(mode="json")
+        values["plan"] = compile_plan(None, None).model_dump(mode="json", exclude_none=True)
         draft = ProjectDraft(project_id=project_id, values=values)
         return self.repo.add(draft)
 
@@ -221,19 +227,29 @@ class Wizard:
         else:
             out["data_facts"] = facts
         changed = out.get("brief") != old.get("brief") or facts != old.get("data_facts")
-        if changed or "plan" not in old:
+        stale = (old.get("plan") or {}).get("version", 1) < PLAN_VERSION
+        if changed or stale or "plan" not in old:
             plan = compile_plan(
                 UseCaseBrief.model_validate(out["brief"]) if out.get("brief") else None,
                 DataFacts.model_validate(facts) if facts else None,
             )
-            out["plan"] = plan.model_dump(mode="json")
+            out["plan"] = plan.model_dump(mode="json", exclude_none=True)
+            previous = WizardPlan.model_validate(old["plan"]) if old.get("plan") else None
+            diff = diff_plans(previous, plan)
+            if diff.empty:
+                out.pop("plan_diff", None)
+            else:
+                out["plan_diff"] = diff.model_dump(mode="json")
         return out
 
     def plan(self, draft: ProjectDraft) -> WizardPlan:
         """El plan guardado o, en borradores anteriores al ADR-0040, el compilado al vuelo."""
         values = draft.values
         if values.get("plan"):
-            return WizardPlan.model_validate(values["plan"])
+            stored = WizardPlan.model_validate(values["plan"])
+            if stored.version >= PLAN_VERSION:
+                return stored
+            # Reglas nuevas: el plan guardado se recompila al vuelo (se persiste al editar).
         brief = values.get("brief")
         facts = values.get("data_facts")
         return compile_plan(
@@ -270,6 +286,39 @@ class Wizard:
             validator=validate_patch,
             prompt="intake",
             prompt_vars={"message": message, "transcript": transcript or "(sin mensajes previos)"},
+        )
+        return out.value, out.call_id
+
+    def reconcile(self, project_id: str) -> tuple[BriefPatch, str]:
+        """Compara la ficha con el perfil de los datos (fase 2 del ADR-0040).
+
+        El LLM propone correcciones a la ficha o preguntas cuando lo declarado no coincide con
+        lo que se ve en la Profile Card. No modifica nada: la persona acepta o descarta.
+        """
+        draft = self.get(project_id)
+        if not draft.values.get("dataset_version_id"):
+            raise ValidationError(
+                "Primero elegí los datos: la ficha se compara con su perfil.",
+                details={"reason": "no_dataset"},
+            )
+        project = self.wf.project(project_id)
+        ctx = self._context(draft)
+        ctx = ctx.model_copy(
+            update={
+                "system": {
+                    **ctx.system,
+                    "brief_fields": list(get_args(BriefField)),
+                    "brief_schema": UseCaseBrief.model_json_schema(),
+                }
+            }
+        )
+        out = self.ctx.llm.structured(
+            LLMPurpose.COPILOT,
+            BriefPatch,
+            ctx,
+            project=project,
+            validator=validate_patch,
+            prompt="reconcile",
         )
         return out.value, out.call_id
 

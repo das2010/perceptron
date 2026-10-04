@@ -29,19 +29,35 @@ if TYPE_CHECKING:
     from perceptron.domain.models import DatasetVersion
 
 Step = Literal[
-    "goal", "data", "quality", "labeling", "task", "architecture", "hpo", "budget", "review"
+    "goal",
+    "data",
+    "quality",
+    "formula",
+    "labeling",
+    "task",
+    "threshold",
+    "architecture",
+    "hpo",
+    "budget",
+    "review",
 ]
+# Orden de todos los pasos. «formula» y «threshold» son condicionales (fase 2 del ADR-0040):
+# solo aparecen si la ficha los justifica.
 STEPS: tuple[Step, ...] = (
     "goal",
     "data",
     "quality",
+    "formula",
     "labeling",
     "task",
+    "threshold",
     "architecture",
     "hpo",
     "budget",
     "review",
 )
+CONDITIONAL: frozenset[Step] = frozenset({"formula", "threshold"})
+PLAN_VERSION = 2  # sube cuando cambian las reglas: los planes guardados se recompilan
 COLLINEAR = 0.98  # correlación de rangos entre entradas numéricas
 FACTS_SAMPLE = 5000
 FEW_ROWS = 100
@@ -241,6 +257,48 @@ class WizardPlan(BaseModel):
     defaults: list[PlanDefault] = Field(default_factory=list)
     checks: list[PlanCheck] = Field(default_factory=list)
     adapted: bool = Field(default=False, description="False: plan estándar (nada reconocido)")
+    version: int = Field(default=1, description="Versión de las reglas que lo compilaron")
+
+
+class PlanDiff(BaseModel):
+    """Qué cambió del plan respecto del anterior (para mostrarlo en la UI)."""
+
+    added_steps: list[str] = Field(default_factory=list)
+    removed_steps: list[str] = Field(default_factory=list)
+    changed_defaults: list[str] = Field(default_factory=list)
+    new_checks: list[str] = Field(default_factory=list, description="Mensajes de avisos nuevos")
+    resolved_checks: list[str] = Field(default_factory=list)
+
+    @property
+    def empty(self) -> bool:
+        return not (
+            self.added_steps
+            or self.removed_steps
+            or self.changed_defaults
+            or self.new_checks
+            or self.resolved_checks
+        )
+
+
+def diff_plans(old: WizardPlan | None, new: WizardPlan) -> PlanDiff:
+    if old is None:
+        return PlanDiff()
+    old_steps, new_steps = [s.id for s in old.steps], [s.id for s in new.steps]
+    old_defaults = {d.key: d.value for d in old.defaults}
+    new_defaults = {d.key: d.value for d in new.defaults}
+    old_checks = {c.code: c.message for c in old.checks}
+    new_checks = {c.code: c.message for c in new.checks}
+    return PlanDiff(
+        added_steps=[s for s in new_steps if s not in old_steps],
+        removed_steps=[s for s in old_steps if s not in new_steps],
+        changed_defaults=sorted(
+            k
+            for k in set(old_defaults) | set(new_defaults)
+            if old_defaults.get(k) != new_defaults.get(k)
+        ),
+        new_checks=[m for c, m in new_checks.items() if c not in old_checks],
+        resolved_checks=[m for c, m in old_checks.items() if c not in new_checks],
+    )
 
 
 _TASK_OF: dict[str, TaskType] = {
@@ -437,11 +495,90 @@ def compile_plan(brief: UseCaseBrief | None, facts: DataFacts | None) -> WizardP
             )
         )
 
+    # --- reconciliación por reglas: lo que la ficha dice contra lo que se mide
+    if facts and facts.datetime_columns:
+        cols = ", ".join(f"«{c}»" for c in facts.datetime_columns[:3])
+        if b.has_time is False:
+            checks.append(
+                PlanCheck(
+                    code="dates_contradiction",
+                    severity="warning",
+                    step="data",
+                    message=f"La ficha dice que no hay orden temporal, pero hay fechas ({cols}). "
+                    "Si los datos se juntaron en el tiempo, evaluar con una partición aleatoria "
+                    "puede mezclar el futuro con el pasado.",
+                )
+            )
+        elif b.has_time is None:
+            checks.append(
+                PlanCheck(
+                    code="dates_undeclared",
+                    severity="info",
+                    step="data",
+                    message=f"Hay columnas de fecha ({cols}). ¿Los datos tienen orden temporal? "
+                    "Si es así, indicalo en la ficha: cambia cómo conviene evaluar.",
+                )
+            )
+    if facts and b.labels_available is False and facts.target:
+        checks.append(
+            PlanCheck(
+                code="labels_contradiction",
+                severity="info",
+                step="data",
+                message=f"La ficha dice que faltan etiquetas, pero los datos tienen el objetivo "
+                f"«{facts.target}». Si esa columna es la etiqueta, corregí la ficha.",
+            )
+        )
+
+    # --- pasos condicionales
+    include: set[Step] = set()
+    tabular_regression = facts is None or (
+        facts.modality == "tabular"
+        and facts.target_task in (None, TaskType.REGRESSION)
+        and bool(facts.numeric_inputs)
+    )
+    if b.problem == "rule" and tabular_regression:
+        include.add("formula")
+        reasons["formula"] = (
+            "En la ficha: el objetivo es descubrir una regla. Antes de entrenar redes, buscá una "
+            "fórmula: si existe, la vas a ver escrita y extrapola."
+        )
+    classification = b.problem == "category" or (
+        facts is not None and facts.target_task is TaskType.CLASSIFICATION
+    )
+    binary = facts is None or facts.target_classes in (None, 2)
+    if b.error_costs in ("false_negative_worse", "false_positive_worse") and classification:
+        if binary:
+            include.add("threshold")
+            reasons["threshold"] = (
+                "En la ficha: un error es peor que el otro. El umbral de decisión se elige con "
+                "validación para minimizar el costo esperado, no el 50 %."
+            )
+        else:
+            checks.append(
+                PlanCheck(
+                    code="threshold_multiclass",
+                    severity="info",
+                    step="task",
+                    message="Los costos asimétricos se calibran con un umbral solo en "
+                    "clasificación binaria; con más clases se usa la métrica sugerida.",
+                )
+            )
+
     skip_ids = {s.id for s in skipped}
-    steps = [PlanStep(id=s, reason=reasons.get(s)) for s in STEPS if s not in skip_ids]
+    steps = [
+        PlanStep(id=s, reason=reasons.get(s))
+        for s in STEPS
+        if s not in skip_ids and (s not in CONDITIONAL or s in include)
+    ]
     adapted = bool(defaults or checks or skipped or reasons)
     return WizardPlan(
-        steps=steps, skipped=skipped, defaults=defaults, checks=checks, adapted=adapted
+        steps=steps,
+        skipped=skipped,
+        defaults=defaults,
+        checks=checks,
+        adapted=adapted,
+        version=PLAN_VERSION,
     )
 
 
