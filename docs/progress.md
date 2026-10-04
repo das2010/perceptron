@@ -37,6 +37,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | 9. Evaluación + registro | ✅ |
 | 10. Jobs, API/WS, CLI, quickstart, E2E UC-01/UC-04 | ✅ |
 | Caso «Tabla 3»: la única entrada no se descarta por parecer id (aviso `id_like_feature`); sin entradas el pipeline se rechaza (422) y el perfil alerta `no_features`; tipos corregibles desde Datos (RF-ING-06); métricas de validación de regresión en unidades reales | ✅ |
+| Regresión lineal pura sin weight decay (sesgo en la pendiente); épocas por trial sugeridas por la arquitectura según el tiempo estimado | ✅ |
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 

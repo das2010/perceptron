@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import ValidationError as PydanticValidationError
 
+from perceptron.archspec.defaults import without_linear_shrinkage
 from perceptron.archspec.schema import ArchSpec, Provenance
 from perceptron.archspec.validate import ValidationReport, offline_mode, validate_archspec
 from perceptron.catalog.registry import HF_TEXT_MODELS, TIMM_WEIGHTS, blocks_for
@@ -218,7 +219,8 @@ class LLMRoles:
 
         def fix(c: ArchCandidate) -> ArchSpec:
             # input y task salen de los datos, no son decisión de diseño.
-            return c.archspec.model_copy(update={"input": rec.spec.input, "task": rec.spec.task})
+            spec = c.archspec.model_copy(update={"input": rec.spec.input, "task": rec.spec.task})
+            return without_linear_shrinkage(spec)
 
         def check(c: ArchCandidate) -> ValidationReport:
             return validate_archspec(fix(c), device_memory_gb=memory_gb)
