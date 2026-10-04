@@ -1294,5 +1294,29 @@
       "Pipeline": "Pipeline",
       "ArchSpecRecord": "Architecture"
     }
+  },
+  "symbolic": {
+    "title": "Suggested formula",
+    "hint": "Searches for a mathematical formula that explains the target from the numeric columns. It is a reference: if the output comes from a calculation rule, the formula shows it and also extrapolates, which a network does not.",
+    "dataset": "Dataset",
+    "timeLimit": "Search time",
+    "search": "Find formula",
+    "searching": "Searching formulas (up to {{seconds}} s)…",
+    "formula": "Formula",
+    "valMae": "Validation MAE",
+    "valR2": "Validation R²",
+    "testMae": "Test MAE",
+    "testR2": "Test R²",
+    "bestNetwork": "Best network ({{run}})",
+    "parity": "Test: actual vs. formula",
+    "real": "actual",
+    "predicted": "formula",
+    "try": "Compute",
+    "copyPython": "Copy as Python",
+    "copyExcel": "Copy as Excel",
+    "copied": "Copied!",
+    "excelLegend": "In Excel: {{legend}}",
+    "candidates": "Other formulas evaluated",
+    "candidate": "complexity {{complexity}} · val error {{rmse}}:"
   }
 }

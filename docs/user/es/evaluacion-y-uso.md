@@ -120,3 +120,20 @@ Cuando hay un ONNX verificado aparece **Probar el modelo**:
 Ves la **Predicción**, la **confianza** y las probabilidades. **Explicar esta predicción** muestra la
 **Contribución de cada variable** (tabular) o el **Mapa de calor de la explicación** (imagen). El
 playground para audio y texto llega **próximamente**.
+
+## Fórmula sugerida
+
+En **Experimentos**, para regresión con columnas numéricas, **Buscar fórmula** intenta encontrar
+una fórmula matemática que explique el objetivo (por ejemplo `multiplo = 3·numero` o
+`Salida = Sensor1·(√Sensor2 + 1)`). Es una referencia junto a las redes, no un modelo que se
+exporta o despliega.
+
+- Elegí el **Tiempo de búsqueda** (30 s a 10 min) y esperá el resultado.
+- Ves la fórmula, su error en validación y en test comparado con la **Mejor red**, y un gráfico
+  de valor real vs. fórmula.
+- **Calcular** evalúa la fórmula con valores nuevos, también fuera del rango de los datos: una
+  fórmula que captura la regla extrapola, una red no.
+- **Copiar como Python** o **Copiar como Excel** (las columnas van en A2, B2…).
+
+Si la fórmula avisa que **hay entradas que varían juntas**, muchas fórmulas explican igual esos
+datos: para inferir la regla real hacen falta datos donde cada columna varíe por separado.

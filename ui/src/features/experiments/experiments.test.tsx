@@ -137,3 +137,82 @@ describe("mejor run por estudio", () => {
     expect([...best].sort()).toEqual(["a-t001", "b-t000"]);
   });
 });
+
+describe("fórmula sugerida (ADR-0039)", () => {
+  beforeEach(() => resetApiClient());
+
+  it("muestra la fórmula, la compara con la mejor red, la calcula y busca otra", async () => {
+    const dataset = {
+      id: "dsv_1",
+      project_id: "prj_1",
+      content_hash: "abcdef0123456789",
+      num_samples: 397,
+      size_bytes: 1,
+      modality: "tabular",
+      target: "multiplo",
+      version: 1,
+      created_at: "2026-10-04T10:00:00Z",
+    };
+    const fit = {
+      id: "sym_1",
+      project_id: "prj_1",
+      dataset_version_id: "dsv_1",
+      target: "multiplo",
+      features: ["numero"],
+      expression: "3*x1",
+      formula: "3·numero",
+      python: "import math\n\n\ndef formula(numero):\n    return 3*numero\n",
+      excel_es: "=(3*A2)",
+      excel_en: "=(3*A2)",
+      candidates: [{ length: 3, val_rmse: 0, formula: "3·numero" }],
+      metrics: { val: { mae: 0, r2: 1 }, test: { mae: 0, r2: 1 } },
+      parity: [
+        [3, 3],
+        [600, 600],
+      ],
+      warnings: [],
+      n_train: 277,
+      duration_s: 9,
+      time_limit_s: 60,
+      version: 1,
+    };
+    const best = {
+      ...run(1, 0.001),
+      dataset_version_id: "dsv_1",
+      metrics: { val_loss: 0.01, val_mae: 3.2, val_r2: 0.9998 },
+    };
+    const { calls } = mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/runs": () => [best],
+      "GET /api/v1/projects/prj_1/datasets": () => [dataset],
+      "GET /api/v1/projects/prj_1/symbolic": () => [fit],
+      "POST /api/v1/symbolic/sym_1/predict": () => ({ predictions: [1500] }),
+      "POST /api/v1/projects/prj_1/symbolic": () => ({
+        job: { id: "job_s", kind: "symbolic", status: "queued" },
+      }),
+      "GET /api/v1/jobs/job_s": () => ({ id: "job_s", kind: "symbolic", status: "running" }),
+    });
+    const user = userEvent.setup();
+    render(
+      <Providers client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <App router={createTestRouter("/projects/prj_1/experiments")} />
+      </Providers>,
+    );
+    expect(await screen.findByLabelText("Fórmula")).toHaveTextContent("multiplo = 3·numero");
+    expect(screen.getByText("Mejor red (t001)")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("numero"), "500");
+    await user.click(screen.getByRole("button", { name: "Calcular" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("multiplo = 1500");
+    const predict = calls.find((r) => r.url.endsWith("/symbolic/sym_1/predict"));
+    expect(await predict?.clone().json()).toEqual({ rows: [{ numero: 500 }] });
+    await user.click(screen.getByRole("button", { name: "Buscar fórmula" }));
+    const started = calls.find(
+      (r) => r.method === "POST" && r.url.endsWith("/projects/prj_1/symbolic"),
+    );
+    expect(await started?.clone().json()).toEqual({
+      dataset_version_id: "dsv_1",
+      time_limit_s: 60,
+    });
+  });
+});

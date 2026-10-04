@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -65,7 +65,7 @@ def run_symbolic(
 
 
 def predict_symbolic(
-    fit: SymbolicFit, rows: list[Mapping[str, float | None]]
+    fit: SymbolicFit, rows: Sequence[Mapping[str, float | None]]
 ) -> list[float | None]:
     """Predicciones de la fórmula para filas nuevas (`None` si no se puede calcular)."""
     missing = sorted({f for r in rows for f in fit.features if r.get(f) is None})

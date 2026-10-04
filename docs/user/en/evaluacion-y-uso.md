@@ -120,3 +120,20 @@ When there is a verified ONNX export, **Try the model** appears:
 You see the **Prediction**, the **confidence** and the probabilities. **Explain this prediction** shows
 the **Contribution of each variable** (tabular) or the **Explanation heat map** (image). The playground
 for audio and text is **coming soon**.
+
+## Suggested formula
+
+In **Experiments**, for regression with numeric columns, **Find formula** tries to find a
+mathematical formula that explains the target (for example `multiplo = 3·numero` or
+`Salida = Sensor1·(√Sensor2 + 1)`). It is a reference next to the networks, not a model you
+export or deploy.
+
+- Pick the **Search time** (30 s to 10 min) and wait for the result.
+- You see the formula, its validation and test error compared with the **Best network**, and an
+  actual vs. formula chart.
+- **Compute** evaluates the formula with new values, also outside the data range: a formula that
+  captures the rule extrapolates, a network does not.
+- **Copy as Python** or **Copy as Excel** (columns go in A2, B2…).
+
+If the formula warns that **some inputs vary together**, many formulas explain those data equally
+well: to infer the real rule you need data where each column varies on its own.

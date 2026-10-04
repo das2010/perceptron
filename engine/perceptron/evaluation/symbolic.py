@@ -116,6 +116,13 @@ def parse_expression(text: str) -> ast.Expression:
     return tree
 
 
+def _number(node: ast.Constant) -> float:
+    value = node.value
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise ValidationError(_NOT_ALLOWED)
+    return float(value)
+
+
 def _func(node: ast.Call) -> str:
     if not isinstance(node.func, ast.Name):
         raise ValidationError(_NOT_ALLOWED)
@@ -137,7 +144,7 @@ def evaluate_expression(text: str, x: np.ndarray) -> np.ndarray:
         if isinstance(node, ast.Expression):
             return ev(node.body)
         if isinstance(node, ast.Constant):
-            return float(node.value)
+            return _number(node)
         if isinstance(node, ast.Name):
             i = _var(node) - 1
             if not 0 <= i < x.shape[1]:
@@ -172,7 +179,7 @@ def to_excel(text: str, *, spanish: bool) -> str:
         if isinstance(node, ast.Expression):
             return em(node.body)
         if isinstance(node, ast.Constant):
-            return num(float(node.value))
+            return num(_number(node))
         if isinstance(node, ast.Name):
             return f"{_column_letter(_var(node))}2"
         if isinstance(node, ast.BinOp):
@@ -214,7 +221,7 @@ def _to_sympy(text: str) -> Any:
         if isinstance(node, ast.Expression):
             return conv(node.body)
         if isinstance(node, ast.Constant):
-            return sp.Float(node.value)
+            return sp.Float(_number(node))
         if isinstance(node, ast.Name):
             return sp.Symbol(node.id)
         if isinstance(node, ast.BinOp):
@@ -253,7 +260,7 @@ def simplify(text: str, *, snap: bool) -> str:
                 v = 0.0 if abs(float(f)) < TINY else _snap(float(f))
                 replace[f] = sp.Integer(int(v)) if v.is_integer() else sp.Float(v)
             expr = sp.simplify(expr.xreplace(replace))
-        out = sp.sstr(expr.xreplace({f: sp.Float(f, 12) for f in expr.atoms(sp.Float)}))
+        out = str(sp.sstr(expr.xreplace({f: sp.Float(f, 12) for f in expr.atoms(sp.Float)})))
         parse_expression(out)
     except (ValidationError, TypeError, ValueError, ZeroDivisionError, OverflowError):
         return text
@@ -290,8 +297,10 @@ def _frame(view: DatasetView, split: str, cols: list[str]) -> pl.DataFrame:
 
 
 def _arrays(df: pl.DataFrame, features: list[str], target: str) -> tuple[np.ndarray, np.ndarray]:
+    """float64 en orden C y escribibles: PyOperon (nanobind) no acepta las vistas de Polars."""
     x = df.select(pl.col(c).cast(pl.Float64) for c in features).to_numpy()
-    return x, df[target].cast(pl.Float64).to_numpy()
+    y = df[target].cast(pl.Float64).to_numpy()
+    return np.array(x, dtype=np.float64, order="C"), np.array(y, dtype=np.float64, order="C")
 
 
 def _rmse(y: np.ndarray, pred: np.ndarray) -> float:
