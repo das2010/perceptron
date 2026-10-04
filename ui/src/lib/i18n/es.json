@@ -1294,5 +1294,29 @@
       "Pipeline": "Pipeline",
       "ArchSpecRecord": "Arquitectura"
     }
+  },
+  "symbolic": {
+    "title": "Fórmula sugerida",
+    "hint": "Busca una fórmula matemática que explique el objetivo a partir de las columnas numéricas. Sirve como referencia: si la salida sale de una regla de cálculo, la fórmula la muestra y además extrapola, cosa que una red no hace.",
+    "dataset": "Dataset",
+    "timeLimit": "Tiempo de búsqueda",
+    "search": "Buscar fórmula",
+    "searching": "Buscando fórmulas (hasta {{seconds}} s)…",
+    "formula": "Fórmula",
+    "valMae": "MAE validación",
+    "valR2": "R² validación",
+    "testMae": "MAE test",
+    "testR2": "R² test",
+    "bestNetwork": "Mejor red ({{run}})",
+    "parity": "Test: valor real vs. fórmula",
+    "real": "real",
+    "predicted": "fórmula",
+    "try": "Calcular",
+    "copyPython": "Copiar como Python",
+    "copyExcel": "Copiar como Excel",
+    "copied": "¡Copiado!",
+    "excelLegend": "En Excel: {{legend}}",
+    "candidates": "Otras fórmulas evaluadas",
+    "candidate": "complejidad {{complexity}} · error val {{rmse}}:"
   }
 }

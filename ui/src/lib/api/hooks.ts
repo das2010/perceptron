@@ -18,6 +18,7 @@ export type Project = WithId<Schemas["Project"]>;
 export type ProjectTemplate = Schemas["ProjectTemplate"];
 export type DatasetVersion = WithId<Schemas["DatasetVersion"]>;
 export type SemanticType = Schemas["SemanticType"];
+export type SymbolicFit = WithId<Schemas["SymbolicFit"]>;
 export type ProfileCard = Schemas["ProfileCard"];
 export type Run = WithId<Schemas["Run"]>;
 export type ModelVersion = WithId<Schemas["ModelVersion"]>;
@@ -86,6 +87,7 @@ export const keys = {
   llmProfiles: ["llm", "profiles"] as const,
   audit: (pid: string) => ["llm", "audit", pid] as const,
   job: (id: string) => ["jobs", id] as const,
+  symbolic: (pid: string) => ["projects", pid, "symbolic"] as const,
 };
 
 // ---------------------------------------------------------------- proyectos
@@ -1487,5 +1489,49 @@ export function useCreateRemoteStudy(projectId: string) {
         }),
       ),
     onSuccess: () => void qc.invalidateQueries({ queryKey: keys.runs(projectId) }),
+  });
+}
+
+// ---------------------------------------------------------------- fórmula sugerida (ADR-0039)
+
+export function useSymbolicFits(projectId: string) {
+  return useQuery({
+    queryKey: keys.symbolic(projectId),
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/symbolic", {
+          params: { path: { project_id: projectId } },
+        }),
+      ) as SymbolicFit[],
+  });
+}
+
+export function useStartSymbolic(projectId: string) {
+  return useMutation({
+    mutationFn: async (body: Schemas["SymbolicRequest"]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/symbolic", {
+          params: { path: { project_id: projectId } },
+          body,
+        }),
+      ),
+  });
+}
+
+export function useSymbolicPredict(fitId: string) {
+  return useMutation({
+    mutationFn: async (rows: Record<string, number | null>[]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/symbolic/{symbolic_fit_id}/predict", {
+          params: { path: { symbolic_fit_id: fitId } },
+          body: { rows },
+        }),
+      ).predictions,
   });
 }

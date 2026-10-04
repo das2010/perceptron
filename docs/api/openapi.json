@@ -11351,6 +11351,237 @@
         "title": "SuggestionsResult",
         "type": "object"
       },
+      "SymbolicFit": {
+        "additionalProperties": false,
+        "description": "Fórmula sugerida por regresión simbólica (ADR-0039).\n\nModelo de referencia: se compara con las redes y se prueba con valores nuevos, pero no se\nexporta ni se despliega. `expression` usa x1…xn en el orden de `features`.",
+        "properties": {
+          "candidates": {
+            "description": "Fórmulas evaluadas: complejidad y error en validación",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "duration_s": {
+            "default": 0.0,
+            "title": "Duration S",
+            "type": "number"
+          },
+          "excel_en": {
+            "title": "Excel En",
+            "type": "string"
+          },
+          "excel_es": {
+            "title": "Excel Es",
+            "type": "string"
+          },
+          "expression": {
+            "title": "Expression",
+            "type": "string"
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "formula": {
+            "description": "Legible, con los nombres de las columnas",
+            "title": "Formula",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "n_train": {
+            "default": 0,
+            "title": "N Train",
+            "type": "integer"
+          },
+          "parity": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Parity",
+            "type": "array"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "python": {
+            "title": "Python",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          },
+          "time_limit_s": {
+            "default": 60,
+            "title": "Time Limit S",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión para bloqueo optimista",
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "project_id",
+          "dataset_version_id",
+          "target",
+          "features",
+          "expression",
+          "formula",
+          "python",
+          "excel_es",
+          "excel_en"
+        ],
+        "title": "SymbolicFit",
+        "type": "object"
+      },
+      "SymbolicLaunch": {
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/Job"
+          }
+        },
+        "required": [
+          "job"
+        ],
+        "title": "SymbolicLaunch",
+        "type": "object"
+      },
+      "SymbolicPredictBody": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "title": "SymbolicPredictBody",
+        "type": "object"
+      },
+      "SymbolicPredictions": {
+        "properties": {
+          "predictions": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Predictions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "predictions"
+        ],
+        "title": "SymbolicPredictions",
+        "type": "object"
+      },
+      "SymbolicRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "time_limit_s": {
+            "default": 60,
+            "description": "Tope total de búsqueda",
+            "maximum": 1800.0,
+            "minimum": 5.0,
+            "title": "Time Limit S",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dataset_version_id"
+        ],
+        "title": "SymbolicRequest",
+        "type": "object"
+      },
       "SyncResult": {
         "properties": {
           "created": {
@@ -19504,6 +19735,104 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/symbolic": {
+      "get": {
+        "description": "Fórmulas buscadas en el proyecto, de la más nueva a la más vieja.",
+        "operationId": "listSymbolicFits",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SymbolicFit"
+                  },
+                  "title": "Response Listsymbolicfits",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Symbolic",
+        "tags": [
+          "symbolic"
+        ]
+      },
+      "post": {
+        "description": "Busca una fórmula cerrada para el target (job). 422 si el dataset no la admite.",
+        "operationId": "startSymbolicFit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SymbolicRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SymbolicLaunch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Symbolic",
+        "tags": [
+          "symbolic"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/uploads": {
       "post": {
         "description": "Sube un archivo (CSV, Parquet, ZIP…) o una carpeta (nombres con ruta relativa, p. ej.\n`clase/img.png`) al proyecto y la registra como fuente (RF-ING-01, UI web).",
@@ -21676,6 +22005,59 @@
         "summary": "Resume Study",
         "tags": [
           "hpo"
+        ]
+      }
+    },
+    "/api/v1/symbolic/{symbolic_fit_id}/predict": {
+      "post": {
+        "description": "Valores de la fórmula para filas nuevas (como el playground de un modelo).",
+        "operationId": "predictSymbolic",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "symbolic_fit_id",
+            "required": true,
+            "schema": {
+              "title": "Symbolic Fit Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SymbolicPredictBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SymbolicPredictions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict",
+        "tags": [
+          "symbolic"
         ]
       }
     },

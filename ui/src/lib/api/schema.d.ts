@@ -2074,6 +2074,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/symbolic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Symbolic
+         * @description Fórmulas buscadas en el proyecto, de la más nueva a la más vieja.
+         */
+        get: operations["listSymbolicFits"];
+        put?: never;
+        /**
+         * Start Symbolic
+         * @description Busca una fórmula cerrada para el target (job). 422 si el dataset no la admite.
+         */
+        post: operations["startSymbolicFit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/uploads": {
         parameters: {
             query?: never;
@@ -2925,6 +2949,26 @@ export interface paths {
         put?: never;
         /** Resume Study */
         post: operations["resumeStudy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/symbolic/{symbolic_fit_id}/predict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict
+         * @description Valores de la fórmula para filas nuevas (como el playground de un modelo).
+         */
+        post: operations["predictSymbolic"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7757,6 +7801,116 @@ export interface components {
             pipeline_id: string;
             /** Pipeline Version */
             pipeline_version: number;
+        };
+        /**
+         * SymbolicFit
+         * @description Fórmula sugerida por regresión simbólica (ADR-0039).
+         *
+         *     Modelo de referencia: se compara con las redes y se prueba con valores nuevos, pero no se
+         *     exporta ni se despliega. `expression` usa x1…xn en el orden de `features`.
+         */
+        SymbolicFit: {
+            /**
+             * Candidates
+             * @description Fórmulas evaluadas: complejidad y error en validación
+             */
+            candidates?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /**
+             * Duration S
+             * @default 0
+             */
+            duration_s: number;
+            /** Excel En */
+            excel_en: string;
+            /** Excel Es */
+            excel_es: string;
+            /** Expression */
+            expression: string;
+            /** Features */
+            features: string[];
+            /**
+             * Formula
+             * @description Legible, con los nombres de las columnas
+             */
+            formula: string;
+            /** Id */
+            id?: string;
+            /** Metrics */
+            metrics?: {
+                [key: string]: {
+                    [key: string]: number | null;
+                };
+            };
+            /**
+             * N Train
+             * @default 0
+             */
+            n_train: number;
+            /** Parity */
+            parity?: [
+                number,
+                number
+            ][];
+            /** Project Id */
+            project_id: string;
+            /** Python */
+            python: string;
+            /** Target */
+            target: string;
+            /**
+             * Time Limit S
+             * @default 60
+             */
+            time_limit_s: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * Version
+             * @description Versión para bloqueo optimista
+             * @default 1
+             */
+            version: number;
+            /** Warnings */
+            warnings?: string[];
+        };
+        /** SymbolicLaunch */
+        SymbolicLaunch: {
+            job: components["schemas"]["Job"];
+        };
+        /** SymbolicPredictBody */
+        SymbolicPredictBody: {
+            /** Rows */
+            rows: {
+                [key: string]: number | null;
+            }[];
+        };
+        /** SymbolicPredictions */
+        SymbolicPredictions: {
+            /** Predictions */
+            predictions: (number | null)[];
+        };
+        /** SymbolicRequest */
+        SymbolicRequest: {
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /**
+             * Time Limit S
+             * @description Tope total de búsqueda
+             * @default 60
+             */
+            time_limit_s: number;
         };
         /** SyncResult */
         SyncResult: {
@@ -12646,6 +12800,72 @@ export interface operations {
             };
         };
     };
+    listSymbolicFits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SymbolicFit"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    startSymbolicFit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SymbolicRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SymbolicLaunch"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     uploadSource: {
         parameters: {
             query?: never;
@@ -14154,6 +14374,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StudyLaunch"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictSymbolic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                symbolic_fit_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SymbolicPredictBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SymbolicPredictions"];
                 };
             };
             /** @description Validation Error */

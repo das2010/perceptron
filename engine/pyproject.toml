@@ -50,6 +50,8 @@ ml = [
   "soundfile>=0.12",
   "pycocotools>=2.0.8",
   "lightgbm>=4.5",
+  "pyoperon>=0.6",  # regresión simbólica, fórmula sugerida (ADR-0039), MIT
+  "sympy>=1.13",  # simplificar la fórmula (BSD; ya llega por torch)
   "scipy>=1.11",  # BSD-3 (drift: KS, χ², Capa 6; ya llegaba por scikit-learn)
 ]
 # Capa 2 (ADR-0020): SDKs de Anthropic y OpenAI (también Kimi y compatibles), keychain y

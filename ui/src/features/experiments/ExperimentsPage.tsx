@@ -20,6 +20,7 @@ import { useProjectId } from "@/features/projects/ProjectLayout";
 import { bestRunIds } from "./best";
 import { CompareRuns } from "./CompareRuns";
 import { StudyInsights } from "./StudyInsights";
+import { SymbolicCard } from "./SymbolicCard";
 import { keys, useJob, useRuns, type Run } from "@/lib/api/hooks";
 import { useEngineSocket } from "@/lib/api/ws";
 import { formatDate, formatNumber } from "@/lib/format";
@@ -147,6 +148,7 @@ export function ExperimentsPage() {
       {job && <LiveStudy jobId={job} metric="val_loss" />}
       {compared.length >= 2 && <CompareRuns runs={compared} onClear={() => setCompare([])} />}
       <StudyInsights runs={runs} />
+      <SymbolicCard projectId={projectId} runs={runs} />
       <Card>
         <CardTitle>{t("experiments.runs")}</CardTitle>
         {isPending && <Spinner />}
