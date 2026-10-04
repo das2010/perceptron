@@ -27,6 +27,7 @@ import { DefineWizard } from "@/features/arch/DefineWizard";
 import { UploadPanel } from "@/features/data/DataPage";
 import { ProfileView } from "@/features/data/ProfileView";
 import { useProjectId } from "@/features/projects/ProjectLayout";
+import { NotRecommendedNote, RequirementsPanel } from "@/features/train/DesignRequirements";
 import { ProposalCard } from "@/features/train/TrainPage";
 import { getApiClient } from "@/lib/api/client";
 import {
@@ -262,6 +263,7 @@ function StepArchitecture({
           {t("train.fallback", { reason: proposals.fallback_reason })}
         </p>
       )}
+      {proposals && <RequirementsPanel requirements={proposals.requirements} />}
       <div className="grid gap-3 lg:grid-cols-2">
         {proposals?.proposals.map((p) => (
           <ProposalCard
@@ -273,6 +275,7 @@ function StepArchitecture({
           />
         ))}
       </div>
+      <NotRecommendedNote proposals={proposals?.proposals} chosenId={values.archspec_id} />
       {!proposals && values.archspec_id && (
         <p className="flex items-center gap-2 text-sm">
           <Check className="h-4 w-4 text-ok" aria-hidden="true" />

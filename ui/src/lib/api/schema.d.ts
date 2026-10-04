@@ -3641,6 +3641,8 @@ export interface components {
         /** ArchProposal */
         ArchProposal: {
             archspec: components["schemas"]["ArchSpecRecord"];
+            /** @description Cuánto cumple los requisitos del escenario (ADR-0041) */
+            assessment?: components["schemas"]["DesignAssessment"] | null;
             /** Confidence */
             confidence?: number | null;
             /** Cons */
@@ -3668,6 +3670,7 @@ export interface components {
             origin: components["schemas"]["Origin"];
             /** Proposals */
             proposals: components["schemas"]["ArchProposal"][];
+            requirements?: components["schemas"]["DesignRequirements"] | null;
         };
         /** ArchSpec */
         ArchSpec: {
@@ -4717,6 +4720,57 @@ export interface components {
          * @enum {string}
          */
         DeploymentStatus: "active" | "stopped";
+        /** DesignAssessment */
+        DesignAssessment: {
+            /** Checks */
+            checks?: components["schemas"]["RequirementCheck"][];
+            /**
+             * Recommended
+             * @default false
+             */
+            recommended: boolean;
+            /** Score */
+            score: number;
+        };
+        /** DesignRequirement */
+        DesignRequirement: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "pretrained_backbone" | "no_pretrained_offline" | "small_model" | "linear_option" | "edge_size" | "low_latency" | "imbalance_handling" | "explainable" | "epoch_time";
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "must" | "should";
+            /**
+             * Message
+             * @description Qué se exige y por qué, en castellano (la UI lo traduce)
+             */
+            message: string;
+            /** Params */
+            params?: {
+                [key: string]: number | string;
+            };
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "each" | "any";
+        };
+        /** DesignRequirements */
+        DesignRequirements: {
+            /** Items */
+            items?: components["schemas"]["DesignRequirement"][];
+            /**
+             * Scenario
+             * @description Hechos del escenario que justifican los requisitos
+             */
+            scenario?: {
+                [key: string]: number | string | boolean | null;
+            };
+        };
         /**
          * Device
          * @enum {string}
@@ -7115,6 +7169,21 @@ export interface components {
              * @enum {string}
              */
             mode: "auto" | "llm" | "rules";
+        };
+        /** RequirementCheck */
+        RequirementCheck: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "pretrained_backbone" | "no_pretrained_offline" | "small_model" | "linear_option" | "edge_size" | "low_latency" | "imbalance_handling" | "explainable" | "epoch_time";
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "must" | "should";
+            /** Met */
+            met: boolean;
         };
         /** RetentionBody */
         RetentionBody: {

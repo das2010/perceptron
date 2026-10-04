@@ -21,6 +21,7 @@ from perceptron.domain.enums import LLMPurpose, TaskType
 from perceptron.domain.models import ProjectDraft
 from perceptron.llm.privacy import LLMContext
 from perceptron.llm.types import Message
+from perceptron.services.autodesign import DesignOutcome, Progress, TournamentMode, auto_design
 from perceptron.services.brief import (
     BRIEF_GUIDE,
     PLAN_VERSION,
@@ -76,9 +77,12 @@ class DraftValues(BaseModel):
     plan_diff: PlanDiff | None = Field(
         default=None, description="Qué cambió en la última recompilación del plan"
     )
+    # Diseño guiado (ADR-0041): propuestas evaluadas, torneo y elección con evidencia. Lo
+    # calcula el sistema; la persona lo acepta fijando `archspec_id` y `strategy`.
+    design: DesignOutcome | None = None
 
 
-SYSTEM_FIELDS = ("data_facts", "plan", "plan_diff")
+SYSTEM_FIELDS = ("data_facts", "plan", "plan_diff", "design")
 
 
 # Campos que el copiloto puede proponer cambiar (los ids los fija la UI al elegir).
@@ -228,6 +232,8 @@ class Wizard:
         else:
             out["data_facts"] = facts
         changed = out.get("brief") != old.get("brief") or facts != old.get("data_facts")
+        if changed or out.get("pipeline_id") != old.get("pipeline_id"):
+            out.pop("design", None)  # el diseño era para otros datos, otra ficha u otro pipeline
         stale = (old.get("plan") or {}).get("version", 1) < PLAN_VERSION
         if changed or stale or "plan" not in old:
             plan = compile_plan(
@@ -242,6 +248,28 @@ class Wizard:
             else:
                 out["plan_diff"] = diff.model_dump(mode="json")
         return out
+
+    def design(
+        self,
+        project_id: str,
+        *,
+        tournament: TournamentMode = "auto",
+        progress: Progress | None = None,
+    ) -> DesignOutcome:
+        """Corre el diseño guiado sobre el borrador y lo guarda en `design` (ADR-0041)."""
+        values = self.get(project_id).values
+        outcome = auto_design(self.wf, values, tournament=tournament, progress=progress)
+        draft = self.get(project_id)  # releído: la persona pudo editar mientras tanto
+        stored = {**draft.values, "design": outcome.model_dump(mode="json", exclude_none=True)}
+        if not stored.get("pipeline_id"):
+            stored["pipeline_id"] = outcome.pipeline_id
+        entry = {"ts": _now(), "origin": "system", "fields": ["design"], "step": None}
+        self.repo.update(
+            draft.model_copy(
+                update={"values": stored, "history": [*draft.history, entry][-HISTORY_LIMIT:]}
+            )
+        )
+        return outcome
 
     def plan(self, draft: ProjectDraft) -> WizardPlan:
         """El plan guardado o, en borradores anteriores al ADR-0040, el compilado al vuelo."""

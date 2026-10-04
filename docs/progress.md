@@ -45,6 +45,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | Wizard adaptativo (ADR-0040, fase 2): reconciliación de la ficha con los datos (reglas y LLM), pasos condicionales Fórmula sugerida y Umbral de decisión, umbral por costo en la evaluación, aviso de cambios del plan, golden tests con LLM real | ✅ |
 | Caso «Sensores»: alertas de fuga ajustadas a la ficha (regla/extrapolar → relación determinística), costos asimétricos solo en clasificación (aviso en regresión, entrevista v3), agente con base lineal y la ficha en su contexto, paso Fórmula también al extrapolar | ✅ |
 | Wizard que diseña (ADR-0041, iteración 1): requisitos de diseño por escenario (preentrenada con pocas imágenes, modelo chico en tablas chicas, opción lineal si hay que extrapolar, topes para edge, desbalance, tiempo por época), el arquitecto los recibe y reintenta si falta un obligatorio, plantilla que lo cubre si no, propuesta recomendada primera con su evaluación | ✅ |
+| Wizard que diseña (ADR-0041, iteración 2): diseño guiado de punta a punta en un job (`POST /projects/{id}/draft/design`): preparación, propuestas evaluadas, mini-torneo de las mejores que cumplen los obligatorios (métrica común, presupuesto según el tamaño de los datos), elegida con evidencia, épocas por trial y estrategia de HPO; queda en el borrador para aceptar | ✅ |
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 

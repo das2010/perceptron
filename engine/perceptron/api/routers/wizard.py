@@ -12,8 +12,9 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, ConfigDict, Field
 
 from perceptron.api.context import EngineContext, get_context
+from perceptron.api.jobs import Job, JobContext
 from perceptron.api.streaming import WS_UNAUTHORIZED, ws_authorized
-from perceptron.core.errors import PerceptronError
+from perceptron.core.errors import PerceptronError, ValidationError
 from perceptron.domain.models import ProjectDraft
 from perceptron.llm.types import Message
 from perceptron.services.brief import STEPS, BriefPatch, WizardPlan
@@ -179,6 +180,38 @@ async def copilot(ws: WebSocket, project_id: str) -> None:
     finally:
         with contextlib.suppress(RuntimeError):
             await ws.close()
+
+
+class DesignRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tournament: Literal["auto", "always", "never"] = Field(
+        default="auto",
+        description="Mini-torneo de las mejores: auto = solo si se estima corto (≤ 15 min)",
+    )
+
+
+@router.post("/projects/{project_id}/draft/design", status_code=202, operation_id="draftDesign")
+def draft_design(project_id: str, body: DesignRequest, ctx: Ctx) -> Job:
+    """Diseño guiado (ADR-0041): preparación, propuestas evaluadas contra los requisitos del
+    escenario, mini-torneo de las mejores y estrategia de HPO para la elegida.
+
+    El resultado queda en `values.design` del borrador; no fija la arquitectura: la persona lo
+    acepta con `PATCH /draft` (`archspec_id`, `strategy`, `max_epochs_per_trial`).
+    """
+    wizard = Wizard(Workflow(ctx))
+    if not wizard.get(project_id).values.get("dataset_version_id"):
+        raise ValidationError("primero elegí los datos del proyecto")
+
+    def work(job: JobContext) -> Any:
+        outcome = wizard.design(
+            project_id,
+            tournament=body.tournament,
+            progress=lambda stage: job.emit("stage", stage=stage),
+        )
+        return {"pick": outcome.pick, "candidates": len(outcome.candidates)}
+
+    return ctx.jobs.submit("design", work, refs={"project_id": project_id}, dedicated=True)
 
 
 @router.post("/projects/{project_id}/draft/reconcile", operation_id="draftReconcile")

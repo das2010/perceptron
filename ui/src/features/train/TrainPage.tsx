@@ -33,6 +33,7 @@ import {
 } from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
 import { CostEstimate } from "./CostEstimate";
+import { AssessmentChecks, NotRecommendedNote, RequirementsPanel } from "./DesignRequirements";
 
 type Proposal = ArchProposals["proposals"][number];
 
@@ -75,6 +76,7 @@ export function ProposalCard({
   const est = p.estimates ?? {};
   const body = (
     <>
+      <AssessmentChecks assessment={p.assessment} />
       <p>{p.rationale}</p>
       <p className="mt-2 text-xs text-muted">
         {t("train.estimates", {
@@ -229,6 +231,11 @@ export function TrainPage() {
               {t("train.fallback", { reason: proposals.fallback_reason })}
             </p>
           )}
+          {proposals && (
+            <div className="mt-4">
+              <RequirementsPanel requirements={proposals.requirements} />
+            </div>
+          )}
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             {proposals?.proposals.map((p) => (
               <ProposalCard
@@ -243,6 +250,9 @@ export function TrainPage() {
                 }}
               />
             ))}
+          </div>
+          <div className="mt-3">
+            <NotRecommendedNote proposals={proposals?.proposals} chosenId={archspecId} />
           </div>
           {archspecId && dvId && (
             <CostEstimate projectId={projectId} archspecId={archspecId} datasetVersionId={dvId} />

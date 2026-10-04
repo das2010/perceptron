@@ -80,6 +80,25 @@ memoria y tiempo estimado por época.
 Toda propuesta se **valida** antes de mostrarse: esquema, compatibilidad de formas, memoria contra la
 disponible, y disponibilidad y licencia de pesos preentrenados.
 
+**Requisitos de diseño.** Arriba de las propuestas, Perceptron muestra qué exige tu escenario. Los
+deduce de tus datos, de tu equipo y de la ficha del caso. Algunos ejemplos:
+
+- con pocas imágenes, una red preentrenada;
+- con pocas filas, un modelo chico;
+- si hay que extrapolar o buscás una regla, una opción lineal;
+- si va a un equipo embebido, un tope de tamaño;
+- si las clases están desbalanceadas, compensarlo.
+
+Los requisitos son de dos tipos:
+
+- **Obligatorio:** si ninguna propuesta lo cumple, el arquitecto vuelve a intentar. Si sigue sin
+  cumplirse, Perceptron agrega una propuesta que sí lo cumple.
+- **Recomendable:** suma puntos, pero no bloquea.
+
+Cada propuesta muestra qué requisitos cumple (✓/✗). La que mejor los cumple aparece primera, con la
+insignia **Recomendada**. Podés elegir cualquiera: si elegís otra, se te avisa qué requisitos deja sin
+cumplir.
+
 El catálogo cubre, entre otras: MLP, ResNet-MLP y FT-Transformer (tabular); una CNN compacta o
 modelos preentrenados curados, como EfficientNet (imagen); detección, U-Net y CRNN para OCR (visión
 avanzada); TextCNN, BiLSTM y encoders preentrenados (texto); N-BEATS, LSTM/GRU, TCN, PatchTST y

@@ -577,6 +577,17 @@
           "archspec": {
             "$ref": "#/components/schemas/ArchSpecRecord"
           },
+          "assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignAssessment"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cuánto cumple los requisitos del escenario (ADR-0041)"
+          },
           "confidence": {
             "anyOf": [
               {
@@ -667,6 +678,16 @@
             },
             "title": "Proposals",
             "type": "array"
+          },
+          "requirements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignRequirements"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -3353,6 +3374,135 @@
         ],
         "title": "DeploymentStatus",
         "type": "string"
+      },
+      "DesignAssessment": {
+        "properties": {
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "recommended": {
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "score": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "score"
+        ],
+        "title": "DesignAssessment",
+        "type": "object"
+      },
+      "DesignRequirement": {
+        "properties": {
+          "code": {
+            "enum": [
+              "pretrained_backbone",
+              "no_pretrained_offline",
+              "small_model",
+              "linear_option",
+              "edge_size",
+              "low_latency",
+              "imbalance_handling",
+              "explainable",
+              "epoch_time"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "must",
+              "should"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "message": {
+            "description": "Qué se exige y por qué, en castellano (la UI lo traduce)",
+            "title": "Message",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Params",
+            "type": "object"
+          },
+          "scope": {
+            "enum": [
+              "each",
+              "any"
+            ],
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "level",
+          "scope",
+          "message"
+        ],
+        "title": "DesignRequirement",
+        "type": "object"
+      },
+      "DesignRequirements": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DesignRequirement"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "scenario": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Hechos del escenario que justifican los requisitos",
+            "title": "Scenario",
+            "type": "object"
+          }
+        },
+        "title": "DesignRequirements",
+        "type": "object"
       },
       "Device": {
         "enum": [
@@ -9655,6 +9805,44 @@
           }
         },
         "title": "ReportBody",
+        "type": "object"
+      },
+      "RequirementCheck": {
+        "properties": {
+          "code": {
+            "enum": [
+              "pretrained_backbone",
+              "no_pretrained_offline",
+              "small_model",
+              "linear_option",
+              "edge_size",
+              "low_latency",
+              "imbalance_handling",
+              "explainable",
+              "epoch_time"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "must",
+              "should"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "met": {
+            "title": "Met",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "level",
+          "met"
+        ],
+        "title": "RequirementCheck",
         "type": "object"
       },
       "RetentionBody": {

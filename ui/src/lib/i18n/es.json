@@ -1433,5 +1433,30 @@
     "excelLegend": "En Excel: {{legend}}",
     "candidates": "Otras fórmulas evaluadas",
     "candidate": "complejidad {{complexity}} · error val {{rmse}}:"
+  },
+  "design": {
+    "title": "Requisitos de diseño de este escenario",
+    "intro": "Perceptron los dedujo de tus datos, tu equipo y la ficha del caso. Cada propuesta se evalúa contra ellos y la que mejor los cumple queda recomendada.",
+    "level": {
+      "must": "Obligatorio",
+      "should": "Recomendable"
+    },
+    "code": {
+      "pretrained_backbone": "Red preentrenada",
+      "no_pretrained_offline": "Red chica sin conexión",
+      "small_model": "Modelo chico",
+      "linear_option": "Opción lineal",
+      "edge_size": "Tamaño para equipo embebido",
+      "low_latency": "Baja latencia",
+      "imbalance_handling": "Compensar el desbalance",
+      "explainable": "Explicable",
+      "epoch_time": "Tiempo por época"
+    },
+    "recommended": "Recomendada",
+    "checks": "Requisitos que cumple",
+    "met": "cumple",
+    "unmet": "no cumple",
+    "notRecommended": "Elegiste una opción distinta de la recomendada («{{best}}»). Podés seguir igual.",
+    "unmetList": "No cumple: {{list}}."
   }
 }

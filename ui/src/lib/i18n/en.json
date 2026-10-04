@@ -1433,5 +1433,30 @@
     "excelLegend": "In Excel: {{legend}}",
     "candidates": "Other formulas evaluated",
     "candidate": "complexity {{complexity}} · val error {{rmse}}:"
+  },
+  "design": {
+    "title": "Design requirements for this scenario",
+    "intro": "Perceptron derived them from your data, your hardware and the use-case brief. Each proposal is scored against them and the best one is recommended.",
+    "level": {
+      "must": "Required",
+      "should": "Recommended"
+    },
+    "code": {
+      "pretrained_backbone": "Pretrained network",
+      "no_pretrained_offline": "Small network, offline",
+      "small_model": "Small model",
+      "linear_option": "Linear option",
+      "edge_size": "Size for embedded device",
+      "low_latency": "Low latency",
+      "imbalance_handling": "Handle imbalance",
+      "explainable": "Explainable",
+      "epoch_time": "Time per epoch"
+    },
+    "recommended": "Recommended",
+    "checks": "Requirements met",
+    "met": "met",
+    "unmet": "not met",
+    "notRecommended": "You chose an option other than the recommended one (“{{best}}”). You can still go ahead.",
+    "unmetList": "Not met: {{list}}."
   }
 }

@@ -160,6 +160,76 @@ describe("pantallas", () => {
     ).toBeInTheDocument();
   });
 
+  it("Entrenar: muestra los requisitos, recomienda y avisa al elegir otra (caso Tubos)", async () => {
+    const proposal = (id: string, title: string, recommended: boolean, met: boolean) => ({
+      archspec: {
+        id,
+        project_id: "prj_1",
+        name: title,
+        origin: "llm",
+        content_hash: id,
+        version: 1,
+      },
+      title,
+      rationale: `Porque ${title}`,
+      validation: { valid: true, issues: [] },
+      estimates: { num_params: 1e6, memory_mb: 30, epoch_time_s: 20 },
+      assessment: {
+        score: recommended ? 97 : 52,
+        recommended,
+        checks: [{ code: "pretrained_backbone", level: "must", met }],
+      },
+    });
+    mockEngine({
+      ...base,
+      "POST /api/v1/projects/prj_1/pipelines/propose": () => ({
+        id: "pip_1",
+        project_id: "prj_1",
+        name: "p",
+        graph: { rationale: [] },
+        version: 1,
+      }),
+      "POST /api/v1/projects/prj_1/arch/propose": () => ({
+        origin: "llm",
+        proposals: [
+          proposal("arc_m", "MobileNetV3 preentrenada", true, true),
+          proposal("arc_c", "CNN compacta desde cero", false, false),
+        ],
+        requirements: {
+          scenario: { n_train: 300 },
+          items: [
+            {
+              code: "pretrained_backbone",
+              level: "must",
+              scope: "any",
+              message: "Con 300 imágenes, una red preentrenada generaliza mucho mejor.",
+            },
+          ],
+        },
+      }),
+    });
+    renderAt("/projects/prj_1/train");
+    await userEvent.click(await screen.findByRole("button", { name: "Proponer preparación" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Proponer arquitecturas" }));
+    const panel = await screen.findByRole("region", {
+      name: "Requisitos de diseño de este escenario",
+    });
+    expect(within(panel).getByText("Obligatorio")).toBeInTheDocument();
+    expect(within(panel).getByText(/Con 300 imágenes/)).toBeInTheDocument();
+    const best = screen
+      .getByText("MobileNetV3 preentrenada")
+      .closest("div.rounded-pt") as HTMLElement;
+    expect(within(best).getByText("Recomendada")).toBeInTheDocument();
+    const other = screen
+      .getByText("CNN compacta desde cero")
+      .closest("div.rounded-pt") as HTMLElement;
+    expect(within(other).queryByText("Recomendada")).not.toBeInTheDocument();
+    await userEvent.click(within(other).getByRole("button", { name: "Aceptar" }));
+    const note = await screen.findByRole("status");
+    expect(note).toHaveTextContent("MobileNetV3 preentrenada");
+    expect(note).toHaveTextContent("No cumple: Red preentrenada.");
+  });
+
   it("Entrenar elige por defecto la versión de datos más nueva (la API lista de nueva a vieja)", async () => {
     const newer = { ...dataset, id: "dsv_2", content_hash: "ffff00001111", num_samples: 16938 };
     const bodies: unknown[] = [];
