@@ -139,6 +139,8 @@ last checkpoints, fixed seeds and automatic batch size.
 
 In **Experiments**:
 
+**Studies** lists each search with its status: training, queued, stopped, interrupted (for example, when the worker restarted), finished or failed. **Stop** halts a study keeping the finished trials; **Resume** continues where it left off.
+
 - **Live training:** epoch, metrics and **Validation curves per trial** while it runs.
 - **Training runs:** each run with its **Status** (Queued, Training, Paused, Finished, Failed, Cancelled)
   and **Started**.
