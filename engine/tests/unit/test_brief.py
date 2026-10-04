@@ -184,3 +184,12 @@ def test_plan_diff_lists_what_changed() -> None:
     diff = diff_plans(before, after)
     assert diff.added_steps == ["formula"] and "architecture_hint" in diff.changed_defaults
     assert diff_plans(after, after).empty and diff_plans(None, after).empty
+
+
+def test_llm_field_guide_covers_every_brief_field() -> None:
+    """La guía corta del prompt (modelos chicos) describe exactamente los campos editables."""
+    from typing import get_args
+
+    from perceptron.services.brief import BRIEF_GUIDE, BriefField
+
+    assert set(BRIEF_GUIDE) == set(get_args(BriefField))

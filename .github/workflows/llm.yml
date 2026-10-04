@@ -13,6 +13,10 @@ on:
         type: choice
         options: [all, claude, openai, ollama]
         default: all
+      only_golden:
+        description: "Solo golden tests (validar prompts sin correr el agente)"
+        type: boolean
+        default: false
       benchmark:
         description: "Correr también el benchmark O2"
         type: boolean
@@ -36,6 +40,7 @@ env:
 jobs:
   acceptance:
     name: agente ${{ matrix.provider }} ${{ matrix.uc }}
+    if: github.event_name != 'workflow_dispatch' || !inputs.only_golden
     strategy:
       fail-fast: false
       matrix:

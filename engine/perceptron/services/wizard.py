@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic import ValidationError as PydanticValidationError
@@ -22,9 +22,9 @@ from perceptron.domain.models import ProjectDraft
 from perceptron.llm.privacy import LLMContext
 from perceptron.llm.types import Message
 from perceptron.services.brief import (
+    BRIEF_GUIDE,
     PLAN_VERSION,
     STEPS,
-    BriefField,
     BriefPatch,
     DataFacts,
     PlanDiff,
@@ -266,16 +266,7 @@ class Wizard:
         """
         draft = self.get(project_id)
         project = self.wf.project(project_id)
-        ctx = self._context(draft)
-        ctx = ctx.model_copy(
-            update={
-                "system": {
-                    **ctx.system,
-                    "brief_fields": list(get_args(BriefField)),
-                    "brief_schema": UseCaseBrief.model_json_schema(),
-                }
-            }
-        )
+        ctx = self._brief_context(draft, facts=False)
         turns = history[-CHAT_TURNS * 2 :]
         transcript = "\n".join(f"{m.role}: {m.content}" for m in turns)
         out = self.ctx.llm.structured(
@@ -302,25 +293,46 @@ class Wizard:
                 details={"reason": "no_dataset"},
             )
         project = self.wf.project(project_id)
-        ctx = self._context(draft)
-        ctx = ctx.model_copy(
-            update={
-                "system": {
-                    **ctx.system,
-                    "brief_fields": list(get_args(BriefField)),
-                    "brief_schema": UseCaseBrief.model_json_schema(),
-                }
-            }
-        )
         out = self.ctx.llm.structured(
             LLMPurpose.COPILOT,
             BriefPatch,
-            ctx,
+            self._brief_context(draft, facts=True),
             project=project,
             validator=validate_patch,
             prompt="reconcile",
         )
         return out.value, out.call_id
+
+    def _brief_context(self, draft: ProjectDraft, *, facts: bool) -> LLMContext:
+        """Contexto liviano de la entrevista y la reconciliación: la ficha (sin vacíos), el
+        perfil si hay datos y, para reconciliar, los hechos medidos. Sin el plan ni el borrador
+        entero, y con una guía corta de campos en vez del JSON Schema: los modelos chicos
+        locales se perdían en el contexto completo y no proponían el tipo de problema."""
+        values = draft.values
+        brief = {
+            k: v
+            for k, v in (values.get("brief") or {}).items()
+            if v not in (None, [], {}) and k != "origins"
+        }
+        constraints: dict[str, Any] = {"brief": brief}
+        if facts and values.get("data_facts"):
+            constraints["data_facts"] = values["data_facts"]
+        project = self.wf.project(draft.project_id)
+        return LLMContext(
+            goal=project.goal or values.get("goal"),
+            card=self._card(values),
+            constraints=constraints,
+            system={"brief_fields": BRIEF_GUIDE},
+        )
+
+    def _card(self, values: dict[str, Any]) -> Any:
+        if not values.get("dataset_version_id"):
+            return None
+        try:
+            return self.wf.profile_card(str(values["dataset_version_id"]))
+        except Exception:  # sin perfil todavía: el copiloto igual responde
+            logger.debug("borrador sin perfil", exc_info=True)
+            return None
 
     # ------------------------------------------------------------------ copiloto
 

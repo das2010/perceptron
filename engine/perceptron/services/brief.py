@@ -131,6 +131,29 @@ BriefField = Literal[
 ]
 
 
+# Guía corta de campos y valores para el LLM: más liviana que el JSON Schema completo (los
+# modelos chicos locales se pierden con el schema y con el borrador entero).
+BRIEF_GUIDE: dict[str, str] = {
+    "problem": '"value" (predecir un número) | "category" (predecir una clase) | "anomaly" '
+    '(detectar algo raro) | "forecast" (pronosticar una serie) | "rule" (descubrir la fórmula '
+    'o regla que genera el dato) | "other" (nada de lo anterior)',
+    "problem_other": "texto: qué quiere lograr, si problem es other",
+    "prediction": "texto: qué se predice y en qué unidad",
+    "error_costs": '"symmetric" | "false_negative_worse" (no detectar un caso es peor) | '
+    '"false_positive_worse" (una falsa alarma es peor)',
+    "error_cost_ratio": "número ≥ 1: cuántas veces peor es el error más caro",
+    "business_metric": "texto: cómo mide el éxito el negocio",
+    "has_time": "true | false: los datos tienen fechas u orden temporal",
+    "has_entities": "true | false: hay entidades repetidas (máquinas, clientes, pacientes)",
+    "labels_available": "true | false: ya tiene las etiquetas o el valor a predecir",
+    "independent_inputs": "true | false: las entradas varían por separado",
+    "extrapolate": "true | false: va a predecir fuera del rango de los datos",
+    "explainability": "true | false: hay que explicar las predicciones",
+    "deployment": '"desktop" | "server" | "edge" | "spreadsheet"',
+    "max_latency_ms": "número: latencia máxima aceptable en milisegundos",
+}
+
+
 class BriefChange(BaseModel):
     field: BriefField
     value: Any
