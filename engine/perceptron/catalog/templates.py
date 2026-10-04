@@ -66,7 +66,7 @@ def tabular_template(
     epochs: int = 40,
     rationale: str | None = None,
 ) -> ArchSpec:
-    """`mlp`, `resnet_mlp` o `ft_transformer`."""
+    """`mlp`, `resnet_mlp`, `ft_transformer` o `linear`."""
     inp = InputSpec(
         kind="tabular",
         num_numeric=num_numeric,
@@ -117,6 +117,16 @@ def tabular_template(
             Node(id="head", block="head.linear"),
         ]
         lr = 3e-4
+    elif template == "linear":
+        # Regresión/clasificación lineal: lo primero a probar si hay que extrapolar o se busca
+        # una regla (ADR-0040). Sin capas ocultas; en regresión el weight decay va en 0
+        # (`archspec.defaults.without_linear_shrinkage`).
+        nodes = [
+            Node(id="features", block="input.tabular", params={"dropout": 0.0}),
+            Node(id="head", block="head.linear"),
+        ]
+        lr = 5e-3
+        epochs = max(epochs, 80)
     else:
         raise ValueError(f"plantilla tabular desconocida: {template}")
     return ArchSpec(

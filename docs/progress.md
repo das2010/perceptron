@@ -43,6 +43,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | Fórmula sugerida: regresión simbólica (PyOperon) como modelo de referencia en Experimentos, con prueba de valores y copia a Python/Excel (ADR-0039) | ✅ |
 | Wizard adaptativo (ADR-0040, fase 1): ficha del caso con entrevista aceptable, hechos medidos de los datos y plan compilado (pasos, defaults con «por qué», chequeos) | ✅ |
 | Wizard adaptativo (ADR-0040, fase 2): reconciliación de la ficha con los datos (reglas y LLM), pasos condicionales Fórmula sugerida y Umbral de decisión, umbral por costo en la evaluación, aviso de cambios del plan, golden tests con LLM real | ✅ |
+| Caso «Sensores»: alertas de fuga ajustadas a la ficha (regla/extrapolar → relación determinística), costos asimétricos solo en clasificación (aviso en regresión, entrevista v3), agente con base lineal y la ficha en su contexto, paso Fórmula también al extrapolar | ✅ |
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 

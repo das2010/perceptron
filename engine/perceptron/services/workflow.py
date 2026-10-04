@@ -220,12 +220,19 @@ class Workflow:
         return card
 
     def profile_card(self, dataset_version_id: str) -> ProfileCard:
+        """Perfil del dataset con las alertas ajustadas a la ficha del caso (ADR-0040)."""
+        from perceptron.services.brief import contextualize_card, project_use_case
+
         found = self.ctx.repo(Profile).list(
             filters={"dataset_version_id": dataset_version_id}, limit=1
         )
-        if not found:
-            return self.profile(dataset_version_id)
-        return ProfileCard.model_validate(found[0].stats)
+        card = (
+            ProfileCard.model_validate(found[0].stats)
+            if found
+            else self.profile(dataset_version_id)
+        )
+        dv = self.dataset(dataset_version_id)
+        return contextualize_card(card, project_use_case(self.ctx, dv.project_id))
 
     # ------------------------------------------------------------------ pipeline
 
