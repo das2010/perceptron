@@ -430,7 +430,8 @@
           "mixed_sample_rates",
           "silent_audio",
           "id_like_feature",
-          "no_features"
+          "no_features",
+          "deterministic_relation"
         ],
         "title": "AlertCode",
         "type": "string"

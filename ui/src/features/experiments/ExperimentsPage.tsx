@@ -17,6 +17,7 @@ import {
 } from "@/components/ui";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 
+import { bestRunIds } from "./best";
 import { CompareRuns } from "./CompareRuns";
 import { StudyInsights } from "./StudyInsights";
 import { keys, useJob, useRuns, type Run } from "@/lib/api/hooks";
@@ -135,6 +136,7 @@ export function ExperimentsPage() {
   }, [finished, qc, projectId]);
   const runs = useMemo(() => [...(data ?? [])].reverse(), [data]);
   const cols = metricCols(runs);
+  const best = useMemo(() => bestRunIds(runs), [runs]);
   const [compare, setCompare] = useState<string[]>([]);
   const toggle = (id: string) =>
     setCompare((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -184,6 +186,11 @@ export function ExperimentsPage() {
                     >
                       {r.id.split("-").at(-1)}
                     </Link>
+                    {best.has(r.id) && (
+                      <Badge tone="ok" className="ml-2" title={t("experiments.bestHint")}>
+                        {t("experiments.best")}
+                      </Badge>
+                    )}
                   </Td>
                   <Td>
                     <Badge tone={STATUS_TONE[r.status]}>{t(`status.${r.status}`)}</Badge>

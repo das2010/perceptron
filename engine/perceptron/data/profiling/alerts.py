@@ -88,6 +88,7 @@ def column_alerts(schema: TableSchema, cols: list[ColumnProfile], df: pl.DataFra
     alerts: list[Alert] = []
     now = datetime.now(UTC).replace(tzinfo=None)
     id_like = {c.name for c in schema.columns if c.id_like}
+    sole_input = len(schema.feature_columns) == 1
     for c in cols:
         if c.name in id_like:
             alerts.append(
@@ -140,7 +141,27 @@ def column_alerts(schema: TableSchema, cols: list[ColumnProfile], df: pl.DataFra
                     null_fraction=c.null_fraction,
                 )
             )
-        if c.target_association is not None and c.target_association >= LEAKAGE_ASSOCIATION:
+        if (
+            c.target_association is not None
+            and c.target_association >= LEAKAGE_ASSOCIATION
+            and sole_input
+        ):
+            # Con una sola entrada no hay otra columna que «se cuele»: lo más probable es una
+            # relación determinística (una fórmula). Avisar «fuga» confundía al diagnóstico y
+            # al informe (caso «Tabla 3»: multiplo = 3 × numero).
+            alerts.append(
+                _a(
+                    AlertCode.DETERMINISTIC_RELATION,
+                    AlertSeverity.WARNING,
+                    "La columna determina el objetivo casi por completo. Si es una relación "
+                    "esperable (una fórmula), un modelo lineal o una regla alcanzan y extrapolan "
+                    "mejor que una red. Solo sería una fuga si el valor se conoce recién después "
+                    "del resultado.",
+                    c.name,
+                    association=c.target_association,
+                )
+            )
+        elif c.target_association is not None and c.target_association >= LEAKAGE_ASSOCIATION:
             alerts.append(
                 _a(
                     AlertCode.TARGET_LEAKAGE,
