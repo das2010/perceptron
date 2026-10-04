@@ -66,7 +66,7 @@ def test_tabla_3_rule_to_extrapolate() -> None:
 
 def test_sensores_collinear_inputs_are_flagged_before_training() -> None:
     brief = UseCaseBrief(problem="rule", independent_inputs=True)
-    facts = _facts(numeric_inputs=["Sensor1", "Sensor2"], collinear_pairs=[("Sensor1", "Sensor2")])
+    facts = _facts(numeric_inputs=["Sensor1", "Sensor2"], collinear_pairs=[["Sensor1", "Sensor2"]])
     plan = compile_plan(brief, facts)
     check = next(c for c in plan.checks if c.code == "collinear_inputs")
     assert check.severity == "high" and check.step == "data"
@@ -122,4 +122,4 @@ def test_patch_validation_and_origins() -> None:
 def test_collinearity_is_measured_on_ranks() -> None:
     s1 = np.linspace(0.01, 1, 60)
     df = pl.DataFrame({"S1": s1, "S2": np.sqrt(s1), "ruido": np.random.default_rng(0).random(60)})
-    assert _collinear_pairs(df, ["S1", "S2", "ruido"]) == [("S1", "S2")]
+    assert _collinear_pairs(df, ["S1", "S2", "ruido"]) == [["S1", "S2"]]

@@ -156,10 +156,12 @@ class DataFacts(BaseModel):
     imbalance_ratio: float | None = None
     numeric_inputs: list[str] = Field(default_factory=list)
     datetime_columns: list[str] = Field(default_factory=list)
-    collinear_pairs: list[tuple[str, str]] = Field(default_factory=list)
+    collinear_pairs: list[list[str]] = Field(
+        default_factory=list, description="Pares de entradas que varían juntas"
+    )
 
 
-def _collinear_pairs(df: pl.DataFrame, cols: list[str]) -> list[tuple[str, str]]:
+def _collinear_pairs(df: pl.DataFrame, cols: list[str]) -> list[list[str]]:
     if len(cols) < 2 or df.height < 3:
         return []
     ranks = df.select(pl.col(c).cast(pl.Float64).rank() for c in cols).drop_nulls()
@@ -168,7 +170,7 @@ def _collinear_pairs(df: pl.DataFrame, cols: list[str]) -> list[tuple[str, str]]
     with np.errstate(all="ignore"):
         corr = np.corrcoef(ranks.to_numpy(), rowvar=False)
     return [
-        (cols[i], cols[j])
+        [cols[i], cols[j]]
         for i in range(len(cols))
         for j in range(i + 1, len(cols))
         if np.isfinite(corr[i, j]) and abs(corr[i, j]) >= COLLINEAR
@@ -179,7 +181,7 @@ def data_facts(dv: DatasetVersion, view: DatasetView, card: ProfileCard | None) 
     schema = view.schema
     numeric = [c.name for c in schema.feature_columns if c.semantic is SemanticType.NUMERIC]
     dates = [c.name for c in schema.columns if c.semantic is SemanticType.DATETIME]
-    pairs: list[tuple[str, str]] = []
+    pairs: list[list[str]] = []
     if 2 <= len(numeric) <= 50:
         train = view.read("train", purpose=Purpose.TRAINING).select(numeric)
         if train.height > FACTS_SAMPLE:
@@ -247,7 +249,7 @@ _PROBLEM_LABEL = {
 }
 
 
-def _pairs(pairs: list[tuple[str, str]]) -> str:
+def _pairs(pairs: list[list[str]]) -> str:
     return ", ".join(f"«{a}» y «{b}»" for a, b in pairs[:5])
 
 
