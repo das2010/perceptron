@@ -181,6 +181,17 @@ def validate_patch(patch: BriefPatch) -> str | None:
     return "\n".join(errors) or None
 
 
+def normalize_patch(patch: BriefPatch) -> BriefPatch:
+    """Cada valor con el tipo real del campo («true» → true, «5» → 5.0): los modelos chicos
+    suelen devolver booleanos o números como texto; la validación los acepta, pero la UI y quien
+    aplique el cambio necesitan el tipo correcto."""
+    changes = []
+    for c in patch.changes:
+        typed = getattr(UseCaseBrief.model_validate({c.field: c.value}), c.field)
+        changes.append(c.model_copy(update={"value": typed}))
+    return patch.model_copy(update={"changes": changes})
+
+
 def apply_patch(brief: UseCaseBrief, changes: list[BriefChange], origin: Origin) -> UseCaseBrief:
     data = brief.model_dump()
     for c in changes:

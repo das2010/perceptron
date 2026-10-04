@@ -33,6 +33,7 @@ from perceptron.services.brief import (
     compile_plan,
     data_facts,
     diff_plans,
+    normalize_patch,
     validate_patch,
 )
 
@@ -278,7 +279,7 @@ class Wizard:
             prompt="intake",
             prompt_vars={"message": message, "transcript": transcript or "(sin mensajes previos)"},
         )
-        return out.value, out.call_id
+        return normalize_patch(out.value), out.call_id
 
     def reconcile(self, project_id: str) -> tuple[BriefPatch, str]:
         """Compara la ficha con el perfil de los datos (fase 2 del ADR-0040).
@@ -301,7 +302,7 @@ class Wizard:
             validator=validate_patch,
             prompt="reconcile",
         )
-        return out.value, out.call_id
+        return normalize_patch(out.value), out.call_id
 
     def _brief_context(self, draft: ProjectDraft, *, facts: bool) -> LLMContext:
         """Contexto liviano de la entrevista y la reconciliación: la ficha (sin vacíos), el
