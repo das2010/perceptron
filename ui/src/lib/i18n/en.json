@@ -245,7 +245,12 @@
     "nulls": "Nulls",
     "unique": "Distinct",
     "summary": "Summary",
-    "numericSummary": "mean {{mean}} · std {{std}}"
+    "numericSummary": "mean {{mean}} · std {{std}}",
+    "typesHint": "If a type is wrong (for example, a number taken as an identifier), fix it here.",
+    "typeOf": "Type of {{column}}",
+    "applyTypes_one": "Apply 1 type change",
+    "applyTypes_other": "Apply {{count}} type changes",
+    "applyTypesHint": "A new dataset version is created with these types; the current one stays as is."
   },
   "split": {
     "train": "train",

@@ -245,7 +245,12 @@
     "nulls": "Nulos",
     "unique": "Distintos",
     "summary": "Resumen",
-    "numericSummary": "media {{mean}} · desvío {{std}}"
+    "numericSummary": "media {{mean}} · desvío {{std}}",
+    "typesHint": "Si un tipo está mal (por ejemplo, un número tomado como identificador), corregilo acá.",
+    "typeOf": "Tipo de {{column}}",
+    "applyTypes_one": "Aplicar 1 cambio de tipo",
+    "applyTypes_other": "Aplicar {{count}} cambios de tipo",
+    "applyTypesHint": "Se crea una nueva versión del dataset con esos tipos; la actual no cambia."
   },
   "split": {
     "train": "entrenamiento",

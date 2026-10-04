@@ -154,6 +154,11 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         cfg.overrides,
         class_weights=class_weights(fitted, train_ds),
         pretrained_allowed=cfg.pretrained_allowed,
+        target_scale=(
+            (fitted.target_mean, fitted.target_std)
+            if fitted.target_mean is not None and fitted.target_std
+            else None
+        ),
     )
 
     epochs = cfg.max_epochs or int(resolve(spec.training.epochs, cfg.overrides))

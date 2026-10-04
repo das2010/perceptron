@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict
 
 from perceptron.core.errors import ValidationError
-from perceptron.domain.enums import Device
+from perceptron.domain.enums import Device, Modality
 from perceptron.domain.models import Study
 from perceptron.hpo.strategy import HPOStrategy
 from perceptron.hpo.study import StudyControl, StudyResult
@@ -91,9 +91,14 @@ def new_study(
     limit_train_batches: float | None = None,
 ) -> Study:
     """Crea el estudio con todo lo necesario para ejecutarse en cualquier lado."""
-    from perceptron.domain.models import ArchSpecRecord
+    from perceptron.domain.models import ArchSpecRecord, DatasetVersion
+    from perceptron.services.workflow import Workflow
 
     record = ctx.repo(ArchSpecRecord).get(archspec_id)
+    dv = ctx.repo(DatasetVersion).find(dataset_version_id)
+    if dv is not None and dv.modality is Modality.TABULAR:
+        # Antes de encolar: un pipeline sin columnas de entrada no puede aprender nada (422).
+        Workflow(ctx).fitted_pipeline(pipeline_id, dataset_version_id)
     request = {
         "dataset_version_id": dataset_version_id,
         "pipeline_id": pipeline_id,

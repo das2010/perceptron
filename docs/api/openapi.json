@@ -428,7 +428,9 @@
           "long_texts",
           "clipping",
           "mixed_sample_rates",
-          "silent_audio"
+          "silent_audio",
+          "id_like_feature",
+          "no_features"
         ],
         "title": "AlertCode",
         "type": "string"
@@ -2062,6 +2064,12 @@
           "dtype": {
             "title": "Dtype",
             "type": "string"
+          },
+          "id_like": {
+            "default": false,
+            "description": "Parece un identificador pero se usa como dato: es la única entrada",
+            "title": "Id Like",
+            "type": "boolean"
           },
           "n_unique": {
             "title": "N Unique",

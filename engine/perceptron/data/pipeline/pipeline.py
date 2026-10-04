@@ -16,6 +16,7 @@ import numpy as np
 import polars as pl
 from pydantic import BaseModel, Field
 
+from perceptron.core.errors import ValidationError
 from perceptron.data.pipeline.steps import OrdinalEncode, State, StepSpec, build_step
 from perceptron.data.series import SeriesConfig
 from perceptron.data.splits import FOLD_COLUMN, SPLIT_COLUMN
@@ -222,6 +223,16 @@ def fit_pipeline(
     not_numeric = [c for c in numeric if not df[c].dtype.is_numeric() and df[c].dtype != pl.Boolean]
     if not_numeric:
         raise ValueError(f"columnas sin codificar al final del pipeline: {not_numeric}")
+    if not numeric and not categorical:
+        # Sin entradas la red solo aprende a devolver el promedio: se frena acá, antes de
+        # proponer arquitecturas o entrenar, con un mensaje que diga qué hacer.
+        dropped = [c for s in spec.steps if s.kind == "drop" for c in s.columns]
+        raise ValidationError(
+            "El pipeline no deja ninguna columna de entrada: no hay con qué predecir el target."
+            + (f" Se descartaron: {', '.join(dropped)}." if dropped else "")
+            + " Si alguna es un dato y no un identificador, cambiá su tipo en Datos.",
+            details={"reason": "no_features", "dropped": dropped},
+        )
     return fitted.model_copy(
         update={
             "numeric_features": numeric,

@@ -287,7 +287,11 @@ export function DataPage() {
       <RetentionCard projectId={projectId} versions={datasets.length} />
       {current && (
         <>
-          <ProfileView datasetVersionId={current} />
+          <ProfileView
+            datasetVersionId={current}
+            dataset={datasets.find((d) => d.id === current)}
+            onRetyped={(dv) => setSelected(dv.id)}
+          />
           <Link
             to="/projects/$projectId/train"
             params={{ projectId }}

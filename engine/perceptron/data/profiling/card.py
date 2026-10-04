@@ -59,6 +59,8 @@ class AlertCode(StrEnum):
     CLIPPING = "clipping"
     MIXED_SAMPLE_RATES = "mixed_sample_rates"
     SILENT_AUDIO = "silent_audio"
+    ID_LIKE_FEATURE = "id_like_feature"
+    NO_FEATURES = "no_features"
 
 
 class Alert(BaseModel):

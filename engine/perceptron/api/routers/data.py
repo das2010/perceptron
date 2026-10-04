@@ -298,11 +298,13 @@ def preview_source(
     with open_source(path) as detected:
         if detected.kind is SourceKind.TABLE:
             df = scan_table(detected.path).head(max(limit, 500)).collect()
+            schema = infer_schema(df)
+            candidates = schema.target_candidates
             return SourcePreview(
                 kind=detected.kind,
                 columns=df.columns,
                 rows=df.head(limit).to_dicts(),
-                schema_=infer_schema(df),
+                schema_=schema.keep_sole_inputs(candidates[0] if candidates else None),
             )
         return SourcePreview(kind=detected.kind, columns=["path", "label"], rows=[])
 
