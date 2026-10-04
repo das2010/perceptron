@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { EChart } from "@/components/charts/EChart";
 import {
   Badge,
+  Button,
   Card,
   CardTitle,
   EmptyState,
@@ -19,9 +20,10 @@ import { useProjectId } from "@/features/projects/ProjectLayout";
 
 import { bestRunIds } from "./best";
 import { CompareRuns } from "./CompareRuns";
+import { StudiesCard } from "./StudiesCard";
 import { StudyInsights } from "./StudyInsights";
 import { SymbolicCard } from "./SymbolicCard";
-import { keys, useJob, useRuns, type Run } from "@/lib/api/hooks";
+import { keys, useJob, useRuns, useStudyAction, type Run } from "@/lib/api/hooks";
 import { useEngineSocket } from "@/lib/api/ws";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -43,9 +45,18 @@ const STATUS_TONE = {
 } as const;
 
 /** Curvas en vivo de un estudio (RF-TRN-06) por el WebSocket del job. */
-function LiveStudy({ jobId, metric }: { jobId: string; metric: string }) {
+function LiveStudy({
+  jobId,
+  metric,
+  projectId,
+}: {
+  jobId: string;
+  metric: string;
+  projectId: string;
+}) {
   const { t } = useTranslation();
   const job = useJob(jobId);
+  const stop = useStudyAction(projectId);
   const [curves, setCurves] = useState<Curves>({});
 
   const onMessage = useCallback(
@@ -85,6 +96,7 @@ function LiveStudy({ jobId, metric }: { jobId: string; metric: string }) {
   );
 
   const status = job.data?.status ?? "queued";
+  const studyId = job.data?.refs?.study_id;
   return (
     <Card>
       <CardTitle className="flex items-center gap-2">
@@ -94,7 +106,20 @@ function LiveStudy({ jobId, metric }: { jobId: string; metric: string }) {
           <Badge tone="brand">{t("queue.runningOn", { worker: job.data.worker })}</Badge>
         )}
         {connected && <span className="text-xs text-muted">{t("experiments.connected")}</span>}
+        {studyId && (status === "running" || status === "queued") && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="ml-auto"
+            loading={stop.isPending}
+            title={t("studies.stopHint")}
+            onClick={() => stop.mutate({ studyId, action: "pause" })}
+          >
+            {t("studies.stop")}
+          </Button>
+        )}
       </CardTitle>
+      <ErrorNote error={stop.error} />
       {Object.keys(curves).length === 0 ? (
         <Spinner label={t("experiments.waiting")} />
       ) : (
@@ -145,8 +170,9 @@ export function ExperimentsPage() {
 
   return (
     <div className="space-y-6">
-      {job && <LiveStudy jobId={job} metric="val_loss" />}
+      {job && <LiveStudy jobId={job} metric="val_loss" projectId={projectId} />}
       {compared.length >= 2 && <CompareRuns runs={compared} onClear={() => setCompare([])} />}
+      <StudiesCard projectId={projectId} />
       <StudyInsights runs={runs} />
       <SymbolicCard projectId={projectId} runs={runs} />
       <Card>

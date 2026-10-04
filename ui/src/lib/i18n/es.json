@@ -1433,5 +1433,24 @@
     "excelLegend": "En Excel: {{legend}}",
     "candidates": "Otras fórmulas evaluadas",
     "candidate": "complejidad {{complexity}} · error val {{rmse}}:"
+  },
+  "studies": {
+    "title": "Estudios",
+    "name": "Estudio",
+    "status": "Estado",
+    "trials": "Trials",
+    "best": "Mejor run",
+    "trialsOf": "{{done}} de {{total}}",
+    "stop": "Detener",
+    "resume": "Reanudar",
+    "stopHint": "Detiene el estudio; los trials terminados se conservan y podés reanudarlo después.",
+    "state": {
+      "queued": "En cola",
+      "running": "Entrenando",
+      "stopped": "Detenido",
+      "interrupted": "Interrumpido",
+      "finished": "Terminado",
+      "failed": "Con error"
+    }
   }
 }

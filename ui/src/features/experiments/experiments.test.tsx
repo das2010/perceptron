@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -214,5 +214,65 @@ describe("fórmula sugerida (ADR-0039)", () => {
       dataset_version_id: "dsv_1",
       time_limit_s: 60,
     });
+  });
+});
+
+describe("control de estudios", () => {
+  beforeEach(() => resetApiClient());
+
+  it("muestra el estado, detiene el que entrena y reanuda el interrumpido", async () => {
+    const view = (id: string, status: string, extra: Record<string, unknown> = {}) => ({
+      study: { id, project_id: "prj_1", name: `hpo-${id}`, version: 1 },
+      status,
+      job_id: status === "running" ? "job_1" : null,
+      trials_done: 5,
+      trials_total: 20,
+      best_run_id: `${id}-t003`,
+      reason: null,
+      resumable: false,
+      ...extra,
+    });
+    const { calls } = mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/runs": () => [],
+      "GET /api/v1/projects/prj_1/datasets": () => [],
+      "GET /api/v1/projects/prj_1/symbolic": () => [],
+      "GET /api/v1/projects/prj_1/studies": () => [
+        view("std_a", "running"),
+        view("std_b", "interrupted", {
+          resumable: true,
+          reason: "El worker se reinició durante el entrenamiento.",
+        }),
+      ],
+      "POST /api/v1/studies/std_a/pause": () => ({
+        id: "job_1",
+        kind: "study",
+        status: "cancelled",
+      }),
+      "POST /api/v1/studies/std_b/resume": () => ({
+        study: { id: "std_b" },
+        job: { id: "job_2", kind: "study", status: "queued" },
+      }),
+    });
+    const user = userEvent.setup();
+    render(
+      <Providers client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <App router={createTestRouter("/projects/prj_1/experiments")} />
+      </Providers>,
+    );
+    expect(await screen.findByText("Interrumpido")).toBeInTheDocument();
+    expect(screen.getByText("El worker se reinició durante el entrenamiento.")).toBeInTheDocument();
+    expect(screen.getAllByText("5 de 20")).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: "Detener" }));
+    await user.click(screen.getByRole("button", { name: "Reanudar" }));
+    await waitFor(() =>
+      expect(calls.map((r) => `${r.method} ${new URL(r.url).pathname}`)).toEqual(
+        expect.arrayContaining([
+          "POST /api/v1/studies/std_a/pause",
+          "POST /api/v1/studies/std_b/resume",
+        ]),
+      ),
+    );
   });
 });

@@ -1569,3 +1569,43 @@ export function useSymbolicPredict(fitId: string) {
       ).predictions,
   });
 }
+
+// ---------------------------------------------------------------- control de estudios
+
+export type StudyView = Schemas["StudyView"];
+
+export function useStudies(projectId: string) {
+  return useQuery({
+    queryKey: ["projects", projectId, "studies"],
+    // Con estudios activos se refresca solo (pasan a terminados o interrumpidos).
+    refetchInterval: (q) =>
+      (q.state.data ?? []).some((v) => v.status === "running" || v.status === "queued")
+        ? 4000
+        : false,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/projects/{project_id}/studies", {
+          params: { path: { project_id: projectId } },
+        }),
+      ) as StudyView[],
+  });
+}
+
+export function useStudyAction(projectId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ studyId, action }: { studyId: string; action: "pause" | "resume" }) => {
+      const api = await getApiClient();
+      const params = { params: { path: { study_id: studyId } } };
+      return action === "pause"
+        ? unwrap(await api.POST("/api/v1/studies/{study_id}/pause", params))
+        : unwrap(await api.POST("/api/v1/studies/{study_id}/resume", params));
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["projects", projectId, "studies"] });
+      void qc.invalidateQueries({ queryKey: keys.runs(projectId) });
+    },
+  });
+}

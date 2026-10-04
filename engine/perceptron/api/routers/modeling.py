@@ -44,6 +44,7 @@ from perceptron.services.pipeline_advice import (
     apply_accepted,
     suggest,
 )
+from perceptron.services.study_control import StudyView, list_study_views, prepare_resume
 from perceptron.services.workflow import Workflow
 
 router = APIRouter()
@@ -546,7 +547,16 @@ def resume_study(study_id: str, ctx: Ctx) -> StudyLaunch:
     study = ctx.repo(Study).get(study_id)
     if _study_job(ctx, study_id) is not None:
         raise ConflictError(f"el estudio {study_id} ya está en ejecución")
+    # Sin la cancelación persistida al pausar (el worker lo descartaría) ni runs colgados.
+    study = prepare_resume(ctx, study)
     return StudyLaunch(study=study, job=ctx.launch_study(study))
+
+
+@router.get("/projects/{project_id}/studies", tags=["hpo"], operation_id="listStudies")
+def list_studies(project_id: str, ctx: Ctx) -> list[StudyView]:
+    """Estudios del proyecto con su estado (en curso, detenido, interrumpido, terminado)."""
+    ctx.projects.get(project_id)
+    return list_study_views(ctx, project_id)
 
 
 # ------------------------------------------------------------------ runs

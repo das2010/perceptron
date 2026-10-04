@@ -11674,6 +11674,86 @@
         "title": "StudyLaunch",
         "type": "object"
       },
+      "StudyView": {
+        "properties": {
+          "best_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Run Id"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por qué se interrumpió o falló",
+            "title": "Reason"
+          },
+          "resumable": {
+            "default": false,
+            "title": "Resumable",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "stopped",
+              "interrupted",
+              "finished",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "study": {
+            "$ref": "#/components/schemas/Study"
+          },
+          "trials_done": {
+            "default": 0,
+            "title": "Trials Done",
+            "type": "integer"
+          },
+          "trials_total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trials Total"
+          }
+        },
+        "required": [
+          "study",
+          "status"
+        ],
+        "title": "StudyView",
+        "type": "object"
+      },
       "SuggestBody": {
         "additionalProperties": false,
         "properties": {
@@ -20535,6 +20615,51 @@
       }
     },
     "/api/v1/projects/{project_id}/studies": {
+      "get": {
+        "description": "Estudios del proyecto con su estado (en curso, detenido, interrumpido, terminado).",
+        "operationId": "listStudies",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudyView"
+                  },
+                  "title": "Response Liststudies",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Studies",
+        "tags": [
+          "hpo"
+        ]
+      },
       "post": {
         "operationId": "createStudy",
         "parameters": [
