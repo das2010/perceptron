@@ -103,7 +103,8 @@ def test_brief_compiles_the_plan_and_system_fields_are_protected(
 ) -> None:
     pid = _project(client)
     view = _ok(client.get(f"{API}/projects/{pid}/draft"))
-    assert [s["id"] for s in view["plan"]["steps"]] == view["steps"]
+    base = [s for s in view["steps"] if s not in ("formula", "threshold")]  # condicionales
+    assert [s["id"] for s in view["plan"]["steps"]] == base
     assert not view["plan"]["adapted"]
     brief = {"problem": "category", "error_costs": "false_negative_worse", "error_cost_ratio": 10}
     view = _ok(
