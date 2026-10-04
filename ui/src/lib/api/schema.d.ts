@@ -1647,6 +1647,29 @@ export interface paths {
         patch: operations["updateDraft"];
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/draft/intake": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft Intake
+         * @description Entrevista del paso Objetivo (ADR-0040): cambios propuestos a la ficha y próxima pregunta.
+         *
+         *     No modifica el borrador: la persona acepta los cambios con `PATCH /draft` (`brief`).
+         *     Sin LLM utilizable responde 503 `llm_unavailable` y la ficha se completa a mano.
+         */
+        post: operations["draftIntake"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/duplicate": {
         parameters: {
             query?: never;
@@ -3692,6 +3715,13 @@ export interface components {
              */
             version: number;
         };
+        /** Assumption */
+        Assumption: {
+            /** Confidence */
+            confidence: number;
+            /** Text */
+            text: string;
+        };
         /**
          * AudioProfile
          * @description Audio (RF-PRF-05).
@@ -3873,6 +3903,33 @@ export interface components {
             y1: number;
             /** Y2 */
             y2: number;
+        };
+        /** BriefChange */
+        BriefChange: {
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "problem" | "problem_other" | "prediction" | "error_costs" | "error_cost_ratio" | "business_metric" | "has_time" | "has_entities" | "labels_available" | "independent_inputs" | "extrapolate" | "explainability" | "deployment" | "max_latency_ms";
+            /** Rationale */
+            rationale: string;
+            /** Value */
+            value: unknown;
+        };
+        /**
+         * BriefPatch
+         * @description Lo que el LLM entendió de la conversación: cambios propuestos y la próxima pregunta.
+         */
+        BriefPatch: {
+            /** Assumptions */
+            assumptions?: components["schemas"]["Assumption"][];
+            /** Changes */
+            changes?: components["schemas"]["BriefChange"][];
+            /**
+             * Next Question
+             * @description La pregunta más útil que falta (o null)
+             */
+            next_question?: string | null;
         };
         /** Budget */
         Budget: {
@@ -4269,6 +4326,36 @@ export interface components {
             severity: components["schemas"]["perceptron__domain__enums__Severity"];
             /** Share Drifted */
             share_drifted: number;
+        };
+        /**
+         * DataFacts
+         * @description Hechos medibles del dataset elegido: lo único que el compilador mira de los datos.
+         */
+        DataFacts: {
+            /**
+             * Collinear Pairs
+             * @description Pares de entradas que varían juntas
+             */
+            collinear_pairs?: string[][];
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            /** Datetime Columns */
+            datetime_columns?: string[];
+            /** Imbalance Ratio */
+            imbalance_ratio?: number | null;
+            /** Modality */
+            modality: string;
+            /** Numeric Inputs */
+            numeric_inputs?: string[];
+            /** Rows */
+            rows: number;
+            /** Split Strategy */
+            split_strategy?: string | null;
+            /** Target */
+            target?: string | null;
+            /** Target Classes */
+            target_classes?: number | null;
+            target_task?: components["schemas"]["TaskType"] | null;
         };
         /** DataSource */
         DataSource: {
@@ -4677,6 +4764,8 @@ export interface components {
              * @description Lanzar con el agente autónomo
              */
             autonomous?: boolean | null;
+            brief?: components["schemas"]["UseCaseBrief"] | null;
+            data_facts?: components["schemas"]["DataFacts"] | null;
             /** Dataset Version Id */
             dataset_version_id?: string | null;
             /** Device */
@@ -4693,6 +4782,7 @@ export interface components {
             max_trials?: number | null;
             /** Pipeline Id */
             pipeline_id?: string | null;
+            plan?: components["schemas"]["WizardPlan"] | null;
             /**
              * Strategy
              * @description HPOStrategy elegida
@@ -4717,6 +4807,8 @@ export interface components {
         /** DraftView */
         DraftView: {
             draft: components["schemas"]["ProjectDraft"];
+            /** @description Pasos, defaults y chequeos para este caso (ADR-0040) */
+            plan: components["schemas"]["WizardPlan"];
             /** Steps */
             steps: string[];
             values: components["schemas"]["DraftValues"];
@@ -5383,6 +5475,29 @@ export interface components {
              * @description Tokens: tamaño del vocabulario
              */
             vocab_size?: number | null;
+        };
+        /** IntakeReply */
+        IntakeReply: {
+            /** Llm Call Id */
+            llm_call_id: string;
+            patch: components["schemas"]["BriefPatch"];
+        };
+        /** IntakeRequest */
+        IntakeRequest: {
+            /** History */
+            history?: components["schemas"]["IntakeTurn"][];
+            /** Message */
+            message: string;
+        };
+        /** IntakeTurn */
+        IntakeTurn: {
+            /** Content */
+            content: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
         };
         /** Issue */
         Issue: {
@@ -6302,6 +6417,53 @@ export interface components {
             graph: components["schemas"]["PipelineSpec"];
             /** Version */
             version: number;
+        };
+        /** PlanCheck */
+        PlanCheck: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "info" | "warning" | "high";
+            /**
+             * Step
+             * @enum {string}
+             */
+            step: "goal" | "data" | "quality" | "labeling" | "task" | "architecture" | "hpo" | "budget" | "review";
+        };
+        /** PlanDefault */
+        PlanDefault: {
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "task" | "target_metric" | "architecture_hint";
+            /** Reason */
+            reason: string;
+            /**
+             * Step
+             * @enum {string}
+             */
+            step: "goal" | "data" | "quality" | "labeling" | "task" | "architecture" | "hpo" | "budget" | "review";
+            /** Value */
+            value: string;
+        };
+        /** PlanStep */
+        PlanStep: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "goal" | "data" | "quality" | "labeling" | "task" | "architecture" | "hpo" | "budget" | "review";
+            /**
+             * Reason
+             * @description Por qué el plan incluye o saltea el paso
+             */
+            reason?: string | null;
         };
         /** PlaygroundResult */
         PlaygroundResult: {
@@ -8319,6 +8481,72 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
+        /**
+         * UseCaseBrief
+         * @description Lo que la persona sabe del caso, en términos que sirven para cualquier dataset.
+         */
+        UseCaseBrief: {
+            /** Assumptions */
+            assumptions?: components["schemas"]["Assumption"][];
+            /** Business Metric */
+            business_metric?: string | null;
+            /** Deployment */
+            deployment?: ("desktop" | "server" | "edge" | "spreadsheet") | null;
+            /**
+             * Error Cost Ratio
+             * @description Cuántas veces peor es el error más caro
+             */
+            error_cost_ratio?: number | null;
+            /** Error Costs */
+            error_costs?: ("symmetric" | "false_negative_worse" | "false_positive_worse") | null;
+            /** Explainability */
+            explainability?: boolean | null;
+            /**
+             * Extrapolate
+             * @description Se va a predecir fuera del rango de los datos
+             */
+            extrapolate?: boolean | null;
+            /**
+             * Has Entities
+             * @description Hay entidades repetidas (máquinas, clientes, pacientes)
+             */
+            has_entities?: boolean | null;
+            /**
+             * Has Time
+             * @description Los datos tienen fechas u orden
+             */
+            has_time?: boolean | null;
+            /**
+             * Independent Inputs
+             * @description Las entradas varían por separado (no una función de otra)
+             */
+            independent_inputs?: boolean | null;
+            /** Labels Available */
+            labels_available?: boolean | null;
+            /** Max Latency Ms */
+            max_latency_ms?: number | null;
+            /** Open Questions */
+            open_questions?: string[];
+            /**
+             * Origins
+             * @description De dónde salió cada campo (historial)
+             */
+            origins?: {
+                [key: string]: "user" | "llm" | "profile";
+            };
+            /**
+             * Prediction
+             * @description Qué se predice y en qué unidad
+             */
+            prediction?: string | null;
+            /**
+             * Problem
+             * @description value: predecir un número; category: una categoría; anomaly: detectar anomalías; forecast: pronosticar una serie; rule: descubrir una regla o fórmula; other
+             */
+            problem?: ("value" | "category" | "anomaly" | "forecast" | "rule" | "other") | null;
+            /** Problem Other */
+            problem_other?: string | null;
+        };
         /** User */
         User: {
             /**
@@ -8484,6 +8712,23 @@ export interface components {
             text_length_p50?: number | null;
             /** Text Length P95 */
             text_length_p95?: number | null;
+        };
+        /** WizardPlan */
+        WizardPlan: {
+            /**
+             * Adapted
+             * @description False: plan estándar (nada reconocido)
+             * @default false
+             */
+            adapted: boolean;
+            /** Checks */
+            checks?: components["schemas"]["PlanCheck"][];
+            /** Defaults */
+            defaults?: components["schemas"]["PlanDefault"][];
+            /** Skipped */
+            skipped?: components["schemas"]["PlanStep"][];
+            /** Steps */
+            steps: components["schemas"]["PlanStep"][];
         };
         /** WorkerInfo */
         WorkerInfo: {
@@ -11946,6 +12191,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DraftView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draftIntake: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntakeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntakeReply"];
                 };
             };
             /** @description Validation Error */

@@ -41,8 +41,12 @@ import {
   type ArchProposals,
   type DraftValues,
   type Schemas,
+  type UseCaseBrief,
+  type WizardPlan,
 } from "@/lib/api/hooks";
 import { cn } from "@/lib/cn";
+
+import { BriefPanel, PlanChecks, PlanSuggestion } from "./BriefPanel";
 
 const METRICS: Record<string, string[]> = {
   classification: ["val_loss", "val_accuracy", "val_f1_macro", "val_recall_macro", "val_roc_auc"],
@@ -55,21 +59,29 @@ const METRICS: Record<string, string[]> = {
 };
 const TASKS = Object.keys(METRICS);
 
-type Save = (values: Partial<DraftValues>) => void;
+type Save = (values: Partial<DraftValues>, origin?: "user" | "copilot") => void;
 
 function StepGoal({ values, save }: { values: DraftValues; save: Save }) {
   const { t } = useTranslation();
+  const projectId = useProjectId();
   const [goal, setGoal] = useState(values.goal ?? "");
   return (
-    <Field label={t("wizard.goal.label")} hint={t("wizard.goal.hint")}>
-      <Textarea
-        rows={5}
-        value={goal}
-        onChange={(e) => setGoal(e.target.value)}
-        onBlur={() => goal !== (values.goal ?? "") && save({ goal })}
-        placeholder={t("wizard.goal.placeholder")}
+    <div className="space-y-4">
+      <Field label={t("wizard.goal.label")} hint={t("wizard.goal.hint")}>
+        <Textarea
+          rows={4}
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
+          onBlur={() => goal !== (values.goal ?? "") && save({ goal })}
+          placeholder={t("wizard.goal.placeholder")}
+        />
+      </Field>
+      <BriefPanel
+        projectId={projectId}
+        brief={values.brief ?? ({} as UseCaseBrief)}
+        save={(brief, origin) => save({ brief }, origin)}
       />
-    </Field>
+    </div>
   );
 }
 
@@ -104,51 +116,74 @@ function StepData({ values, save }: { values: DraftValues; save: Save }) {
   );
 }
 
-function StepTask({ values, save }: { values: DraftValues; save: Save }) {
+function StepTask({ values, save, plan }: { values: DraftValues; save: Save; plan: WizardPlan }) {
   const { t } = useTranslation();
   const task = values.task ?? "classification";
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      <Field label={t("wizard.task.task")}>
-        <Select
-          value={task}
-          onChange={(e) => save({ task: e.target.value as NonNullable<DraftValues["task"]> })}
-        >
-          {TASKS.map((k) => (
-            <option key={k} value={k}>
-              {t(`task.${k}`)}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field label={t("wizard.task.metric")} hint={t("wizard.task.metricHint")}>
-        <Select
-          value={values.target_metric ?? ""}
-          onChange={(e) => save({ target_metric: e.target.value || null })}
-        >
-          <option value="">{t("wizard.task.metricAuto")}</option>
-          {(METRICS[task] ?? []).map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field label={t("wizard.task.threshold")}>
-        <Input
-          type="number"
-          step="any"
-          defaultValue={values.success_threshold ?? ""}
-          onBlur={(e) =>
-            save({ success_threshold: e.target.value === "" ? null : Number(e.target.value) })
-          }
-        />
-      </Field>
+    <div>
+      <PlanSuggestion
+        plan={plan}
+        field="task"
+        current={values.task ?? null}
+        label={(v) => t(`task.${v}`)}
+        onUse={(v) => save({ task: v as NonNullable<DraftValues["task"]> })}
+      />
+      <PlanSuggestion
+        plan={plan}
+        field="target_metric"
+        current={values.target_metric ?? null}
+        onUse={(v) => save({ target_metric: v })}
+      />
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <Field label={t("wizard.task.task")}>
+          <Select
+            value={task}
+            onChange={(e) => save({ task: e.target.value as NonNullable<DraftValues["task"]> })}
+          >
+            {TASKS.map((k) => (
+              <option key={k} value={k}>
+                {t(`task.${k}`)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t("wizard.task.metric")} hint={t("wizard.task.metricHint")}>
+          <Select
+            value={values.target_metric ?? ""}
+            onChange={(e) => save({ target_metric: e.target.value || null })}
+          >
+            <option value="">{t("wizard.task.metricAuto")}</option>
+            {(METRICS[task] ?? []).map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t("wizard.task.threshold")}>
+          <Input
+            type="number"
+            step="any"
+            defaultValue={values.success_threshold ?? ""}
+            onBlur={(e) =>
+              save({ success_threshold: e.target.value === "" ? null : Number(e.target.value) })
+            }
+          />
+        </Field>
+      </div>
     </div>
   );
 }
 
-function StepArchitecture({ values, save }: { values: DraftValues; save: Save }) {
+function StepArchitecture({
+  values,
+  save,
+  plan,
+}: {
+  values: DraftValues;
+  save: Save;
+  plan: WizardPlan;
+}) {
   const { t } = useTranslation();
   const projectId = useProjectId();
   const pipeline = useProposePipeline(projectId);
@@ -188,6 +223,7 @@ function StepArchitecture({ values, save }: { values: DraftValues; save: Save })
 
   return (
     <div className="space-y-4">
+      <PlanSuggestion plan={plan} field="architecture_hint" />
       <div className="flex flex-wrap gap-2">
         <Button loading={pipeline.isPending || propose.isPending} onClick={run}>
           {t("train.proposeArch")}
@@ -496,11 +532,18 @@ export function WizardPage() {
 
   if (isPending) return <Spinner />;
   if (error || !view) return <ErrorNote error={error} />;
-  const steps = view.steps;
-  const current = Math.max(0, steps.indexOf(view.draft.step));
+  const plan = view.plan;
+  const steps = plan.steps.map((s) => s.id);
+  // Un paso salteado por el plan (p. ej. etiquetado) lleva al siguiente que sí está.
+  const at = view.steps.indexOf(view.draft.step);
+  const current = Math.max(
+    0,
+    steps.findIndex((s) => view.steps.indexOf(s) >= at),
+  );
   const step = steps[current] ?? "goal";
+  const reason = plan.steps.find((s) => s.id === step)?.reason;
   const values = view.values;
-  const save: Save = (v) => update.mutate({ values: v });
+  const save: Save = (v, origin) => update.mutate({ values: v, ...(origin ? { origin } : {}) });
   const go = (i: number) => update.mutate({ step: steps[i] ?? step });
 
   return (
@@ -524,6 +567,11 @@ export function WizardPage() {
           </li>
         ))}
       </ol>
+      {(plan.skipped ?? []).map((s) => (
+        <p key={s.id} className="text-xs text-muted">
+          {t("wizard.plan.skipped", { step: t(`wizard.step.${s.id}`), reason: s.reason ?? "" })}
+        </p>
+      ))}
       <Card>
         <CardTitle className="flex items-center justify-between gap-2">
           {t(`wizard.step.${step}`)}
@@ -537,6 +585,15 @@ export function WizardPage() {
           </Button>
         </CardTitle>
         <p className="mb-4 text-sm text-muted">{t(`wizard.help.${step}`)}</p>
+        {reason && (
+          <p className="mb-4 text-sm">
+            <Badge tone="brand" className="mr-2">
+              {t("wizard.plan.why")}
+            </Badge>
+            {reason}
+          </p>
+        )}
+        <PlanChecks plan={plan} step={step} />
         {step === "goal" && <StepGoal values={values} save={save} />}
         {step === "data" && <StepData values={values} save={save} />}
         {step === "quality" &&
@@ -552,8 +609,8 @@ export function WizardPage() {
               : t("wizard.labeling.none")}
           </p>
         )}
-        {step === "task" && <StepTask values={values} save={save} />}
-        {step === "architecture" && <StepArchitecture values={values} save={save} />}
+        {step === "task" && <StepTask values={values} save={save} plan={plan} />}
+        {step === "architecture" && <StepArchitecture values={values} save={save} plan={plan} />}
         {step === "hpo" && <StepHpo values={values} save={save} />}
         {step === "budget" && <StepBudget values={values} save={save} />}
         {step === "review" && <StepReview values={values} />}

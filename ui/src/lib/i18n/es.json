@@ -465,6 +465,79 @@
     "why": {
       "button": "¿Por qué?",
       "question": "¿Por qué conviene lo que se recomienda en el paso «{{step}}» para mi proyecto? Explicámelo con mis datos y decime qué cambiarías."
+    },
+    "brief": {
+      "title": "Ficha del caso",
+      "hint": "Lo que sabés del caso. Con esto el wizard elige pasos, métricas y avisos. Podés completarla a mano o contarle el caso al asistente.",
+      "problem": {
+        "label": "Tipo de problema",
+        "value": "Predecir un número",
+        "category": "Predecir una categoría",
+        "anomaly": "Detectar anomalías",
+        "forecast": "Pronosticar una serie",
+        "rule": "Descubrir una regla o fórmula",
+        "other": "Otro"
+      },
+      "problemOther": "¿Qué querés lograr?",
+      "prediction": "Qué se predice (y en qué unidad)",
+      "error_costs": {
+        "label": "¿Qué error es peor?",
+        "symmetric": "Los dos pesan igual",
+        "false_negative_worse": "No detectar un caso",
+        "false_positive_worse": "Una falsa alarma"
+      },
+      "ratio": "¿Cuántas veces peor?",
+      "has_time": "¿Los datos tienen fechas u orden temporal?",
+      "has_entities": "¿Hay entidades repetidas (máquinas, clientes)?",
+      "labels_available": "¿Ya tenés las etiquetas?",
+      "independent_inputs": "¿Las entradas varían por separado?",
+      "extrapolate": "¿Vas a predecir fuera del rango de los datos?",
+      "explainability": "¿Hay que explicar las predicciones?",
+      "deployment": {
+        "label": "¿Dónde se va a usar?",
+        "desktop": "En esta computadora",
+        "server": "En un servidor",
+        "edge": "En un equipo chico",
+        "spreadsheet": "En una planilla"
+      },
+      "unknown": "No sé",
+      "yes": "Sí",
+      "no": "No",
+      "assumptions": "Supuestos del asistente",
+      "fieldName": {
+        "problem": "Tipo de problema",
+        "problem_other": "Descripción",
+        "prediction": "Qué se predice",
+        "error_costs": "Costo de los errores",
+        "error_cost_ratio": "Cuántas veces peor",
+        "business_metric": "Métrica de negocio",
+        "has_time": "Fechas u orden temporal",
+        "has_entities": "Entidades repetidas",
+        "labels_available": "Etiquetas disponibles",
+        "independent_inputs": "Entradas independientes",
+        "extrapolate": "Predecir fuera del rango",
+        "explainability": "Hay que explicarlo",
+        "deployment": "Dónde se usa",
+        "max_latency_ms": "Latencia máxima (ms)"
+      }
+    },
+    "intake": {
+      "title": "Contale tu caso al asistente",
+      "hint": "Describí qué querés lograr con tus palabras. El asistente propone cómo completar la ficha y te pregunta lo que falta; nada se aplica sin que lo aceptes.",
+      "placeholder": "Ej.: quiero anticipar cuándo va a fallar un rodamiento a partir del sonido; perder una falla es mucho peor que una falsa alarma.",
+      "message": "Tu mensaje",
+      "question": "Pregunta del asistente",
+      "send": "Enviar",
+      "proposed": "El asistente propone:",
+      "accept": "Aceptar cambios",
+      "reject": "Descartar"
+    },
+    "plan": {
+      "why": "Por qué",
+      "checks": "Avisos del plan",
+      "suggested": "Sugerido",
+      "use": "Usar",
+      "skipped": "Se saltea «{{step}}»: {{reason}}"
     }
   },
   "agent": {

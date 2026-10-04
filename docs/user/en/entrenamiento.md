@@ -31,6 +31,25 @@ target column, task, metric, threshold, trials, epochs, time, autonomous mode), 
 Without an LLM configured, or with privacy L0, the copilot is unavailable and the wizard keeps working
 with rule-based recommendations.
 
+### Case sheet and adapted plan
+
+In **Goal** there is the **Case sheet**: the kind of problem, what is predicted, which error is worse
+(and by how much), whether there are dates or repeated entities, whether the inputs vary on their
+own, whether you will predict outside the data range and where the result will be used. Fill it in
+by hand or **tell the assistant about your case**: it proposes how to fill it in, asks what is
+missing and nothing is applied until you press **Accept changes**.
+
+With the sheet and the data, the wizard **adapts the plan**:
+
+- it skips steps you don't need (for example **Labeling** when labels exist) and says why;
+- it suggests the task, the metric and the kind of architecture, each with its **Why** and a
+  **Use** button;
+- it warns before training when something doesn't add up: inputs that vary together when you want
+  to discover a rule, a random split with time-ordered data or repeated entities, too few rows.
+
+If the case doesn't fit what Perceptron solves, the wizard says so and continues with the standard
+steps.
+
 ## Architectures
 
 ### Proposals: by rules or by LLM

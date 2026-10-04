@@ -10,25 +10,36 @@ import { useUiStore } from "@/app/store";
 import { resetApiClient } from "@/lib/api/client";
 import { mockEngine, project } from "@/test/engine";
 
+const STEPS = [
+  "goal",
+  "data",
+  "quality",
+  "labeling",
+  "task",
+  "architecture",
+  "hpo",
+  "budget",
+  "review",
+];
+
 function draft(
   step = "goal",
   values: Record<string, unknown> = { goal: "detectar fallas" },
   version = 1,
+  plan: Record<string, unknown> = {},
 ) {
   return {
     draft: { id: "dft_1", project_id: "prj_1", step, values, history: [], version },
-    steps: [
-      "goal",
-      "data",
-      "quality",
-      "labeling",
-      "task",
-      "architecture",
-      "hpo",
-      "budget",
-      "review",
-    ],
+    steps: STEPS,
     values,
+    plan: {
+      steps: STEPS.map((id) => ({ id, reason: null })),
+      skipped: [],
+      defaults: [],
+      checks: [],
+      adapted: false,
+      ...plan,
+    },
   };
 }
 
@@ -198,5 +209,89 @@ describe("wizard y copiloto", () => {
     await userEvent.click(screen.getByRole("button", { name: "Aceptar" }));
     await waitFor(() => expect(approved).toBe(true));
     expect(await screen.findByText("Trabajando")).toBeInTheDocument();
+  });
+});
+
+describe("wizard adaptativo (ADR-0040)", () => {
+  beforeEach(() => resetApiClient());
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("muestra el plan: salteados, por qué, avisos y defaults que se pueden usar", async () => {
+    const plan = {
+      steps: STEPS.filter((s) => s !== "labeling").map((id) => ({
+        id,
+        reason: id === "task" ? "En la ficha: perder una falla es lo peor." : null,
+      })),
+      skipped: [{ id: "labeling", reason: "Ya hay etiquetas: el objetivo es «falla»." }],
+      defaults: [
+        {
+          key: "target_metric",
+          value: "val_recall_macro",
+          step: "task",
+          reason: "El recall mide cuántas fallas reales se detectan.",
+        },
+      ],
+      checks: [{ code: "few_rows", severity: "info", step: "task", message: "Hay 80 filas." }],
+      adapted: true,
+    };
+    const { calls } = mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/draft": () => draft("task", { task: "classification" }, 3, plan),
+      "PATCH /api/v1/projects/prj_1/draft": () =>
+        draft("task", { task: "classification", target_metric: "val_recall_macro" }, 4, plan),
+    });
+    renderAt("/projects/prj_1/wizard");
+    expect(await screen.findByText(/Se saltea «Etiquetado»/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Etiquetado/ })).not.toBeInTheDocument();
+    expect(screen.getByText("En la ficha: perder una falla es lo peor.")).toBeInTheDocument();
+    expect(screen.getByText("Hay 80 filas.")).toBeInTheDocument();
+    expect(
+      screen.getByText("El recall mide cuántas fallas reales se detectan."),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Usar" }));
+    await waitFor(() => expect(calls.some((r) => r.method === "PATCH")).toBe(true));
+    const patch = calls.find((r) => r.method === "PATCH");
+    expect(await patch?.clone().json()).toMatchObject({
+      values: { target_metric: "val_recall_macro" },
+    });
+  });
+
+  it("la entrevista propone cambios a la ficha y se aplican solo al aceptarlos", async () => {
+    const { calls } = mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/draft": () => draft("goal", { goal: "rodamientos" }, 1),
+      "PATCH /api/v1/projects/prj_1/draft": () => draft("goal", { goal: "rodamientos" }, 2),
+      "POST /api/v1/projects/prj_1/draft/intake": () => ({
+        llm_call_id: "llc_9",
+        patch: {
+          changes: [
+            { field: "problem", value: "category", rationale: "Quiere detectar fallas." },
+            { field: "extrapolate", value: false, rationale: "Mismos equipos." },
+          ],
+          assumptions: [],
+          next_question: "¿Los datos vienen de varias máquinas?",
+        },
+      }),
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/wizard");
+    await user.type(await screen.findByLabelText("Tu mensaje"), "Quiero anticipar fallas");
+    await user.click(screen.getByRole("button", { name: "Enviar" }));
+    expect(await screen.findByLabelText("Pregunta del asistente")).toHaveTextContent(
+      "¿Los datos vienen de varias máquinas?",
+    );
+    const proposed = screen.getByText("El asistente propone:").closest("div");
+    expect(proposed).toHaveTextContent("Tipo de problema: Predecir una categoría");
+    expect(calls.some((r) => r.method === "PATCH")).toBe(false); // nada sin aceptar
+    await user.click(screen.getByRole("button", { name: "Aceptar cambios" }));
+    await waitFor(() => expect(calls.some((r) => r.method === "PATCH")).toBe(true));
+    const body = await calls
+      .find((r) => r.method === "PATCH")
+      ?.clone()
+      .json();
+    expect(body.origin).toBe("copilot");
+    expect(body.values.brief).toMatchObject({ problem: "category", extrapolate: false });
   });
 });

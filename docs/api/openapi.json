@@ -846,6 +846,27 @@
         "title": "ArchSpecRecord",
         "type": "object"
       },
+      "Assumption": {
+        "properties": {
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "text": {
+            "maxLength": 500,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "confidence"
+        ],
+        "title": "Assumption",
+        "type": "object"
+      },
       "AudioProfile": {
         "description": "Audio (RF-PRF-05).",
         "properties": {
@@ -1289,6 +1310,81 @@
           "label"
         ],
         "title": "Box",
+        "type": "object"
+      },
+      "BriefChange": {
+        "properties": {
+          "field": {
+            "enum": [
+              "problem",
+              "problem_other",
+              "prediction",
+              "error_costs",
+              "error_cost_ratio",
+              "business_metric",
+              "has_time",
+              "has_entities",
+              "labels_available",
+              "independent_inputs",
+              "extrapolate",
+              "explainability",
+              "deployment",
+              "max_latency_ms"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 500,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "required": [
+          "field",
+          "value",
+          "rationale"
+        ],
+        "title": "BriefChange",
+        "type": "object"
+      },
+      "BriefPatch": {
+        "description": "Lo que el LLM entendió de la conversación: cambios propuestos y la próxima pregunta.",
+        "properties": {
+          "assumptions": {
+            "items": {
+              "$ref": "#/components/schemas/Assumption"
+            },
+            "maxItems": 10,
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/BriefChange"
+            },
+            "maxItems": 14,
+            "title": "Changes",
+            "type": "array"
+          },
+          "next_question": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "La pregunta más útil que falta (o null)",
+            "title": "Next Question"
+          }
+        },
+        "title": "BriefPatch",
         "type": "object"
       },
       "Budget": {
@@ -2409,6 +2505,109 @@
         "title": "DataDrift",
         "type": "object"
       },
+      "DataFacts": {
+        "description": "Hechos medibles del dataset elegido: lo único que el compilador mira de los datos.",
+        "properties": {
+          "collinear_pairs": {
+            "description": "Pares de entradas que varían juntas",
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Collinear Pairs",
+            "type": "array"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "datetime_columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Datetime Columns",
+            "type": "array"
+          },
+          "imbalance_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imbalance Ratio"
+          },
+          "modality": {
+            "title": "Modality",
+            "type": "string"
+          },
+          "numeric_inputs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Numeric Inputs",
+            "type": "array"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "split_strategy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Split Strategy"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "target_classes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Classes"
+          },
+          "target_task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "modality",
+          "rows"
+        ],
+        "title": "DataFacts",
+        "type": "object"
+      },
       "DataSource": {
         "additionalProperties": false,
         "properties": {
@@ -3332,6 +3531,26 @@
             "description": "Lanzar con el agente autónomo",
             "title": "Autonomous"
           },
+          "brief": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UseCaseBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_facts": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DataFacts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "dataset_version_id": {
             "anyOf": [
               {
@@ -3434,6 +3653,16 @@
             ],
             "title": "Pipeline Id"
           },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WizardPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "strategy": {
             "anyOf": [
               {
@@ -3501,6 +3730,10 @@
           "draft": {
             "$ref": "#/components/schemas/ProjectDraft"
           },
+          "plan": {
+            "$ref": "#/components/schemas/WizardPlan",
+            "description": "Pasos, defaults y chequeos para este caso (ADR-0040)"
+          },
           "steps": {
             "items": {
               "type": "string"
@@ -3515,7 +3748,8 @@
         "required": [
           "draft",
           "steps",
-          "values"
+          "values",
+          "plan"
         ],
         "title": "DraftView",
         "type": "object"
@@ -5275,6 +5509,71 @@
           "kind"
         ],
         "title": "InputSpec",
+        "type": "object"
+      },
+      "IntakeReply": {
+        "properties": {
+          "llm_call_id": {
+            "title": "Llm Call Id",
+            "type": "string"
+          },
+          "patch": {
+            "$ref": "#/components/schemas/BriefPatch"
+          }
+        },
+        "required": [
+          "patch",
+          "llm_call_id"
+        ],
+        "title": "IntakeReply",
+        "type": "object"
+      },
+      "IntakeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/IntakeTurn"
+            },
+            "maxItems": 40,
+            "title": "History",
+            "type": "array"
+          },
+          "message": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "IntakeRequest",
+        "type": "object"
+      },
+      "IntakeTurn": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "maxLength": 4000,
+            "title": "Content",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "IntakeTurn",
         "type": "object"
       },
       "Issue": {
@@ -7499,6 +7798,130 @@
           "graph"
         ],
         "title": "PipelineUpdate",
+        "type": "object"
+      },
+      "PlanCheck": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "warning",
+              "high"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "step": {
+            "enum": [
+              "goal",
+              "data",
+              "quality",
+              "labeling",
+              "task",
+              "architecture",
+              "hpo",
+              "budget",
+              "review"
+            ],
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "step",
+          "message"
+        ],
+        "title": "PlanCheck",
+        "type": "object"
+      },
+      "PlanDefault": {
+        "properties": {
+          "key": {
+            "enum": [
+              "task",
+              "target_metric",
+              "architecture_hint"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "step": {
+            "enum": [
+              "goal",
+              "data",
+              "quality",
+              "labeling",
+              "task",
+              "architecture",
+              "hpo",
+              "budget",
+              "review"
+            ],
+            "title": "Step",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value",
+          "step",
+          "reason"
+        ],
+        "title": "PlanDefault",
+        "type": "object"
+      },
+      "PlanStep": {
+        "properties": {
+          "id": {
+            "enum": [
+              "goal",
+              "data",
+              "quality",
+              "labeling",
+              "task",
+              "architecture",
+              "hpo",
+              "budget",
+              "review"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por qué el plan incluye o saltea el paso",
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "PlanStep",
         "type": "object"
       },
       "PlaygroundResult": {
@@ -12582,6 +13005,229 @@
         "title": "UploadState",
         "type": "object"
       },
+      "UseCaseBrief": {
+        "additionalProperties": false,
+        "description": "Lo que la persona sabe del caso, en términos que sirven para cualquier dataset.",
+        "properties": {
+          "assumptions": {
+            "items": {
+              "$ref": "#/components/schemas/Assumption"
+            },
+            "maxItems": 20,
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "business_metric": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Metric"
+          },
+          "deployment": {
+            "anyOf": [
+              {
+                "enum": [
+                  "desktop",
+                  "server",
+                  "edge",
+                  "spreadsheet"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deployment"
+          },
+          "error_cost_ratio": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cuántas veces peor es el error más caro",
+            "title": "Error Cost Ratio"
+          },
+          "error_costs": {
+            "anyOf": [
+              {
+                "enum": [
+                  "symmetric",
+                  "false_negative_worse",
+                  "false_positive_worse"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Costs"
+          },
+          "explainability": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explainability"
+          },
+          "extrapolate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Se va a predecir fuera del rango de los datos",
+            "title": "Extrapolate"
+          },
+          "has_entities": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hay entidades repetidas (máquinas, clientes, pacientes)",
+            "title": "Has Entities"
+          },
+          "has_time": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Los datos tienen fechas u orden",
+            "title": "Has Time"
+          },
+          "independent_inputs": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Las entradas varían por separado (no una función de otra)",
+            "title": "Independent Inputs"
+          },
+          "labels_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labels Available"
+          },
+          "max_latency_ms": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Latency Ms"
+          },
+          "open_questions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Open Questions",
+            "type": "array"
+          },
+          "origins": {
+            "additionalProperties": {
+              "enum": [
+                "user",
+                "llm",
+                "profile"
+              ],
+              "type": "string"
+            },
+            "description": "De dónde salió cada campo (historial)",
+            "title": "Origins",
+            "type": "object"
+          },
+          "prediction": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qué se predice y en qué unidad",
+            "title": "Prediction"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "enum": [
+                  "value",
+                  "category",
+                  "anomaly",
+                  "forecast",
+                  "rule",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "value: predecir un número; category: una categoría; anomaly: detectar anomalías; forecast: pronosticar una serie; rule: descubrir una regla o fórmula; other",
+            "title": "Problem"
+          },
+          "problem_other": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Other"
+          }
+        },
+        "title": "UseCaseBrief",
+        "type": "object"
+      },
       "User": {
         "additionalProperties": false,
         "properties": {
@@ -13093,6 +13739,49 @@
           "task"
         ],
         "title": "VisionTaskProfile",
+        "type": "object"
+      },
+      "WizardPlan": {
+        "properties": {
+          "adapted": {
+            "default": false,
+            "description": "False: plan estándar (nada reconocido)",
+            "title": "Adapted",
+            "type": "boolean"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/PlanCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "defaults": {
+            "items": {
+              "$ref": "#/components/schemas/PlanDefault"
+            },
+            "title": "Defaults",
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/PlanStep"
+            },
+            "title": "Skipped",
+            "type": "array"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/PlanStep"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "steps"
+        ],
+        "title": "WizardPlan",
         "type": "object"
       },
       "WorkerInfo": {
@@ -18462,6 +19151,59 @@
           }
         },
         "summary": "Update Draft",
+        "tags": [
+          "wizard"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/draft/intake": {
+      "post": {
+        "description": "Entrevista del paso Objetivo (ADR-0040): cambios propuestos a la ficha y próxima pregunta.\n\nNo modifica el borrador: la persona acepta los cambios con `PATCH /draft` (`brief`).\nSin LLM utilizable responde 503 `llm_unavailable` y la ficha se completa a mano.",
+        "operationId": "draftIntake",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeReply"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Draft Intake",
         "tags": [
           "wizard"
         ]
