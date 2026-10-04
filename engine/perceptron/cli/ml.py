@@ -182,6 +182,7 @@ def arch_propose(
             "origin": out.origin.value,
             "llm_call_id": out.llm_call_id,
             "fallback_reason": out.fallback_reason,
+            "requirements": out.requirements.model_dump(mode="json") if out.requirements else None,
             "proposals": [
                 {
                     "archspec": o.record.model_dump(mode="json"),
@@ -192,6 +193,7 @@ def arch_propose(
                     "risks": o.risks,
                     "confidence": o.confidence,
                     "estimates": o.estimates,
+                    "assessment": o.assessment.model_dump(mode="json") if o.assessment else None,
                 }
                 for o in out.options
             ],
@@ -199,7 +201,14 @@ def arch_propose(
         head = f"Origen: {out.origin.value}"
         if out.fallback_reason:
             head += f" ({out.fallback_reason})"
-        lines = [head] + [f"{o.record.id}  {o.title}\n  {o.rationale}" for o in out.options]
+
+        def mark(o: Any) -> str:
+            a = o.assessment
+            return f"  [recomendada · {a.score:g}]" if a is not None and a.recommended else ""
+
+        lines = [head] + [
+            f"{o.record.id}  {o.title}{mark(o)}\n  {o.rationale}" for o in out.options
+        ]
         _out(data, as_json, "\n".join(lines))
 
 
