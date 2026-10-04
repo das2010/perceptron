@@ -164,7 +164,9 @@ def profile_columns(schema: TableSchema, df: pl.DataFrame) -> list[ColumnProfile
             n_unique=s.n_unique(),
         )
         if col.semantic is SemanticType.NUMERIC:
-            prof.numeric = numeric_stats(s)
+            # Versiones viejas pudieron quedar con texto marcado como numérico: sin
+            # estadísticas, pero sin romper el perfil (500).
+            prof.numeric = numeric_stats(s) if s.dtype.is_numeric() else None
         elif col.semantic in (SemanticType.CATEGORICAL, SemanticType.BOOLEAN):
             prof.categorical = categorical_stats(s)
         elif col.semantic is SemanticType.TEXT:

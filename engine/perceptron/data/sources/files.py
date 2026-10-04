@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import os
+import re
 import shutil
 import tempfile
 import zipfile
@@ -43,6 +44,26 @@ class DetectedSource:
     path: Path
 
 
+_COMMA_DECIMAL = re.compile(r"^[+-]?\d+,\d+$")
+_DOT_DECIMAL = re.compile(r"^[+-]?\d*\.\d+$")
+
+
+def _decimal_comma(path: Path, sep: str, encoding: str = "utf-8") -> bool:
+    """Decimales con coma (`0,25`), como exporta Excel en español con `;` o `|`.
+
+    Sin esto las columnas numéricas se leían como texto (y el perfil fallaba si se las
+    corregía a «numérica»). Solo si el separador no es la coma y no hay decimales con punto.
+    """
+    if sep == ",":
+        return False
+    with path.open("r", encoding=encoding, errors="replace", newline="") as f:
+        rows = list(csv.reader(f.read(64 * 1024).splitlines()[1:200], delimiter=sep))
+    fields = [v.strip() for row in rows for v in row]
+    return any(_COMMA_DECIMAL.match(v) for v in fields) and not any(
+        _DOT_DECIMAL.match(v) for v in fields
+    )
+
+
 def _sniff_separator(path: Path) -> str:
     if path.suffix.lower() == ".tsv":
         return "\t"
@@ -71,11 +92,20 @@ def scan_table(path: Path) -> pl.LazyFrame:
         sep = _sniff_separator(path)
         if _is_utf8(path):
             return pl.scan_csv(
-                path, separator=sep, infer_schema_length=10_000, try_parse_dates=True
+                path,
+                separator=sep,
+                infer_schema_length=10_000,
+                try_parse_dates=True,
+                decimal_comma=_decimal_comma(path, sep),
             )
         # Archivos de Excel exportados en Windows suelen venir en cp1252.
         text = path.read_bytes().decode("cp1252")
-        return pl.read_csv(text.encode("utf-8"), separator=sep, try_parse_dates=True).lazy()
+        return pl.read_csv(
+            text.encode("utf-8"),
+            separator=sep,
+            try_parse_dates=True,
+            decimal_comma=_decimal_comma(path, sep, encoding="cp1252"),
+        ).lazy()
     if suffix == ".parquet":
         return pl.scan_parquet(path)
     if suffix in {".jsonl", ".ndjson"}:
