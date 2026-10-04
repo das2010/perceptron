@@ -57,7 +57,7 @@ STEPS: tuple[Step, ...] = (
     "review",
 )
 CONDITIONAL: frozenset[Step] = frozenset({"formula", "threshold"})
-PLAN_VERSION = 2  # sube cuando cambian las reglas: los planes guardados se recompilan
+PLAN_VERSION = 3  # sube cuando cambian las reglas: los planes guardados se recompilan
 COLLINEAR = 0.98  # correlación de rangos entre entradas numéricas
 FACTS_SAMPLE = 5000
 FEW_ROWS = 100
@@ -190,6 +190,51 @@ def normalize_patch(patch: BriefPatch) -> BriefPatch:
         typed = getattr(UseCaseBrief.model_validate({c.field: c.value}), c.field)
         changes.append(c.model_copy(update={"value": typed}))
     return patch.model_copy(update={"changes": changes})
+
+
+def prefers_linear(brief: UseCaseBrief | dict[str, Any] | None) -> bool:
+    """La ficha pide una regla o extrapolar (fuera de clasificación): lineal y fórmula primero,
+    porque las redes aproximan dentro del rango visto. Lo usan el plan y el agente."""
+    if brief is None:
+        return False
+    b = (
+        brief
+        if isinstance(brief, UseCaseBrief)
+        else UseCaseBrief.model_validate(
+            {k: v for k, v in brief.items() if k in UseCaseBrief.model_fields}
+        )
+    )
+    return b.problem == "rule" or (
+        bool(b.extrapolate) and b.problem not in ("category", "anomaly", "other")
+    )
+
+
+def contextualize_card(card: ProfileCard, use_case: dict[str, Any] | None) -> ProfileCard:
+    """Ajusta las alertas del perfil a la ficha del proyecto (al leerlo, no se guarda).
+
+    Si el objetivo es una regla o hay que extrapolar, una columna que determina el objetivo es
+    lo esperable: «probable fuga» (alta) pasa a «relación determinística» (atención). Antes,
+    en «Sensores», la alerta falsa distraía al agente y a la revisión de la ficha.
+    """
+    from perceptron.data.profiling.card import AlertCode, AlertSeverity
+
+    if not prefers_linear(use_case):
+        return card
+    alerts = [
+        a.model_copy(
+            update={
+                "code": AlertCode.DETERMINISTIC_RELATION,
+                "severity": AlertSeverity.WARNING,
+                "message": "La columna determina el objetivo casi por completo. La ficha dice "
+                "que buscás una regla o que vas a extrapolar: una relación así es lo esperable. "
+                "Solo sería una fuga si el valor se conoce recién después del resultado.",
+            }
+        )
+        if a.code is AlertCode.TARGET_LEAKAGE
+        else a
+        for a in card.alerts
+    ]
+    return card.model_copy(update={"alerts": alerts})
 
 
 def apply_patch(brief: UseCaseBrief, changes: list[BriefChange], origin: Origin) -> UseCaseBrief:
@@ -433,7 +478,7 @@ def compile_plan(brief: UseCaseBrief | None, facts: DataFacts | None) -> WizardP
         )
 
     # --- reglas y extrapolación
-    if b.problem == "rule" or b.extrapolate:
+    if prefers_linear(b):
         why = (
             "En la ficha: el objetivo es descubrir una regla."
             if b.problem == "rule"
@@ -571,11 +616,30 @@ def compile_plan(brief: UseCaseBrief | None, facts: DataFacts | None) -> WizardP
         and facts.target_task in (None, TaskType.REGRESSION)
         and bool(facts.numeric_inputs)
     )
-    if b.problem == "rule" and tabular_regression:
+    if prefers_linear(b) and tabular_regression:
         include.add("formula")
         reasons["formula"] = (
-            "En la ficha: el objetivo es descubrir una regla. Antes de entrenar redes, buscá una "
-            "fórmula: si existe, la vas a ver escrita y extrapola."
+            "En la ficha: el objetivo es descubrir una regla. "
+            if b.problem == "rule"
+            else "En la ficha: vas a predecir fuera del rango de los datos. "
+        ) + (
+            "Antes de entrenar redes, buscá una fórmula: si existe, la vas a ver escrita y "
+            "extrapola; una red no."
+        )
+    asymmetric = b.error_costs in ("false_negative_worse", "false_positive_worse")
+    regression = b.problem in ("value", "rule", "forecast") or (
+        facts is not None and facts.target_task in (TaskType.REGRESSION, TaskType.FORECASTING)
+    )
+    if asymmetric and regression:
+        checks.append(
+            PlanCheck(
+                code="costs_ignored",
+                severity="info",
+                step="task",
+                message="En la ficha hay un error más caro que el otro, pero eso se usa para "
+                "elegir un umbral de decisión en clasificación. En regresión no se aplica: el "
+                "modelo minimiza el error medio en las dos direcciones.",
+            )
         )
     classification = b.problem == "category" or (
         facts is not None and facts.target_task is TaskType.CLASSIFICATION

@@ -207,3 +207,58 @@ def test_patch_values_are_normalized_to_field_types() -> None:
         ]
     )
     assert [c.value for c in normalize_patch(patch).changes] == [True, 5.0, "rule"]
+
+
+# ------------------------------------------------------------------ caso «Sensores»
+
+
+def test_extrapolation_adds_the_formula_step_and_linear_hint() -> None:
+    from perceptron.services.brief import prefers_linear
+
+    brief = UseCaseBrief(problem="value", extrapolate=True)
+    plan = compile_plan(brief, _facts(numeric_inputs=["sensor1", "sensor2"]))
+    assert "formula" in [s.id for s in plan.steps]
+    assert _defaults(plan)["architecture_hint"] == "linear_first"
+    assert prefers_linear(brief) and prefers_linear({"problem": "rule"})
+    assert not prefers_linear(UseCaseBrief(problem="category", extrapolate=True))
+    assert not prefers_linear(None)
+
+
+def test_asymmetric_costs_in_regression_are_flagged_as_ignored() -> None:
+    brief = UseCaseBrief(problem="value", error_costs="false_negative_worse", error_cost_ratio=2)
+    plan = compile_plan(brief, _facts())
+    assert _checks(plan)["costs_ignored"] == "info"
+    assert "threshold" not in [s.id for s in plan.steps]
+    category = UseCaseBrief(problem="category", error_costs="false_negative_worse")
+    binary = _facts(target_task=TaskType.CLASSIFICATION, target_classes=2)
+    assert "costs_ignored" not in _checks(compile_plan(category, binary))
+
+
+def test_leakage_alert_becomes_a_deterministic_relation_with_the_brief() -> None:
+    from perceptron.data.profiling.card import Alert, AlertCode, AlertSeverity, ProfileCard
+    from perceptron.domain.enums import Modality
+    from perceptron.services.brief import contextualize_card
+
+    leak = Alert(
+        code=AlertCode.TARGET_LEAKAGE,
+        severity=AlertSeverity.HIGH,
+        column="sensor1",
+        message="probable fuga",
+        evidence={"association": 0.995},
+    )
+    card = ProfileCard(
+        modality=Modality.TABULAR,
+        num_samples=10,
+        profiled_samples=10,
+        split_counts={},
+        num_features=2,
+        target=None,
+        columns=[],
+        alerts=[leak],
+    )
+    adjusted = contextualize_card(card, {"problem": "value", "extrapolate": True})
+    [alert] = adjusted.alerts
+    assert alert.code is AlertCode.DETERMINISTIC_RELATION and alert.column == "sensor1"
+    assert alert.severity is AlertSeverity.WARNING
+    assert contextualize_card(card, {"problem": "category"}).alerts == [leak]
+    assert contextualize_card(card, None).alerts == [leak]

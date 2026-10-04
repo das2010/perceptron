@@ -42,10 +42,19 @@ from perceptron.agent.models import (
     SuggestPipelineChange,
     ValidateArchspec,
 )
+from perceptron.archspec.defaults import without_linear_shrinkage
 from perceptron.archspec.schema import ArchSpec, Provenance
 from perceptron.archspec.validate import validate_archspec
+from perceptron.catalog.templates import tabular_template
 from perceptron.core.errors import ConflictError
-from perceptron.domain.enums import AgentState, LLMPurpose, Origin, RunStatus
+from perceptron.domain.enums import (
+    AgentState,
+    LLMPurpose,
+    Modality,
+    Origin,
+    RunStatus,
+    TaskType,
+)
 from perceptron.domain.models import AgentRun, ArchSpecRecord, Run, Study, utcnow
 from perceptron.hpo.recommend import recommend_strategy
 from perceptron.hpo.strategy import Budget, HPOStrategy
@@ -58,6 +67,7 @@ from perceptron.llm.errors import (
     LLMUnavailableError,
 )
 from perceptron.llm.privacy import LLMContext, RunSummary
+from perceptron.services.brief import prefers_linear, project_use_case
 from perceptron.services.studies import run_study_managed
 from perceptron.training.config import RESULT_FILE, RunResult
 from perceptron.training.diagnostics import detect
@@ -140,18 +150,55 @@ class AgentRunner:
         """Crea el AgentRun; la propuesta por reglas queda como archspec base (a0)."""
         features.require("llm.agent")
         base, why = self.wf.propose_architecture(dataset_version_id, pipeline_id)
+        archspecs, message = (
+            [base.id],
+            f"Agente iniciado. Arquitectura base por reglas: {base.name}.",
+        )
+        # La ficha pide extrapolar o descubrir una regla (ADR-0040): primero la lineal, que
+        # extrapola; la red queda como alternativa si la lineal no alcanza.
+        linear = (
+            self._linear_base(project_id, base)
+            if prefers_linear(project_use_case(self.ctx, project_id))
+            else None
+        )
+        if linear is not None:
+            archspecs = [linear.id, base.id]
+            message = (
+                "Agente iniciado. La ficha pide extrapolar o descubrir una regla: arquitectura "
+                f"base lineal ({linear.name}); la red {base.name} queda como alternativa."
+            )
+            why = "Las redes aproximan dentro del rango visto; una regla lineal extrapola."
         ar = AgentRun(
             project_id=project_id,
             dataset_version_id=dataset_version_id,
             pipeline_id=pipeline_id,
             limits=(limits or AgentLimits()).model_dump(mode="json"),
             approval=(approval or ApprovalPolicy()).model_dump(mode="json"),
-            archspecs=[base.id],
+            archspecs=archspecs,
             started_at=utcnow(),
         )
-        self._log(ar, "system", f"Agente iniciado. Arquitectura base por reglas: {base.name}.")
-        self._observe(ar, "system", {"base_archspec_id": base.id, "name": base.name, "why": why})
+        first = linear or base
+        self._log(ar, "system", message)
+        self._observe(ar, "system", {"base_archspec_id": first.id, "name": first.name, "why": why})
         return self.repo.add(ar)
+
+    def _linear_base(self, project_id: str, base: ArchSpecRecord) -> ArchSpecRecord | None:
+        """Versión lineal de la arquitectura base (regresión tabular), sin weight decay."""
+        spec = ArchSpec.model_validate(base.spec)
+        if spec.modality is not Modality.TABULAR or spec.task.type is not TaskType.REGRESSION:
+            return None
+        linear = tabular_template(
+            "linear",
+            task=TaskType.REGRESSION,
+            num_classes=None,
+            num_numeric=spec.input.num_numeric or 0,
+            cardinalities=list(spec.input.cardinalities or []),
+            rationale="La ficha pide extrapolar o descubrir una regla: lineal primero.",
+        )
+        linear = without_linear_shrinkage(linear.model_copy(update={"input": spec.input}))
+        if not validate_archspec(linear).valid:
+            return None
+        return self.wf.save_archspec(project_id, linear, origin=Origin.RULES)
 
     def run(self, agent_id: str) -> AgentRun:
         """Avanza hasta terminar, pedir aprobación, detenerse o fallar."""
@@ -328,6 +375,16 @@ class AgentRunner:
         card = wf.profile_card(ar.dataset_version_id)
         limits = self._limits(ar)
         base = self._spec(ar.archspecs[0])
+        # La ficha del caso (ADR-0040) y lo que implica para el agente.
+        use_case = project_use_case(self.ctx, ar.project_id)
+        guidance: list[str] = []
+        if prefers_linear(use_case):
+            guidance.append(
+                "La ficha pide extrapolar o descubrir una regla: las redes aproximan dentro del "
+                "rango visto y no extrapolan. Entrená primero la arquitectura base (lineal); "
+                "probá la red alternativa solo si la lineal no alcanza en validación. En el "
+                "cierre, recomendá buscar la fórmula sugerida en Experimentos."
+            )
         archspecs: dict[str, Any] = {}
         for aid in ar.archspecs:
             record = self.ctx.repo(ArchSpecRecord).get(aid)
@@ -357,6 +414,8 @@ class AgentRunner:
                     "llm_cost_usd": round(max(limits.max_llm_cost_usd - ar.cost_usd, 0), 4),
                 },
                 "approval": self._approval(ar).model_dump(mode="json"),
+                "use_case": use_case,
+                "guidance": guidance,
                 "selection_metric": limits.selection_metric,
                 "direction": "min" if monitor_mode(limits.selection_metric) == "min" else "max",
             },

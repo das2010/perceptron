@@ -185,3 +185,53 @@ def test_agent_repeated_actions_are_not_reexecuted(
     assert ar.iterations == 1 and ar.steps == 5  # launch + curves + 3 repeticiones
     errors = [e for e in ar.log if e["kind"] == "observation" and "error" in (e["data"] or {})]
     assert len(errors) == 2 and "repetida" in errors[0]["data"]["error"]
+
+
+def test_agent_starts_linear_when_the_brief_asks_to_extrapolate(
+    wf: Workflow, fake_llm: FakeLLMProvider, tmp_path: Path
+) -> None:
+    """Caso «Sensores» (ADR-0040): la ficha pide extrapolar → base lineal, la red de alternativa,
+    y el agente recibe la ficha y la guía."""
+    import numpy as np
+    import polars as pl
+
+    from perceptron.services.wizard import Wizard
+
+    rng = np.random.default_rng(0)
+    s1, s2 = rng.uniform(0, 1.5, 300), rng.uniform(1.2, 2.3, 300)
+    path = tmp_path / "sensores.csv"
+    pl.DataFrame({"sensor1": s1, "sensor2": s2, "resultado": s1 * (1 + np.sqrt(s2))}).write_csv(
+        path
+    )
+    p = wf.ctx.projects.add(Project(name="sensores"))
+    wf.ctx.files.init_project(p)
+    dv = wf.ingest(p.id, path)
+    wizard = Wizard(wf)
+    draft = wizard.get(p.id)
+    wizard.update(
+        p.id,
+        version=draft.version,
+        values={"brief": {"problem": "value", "extrapolate": True}},
+    )
+    pipe = wf.propose_pipeline(dv.id).id
+    runner = AgentRunner(wf)
+    ar = runner.start(p.id, dv.id, pipe, limits=LIMITS)
+    assert len(ar.archspecs) == 2
+    linear = ArchSpec.model_validate(wf.ctx.repo(ArchSpecRecord).get(ar.archspecs[0]).spec)
+    assert linear.name == "tabular-linear" and linear.optimizer.weight_decay == 0.0
+    assert "lineal" in ar.log[0]["message"]
+
+    seen: list[dict[str, Any]] = []
+
+    def finish_now(request: LLMRequest) -> dict[str, Any]:
+        seen.append(datos(request)["constraints"])
+        return {
+            "log_entry": "Cierro sin entrenar.",
+            "action": {"tool": "finish", "summary": "fin"},
+        }
+
+    # Primero captura el contexto (cierre rechazado: no hay runs), después entrena la base y cierra.
+    fake_llm.script("agent", finish_now, launch_base, FINISH)
+    runner.run(ar.id)
+    assert seen and seen[0]["use_case"]["extrapolate"] is True
+    assert "extrapolar" in seen[0]["guidance"][0]
