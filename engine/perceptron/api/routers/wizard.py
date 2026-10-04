@@ -179,3 +179,14 @@ async def copilot(ws: WebSocket, project_id: str) -> None:
     finally:
         with contextlib.suppress(RuntimeError):
             await ws.close()
+
+
+@router.post("/projects/{project_id}/draft/reconcile", operation_id="draftReconcile")
+def draft_reconcile(project_id: str, ctx: Ctx) -> IntakeReply:
+    """Compara la ficha con el perfil de los datos (ADR-0040, fase 2).
+
+    Propone correcciones o preguntas cuando lo declarado no coincide con lo que se mide; no
+    modifica el borrador (se acepta con `PATCH /draft`). Sin datos elegidos, 422; sin LLM, 503.
+    """
+    patch, call_id = Wizard(Workflow(ctx)).reconcile(project_id)
+    return IntakeReply(patch=patch, llm_call_id=call_id)

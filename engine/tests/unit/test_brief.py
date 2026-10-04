@@ -7,6 +7,8 @@ import polars as pl
 
 from perceptron.domain.enums import TaskType
 from perceptron.services.brief import (
+    CONDITIONAL,
+    PLAN_VERSION,
     STEPS,
     BriefChange,
     BriefPatch,
@@ -15,8 +17,11 @@ from perceptron.services.brief import (
     _collinear_pairs,
     apply_patch,
     compile_plan,
+    diff_plans,
     validate_patch,
 )
+
+BASE = [s for s in STEPS if s not in CONDITIONAL]
 
 
 def _facts(**kw: object) -> DataFacts:
@@ -41,7 +46,8 @@ def _checks(plan: object) -> dict[str, str]:
 
 def test_unknown_case_keeps_the_standard_plan() -> None:
     plan = compile_plan(None, None)
-    assert [s.id for s in plan.steps] == list(STEPS) and not plan.adapted
+    assert [s.id for s in plan.steps] == BASE and not plan.adapted
+    assert plan.version == PLAN_VERSION
     assert not plan.defaults and not plan.checks
 
 
@@ -103,7 +109,7 @@ def test_split_checks_follow_the_brief() -> None:
 def test_out_of_catalog_and_mismatch() -> None:
     other = compile_plan(UseCaseBrief(problem="other", problem_other="recomendar películas"), None)
     assert _checks(other) == {"out_of_catalog": "info"}
-    assert [s.id for s in other.steps] == list(STEPS)
+    assert [s.id for s in other.steps] == BASE
     mismatch = compile_plan(
         UseCaseBrief(problem="value"), _facts(target_task=TaskType.CLASSIFICATION)
     )
@@ -123,3 +129,58 @@ def test_collinearity_is_measured_on_ranks() -> None:
     s1 = np.linspace(0.01, 1, 60)
     df = pl.DataFrame({"S1": s1, "S2": np.sqrt(s1), "ruido": np.random.default_rng(0).random(60)})
     assert _collinear_pairs(df, ["S1", "S2", "ruido"]) == [["S1", "S2"]]
+
+
+# ------------------------------------------------------------------ fase 2
+
+
+def test_rule_adds_the_formula_step_after_quality() -> None:
+    plan = compile_plan(UseCaseBrief(problem="rule"), _facts(numeric_inputs=["numero"]))
+    ids = [s.id for s in plan.steps]
+    assert ids.index("formula") == ids.index("quality") + 1
+    assert "fórmula" in (plan.steps[ids.index("formula")].reason or "")
+    # Sin entradas numéricas (p. ej. imágenes) no hay fórmula que buscar.
+    images = _facts(modality="image", numeric_inputs=[], target_task=TaskType.CLASSIFICATION)
+    assert "formula" not in [s.id for s in compile_plan(UseCaseBrief(problem="rule"), images).steps]
+
+
+def test_asymmetric_binary_costs_add_the_threshold_step() -> None:
+    brief = UseCaseBrief(
+        problem="category", error_costs="false_negative_worse", error_cost_ratio=10
+    )
+    binary = _facts(target_task=TaskType.CLASSIFICATION, target_classes=2)
+    ids = [s.id for s in compile_plan(brief, binary).steps]
+    assert ids.index("threshold") == ids.index("task") + 1
+    multi = compile_plan(brief, _facts(target_task=TaskType.CLASSIFICATION, target_classes=4))
+    assert "threshold" not in [s.id for s in multi.steps]
+    assert _checks(multi)["threshold_multiclass"] == "info"
+    assert "threshold" not in [
+        s.id for s in compile_plan(UseCaseBrief(problem="category"), binary).steps
+    ]
+
+
+def test_dates_are_reconciled_with_the_brief() -> None:
+    facts = _facts(datetime_columns=["fecha"])
+    assert _checks(compile_plan(None, facts))["dates_undeclared"] == "info"
+    assert _checks(compile_plan(UseCaseBrief(has_time=False), facts))["dates_contradiction"] == (
+        "warning"
+    )
+    assert not {"dates_undeclared", "dates_contradiction"} & set(
+        _checks(compile_plan(UseCaseBrief(has_time=True), facts))
+    )
+    assert (
+        _checks(compile_plan(UseCaseBrief(labels_available=False), _facts()))[
+            "labels_contradiction"
+        ]
+        == "info"
+    )
+
+
+def test_plan_diff_lists_what_changed() -> None:
+    before = compile_plan(UseCaseBrief(problem="value"), _facts(numeric_inputs=["x"]))
+    after = compile_plan(
+        UseCaseBrief(problem="rule", extrapolate=True), _facts(numeric_inputs=["x"])
+    )
+    diff = diff_plans(before, after)
+    assert diff.added_steps == ["formula"] and "architecture_hint" in diff.changed_defaults
+    assert diff_plans(after, after).empty and diff_plans(None, after).empty

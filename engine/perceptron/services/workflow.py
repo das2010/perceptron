@@ -55,6 +55,7 @@ from perceptron.domain.models import (
     Study,
     utcnow,
 )
+from perceptron.evaluation.cost import CostSpec
 from perceptron.evaluation.evaluate import (
     EVALUATION_DIR,
     EVALUATION_FILE,
@@ -556,6 +557,20 @@ class Workflow:
     def _run_dir(self, run: Run) -> Path:
         return self.ctx.settings.paths.project(run.project_id).run(run.id)
 
+    def _cost_spec(self, project_id: str) -> CostSpec | None:
+        """Costos de error de la ficha del caso (ADR-0040), si declara cuál es peor y cuánto."""
+        from perceptron.services.brief import project_use_case
+
+        brief = project_use_case(self.ctx, project_id) or {}
+        worse: dict[str, Literal["false_negative", "false_positive"]] = {
+            "false_negative_worse": "false_negative",
+            "false_positive_worse": "false_positive",
+        }
+        kind = worse.get(str(brief.get("error_costs")))
+        if kind is None or not brief.get("error_cost_ratio"):
+            return None
+        return CostSpec(worse=kind, ratio=float(brief["error_cost_ratio"]))
+
     def evaluate(self, run_id: str) -> tuple[Evaluation, EvaluationReport]:
         run = self.ctx.repo(Run).get(run_id)
         dv = self.dataset(run.dataset_version_id)
@@ -567,7 +582,7 @@ class Workflow:
                 json.loads((run_dir / EVALUATION_DIR / EVALUATION_FILE).read_text(encoding="utf-8"))
             )
         else:
-            report = evaluate_run(run_dir, dataset_dir)
+            report = evaluate_run(run_dir, dataset_dir, cost=self._cost_spec(run.project_id))
         evaluation = Evaluation(
             run_id=run.id,
             split=report.split,

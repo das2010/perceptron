@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import torch
 from pydantic import BaseModel, Field
 from torch.utils.data import DataLoader
@@ -19,6 +20,7 @@ from perceptron.data.pipeline.pipeline import FittedPipeline
 from perceptron.data.view import DatasetView, Purpose
 from perceptron.domain.enums import ModelStage, TaskType
 from perceptron.domain.models import ModelVersion
+from perceptron.evaluation.cost import CostSpec, cost_threshold
 from perceptron.evaluation.metrics import ClassificationMetrics, RegressionMetrics
 from perceptron.storage.filesystem import write_json
 from perceptron.tasks import get_adapter
@@ -45,7 +47,9 @@ class EvaluationReport(BaseModel):
     checkpoint: str
 
 
-def evaluate_run(run_dir: Path, dataset_dir: Path, *, split: str = "test") -> EvaluationReport:
+def evaluate_run(
+    run_dir: Path, dataset_dir: Path, *, split: str = "test", cost: CostSpec | None = None
+) -> EvaluationReport:
     trained = load_trained(run_dir)
     view = DatasetView(dataset_dir)
     ds = make_dataset(view, trained.pipeline, split, train=False, purpose=Purpose.FINAL_EVALUATION)
@@ -62,6 +66,22 @@ def evaluate_run(run_dir: Path, dataset_dir: Path, *, split: str = "test") -> Ev
             calibration = adapter.calibrate(trained.model, loader, trained.spec)
     result = adapter.evaluate(preds, trained.spec, trained.pipeline, calibration)
     detail = dict(result.detail)
+    classes = trained.pipeline.classes or []
+    if cost is not None and trained.task is TaskType.CLASSIFICATION and len(classes) == 2:
+        # Umbral por costo (ADR-0040): se elige en validación, se informa en test.
+        val_ds = make_dataset(
+            view, trained.pipeline, "val", train=False, purpose=Purpose.FINAL_EVALUATION
+        )
+        val = predict(trained, val_ds)
+        if val.proba is not None and preds.proba is not None and val.y_true is not None:
+            detail["cost_threshold"] = cost_threshold(
+                val.y_true.astype(int),
+                val.proba[:, 1],
+                np.asarray(preds.y_true).astype(int),
+                preds.proba[:, 1],
+                cost,
+                positive=str(classes[1]),
+            )
     report = EvaluationReport(
         run_id=run_id,
         split=split,

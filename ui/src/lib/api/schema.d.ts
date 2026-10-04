@@ -1670,6 +1670,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/draft/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft Reconcile
+         * @description Compara la ficha con el perfil de los datos (ADR-0040, fase 2).
+         *
+         *     Propone correcciones o preguntas cuando lo declarado no coincide con lo que se mide; no
+         *     modifica el borrador (se acepta con `PATCH /draft`). Sin datos elegidos, 422; sin LLM, 503.
+         */
+        post: operations["draftReconcile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/duplicate": {
         parameters: {
             query?: never;
@@ -4783,6 +4806,8 @@ export interface components {
             /** Pipeline Id */
             pipeline_id?: string | null;
             plan?: components["schemas"]["WizardPlan"] | null;
+            /** @description Qué cambió en la última recompilación del plan */
+            plan_diff?: components["schemas"]["PlanDiff"] | null;
             /**
              * Strategy
              * @description HPOStrategy elegida
@@ -6433,7 +6458,7 @@ export interface components {
              * Step
              * @enum {string}
              */
-            step: "goal" | "data" | "quality" | "labeling" | "task" | "architecture" | "hpo" | "budget" | "review";
+            step: "goal" | "data" | "quality" | "formula" | "labeling" | "task" | "threshold" | "architecture" | "hpo" | "budget" | "review";
         };
         /** PlanDefault */
         PlanDefault: {
@@ -6448,9 +6473,28 @@ export interface components {
              * Step
              * @enum {string}
              */
-            step: "goal" | "data" | "quality" | "labeling" | "task" | "architecture" | "hpo" | "budget" | "review";
+            step: "goal" | "data" | "quality" | "formula" | "labeling" | "task" | "threshold" | "architecture" | "hpo" | "budget" | "review";
             /** Value */
             value: string;
+        };
+        /**
+         * PlanDiff
+         * @description Qué cambió del plan respecto del anterior (para mostrarlo en la UI).
+         */
+        PlanDiff: {
+            /** Added Steps */
+            added_steps?: string[];
+            /** Changed Defaults */
+            changed_defaults?: string[];
+            /**
+             * New Checks
+             * @description Mensajes de avisos nuevos
+             */
+            new_checks?: string[];
+            /** Removed Steps */
+            removed_steps?: string[];
+            /** Resolved Checks */
+            resolved_checks?: string[];
         };
         /** PlanStep */
         PlanStep: {
@@ -6458,7 +6502,7 @@ export interface components {
              * Id
              * @enum {string}
              */
-            id: "goal" | "data" | "quality" | "labeling" | "task" | "architecture" | "hpo" | "budget" | "review";
+            id: "goal" | "data" | "quality" | "formula" | "labeling" | "task" | "threshold" | "architecture" | "hpo" | "budget" | "review";
             /**
              * Reason
              * @description Por qué el plan incluye o saltea el paso
@@ -8729,6 +8773,12 @@ export interface components {
             skipped?: components["schemas"]["PlanStep"][];
             /** Steps */
             steps: components["schemas"]["PlanStep"][];
+            /**
+             * Version
+             * @description Versión de las reglas que lo compilaron
+             * @default 1
+             */
+            version: number;
         };
         /** WorkerInfo */
         WorkerInfo: {
@@ -12218,6 +12268,37 @@ export interface operations {
                 "application/json": components["schemas"]["IntakeRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntakeReply"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draftReconcile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

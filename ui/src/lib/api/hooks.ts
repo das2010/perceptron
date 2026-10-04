@@ -599,6 +599,21 @@ export type UseCaseBrief = Schemas["UseCaseBrief"];
 export type WizardPlan = Schemas["WizardPlan"];
 export type BriefPatch = Schemas["BriefPatch"];
 export type IntakeTurn = Schemas["IntakeTurn"];
+export type PlanDiff = Schemas["PlanDiff"];
+
+/** Reconciliación de la ficha con el perfil de los datos (ADR-0040, fase 2). */
+export function useDraftReconcile(projectId: string) {
+  return useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/draft/reconcile", {
+          params: { path: { project_id: projectId } },
+        }),
+      ),
+  });
+}
 
 /** Entrevista del wizard (ADR-0040): propone cambios a la ficha; no aplica nada. */
 export function useDraftIntake(projectId: string) {

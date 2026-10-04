@@ -10,17 +10,21 @@ import { useUiStore } from "@/app/store";
 import { resetApiClient } from "@/lib/api/client";
 import { mockEngine, project } from "@/test/engine";
 
+// Todos los pasos (como `steps` del API); «formula» y «threshold» son condicionales.
 const STEPS = [
   "goal",
   "data",
   "quality",
+  "formula",
   "labeling",
   "task",
+  "threshold",
   "architecture",
   "hpo",
   "budget",
   "review",
 ];
+const BASE = STEPS.filter((s) => s !== "formula" && s !== "threshold");
 
 function draft(
   step = "goal",
@@ -33,7 +37,7 @@ function draft(
     steps: STEPS,
     values,
     plan: {
-      steps: STEPS.map((id) => ({ id, reason: null })),
+      steps: BASE.map((id) => ({ id, reason: null })),
       skipped: [],
       defaults: [],
       checks: [],
@@ -218,7 +222,7 @@ describe("wizard adaptativo (ADR-0040)", () => {
 
   it("muestra el plan: salteados, por qué, avisos y defaults que se pueden usar", async () => {
     const plan = {
-      steps: STEPS.filter((s) => s !== "labeling").map((id) => ({
+      steps: BASE.filter((s) => s !== "labeling").map((id) => ({
         id,
         reason: id === "task" ? "En la ficha: perder una falla es lo peor." : null,
       })),
@@ -293,5 +297,138 @@ describe("wizard adaptativo (ADR-0040)", () => {
       .json();
     expect(body.origin).toBe("copilot");
     expect(body.values.brief).toMatchObject({ problem: "category", extrapolate: false });
+  });
+});
+
+describe("wizard adaptativo, fase 2", () => {
+  beforeEach(() => resetApiClient());
+  afterEach(() => vi.unstubAllGlobals());
+
+  const dataset = {
+    id: "dsv_1",
+    project_id: "prj_1",
+    content_hash: "abcdef0123456789",
+    num_samples: 108,
+    size_bytes: 1,
+    modality: "tabular",
+    target: "Salida",
+    version: 1,
+    created_at: "2026-10-04T10:00:00Z",
+  };
+  const planWith = (extra: string[]) => ({
+    steps: [
+      "goal",
+      "data",
+      "quality",
+      ...extra,
+      "task",
+      "architecture",
+      "hpo",
+      "budget",
+      "review",
+    ].map((id) => ({
+      id,
+      reason: id === "formula" ? "En la ficha: el objetivo es descubrir una regla." : null,
+    })),
+    adapted: true,
+  });
+
+  it("muestra los cambios del plan y el paso Fórmula con la búsqueda", async () => {
+    const values = {
+      dataset_version_id: "dsv_1",
+      brief: { problem: "rule" },
+      plan_diff: {
+        added_steps: ["formula"],
+        removed_steps: [],
+        changed_defaults: ["architecture_hint"],
+        new_checks: [],
+        resolved_checks: [],
+      },
+    };
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/draft": () => draft("formula", values, 2, planWith(["formula"])),
+      "GET /api/v1/projects/prj_1/datasets": () => [dataset],
+      "GET /api/v1/projects/prj_1/symbolic": () => [],
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/wizard");
+    const banner = await screen.findByRole("status", { name: "El plan cambió" });
+    expect(banner).toHaveTextContent("Nuevo paso: Fórmula sugerida");
+    expect(banner).toHaveTextContent("Cambió la sugerencia de arquitectura");
+    expect(
+      screen.getByText("En la ficha: el objetivo es descubrir una regla."),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Buscar fórmula" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Entendido" }));
+    expect(screen.queryByRole("status", { name: "El plan cambió" })).not.toBeInTheDocument();
+  });
+
+  it("la reconciliación propone cambios desde Calidad y se aceptan", async () => {
+    const values = {
+      dataset_version_id: "dsv_1",
+      brief: { problem: "rule", independent_inputs: true },
+    };
+    const { calls } = mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/draft": () => draft("quality", values, 3, planWith([])),
+      "PATCH /api/v1/projects/prj_1/draft": () => draft("quality", values, 4, planWith([])),
+      "GET /api/v1/datasets/dsv_1/profile": () => new Response("{}", { status: 404 }),
+      "POST /api/v1/projects/prj_1/draft/reconcile": () => ({
+        llm_call_id: "llc_2",
+        patch: {
+          changes: [
+            {
+              field: "independent_inputs",
+              value: false,
+              rationale: "S2 es la raíz de S1: varían juntas.",
+            },
+          ],
+          assumptions: [],
+          next_question: null,
+        },
+      }),
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/wizard");
+    await user.click(await screen.findByRole("button", { name: "Revisar la ficha" }));
+    expect(await screen.findByText("— S2 es la raíz de S1: varían juntas.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Aceptar cambios" }));
+    await waitFor(() => expect(calls.some((r) => r.method === "PATCH")).toBe(true));
+    const body = await calls
+      .find((r) => r.method === "PATCH")
+      ?.clone()
+      .json();
+    expect(body.origin).toBe("copilot");
+    expect(body.values.brief).toMatchObject({ independent_inputs: false });
+  });
+
+  it("el paso Umbral pide cuántas veces peor es el error", async () => {
+    const values = { brief: { problem: "category", error_costs: "false_negative_worse" } };
+    const { calls } = mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/draft": () =>
+        draft("threshold", values, 5, planWith(["threshold"])),
+      "PATCH /api/v1/projects/prj_1/draft": () =>
+        draft("threshold", values, 6, planWith(["threshold"])),
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/wizard");
+    expect(await screen.findByText(/no se puede calcular el umbral por costo/)).toBeInTheDocument();
+    const ratio = screen.getByLabelText("¿Cuántas veces peor?");
+    await user.type(ratio, "10");
+    await user.tab();
+    await waitFor(() => expect(calls.some((r) => r.method === "PATCH")).toBe(true));
+    const body = await calls
+      .find((r) => r.method === "PATCH")
+      ?.clone()
+      .json();
+    expect(body.values.brief).toMatchObject({
+      error_costs: "false_negative_worse",
+      error_cost_ratio: 10,
+    });
   });
 });

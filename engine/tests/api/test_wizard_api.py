@@ -103,7 +103,8 @@ def test_brief_compiles_the_plan_and_system_fields_are_protected(
 ) -> None:
     pid = _project(client)
     view = _ok(client.get(f"{API}/projects/{pid}/draft"))
-    assert [s["id"] for s in view["plan"]["steps"]] == view["steps"]
+    base = [s for s in view["steps"] if s not in ("formula", "threshold")]  # condicionales
+    assert [s["id"] for s in view["plan"]["steps"]] == base
     assert not view["plan"]["adapted"]
     brief = {"problem": "category", "error_costs": "false_negative_worse", "error_cost_ratio": 10}
     view = _ok(
@@ -179,3 +180,62 @@ def test_intake_without_llm_is_unavailable(client: TestClient) -> None:
     pid = _project(client)
     r = client.post(f"{API}/projects/{pid}/draft/intake", json={"message": "hola"})
     assert r.status_code == 503 and r.json()["code"] == "llm_unavailable"
+
+
+def test_plan_diff_shows_what_changed(client: TestClient) -> None:
+    pid = _project(client)
+    view = _ok(client.get(f"{API}/projects/{pid}/draft"))
+    for brief in ({"problem": "value"}, {"problem": "rule", "extrapolate": True}):
+        view = _ok(
+            client.patch(
+                f"{API}/projects/{pid}/draft",
+                json={"version": view["draft"]["version"], "values": {"brief": brief}},
+            )
+        )
+    diff = view["values"]["plan_diff"]
+    assert diff["added_steps"] == ["formula"] and "architecture_hint" in diff["changed_defaults"]
+    assert "formula" in [s["id"] for s in view["plan"]["steps"]]
+
+
+def test_reconcile_compares_the_brief_with_the_data(
+    client: TestClient, fake_llm: FakeLLMProvider, fixtures_dir: Any
+) -> None:
+    pid = _project(client)
+    r = client.post(f"{API}/projects/{pid}/draft/reconcile")
+    assert r.status_code == 422 and r.json()["details"]["reason"] == "no_dataset"
+    src = _ok(
+        client.post(
+            f"{API}/projects/{pid}/sources",
+            json={"path": str(fixtures_dir / "uc01_churn" / "churn.csv")},
+        ),
+        201,
+    )
+    dv = _ok(client.post(f"{API}/sources/{src['id']}/ingest", json={"target": "churn"}), 201)
+    view = _ok(client.get(f"{API}/projects/{pid}/draft"))
+    view = _ok(
+        client.patch(
+            f"{API}/projects/{pid}/draft",
+            json={
+                "version": view["draft"]["version"],
+                "values": {"dataset_version_id": dv["id"], "brief": {"problem": "value"}},
+            },
+        )
+    )
+    assert "task_mismatch" in [c["code"] for c in view["plan"]["checks"]]  # también sin LLM
+    fake_llm.script(
+        "copilot",
+        {
+            "changes": [
+                {
+                    "field": "problem",
+                    "value": "category",
+                    "rationale": "El objetivo «churn» tiene dos clases: es una categoría.",
+                }
+            ],
+            "next_question": None,
+        },
+    )
+    reply = _ok(client.post(f"{API}/projects/{pid}/draft/reconcile"))
+    assert reply["patch"]["changes"][0]["value"] == "category"
+    after = _ok(client.get(f"{API}/projects/{pid}/draft"))
+    assert after["draft"]["version"] == view["draft"]["version"]  # nada se aplicó

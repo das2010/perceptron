@@ -46,7 +46,16 @@ import {
 } from "@/lib/api/hooks";
 import { cn } from "@/lib/cn";
 
-import { BriefPanel, PlanChecks, PlanSuggestion } from "./BriefPanel";
+import { SymbolicCard } from "@/features/experiments/SymbolicCard";
+
+import {
+  BriefPanel,
+  PlanChecks,
+  PlanDiffBanner,
+  PlanSuggestion,
+  ReconcileCard,
+  ThresholdStep,
+} from "./BriefPanel";
 
 const METRICS: Record<string, string[]> = {
   classification: ["val_loss", "val_accuracy", "val_f1_macro", "val_recall_macro", "val_roc_auc"],
@@ -567,6 +576,7 @@ export function WizardPage() {
           </li>
         ))}
       </ol>
+      <PlanDiffBanner diff={values.plan_diff} />
       {(plan.skipped ?? []).map((s) => (
         <p key={s.id} className="text-xs text-muted">
           {t("wizard.plan.skipped", { step: t(`wizard.step.${s.id}`), reason: s.reason ?? "" })}
@@ -598,10 +608,43 @@ export function WizardPage() {
         {step === "data" && <StepData values={values} save={save} />}
         {step === "quality" &&
           (values.dataset_version_id ? (
-            <ProfileView datasetVersionId={values.dataset_version_id} />
+            <div className="space-y-4">
+              {values.brief && (
+                <ReconcileCard
+                  projectId={projectId}
+                  brief={values.brief}
+                  save={(brief, origin) => save({ brief }, origin)}
+                />
+              )}
+              <ProfileView datasetVersionId={values.dataset_version_id} />
+            </div>
           ) : (
             <EmptyState>{t("train.noData")}</EmptyState>
           ))}
+        {step === "formula" &&
+          (values.dataset_version_id ? (
+            <SymbolicCard
+              projectId={projectId}
+              runs={[]}
+              datasetVersionId={values.dataset_version_id}
+            />
+          ) : (
+            <EmptyState>{t("train.noData")}</EmptyState>
+          ))}
+        {step === "threshold" && (
+          <>
+            <ThresholdStep
+              brief={values.brief ?? ({} as UseCaseBrief)}
+              save={(brief, origin) => save({ brief }, origin)}
+            />
+            <PlanSuggestion
+              plan={plan}
+              field="target_metric"
+              current={values.target_metric ?? null}
+              onUse={(v) => save({ target_metric: v })}
+            />
+          </>
+        )}
         {step === "labeling" && (
           <p className="text-sm">
             {values.target

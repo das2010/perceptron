@@ -50,6 +50,19 @@ With the sheet and the data, the wizard **adapts the plan**:
 If the case doesn't fit what Perceptron solves, the wizard says so and continues with the standard
 steps.
 
+Also:
+
+- In **Quality**, **Check the case sheet** compares what you said with what the data show (for
+  example, inputs declared independent that actually vary together) and proposes corrections to
+  accept or discard.
+- If the goal is to discover a rule, the **Suggested formula** step appears before training.
+- If one error is worse than the other in a two-class classification, **Decision threshold**
+  appears: you say how many times worse it is, and the evaluation picks on validation the
+  threshold that minimizes the cost and shows it on the test set next to the 50 % one
+  (**Threshold by error cost**, on the run page).
+- When the plan changes, a **The plan changed** notice says which steps were added or removed and
+  which warnings are new or resolved.
+
 ## Architectures
 
 ### Proposals: by rules or by LLM

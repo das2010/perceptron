@@ -3663,6 +3663,17 @@
               }
             ]
           },
+          "plan_diff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanDiff"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qué cambió en la última recompilación del plan"
+          },
           "strategy": {
             "anyOf": [
               {
@@ -7824,8 +7835,10 @@
               "goal",
               "data",
               "quality",
+              "formula",
               "labeling",
               "task",
+              "threshold",
               "architecture",
               "hpo",
               "budget",
@@ -7864,8 +7877,10 @@
               "goal",
               "data",
               "quality",
+              "formula",
               "labeling",
               "task",
+              "threshold",
               "architecture",
               "hpo",
               "budget",
@@ -7888,6 +7903,49 @@
         "title": "PlanDefault",
         "type": "object"
       },
+      "PlanDiff": {
+        "description": "Qué cambió del plan respecto del anterior (para mostrarlo en la UI).",
+        "properties": {
+          "added_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Added Steps",
+            "type": "array"
+          },
+          "changed_defaults": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed Defaults",
+            "type": "array"
+          },
+          "new_checks": {
+            "description": "Mensajes de avisos nuevos",
+            "items": {
+              "type": "string"
+            },
+            "title": "New Checks",
+            "type": "array"
+          },
+          "removed_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Removed Steps",
+            "type": "array"
+          },
+          "resolved_checks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Resolved Checks",
+            "type": "array"
+          }
+        },
+        "title": "PlanDiff",
+        "type": "object"
+      },
       "PlanStep": {
         "properties": {
           "id": {
@@ -7895,8 +7953,10 @@
               "goal",
               "data",
               "quality",
+              "formula",
               "labeling",
               "task",
+              "threshold",
               "architecture",
               "hpo",
               "budget",
@@ -13776,6 +13836,12 @@
             },
             "title": "Steps",
             "type": "array"
+          },
+          "version": {
+            "default": 1,
+            "description": "Versión de las reglas que lo compilaron",
+            "title": "Version",
+            "type": "integer"
           }
         },
         "required": [
@@ -19204,6 +19270,49 @@
           }
         },
         "summary": "Draft Intake",
+        "tags": [
+          "wizard"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/draft/reconcile": {
+      "post": {
+        "description": "Compara la ficha con el perfil de los datos (ADR-0040, fase 2).\n\nPropone correcciones o preguntas cuando lo declarado no coincide con lo que se mide; no\nmodifica el borrador (se acepta con `PATCH /draft`). Sin datos elegidos, 422; sin LLM, 503.",
+        "operationId": "draftReconcile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeReply"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Draft Reconcile",
         "tags": [
           "wizard"
         ]

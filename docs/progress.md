@@ -42,6 +42,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | Archivos con coma decimal (`0,25` con separador `;` o `|`) se leen como números; corregir texto a numérica convierte los valores o responde 422 (antes, perfil con HTTP 500) | ✅ |
 | Fórmula sugerida: regresión simbólica (PyOperon) como modelo de referencia en Experimentos, con prueba de valores y copia a Python/Excel (ADR-0039) | ✅ |
 | Wizard adaptativo (ADR-0040, fase 1): ficha del caso con entrevista aceptable, hechos medidos de los datos y plan compilado (pasos, defaults con «por qué», chequeos) | ✅ |
+| Wizard adaptativo (ADR-0040, fase 2): reconciliación de la ficha con los datos (reglas y LLM), pasos condicionales Fórmula sugerida y Umbral de decisión, umbral por costo en la evaluación, aviso de cambios del plan, golden tests con LLM real | ✅ |
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 
