@@ -17,6 +17,7 @@ import {
 } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { useProjectId } from "@/features/projects/ProjectLayout";
+import { DEFAULT_EPOCHS, suggestEpochs } from "@/features/train/epochs";
 import {
   useCreateRemoteStudy,
   useCreateStudy,
@@ -138,7 +139,7 @@ export function TrainPage() {
   const [proposals, setProposals] = useState<ArchProposals | null>(null);
   const [archspecId, setArchspecId] = useState<string>("");
   const [trials, setTrials] = useState(10);
-  const [epochs, setEpochs] = useState(15);
+  const [epochs, setEpochs] = useState(DEFAULT_EPOCHS);
   const [strategy, setStrategy] = useState<HPOStrategy | null>(null);
 
   const proposePipeline = useProposePipeline(projectId);
@@ -238,6 +239,7 @@ export function TrainPage() {
                 onChoose={() => {
                   setArchspecId(p.archspec.id ?? "");
                   setStrategy(null);
+                  setEpochs(suggestEpochs(p.archspec.spec, p.estimates?.epoch_time_s, trials));
                 }}
               />
             ))}
