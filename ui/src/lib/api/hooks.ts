@@ -595,6 +595,25 @@ export function useAudit(projectId: string) {
 
 export type DraftView = Schemas["DraftView"];
 export type DraftValues = Schemas["DraftValues"];
+export type UseCaseBrief = Schemas["UseCaseBrief"];
+export type WizardPlan = Schemas["WizardPlan"];
+export type BriefPatch = Schemas["BriefPatch"];
+export type IntakeTurn = Schemas["IntakeTurn"];
+
+/** Entrevista del wizard (ADR-0040): propone cambios a la ficha; no aplica nada. */
+export function useDraftIntake(projectId: string) {
+  return useMutation({
+    mutationFn: async (body: { message: string; history: IntakeTurn[] }) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/draft/intake", {
+          params: { path: { project_id: projectId } },
+          body,
+        }),
+      ),
+  });
+}
 
 export function useDraft(projectId: string | undefined) {
   return useQuery({

@@ -32,6 +32,25 @@ sugeridos al borrador** con **Aceptar** / **Descartar**.
 Sin LLM configurado, o con privacidad L0, el copiloto no está disponible y el wizard sigue funcionando
 con recomendaciones por reglas.
 
+### Ficha del caso y plan adaptado
+
+En **Objetivo** está la **Ficha del caso**: qué tipo de problema es, qué se predice, qué error es
+peor (y cuánto), si hay fechas o entidades repetidas, si las entradas varían por separado, si vas a
+predecir fuera del rango de los datos y dónde se va a usar el resultado. Podés completarla a mano o
+**contarle tu caso al asistente**: propone cómo completarla, te pregunta lo que falta y nada se
+aplica hasta que tocás **Aceptar cambios**.
+
+Con la ficha y los datos, el wizard **adapta el plan**:
+
+- saltea pasos que no hacen falta (por ejemplo, **Etiquetado** si ya hay etiquetas) y dice por qué;
+- sugiere la tarea, la métrica y el tipo de arquitectura, cada uno con su **Por qué** y un botón
+  **Usar**;
+- avisa antes de entrenar si algo no cierra: entradas que varían juntas cuando querés descubrir una
+  regla, partición aleatoria con datos temporales o con entidades repetidas, pocas filas.
+
+Si el caso no encaja en lo que Perceptron resuelve, el wizard lo dice y sigue con los pasos
+estándar.
+
 ## Arquitecturas
 
 ### Propuestas: por reglas o por LLM

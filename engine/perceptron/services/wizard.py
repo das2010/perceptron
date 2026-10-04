@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic import ValidationError as PydanticValidationError
@@ -21,26 +21,23 @@ from perceptron.domain.enums import LLMPurpose, TaskType
 from perceptron.domain.models import ProjectDraft
 from perceptron.llm.privacy import LLMContext
 from perceptron.llm.types import Message
+from perceptron.services.brief import (
+    STEPS,
+    BriefField,
+    BriefPatch,
+    DataFacts,
+    UseCaseBrief,
+    WizardPlan,
+    compile_plan,
+    data_facts,
+    validate_patch,
+)
 
 if TYPE_CHECKING:
     from perceptron.services.workflow import Workflow
 
 logger = logging.getLogger(__name__)
 
-STEPS = (
-    "goal",
-    "data",
-    "quality",
-    "labeling",
-    "task",
-    "architecture",
-    "hpo",
-    "budget",
-    "review",
-)
-Step = Literal[
-    "goal", "data", "quality", "labeling", "task", "architecture", "hpo", "budget", "review"
-]
 HISTORY_LIMIT = 200
 CHAT_TURNS = 8
 
@@ -67,6 +64,14 @@ class DraftValues(BaseModel):
     device: Literal["cpu", "cuda", "rocm", "xpu", "mps"] | None = None
     autonomous: bool | None = Field(default=None, description="Lanzar con el agente autónomo")
     llm_budget_usd: float | None = Field(default=None, ge=0)
+    # Wizard adaptativo (ADR-0040). La ficha la edita la persona (o acepta lo del LLM); los
+    # hechos y el plan los calcula el sistema.
+    brief: UseCaseBrief | None = None
+    data_facts: DataFacts | None = None
+    plan: WizardPlan | None = None
+
+
+SYSTEM_FIELDS = ("data_facts", "plan")
 
 
 # Campos que el copiloto puede proponer cambiar (los ids los fija la UI al elegir).
@@ -123,12 +128,10 @@ class Wizard:
         found = list(self.repo.list(filters={"project_id": project_id}, limit=1))
         if found:
             return found[0]
-        draft = ProjectDraft(
-            project_id=project_id,
-            values=DraftValues(goal=project.goal or None).model_dump(
-                mode="json", exclude_none=True
-            ),
-        )
+        values = DraftValues(goal=project.goal or None).model_dump(mode="json", exclude_none=True)
+        # El plan nace con el borrador: así no figura como cambio en la primera edición.
+        values["plan"] = compile_plan(None, None).model_dump(mode="json")
+        draft = ProjectDraft(project_id=project_id, values=values)
         return self.repo.add(draft)
 
     def update(
@@ -147,14 +150,25 @@ class Wizard:
             )
         if step is not None and step not in STEPS:
             raise ValidationError(f"paso desconocido: {step}", details={"steps": list(STEPS)})
+        if any(k in SYSTEM_FIELDS for k in values or {}):
+            raise ValidationError(
+                "los hechos de los datos y el plan los calcula el sistema",
+                details={"fields": [k for k in values or {} if k in SYSTEM_FIELDS]},
+            )
         merged = {**draft.values, **(values or {})}
+        if "brief" in (values or {}) and values and values["brief"] is not None:
+            merged["brief"] = self._with_origins(draft.values.get("brief"), values["brief"], origin)
         try:
             clean = DraftValues.model_validate(merged).model_dump(mode="json", exclude_none=True)
         except PydanticValidationError as e:
             raise ValidationError(
                 "valores inválidos para el borrador", details={"errors": e.errors()}
             ) from e
-        changed = sorted(k for k in (values or {}) if draft.values.get(k) != clean.get(k))
+        # Lo guardado pasa por la misma serialización (sin nulos anidados): si no, el plan
+        # parecería distinto aunque sea igual y figuraría como cambio.
+        before = DraftValues.model_validate(draft.values).model_dump(mode="json", exclude_none=True)
+        clean = self._replan(before, clean)
+        changed = sorted(k for k in clean if before.get(k) != clean.get(k))
         history = draft.history
         if changed or step:
             entry = {"ts": _now(), "origin": origin, "fields": changed, "step": step}
@@ -168,6 +182,96 @@ class Wizard:
             if project.goal != clean["goal"]:
                 self.ctx.projects.update(project.model_copy(update={"goal": clean["goal"]}))
         return result
+
+    # ------------------------------------------------------------------ ficha y plan
+
+    @staticmethod
+    def _with_origins(
+        old: dict[str, Any] | None, new: dict[str, Any], origin: str
+    ) -> dict[str, Any]:
+        """Marca de dónde salió cada campo que cambió (persona o LLM aceptado)."""
+        before = old or {}
+        origins = dict(before.get("origins") or {})
+        for key, value in new.items():
+            if key not in ("origins", "assumptions", "open_questions") and before.get(key) != value:
+                origins[key] = "llm" if origin == "copilot" else "user"
+        return {**new, "origins": origins}
+
+    def _facts(self, dataset_version_id: str) -> dict[str, Any] | None:
+        try:
+            dv = self.wf.dataset(dataset_version_id)
+            card = self.wf.profile_card(dataset_version_id)
+            facts = data_facts(dv, self.wf.view(dv), card)
+        except Exception:  # un dataset que no se puede perfilar no rompe el wizard
+            logger.warning("sin hechos del dataset", exc_info=True)
+            return None
+        return facts.model_dump(mode="json")
+
+    def _replan(self, old: dict[str, Any], clean: dict[str, Any]) -> dict[str, Any]:
+        """Recalcula hechos y plan si cambió el dataset o la ficha (o faltan)."""
+        out = dict(clean)
+        dv = out.get("dataset_version_id")
+        facts = out.get("data_facts")
+        if dv and (dv != old.get("dataset_version_id") or not facts):
+            facts = self._facts(str(dv))
+        if not dv:
+            facts = None
+        if facts is None:
+            out.pop("data_facts", None)
+        else:
+            out["data_facts"] = facts
+        changed = out.get("brief") != old.get("brief") or facts != old.get("data_facts")
+        if changed or "plan" not in old:
+            plan = compile_plan(
+                UseCaseBrief.model_validate(out["brief"]) if out.get("brief") else None,
+                DataFacts.model_validate(facts) if facts else None,
+            )
+            out["plan"] = plan.model_dump(mode="json")
+        return out
+
+    def plan(self, draft: ProjectDraft) -> WizardPlan:
+        """El plan guardado o, en borradores anteriores al ADR-0040, el compilado al vuelo."""
+        values = draft.values
+        if values.get("plan"):
+            return WizardPlan.model_validate(values["plan"])
+        brief = values.get("brief")
+        facts = values.get("data_facts")
+        return compile_plan(
+            UseCaseBrief.model_validate(brief) if brief else None,
+            DataFacts.model_validate(facts) if facts else None,
+        )
+
+    def intake(
+        self, project_id: str, message: str, history: list[Message]
+    ) -> tuple[BriefPatch, str]:
+        """Entrevista: qué entendió el LLM del caso (cambios a la ficha) y qué conviene preguntar.
+
+        No modifica nada: la UI muestra los cambios y la persona los acepta o los descarta.
+        """
+        draft = self.get(project_id)
+        project = self.wf.project(project_id)
+        ctx = self._context(draft)
+        ctx = ctx.model_copy(
+            update={
+                "system": {
+                    **ctx.system,
+                    "brief_fields": list(get_args(BriefField)),
+                    "brief_schema": UseCaseBrief.model_json_schema(),
+                }
+            }
+        )
+        turns = history[-CHAT_TURNS * 2 :]
+        transcript = "\n".join(f"{m.role}: {m.content}" for m in turns)
+        out = self.ctx.llm.structured(
+            LLMPurpose.COPILOT,
+            BriefPatch,
+            ctx,
+            project=project,
+            validator=validate_patch,
+            prompt="intake",
+            prompt_vars={"message": message, "transcript": transcript or "(sin mensajes previos)"},
+        )
+        return out.value, out.call_id
 
     # ------------------------------------------------------------------ copiloto
 

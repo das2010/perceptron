@@ -465,6 +465,79 @@
     "why": {
       "button": "Why?",
       "question": "Why is the recommendation in the “{{step}}” step a good fit for my project? Explain it with my data and tell me what you would change."
+    },
+    "brief": {
+      "title": "Case sheet",
+      "hint": "What you know about the case. The wizard uses it to pick steps, metrics and warnings. Fill it in by hand or tell the assistant about your case.",
+      "problem": {
+        "label": "Problem type",
+        "value": "Predict a number",
+        "category": "Predict a category",
+        "anomaly": "Detect anomalies",
+        "forecast": "Forecast a series",
+        "rule": "Discover a rule or formula",
+        "other": "Other"
+      },
+      "problemOther": "What do you want to achieve?",
+      "prediction": "What is predicted (and in which unit)",
+      "error_costs": {
+        "label": "Which error is worse?",
+        "symmetric": "Both weigh the same",
+        "false_negative_worse": "Missing a case",
+        "false_positive_worse": "A false alarm"
+      },
+      "ratio": "How many times worse?",
+      "has_time": "Do the data have dates or a time order?",
+      "has_entities": "Are there repeated entities (machines, customers)?",
+      "labels_available": "Do you already have the labels?",
+      "independent_inputs": "Do the inputs vary independently?",
+      "extrapolate": "Will you predict outside the data range?",
+      "explainability": "Do predictions need explaining?",
+      "deployment": {
+        "label": "Where will it be used?",
+        "desktop": "On this computer",
+        "server": "On a server",
+        "edge": "On a small device",
+        "spreadsheet": "In a spreadsheet"
+      },
+      "unknown": "Not sure",
+      "yes": "Yes",
+      "no": "No",
+      "assumptions": "Assistant assumptions",
+      "fieldName": {
+        "problem": "Problem type",
+        "problem_other": "Description",
+        "prediction": "What is predicted",
+        "error_costs": "Error costs",
+        "error_cost_ratio": "How many times worse",
+        "business_metric": "Business metric",
+        "has_time": "Dates or time order",
+        "has_entities": "Repeated entities",
+        "labels_available": "Labels available",
+        "independent_inputs": "Independent inputs",
+        "extrapolate": "Predict outside the range",
+        "explainability": "Needs explaining",
+        "deployment": "Where it is used",
+        "max_latency_ms": "Max latency (ms)"
+      }
+    },
+    "intake": {
+      "title": "Tell the assistant about your case",
+      "hint": "Describe what you want to achieve in your own words. The assistant proposes how to fill in the case sheet and asks what is missing; nothing is applied until you accept it.",
+      "placeholder": "E.g.: I want to anticipate when a bearing will fail from its sound; missing a failure is much worse than a false alarm.",
+      "message": "Your message",
+      "question": "Assistant question",
+      "send": "Send",
+      "proposed": "The assistant proposes:",
+      "accept": "Accept changes",
+      "reject": "Discard"
+    },
+    "plan": {
+      "why": "Why",
+      "checks": "Plan warnings",
+      "suggested": "Suggested",
+      "use": "Use",
+      "skipped": "Skipping “{{step}}”: {{reason}}"
     }
   },
   "agent": {

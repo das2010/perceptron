@@ -16,7 +16,8 @@ from perceptron.api.streaming import WS_UNAUTHORIZED, ws_authorized
 from perceptron.core.errors import PerceptronError
 from perceptron.domain.models import ProjectDraft
 from perceptron.llm.types import Message
-from perceptron.services.wizard import STEPS, DraftValues, Wizard
+from perceptron.services.brief import STEPS, BriefPatch, WizardPlan
+from perceptron.services.wizard import DraftValues, Wizard
 from perceptron.services.workflow import Workflow
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,26 @@ class DraftView(BaseModel):
     draft: ProjectDraft
     steps: list[str]
     values: DraftValues
+    plan: WizardPlan = Field(description="Pasos, defaults y chequeos para este caso (ADR-0040)")
+
+
+class IntakeTurn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=4000)
+
+
+class IntakeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    message: str = Field(min_length=1, max_length=4000)
+    history: list[IntakeTurn] = Field(default_factory=list, max_length=40)
+
+
+class IntakeReply(BaseModel):
+    patch: BriefPatch
+    llm_call_id: str
 
 
 class DraftUpdate(BaseModel):
@@ -40,23 +61,40 @@ class DraftUpdate(BaseModel):
     origin: Literal["user", "copilot"] = "user"
 
 
-def _view(draft: ProjectDraft) -> DraftView:
+def _view(wizard: Wizard, draft: ProjectDraft) -> DraftView:
     return DraftView(
-        draft=draft, steps=list(STEPS), values=DraftValues.model_validate(draft.values)
+        draft=draft,
+        steps=list(STEPS),
+        values=DraftValues.model_validate(draft.values),
+        plan=wizard.plan(draft),
     )
 
 
 @router.get("/projects/{project_id}/draft", operation_id="getDraft")
 def get_draft(project_id: str, ctx: Ctx) -> DraftView:
-    return _view(Wizard(Workflow(ctx)).get(project_id))
+    wizard = Wizard(Workflow(ctx))
+    return _view(wizard, wizard.get(project_id))
 
 
 @router.patch("/projects/{project_id}/draft", operation_id="updateDraft")
 def update_draft(project_id: str, body: DraftUpdate, ctx: Ctx) -> DraftView:
-    draft = Wizard(Workflow(ctx)).update(
+    wizard = Wizard(Workflow(ctx))
+    draft = wizard.update(
         project_id, version=body.version, values=body.values, step=body.step, origin=body.origin
     )
-    return _view(draft)
+    return _view(wizard, draft)
+
+
+@router.post("/projects/{project_id}/draft/intake", operation_id="draftIntake")
+def draft_intake(project_id: str, body: IntakeRequest, ctx: Ctx) -> IntakeReply:
+    """Entrevista del paso Objetivo (ADR-0040): cambios propuestos a la ficha y próxima pregunta.
+
+    No modifica el borrador: la persona acepta los cambios con `PATCH /draft` (`brief`).
+    Sin LLM utilizable responde 503 `llm_unavailable` y la ficha se completa a mano.
+    """
+    history = [Message(role=t.role, content=t.content) for t in body.history]
+    patch, call_id = Wizard(Workflow(ctx)).intake(project_id, body.message, history)
+    return IntakeReply(patch=patch, llm_call_id=call_id)
 
 
 def _produce(
