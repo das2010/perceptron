@@ -61,6 +61,7 @@ from perceptron.llm.schemas import (
     ProposedParam,
     Report,
 )
+from perceptron.services.brief import project_use_case
 from perceptron.services.estimate import estimate_epoch_time
 from perceptron.training.config import RESULT_FILE, RunResult
 from perceptron.training.diagnostics import rules_diagnosis
@@ -245,6 +246,7 @@ class LLMRoles:
                 "base_archspec": rec.spec.model_dump(mode="json", exclude={"provenance"}),
                 "allow_pretrained": not offline_mode(),
                 "commercial_use": True,
+                "use_case": project_use_case(self.ctx, project.id),
                 "device": device,
                 "n_train": card.split_counts.get("train"),
             },
@@ -344,6 +346,7 @@ class LLMRoles:
                 "not_tuned": sorted(NOT_TUNED),
                 "budget": budget.model_dump(mode="json"),
                 "objective_metrics": sorted(metrics),
+                "use_case": project_use_case(self.ctx, project.id),
                 "rules_strategy": base.model_dump(mode="json", exclude={"search_space"}),
             },
         )
@@ -412,7 +415,11 @@ class LLMRoles:
                     )
                 ],
                 evidence=[p.model_dump(mode="json") for p in diagnosis.problems],
-                constraints={"hyperparameters": sorted(tunable), "max_epochs": max_epochs},
+                constraints={
+                    "hyperparameters": sorted(tunable),
+                    "max_epochs": max_epochs,
+                    "use_case": project_use_case(self.ctx, project.id),
+                },
             )
             try:
                 out = self.gateway.structured(
@@ -449,6 +456,7 @@ class LLMRoles:
                 goal=project.goal or None,
                 card=card,
                 archspec=spec.model_dump(mode="json", exclude={"provenance"}),
+                constraints={"use_case": project_use_case(self.ctx, project.id)},
                 evaluation=evaluation.model_dump(mode="json", exclude={"curves"}),
                 runs=[
                     RunSummary(
