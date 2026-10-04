@@ -239,3 +239,43 @@ def test_failed_ingest_leaves_no_staging(project_paths: ProjectPaths, tmp_path: 
     with pytest.raises(ValidationError):
         ingest(project_paths, IngestRequest(project_id="prj_test", source=empty))
     assert list(project_paths.datasets_dir.iterdir()) == []
+
+
+def test_decimal_comma_files_are_read_as_numbers(tmp_path: Path) -> None:
+    """Excel en español: `|` o `;` como separador y coma decimal (caso «sensores.txt»)."""
+    src = tmp_path / "sensores.txt"
+    src.write_bytes(
+        b"Sensor1|Sensor2|Salida|Nota\n0,2560000|0,5059644|0,2560000|a, b\n1,5|2|3,25|c\n"
+    )
+    df = scan_table(src).collect()
+    assert df.schema["Sensor1"] == pl.Float64 and df.schema["Salida"] == pl.Float64
+    assert df["Sensor1"].to_list() == [0.256, 1.5]
+    assert df["Nota"].to_list() == ["a, b", "c"]  # el texto con comas no se toca
+    # Con decimales con punto no se activa.
+    dots = tmp_path / "puntos.csv"
+    dots.write_bytes(b"a;b\n0.5;1\n1.5;2\n")
+    assert scan_table(dots).collect()["a"].to_list() == [0.5, 1.5]
+
+
+def test_numeric_override_converts_text_or_rejects_it(
+    project_paths: ProjectPaths, tmp_path: Path
+) -> None:
+    """Corregir a numérica una columna de texto la convierte (antes: perfil con HTTP 500)."""
+    src = tmp_path / "texto.csv"
+    rows = "".join(f'"{i},5",{i % 2}\n' for i in range(60))
+    src.write_bytes(("medida,y\n" + rows).encode())
+    numeric = {"medida": SemanticType.NUMERIC}
+    v = ingest(
+        project_paths,
+        IngestRequest(project_id="prj_test", source=src, target="y", overrides=numeric),
+    )
+    view = DatasetView(project_paths.dataset(v.content_hash))
+    assert view.schema.column("medida").semantic is SemanticType.NUMERIC
+    assert view.read()["medida"].dtype == pl.Float64
+    bad = tmp_path / "malo.csv"
+    bad.write_bytes(("medida,y\n" + rows + '"no sé",1\n').encode())
+    with pytest.raises(ValidationError, match="1 valores no son números"):
+        ingest(
+            project_paths,
+            IngestRequest(project_id="prj_test", source=bad, target="y", overrides=numeric),
+        )

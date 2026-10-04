@@ -74,7 +74,37 @@ def _materialize_table(
         schema = schema.keep_sole_inputs()  # en series el índice entero es el tiempo
     if req.overrides:
         schema = schema.with_overrides(req.overrides)  # la corrección manual va al final
+        schema, df = _coerce_numeric_overrides(schema, df)
     return schema, df
+
+
+def _coerce_numeric_overrides(
+    schema: TableSchema, df: pl.DataFrame
+) -> tuple[TableSchema, pl.DataFrame]:
+    """Una columna de texto corregida a numérica se convierte de verdad (acepta `0,25`).
+
+    Antes solo cambiaba la etiqueta: los valores seguían siendo texto y el perfil fallaba
+    con un 500 al calcular las estadísticas. Si hay valores que no son números, 422.
+    """
+    columns = []
+    for col in schema.columns:
+        s = df[col.name]
+        if col.semantic is SemanticType.NUMERIC and s.dtype == pl.String:
+            text = s.str.strip_chars()
+            num = text.str.replace(",", ".", literal=True).cast(pl.Float64, strict=False)
+            bad = int((num.is_null() & text.is_not_null() & (text != "")).sum())
+            if bad:
+                # Sin eco de los valores (ASVS V7): solo cuántos y en qué columna.
+                raise ValidationError(
+                    f"La columna «{col.name}» no se puede usar como numérica: "
+                    f"{bad} valores no son números.",
+                    details={"column": col.name, "invalid_values": bad},
+                )
+            df = df.with_columns(num.alias(col.name))
+            columns.append(col.model_copy(update={"dtype": str(pl.Float64)}))
+        else:
+            columns.append(col)
+    return schema.model_copy(update={"columns": columns}), df
 
 
 def _materialize_images(src: Path, staging: Path) -> tuple[TableSchema, pl.DataFrame]:
