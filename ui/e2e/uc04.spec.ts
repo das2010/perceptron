@@ -43,12 +43,13 @@ test("UC-04: de una carpeta de imágenes a un modelo registrado con el wizard", 
   await expect(page.getByLabel("Versión de datos")).not.toHaveValue("", { timeout: 120_000 });
   await next(page, "3. Calidad");
   await expect(page.getByText("Perfil del dataset")).toBeVisible({ timeout: 120_000 });
-  await next(page, "4. Etiquetado");
-  await next(page, "5. Tarea y métrica");
+  // Las imágenes ya vienen etiquetadas (una carpeta por clase): el plan saltea Etiquetado (ADR-0040).
+  await expect(page.getByText(/Se saltea «Etiquetado»/)).toBeVisible();
+  await next(page, "4. Tarea y métrica");
   await expect(page.getByLabel("Tarea")).toHaveValue("classification");
-  await next(page, "6. Arquitectura");
+  await next(page, "5. Arquitectura");
 
-  // 6. Arquitectura por reglas, revisada en el editor visual (RF-ARC-05) y como código (RF-ARC-07).
+  // 5. Arquitectura por reglas, revisada en el editor visual (RF-ARC-05) y como código (RF-ARC-07).
   await page.getByRole("button", { name: "Proponer arquitecturas" }).click();
   await expect(page.getByText("Por reglas").first()).toBeVisible({ timeout: 120_000 });
   await page.getByRole("link", { name: "Abrir en el editor visual" }).first().click();
@@ -59,17 +60,17 @@ test("UC-04: de una carpeta de imágenes a un modelo registrado con el wizard", 
     timeout: 60_000,
   });
   await page.getByRole("link", { name: "Wizard" }).click();
-  await expect(page.locator('[aria-current="step"]')).toHaveText("6. Arquitectura");
+  await expect(page.locator('[aria-current="step"]')).toHaveText("5. Arquitectura");
   await expect(page.getByText(/Arquitectura elegida/)).toBeVisible();
-  await next(page, "7. Búsqueda de hiperparámetros");
+  await next(page, "6. Búsqueda de hiperparámetros");
 
   // 7. HPO con presupuesto chico para el CI.
   await page.getByLabel("Intentos (trials)").fill("3");
   await page.getByLabel("Épocas máximas por intento").fill("10");
   await page.getByRole("button", { name: "Recomendar estrategia" }).click();
   await expect(page.getByText(/poda/)).toBeVisible({ timeout: 60_000 });
-  await next(page, "8. Presupuesto y hardware");
-  await next(page, "9. Revisión y lanzamiento");
+  await next(page, "7. Presupuesto y hardware");
+  await next(page, "8. Revisión y lanzamiento");
   await expect(
     page.getByText("Se van a entrenar hasta 3 intentos de hasta 10 épocas", { exact: false }),
   ).toBeVisible();

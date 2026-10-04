@@ -128,12 +128,10 @@ class Wizard:
         found = list(self.repo.list(filters={"project_id": project_id}, limit=1))
         if found:
             return found[0]
-        draft = ProjectDraft(
-            project_id=project_id,
-            values=DraftValues(goal=project.goal or None).model_dump(
-                mode="json", exclude_none=True
-            ),
-        )
+        values = DraftValues(goal=project.goal or None).model_dump(mode="json", exclude_none=True)
+        # El plan nace con el borrador: así no figura como cambio en la primera edición.
+        values["plan"] = compile_plan(None, None).model_dump(mode="json")
+        draft = ProjectDraft(project_id=project_id, values=values)
         return self.repo.add(draft)
 
     def update(

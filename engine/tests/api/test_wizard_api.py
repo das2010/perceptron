@@ -172,7 +172,7 @@ def test_intake_proposes_without_applying(client: TestClient, fake_llm: FakeLLMP
     assert reply["patch"]["next_question"] and reply["llm_call_id"]
     after = _ok(client.get(f"{API}/projects/{pid}/draft"))
     assert after["draft"]["version"] == before["draft"]["version"]  # nada se aplicó
-    assert "brief" not in after["values"]
+    assert after["values"]["brief"] is None
 
 
 def test_intake_without_llm_is_unavailable(client: TestClient) -> None:

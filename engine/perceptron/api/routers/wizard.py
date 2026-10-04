@@ -16,8 +16,8 @@ from perceptron.api.streaming import WS_UNAUTHORIZED, ws_authorized
 from perceptron.core.errors import PerceptronError
 from perceptron.domain.models import ProjectDraft
 from perceptron.llm.types import Message
-from perceptron.services.brief import BriefPatch, WizardPlan
-from perceptron.services.wizard import STEPS, DraftValues, Wizard
+from perceptron.services.brief import STEPS, BriefPatch, WizardPlan
+from perceptron.services.wizard import DraftValues, Wizard
 from perceptron.services.workflow import Workflow
 
 logger = logging.getLogger(__name__)

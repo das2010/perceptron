@@ -28,10 +28,20 @@ if TYPE_CHECKING:
     from perceptron.data.view import DatasetView
     from perceptron.domain.models import DatasetVersion
 
-STEPS = ("goal", "data", "quality", "labeling", "task", "architecture", "hpo", "budget", "review")
 Step = Literal[
     "goal", "data", "quality", "labeling", "task", "architecture", "hpo", "budget", "review"
 ]
+STEPS: tuple[Step, ...] = (
+    "goal",
+    "data",
+    "quality",
+    "labeling",
+    "task",
+    "architecture",
+    "hpo",
+    "budget",
+    "review",
+)
 COLLINEAR = 0.98  # correlación de rangos entre entradas numéricas
 FACTS_SAMPLE = 5000
 FEW_ROWS = 100
