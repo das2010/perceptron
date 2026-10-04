@@ -434,6 +434,34 @@ class LLMReservation(Entity):
     amount_usd: float = Field(ge=0)
 
 
+class SymbolicFit(Entity):
+    """Fórmula sugerida por regresión simbólica (ADR-0039).
+
+    Modelo de referencia: se compara con las redes y se prueba con valores nuevos, pero no se
+    exporta ni se despliega. `expression` usa x1…xn en el orden de `features`.
+    """
+
+    id: str = Field(default_factory=_id_factory(IdPrefix.SYMBOLIC_FIT))
+    project_id: str
+    dataset_version_id: str
+    target: str
+    features: list[str]
+    expression: str
+    formula: str = Field(description="Legible, con los nombres de las columnas")
+    python: str
+    excel_es: str
+    excel_en: str
+    candidates: list[JsonDict] = Field(
+        default_factory=list, description="Fórmulas evaluadas: complejidad y error en validación"
+    )
+    metrics: dict[str, dict[str, float | None]] = Field(default_factory=dict)
+    parity: list[tuple[float, float]] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    n_train: int = 0
+    duration_s: float = 0.0
+    time_limit_s: int = 60
+
+
 class ProjectDraft(Entity):
     """Estado del wizard de un proyecto (RF-WIZ-04): versionado, se retoma donde quedó."""
 
@@ -501,6 +529,7 @@ ALL_ENTITIES: tuple[type[Entity], ...] = (
     LLMSession,
     LLMCall,
     LLMReservation,
+    SymbolicFit,
     ActivityEntry,
 )
 

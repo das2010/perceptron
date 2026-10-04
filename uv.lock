@@ -2190,10 +2190,12 @@ ml = [
     { name = "psutil" },
     { name = "pyarrow" },
     { name = "pycocotools" },
+    { name = "pyoperon" },
     { name = "scikit-learn" },
     { name = "scipy" },
     { name = "sentencepiece" },
     { name = "soundfile" },
+    { name = "sympy" },
     { name = "timm" },
     { name = "tokenizers" },
     { name = "torch", version = "2.14.0", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'darwin'" },
@@ -2250,6 +2252,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.5" },
     { name = "pymysql", marker = "extra == 'sources'", specifier = ">=1.1" },
     { name = "pyodbc", marker = "extra == 'sources'", specifier = ">=5.1" },
+    { name = "pyoperon", marker = "extra == 'ml'", specifier = ">=0.6" },
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "python-ulid", specifier = ">=3.0" },
     { name = "pyyaml", specifier = ">=6.0" },
@@ -2259,6 +2262,7 @@ requires-dist = [
     { name = "sentencepiece", marker = "extra == 'ml'", specifier = ">=0.2" },
     { name = "soundfile", marker = "extra == 'ml'", specifier = ">=0.12" },
     { name = "sqlalchemy", specifier = ">=2.0" },
+    { name = "sympy", marker = "extra == 'ml'", specifier = ">=1.13" },
     { name = "timm", marker = "extra == 'ml'", specifier = ">=1.0" },
     { name = "tokenizers", marker = "extra == 'ml'", specifier = ">=0.20" },
     { name = "torch", marker = "extra == 'ml'", specifier = ">=2.6", index = "https://download.pytorch.org/whl/cpu" },
@@ -2741,6 +2745,26 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/41/0f/9dfe4987283ffcb981c49a002f0339d669215eb4a3fe4ee4e14537c52852/pyodbc-5.3.0-cp313-cp313-win32.whl", hash = "sha256:c2eb0b08e24fe5c40c7ebe9240c5d3bd2f18cd5617229acee4b0a0484dc226f2", size = 63399, upload-time = "2025-10-17T18:03:36.931Z" },
     { url = "https://files.pythonhosted.org/packages/56/03/15dcefe549d3888b649652af7cca36eda97c12b6196d92937ca6d11306e9/pyodbc-5.3.0-cp313-cp313-win_amd64.whl", hash = "sha256:01166162149adf2b8a6dc21a212718f205cabbbdff4047dc0c415af3fd85867e", size = 70133, upload-time = "2025-10-17T18:03:38.47Z" },
     { url = "https://files.pythonhosted.org/packages/c4/c1/c8b128ae59a14ecc8510e9b499208e342795aecc3af4c3874805c720b8db/pyodbc-5.3.0-cp313-cp313-win_arm64.whl", hash = "sha256:363311bd40320b4a61454bebf7c38b243cd67c762ed0f8a5219de3ec90c96353", size = 64683, upload-time = "2025-10-17T18:03:39.68Z" },
+]
+
+[[package]]
+name = "pyoperon"
+version = "0.6.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "scikit-learn" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/6f/c55132b8b0c1c81129b96e5d99e82b02277325882f3a568672beccc06202/pyoperon-0.6.1-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:91a1b1c9096b0fd5146b0c07e0ba16d2f24059f291c2577fbc2c889e42946aab", size = 882220, upload-time = "2026-03-01T11:22:46.653Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/66/08a2aecc9fc51966dcdea5c8573de708daf263e3f5292da00cac06c9ca3a/pyoperon-0.6.1-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:2c79ff4ffab471d5e76d975983aa9d145eebf8e6d37c8c231a5cae2f340a6d54", size = 882220, upload-time = "2026-03-01T11:22:48.704Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/bf/aadb7a5efe883af3de385e3c340a038b39afa4c86c46f7e06a362b58be53/pyoperon-0.6.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:863854c519b84808edff15d42c80412bec0934d9ae00f3bc5ee5c2a7a56d4863", size = 1433625, upload-time = "2026-03-01T11:22:49.7Z" },
+    { url = "https://files.pythonhosted.org/packages/bf/11/0e73a2fc20b9f6d94c514401e8573824c1bba0cad7e1c664b814bf755f4f/pyoperon-0.6.1-cp312-cp312-win_amd64.whl", hash = "sha256:4448cff2b4edab496326e45a53fbdd8582b4439e881db8402e22d237936b42ea", size = 967166, upload-time = "2026-03-31T18:05:20.371Z" },
+    { url = "https://files.pythonhosted.org/packages/93/7b/414cb04205bce675abd23c6693d39724ebc3fa11b770099f21da49f7ea25/pyoperon-0.6.1-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:78caaf2d5b4fedcb8cd67f897daec5fd0e83296463f33bcdf51881f60659dee8", size = 882104, upload-time = "2026-03-01T11:22:50.834Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/1e/7f9894c94609a4bdd8e2c899b1b3afe33eaa9d3b2544bd33a38699779673/pyoperon-0.6.1-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:ec6fcafa1012912b82a2cf870eacd57d38c14e64fac0551b9cebbba55858fdd5", size = 882104, upload-time = "2026-03-01T11:22:52.122Z" },
+    { url = "https://files.pythonhosted.org/packages/8e/7f/73ad28e5c67b5dac0d226c8eeb7a96d815efa70cd2815b028cceb9c11a58/pyoperon-0.6.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a3f15965ac3ec98f70b4ee86063230f351bfb9dedabc791f3eb8760e75ffeef7", size = 1433579, upload-time = "2026-03-01T11:22:53.961Z" },
+    { url = "https://files.pythonhosted.org/packages/b6/b8/a1969789bfc675a872eb15d33e41a38c93068f9ffb12428becb9b7d1214b/pyoperon-0.6.1-cp313-cp313-win_amd64.whl", hash = "sha256:412d18513a9371785680c57dee81d630e306a94d1ca31b777c6d5f08fb2f9a2c", size = 967036, upload-time = "2026-03-31T18:05:21.765Z" },
 ]
 
 [[package]]
