@@ -164,8 +164,11 @@ class Wizard:
             raise ValidationError(
                 "valores inválidos para el borrador", details={"errors": e.errors()}
             ) from e
-        clean = self._replan(draft.values, clean)
-        changed = sorted(k for k in clean if draft.values.get(k) != clean.get(k))
+        # Lo guardado pasa por la misma serialización (sin nulos anidados): si no, el plan
+        # parecería distinto aunque sea igual y figuraría como cambio.
+        before = DraftValues.model_validate(draft.values).model_dump(mode="json", exclude_none=True)
+        clean = self._replan(before, clean)
+        changed = sorted(k for k in clean if before.get(k) != clean.get(k))
         history = draft.history
         if changed or step:
             entry = {"ts": _now(), "origin": origin, "fields": changed, "step": step}
