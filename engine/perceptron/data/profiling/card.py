@@ -61,6 +61,7 @@ class AlertCode(StrEnum):
     SILENT_AUDIO = "silent_audio"
     ID_LIKE_FEATURE = "id_like_feature"
     NO_FEATURES = "no_features"
+    DETERMINISTIC_RELATION = "deterministic_relation"
 
 
 class Alert(BaseModel):

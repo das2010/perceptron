@@ -9,6 +9,8 @@ import { createTestRouter } from "@/app/router";
 import { resetApiClient } from "@/lib/api/client";
 import { mockEngine, project } from "@/test/engine";
 
+import { bestRunIds } from "./best";
+
 const run = (n: number, lr: number) => ({
   id: `run-t00${n}`,
   project_id: "prj_1",
@@ -118,5 +120,20 @@ describe("análisis del estudio (RF-HPO-06)", () => {
     ]) {
       expect(await within(card).findByRole("heading", { name: title })).toBeInTheDocument();
     }
+  });
+});
+
+describe("mejor run por estudio", () => {
+  it("marca el de menor val_loss de cada estudio, solo entre los terminados", () => {
+    const r = (id: string, study: string, loss: number | null, status = "succeeded") =>
+      ({ ...run(1, 0.001), id, study_id: study, status, metrics: { val_loss: loss } }) as never;
+    const best = bestRunIds([
+      r("a-t000", "a", 0.2),
+      r("a-t001", "a", 0.05), // el mejor de «a»
+      r("a-t002", "a", 0.01, "running"), // sin terminar: no cuenta
+      r("b-t000", "b", 0.9),
+      r("b-t001", "b", null),
+    ]);
+    expect([...best].sort()).toEqual(["a-t001", "b-t000"]);
   });
 });

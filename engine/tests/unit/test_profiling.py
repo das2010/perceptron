@@ -151,6 +151,11 @@ def test_sole_id_like_input_is_used_as_data(paths: ProjectPaths, tmp_path: Path)
     assert not card.alerts_by(AlertCode.ID_COLUMN)
     assert not card.alerts_by(AlertCode.NO_FEATURES)
     assert card.num_features == 1
+    # Una fórmula (multiplo = 3 × numero) no es una fuga: con una sola entrada no hay otra
+    # columna que se cuele. Se avisa como relación determinística, no como fuga.
+    assert not card.alerts_by(AlertCode.TARGET_LEAKAGE)
+    [rel] = card.alerts_by(AlertCode.DETERMINISTIC_RELATION)
+    assert rel.column == "numero" and rel.severity.value == "warning"
 
 
 def test_no_features_left_is_flagged(paths: ProjectPaths, tmp_path: Path) -> None:

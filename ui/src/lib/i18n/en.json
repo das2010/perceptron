@@ -318,7 +318,9 @@
     "compareSelect": "Select two or more runs to compare them.",
     "archDiff": "Architecture differences",
     "pipelineDiff": "Pipeline differences",
-    "sameConfig": "The runs share architecture and pipeline: only hyperparameters change."
+    "sameConfig": "The runs share architecture and pipeline: only hyperparameters change.",
+    "best": "best",
+    "bestHint": "Lowest validation loss in the study: the one to evaluate"
   },
   "status": {
     "queued": "Queued",

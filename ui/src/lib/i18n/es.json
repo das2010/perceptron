@@ -318,7 +318,9 @@
     "compareSelect": "Marcá dos o más runs para compararlos.",
     "archDiff": "Diferencias de arquitectura",
     "pipelineDiff": "Diferencias de pipeline",
-    "sameConfig": "Los runs comparten arquitectura y pipeline: solo cambian los hiperparámetros."
+    "sameConfig": "Los runs comparten arquitectura y pipeline: solo cambian los hiperparámetros.",
+    "best": "mejor",
+    "bestHint": "Menor pérdida de validación del estudio: es el que conviene evaluar"
   },
   "status": {
     "queued": "En cola",
