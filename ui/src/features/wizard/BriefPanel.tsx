@@ -11,9 +11,11 @@ import { Badge, Button, Card, ErrorNote, Field, Input, Select, Textarea } from "
 import {
   type BriefPatch,
   type IntakeTurn,
+  type PlanDiff,
   type UseCaseBrief,
   type WizardPlan,
   useDraftIntake,
+  useDraftReconcile,
 } from "@/lib/api/hooks";
 
 type SaveBrief = (brief: UseCaseBrief, origin?: "user" | "copilot") => void;
@@ -212,14 +214,6 @@ function IntakeChat({
       },
     );
   };
-  const accept = () => {
-    if (!pending) return;
-    const next: UseCaseBrief = { ...brief };
-    for (const c of pending.changes ?? []) (next as Record<string, unknown>)[c.field] = c.value;
-    next.assumptions = [...(brief.assumptions ?? []), ...(pending.assumptions ?? [])].slice(-20);
-    save(next, "copilot");
-    setPending(null);
-  };
   const question = [...history].reverse().find((h) => h.role === "assistant")?.content;
 
   return (
@@ -250,29 +244,197 @@ function IntakeChat({
         </Button>
       </div>
       <ErrorNote error={intake.error} />
-      {pending && (pending.changes ?? []).length > 0 && (
-        <div className="mt-3 rounded-pt border border-copilot p-3 text-sm">
-          <p className="mb-2 font-semibold">{t("wizard.intake.proposed")}</p>
-          <ul className="space-y-1">
-            {(pending.changes ?? []).map((c) => (
-              <li key={c.field}>
-                <strong>{t(`wizard.brief.fieldName.${c.field}`)}</strong>:{" "}
-                {valueLabel(t, c.field, c.value)}{" "}
-                <span className="text-xs text-muted">— {c.rationale}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-3 flex gap-2">
-            <Button size="sm" variant="ai" onClick={accept}>
-              {t("wizard.intake.accept")}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setPending(null)}>
-              {t("wizard.intake.reject")}
-            </Button>
-          </div>
-        </div>
+      {pending && (
+        <ProposedChanges
+          patch={pending}
+          brief={brief}
+          save={save}
+          onDone={() => setPending(null)}
+        />
       )}
     </Card>
+  );
+}
+
+/** Cambios que propone el LLM a la ficha: se aplican solo con «Aceptar cambios». */
+function ProposedChanges({
+  patch,
+  brief,
+  save,
+  onDone,
+}: {
+  patch: BriefPatch;
+  brief: UseCaseBrief;
+  save: SaveBrief;
+  onDone: () => void;
+}) {
+  const { t } = useTranslation();
+  if ((patch.changes ?? []).length === 0) return null;
+  const accept = () => {
+    const next: UseCaseBrief = { ...brief };
+    for (const c of patch.changes ?? []) (next as Record<string, unknown>)[c.field] = c.value;
+    next.assumptions = [...(brief.assumptions ?? []), ...(patch.assumptions ?? [])].slice(-20);
+    save(next, "copilot");
+    onDone();
+  };
+  return (
+    <div className="mt-3 rounded-pt border border-copilot p-3 text-sm">
+      <p className="mb-2 font-semibold">{t("wizard.intake.proposed")}</p>
+      <ul className="space-y-1">
+        {(patch.changes ?? []).map((c) => (
+          <li key={c.field}>
+            <strong>{t(`wizard.brief.fieldName.${c.field}`)}</strong>:{" "}
+            {valueLabel(t, c.field, c.value)}{" "}
+            <span className="text-xs text-muted">— {c.rationale}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 flex gap-2">
+        <Button size="sm" variant="ai" onClick={accept}>
+          {t("wizard.intake.accept")}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onDone}>
+          {t("wizard.intake.reject")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Reconciliación (fase 2): el LLM compara la ficha con el perfil de los datos. */
+export function ReconcileCard({
+  projectId,
+  brief,
+  save,
+}: {
+  projectId: string;
+  brief: UseCaseBrief;
+  save: SaveBrief;
+}) {
+  const { t } = useTranslation();
+  const reconcile = useDraftReconcile(projectId);
+  const [pending, setPending] = useState<BriefPatch | null>(null);
+  const reply = reconcile.data?.patch;
+  const nothing =
+    reconcile.isSuccess && (reply?.changes ?? []).length === 0 && !reply?.next_question;
+  return (
+    <Card className="border-copilot bg-copilot-bg/30">
+      <h3 className="mb-1 flex items-center gap-2 font-semibold">
+        <Sparkles className="h-4 w-4" aria-hidden="true" />
+        {t("wizard.reconcile.title")}
+      </h3>
+      <p className="mb-3 text-xs text-muted">{t("wizard.reconcile.hint")}</p>
+      <Button
+        variant="ai"
+        loading={reconcile.isPending}
+        onClick={() => reconcile.mutate(undefined, { onSuccess: (r) => setPending(r.patch) })}
+      >
+        {t("wizard.reconcile.run")}
+      </Button>
+      <ErrorNote error={reconcile.error} />
+      {nothing && <p className="mt-2 text-sm">{t("wizard.reconcile.ok")}</p>}
+      {reply?.next_question && (
+        <p className="mt-2 text-sm" aria-label={t("wizard.intake.question")}>
+          <Badge tone="brand" className="mr-2">
+            IA
+          </Badge>
+          {reply.next_question}
+        </p>
+      )}
+      {pending && (
+        <ProposedChanges
+          patch={pending}
+          brief={brief}
+          save={save}
+          onDone={() => setPending(null)}
+        />
+      )}
+    </Card>
+  );
+}
+
+/** Qué cambió del plan en la última recompilación (fase 2). */
+export function PlanDiffBanner({ diff }: { diff: PlanDiff | null | undefined }) {
+  const { t } = useTranslation();
+  const key = JSON.stringify(diff ?? null);
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  if (!diff || dismissed === key) return null;
+  const step = (s: string) => t(`wizard.step.${s}`);
+  const items = [
+    ...(diff.added_steps ?? []).map((s) => t("wizard.diff.added", { step: step(s) })),
+    ...(diff.removed_steps ?? []).map((s) => t("wizard.diff.removed", { step: step(s) })),
+    ...(diff.changed_defaults ?? []).map((k) =>
+      t("wizard.diff.default", { key: t(`wizard.diff.keys.${k}`) }),
+    ),
+    ...(diff.new_checks ?? []).map((m) => t("wizard.diff.newCheck", { message: m })),
+    ...(diff.resolved_checks ?? []).map((m) => t("wizard.diff.resolved", { message: m })),
+  ];
+  if (items.length === 0) return null;
+  return (
+    <div
+      className="rounded-pt border border-brand p-3 text-sm"
+      role="status"
+      aria-label={t("wizard.diff.title")}
+    >
+      <p className="mb-1 font-semibold">{t("wizard.diff.title")}</p>
+      <ul className="list-disc pl-5">
+        {items.map((i) => (
+          <li key={i}>{i}</li>
+        ))}
+      </ul>
+      <Button size="sm" variant="ghost" className="mt-2" onClick={() => setDismissed(key)}>
+        {t("wizard.diff.dismiss")}
+      </Button>
+    </div>
+  );
+}
+
+/** Paso «Umbral de decisión»: qué error es peor y cuánto; la evaluación elige el umbral. */
+export function ThresholdStep({ brief, save }: { brief: UseCaseBrief; save: SaveBrief }) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-3 text-sm">
+      <p>{t("wizard.threshold.explain")}</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label={t("wizard.brief.error_costs.label")}>
+          <Select
+            value={brief.error_costs ?? ""}
+            onChange={(e) =>
+              save({
+                ...brief,
+                error_costs: (e.target.value || null) as NonNullable<
+                  UseCaseBrief["error_costs"]
+                > | null,
+              })
+            }
+          >
+            <option value="">—</option>
+            {COSTS.map((c) => (
+              <option key={c} value={c}>
+                {t(`wizard.brief.error_costs.${c}`)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t("wizard.brief.ratio")} hint={t("wizard.threshold.ratioHint")}>
+          <Input
+            type="number"
+            min={1}
+            step="any"
+            defaultValue={brief.error_cost_ratio ?? ""}
+            onBlur={(e) =>
+              save({
+                ...brief,
+                error_cost_ratio: e.target.value === "" ? null : Number(e.target.value),
+              })
+            }
+          />
+        </Field>
+      </div>
+      {!brief.error_cost_ratio && (
+        <p className="text-xs text-warn">{t("wizard.threshold.needRatio")}</p>
+      )}
+    </div>
   );
 }
 

@@ -348,7 +348,20 @@
     "class": "Class",
     "support": "Cases",
     "openMlflow": "Open in MLflow",
-    "mlflowHint": "See the run in the MLflow UI (optional)"
+    "mlflowHint": "See the run in the MLflow UI (optional)",
+    "cost": {
+      "title": "Threshold by error cost",
+      "explain_false_negative": "Missing “{{positive}}” was considered {{ratio}} times worse than a false alarm. The threshold was chosen on validation; this is the test set.",
+      "explain_false_positive": "A false alarm for “{{positive}}” was considered {{ratio}} times worse than missing it. The threshold was chosen on validation; this is the test set.",
+      "atThreshold": "Cost threshold ({{threshold}})",
+      "at50": "50 % threshold",
+      "threshold": "Threshold",
+      "recall": "Detected",
+      "precision": "Precision",
+      "missed": "Missed",
+      "falseAlarms": "False alarms",
+      "cost": "Cost"
+    }
   },
   "models": {
     "title": "Registered models",
@@ -408,7 +421,9 @@
       "architecture": "Architecture",
       "hpo": "Hyperparameter search",
       "budget": "Budget and hardware",
-      "review": "Review and launch"
+      "review": "Review and launch",
+      "formula": "Suggested formula",
+      "threshold": "Decision threshold"
     },
     "help": {
       "goal": "Describe what you want to achieve. The copilot helps you refine it.",
@@ -419,7 +434,9 @@
       "architecture": "Neural network proposals for your data (from the AI or by rules).",
       "hpo": "How the best hyperparameters are searched within your budget.",
       "budget": "Time, device and whether the agent should iterate on its own.",
-      "review": "Everything chosen, before training."
+      "review": "Everything chosen, before training.",
+      "formula": "Searches for a mathematical formula that explains the target: if it exists, you see it written and it extrapolates.",
+      "threshold": "When one error is worse than the other, the decision threshold does not have to be 50 %."
     },
     "goal": {
       "label": "What do you want to achieve?",
@@ -538,6 +555,31 @@
       "suggested": "Suggested",
       "use": "Use",
       "skipped": "Skipping “{{step}}”: {{reason}}"
+    },
+    "reconcile": {
+      "title": "Check the case sheet against the data",
+      "hint": "The assistant compares what you said in the case sheet with what the data show and proposes corrections. Nothing is applied until you accept it.",
+      "run": "Check the case sheet",
+      "ok": "The case sheet matches the data."
+    },
+    "diff": {
+      "title": "The plan changed",
+      "added": "New step: {{step}}",
+      "removed": "Removed step: {{step}}",
+      "default": "The {{key}} suggestion changed",
+      "newCheck": "New warning: {{message}}",
+      "resolved": "Resolved: {{message}}",
+      "dismiss": "Got it",
+      "keys": {
+        "task": "task",
+        "target_metric": "metric",
+        "architecture_hint": "architecture"
+      }
+    },
+    "threshold": {
+      "explain": "After training, the evaluation uses the validation data to choose the threshold that minimizes the expected cost of errors, and shows how it performs on the test set compared with the 50 % threshold.",
+      "ratioHint": "For example, 10 if missing a case is ten times worse than a false alarm.",
+      "needRatio": "Without how many times worse, the cost-based threshold can't be computed."
     }
   },
   "agent": {

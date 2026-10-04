@@ -348,7 +348,20 @@
     "class": "Clase",
     "support": "Casos",
     "openMlflow": "Abrir en MLflow",
-    "mlflowHint": "Ver el run en la UI de MLflow (opcional)"
+    "mlflowHint": "Ver el run en la UI de MLflow (opcional)",
+    "cost": {
+      "title": "Umbral por costo de los errores",
+      "explain_false_negative": "No detectar «{{positive}}» se consideró {{ratio}} veces peor que una falsa alarma. El umbral se eligió en validación; esto es el test.",
+      "explain_false_positive": "Una falsa alarma de «{{positive}}» se consideró {{ratio}} veces peor que no detectarlo. El umbral se eligió en validación; esto es el test.",
+      "atThreshold": "Umbral por costo ({{threshold}})",
+      "at50": "Umbral del 50 %",
+      "threshold": "Umbral",
+      "recall": "Detectados",
+      "precision": "Precisión",
+      "missed": "No detectados",
+      "falseAlarms": "Falsas alarmas",
+      "cost": "Costo"
+    }
   },
   "models": {
     "title": "Modelos registrados",
@@ -408,7 +421,9 @@
       "architecture": "Arquitectura",
       "hpo": "Búsqueda de hiperparámetros",
       "budget": "Presupuesto y hardware",
-      "review": "Revisión y lanzamiento"
+      "review": "Revisión y lanzamiento",
+      "formula": "Fórmula sugerida",
+      "threshold": "Umbral de decisión"
     },
     "help": {
       "goal": "Describí en palabras qué querés lograr. El copiloto te ayuda a precisarlo.",
@@ -419,7 +434,9 @@
       "architecture": "Propuestas de red neuronal para tus datos (de la IA o por reglas).",
       "hpo": "Cómo se buscan los mejores hiperparámetros con tu presupuesto.",
       "budget": "Tiempo, dispositivo y si querés que el agente itere solo.",
-      "review": "Todo lo elegido, antes de entrenar."
+      "review": "Todo lo elegido, antes de entrenar.",
+      "formula": "Busca una fórmula matemática que explique el objetivo: si existe, la ves escrita y extrapola.",
+      "threshold": "Cuando un error es peor que el otro, el umbral de decisión no tiene que ser el 50 %."
     },
     "goal": {
       "label": "¿Qué querés lograr?",
@@ -538,6 +555,31 @@
       "suggested": "Sugerido",
       "use": "Usar",
       "skipped": "Se saltea «{{step}}»: {{reason}}"
+    },
+    "reconcile": {
+      "title": "Revisar la ficha con los datos",
+      "hint": "El asistente compara lo que dijiste en la ficha con lo que muestran los datos y propone correcciones. Nada se aplica sin que lo aceptes.",
+      "run": "Revisar la ficha",
+      "ok": "La ficha coincide con los datos."
+    },
+    "diff": {
+      "title": "El plan cambió",
+      "added": "Nuevo paso: {{step}}",
+      "removed": "Se quitó el paso: {{step}}",
+      "default": "Cambió la sugerencia de {{key}}",
+      "newCheck": "Nuevo aviso: {{message}}",
+      "resolved": "Resuelto: {{message}}",
+      "dismiss": "Entendido",
+      "keys": {
+        "task": "tarea",
+        "target_metric": "métrica",
+        "architecture_hint": "arquitectura"
+      }
+    },
+    "threshold": {
+      "explain": "Después de entrenar, la evaluación elige con los datos de validación el umbral que minimiza el costo esperado de los errores y muestra cómo rinde en el test frente al umbral del 50 %.",
+      "ratioHint": "Por ejemplo, 10 si no detectar un caso es diez veces peor que una falsa alarma.",
+      "needRatio": "Sin cuántas veces peor, no se puede calcular el umbral por costo."
     }
   },
   "agent": {

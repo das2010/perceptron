@@ -30,6 +30,7 @@ import {
 import { formatNumber } from "@/lib/format";
 
 import { AnalysisPanel } from "./AnalysisPanel";
+import { CostThreshold } from "./CostThreshold";
 import { ExportPanel } from "./ExportPanel";
 import { PlaygroundPanel } from "./PlaygroundPanel";
 
@@ -256,6 +257,7 @@ export function RunPage() {
       </Card>
 
       {evaluated && <Confusion report={evaluated} />}
+      {evaluated && <CostThreshold report={evaluated} />}
       {evaluated && (
         <AnalysisPanel
           runId={runId}

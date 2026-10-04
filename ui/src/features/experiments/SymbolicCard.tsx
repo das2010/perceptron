@@ -42,7 +42,16 @@ function bestRun(runs: Run[], datasetVersionId: string): Run | undefined {
     .sort((a, b) => (a.metrics?.val_loss ?? Infinity) - (b.metrics?.val_loss ?? Infinity))[0];
 }
 
-export function SymbolicCard({ projectId, runs }: { projectId: string; runs: Run[] }) {
+export function SymbolicCard({
+  projectId,
+  runs,
+  datasetVersionId,
+}: {
+  projectId: string;
+  runs: Run[];
+  /** Fija el dataset (wizard): sin selector. */
+  datasetVersionId?: string | undefined;
+}) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const datasets = (useDatasets(projectId).data ?? []).filter((d) => d.modality === "tabular");
@@ -52,7 +61,7 @@ export function SymbolicCard({ projectId, runs }: { projectId: string; runs: Run
   const [limit, setLimit] = useState(60);
   const [jobId, setJobId] = useState<string>();
   const job = useJob(jobId);
-  const current = dvId || datasets[0]?.id || "";
+  const current = datasetVersionId || dvId || datasets[0]?.id || "";
   const running =
     Boolean(jobId) && !["succeeded", "failed", "cancelled"].includes(job.data?.status ?? "");
   const done = job.data?.status === "succeeded";
@@ -74,7 +83,7 @@ export function SymbolicCard({ projectId, runs }: { projectId: string; runs: Run
       </CardTitle>
       <p className="mb-3 text-sm text-muted">{t("symbolic.hint")}</p>
       <div className="flex flex-wrap items-end gap-3">
-        {datasets.length > 1 && (
+        {!datasetVersionId && datasets.length > 1 && (
           <Field label={t("symbolic.dataset")}>
             <Select value={current} onChange={(e) => setDvId(e.target.value)}>
               {datasets.map((d) => (

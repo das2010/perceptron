@@ -51,6 +51,19 @@ Con la ficha y los datos, el wizard **adapta el plan**:
 Si el caso no encaja en lo que Perceptron resuelve, el wizard lo dice y sigue con los pasos
 estándar.
 
+Además:
+
+- En **Calidad**, **Revisar la ficha** compara lo que dijiste con lo que muestran los datos (por
+  ejemplo, entradas declaradas independientes que en realidad varían juntas) y propone
+  correcciones para aceptar o descartar.
+- Si el objetivo es descubrir una regla, aparece el paso **Fórmula sugerida** antes de entrenar.
+- Si un error es peor que el otro en una clasificación de dos clases, aparece **Umbral de
+  decisión**: indicás cuántas veces peor es, y al evaluar se elige con validación el umbral que
+  minimiza el costo y se muestra en el test frente al del 50 % (**Umbral por costo de los
+  errores**, en la página del run).
+- Cuando el plan cambia, un aviso **El plan cambió** dice qué pasos se agregaron o quitaron y qué
+  avisos son nuevos o se resolvieron.
+
 ## Arquitecturas
 
 ### Propuestas: por reglas o por LLM
