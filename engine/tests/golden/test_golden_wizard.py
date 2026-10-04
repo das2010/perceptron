@@ -30,38 +30,39 @@ def wizard(ctx: EngineContext, monkeypatch: pytest.MonkeyPatch) -> Wizard:
     return Wizard(Workflow(ctx, MemoryTracker()))
 
 
-def _changes(wizard: Wizard, text: str) -> dict[str, object]:
+def _changes(wizard: Wizard, text: str) -> tuple[dict[str, object], str]:
+    """Cambios propuestos por campo y, para el mensaje de error, todo lo que devolvió el LLM."""
     project = wizard.ctx.projects.add(Project(name="caso"))
     patch, _ = wizard.intake(project.id, text, [])
-    return {c.field: c.value for c in patch.changes}
+    return {c.field: c.value for c in patch.changes}, patch.model_dump_json()
 
 
 def test_intake_understands_a_failure_detection_case(wizard: Wizard) -> None:
-    got = _changes(
+    got, raw = _changes(
         wizard,
         "Quiero saber a partir del sonido si un rodamiento va a fallar. Tengo grabaciones "
         "etiquetadas como 'bien' o 'falla'. No detectar una falla es mucho peor que una falsa "
         "alarma, como diez veces peor.",
     )
-    assert got.get("problem") in ("category", "anomaly")
-    assert got.get("error_costs") == "false_negative_worse"
+    assert got.get("problem") in ("category", "anomaly"), raw
+    assert got.get("error_costs") == "false_negative_worse", raw
 
 
 def test_intake_understands_a_rule_to_extrapolate(wizard: Wizard) -> None:
-    got = _changes(
+    got, raw = _changes(
         wizard,
         "Tengo una tabla con un número y su múltiplo de 3. Quiero que el sistema descubra la "
         "regla y después usarla con números mucho más grandes que los de la tabla.",
     )
-    assert got.get("problem") == "rule" and got.get("extrapolate") is True
+    assert got.get("problem") == "rule" and got.get("extrapolate") is True, raw
 
 
 def test_intake_flags_out_of_catalog_problems(wizard: Wizard) -> None:
-    got = _changes(
+    got, raw = _changes(
         wizard,
         "Quiero recomendarle películas a cada usuario según lo que vio antes, como Netflix.",
     )
-    assert got.get("problem") == "other"
+    assert got.get("problem") == "other", raw
 
 
 def test_reconcile_detects_dependent_inputs(wizard: Wizard, tmp_path: Path) -> None:
@@ -87,4 +88,4 @@ def test_reconcile_detects_dependent_inputs(wizard: Wizard, tmp_path: Path) -> N
     fields = {c.field: c.value for c in patch.changes}
     assert fields.get("independent_inputs") is False or (
         patch.next_question and "S2" in patch.next_question
-    )
+    ), patch.model_dump_json()

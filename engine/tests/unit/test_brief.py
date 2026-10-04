@@ -184,3 +184,26 @@ def test_plan_diff_lists_what_changed() -> None:
     diff = diff_plans(before, after)
     assert diff.added_steps == ["formula"] and "architecture_hint" in diff.changed_defaults
     assert diff_plans(after, after).empty and diff_plans(None, after).empty
+
+
+def test_llm_field_guide_covers_every_brief_field() -> None:
+    """La guía corta del prompt (modelos chicos) describe exactamente los campos editables."""
+    from typing import get_args
+
+    from perceptron.services.brief import BRIEF_GUIDE, BriefField
+
+    assert set(BRIEF_GUIDE) == set(get_args(BriefField))
+
+
+def test_patch_values_are_normalized_to_field_types() -> None:
+    """Los modelos chicos devuelven «true» o «5» como texto: se normalizan al tipo del campo."""
+    from perceptron.services.brief import normalize_patch
+
+    patch = BriefPatch(
+        changes=[
+            BriefChange(field="extrapolate", value="true", rationale="x"),
+            BriefChange(field="error_cost_ratio", value="5", rationale="x"),
+            BriefChange(field="problem", value="rule", rationale="x"),
+        ]
+    )
+    assert [c.value for c in normalize_patch(patch).changes] == [True, 5.0, "rule"]
