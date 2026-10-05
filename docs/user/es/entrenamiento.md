@@ -186,6 +186,8 @@ En **Experimentos**:
 
 **Estudios** lista cada búsqueda con su estado: entrenando, en cola, detenido, interrumpido (por ejemplo, si el worker se reinició), terminado o con error. **Detener** frena un estudio conservando los trials terminados; **Reanudar** sigue desde donde quedó.
 
+Mientras un trial entrena, su fila en **Entrenamientos** y su estudio muestran una barra de progreso con la época actual, el total y el tiempo restante estimado («Época 7 de 20 · ~3 min restantes»). Antes de la primera época se ve «Preparando…». Si el trial corta antes por early stopping, termina sin llegar al total.
+
 - **Entrenamiento en vivo:** época, métricas y **Curvas de validación por intento** mientras corre.
 - **Entrenamientos:** cada run con su **Estado** (En cola, Entrenando, En pausa, Terminado, Falló,
   Cancelado) e **Inicio**.

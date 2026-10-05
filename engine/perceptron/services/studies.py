@@ -62,7 +62,15 @@ def execute_study(
 
     def on_event(ev: Any) -> None:
         if ev.event == "epoch":
-            emit("epoch", run_id=ev.run_id, epoch=ev.epoch, metrics=ev.metrics)
+            # Total de épocas y tiempo restante: la UI muestra el progreso del trial en curso.
+            emit(
+                "epoch",
+                run_id=ev.run_id,
+                epoch=ev.epoch,
+                metrics=ev.metrics,
+                max_epochs=ev.data.get("max_epochs"),
+                eta_s=ev.data.get("eta_s"),
+            )
 
     _, result = Workflow(ctx).run_study(
         study.project_id,

@@ -275,4 +275,49 @@ describe("control de estudios", () => {
       ),
     );
   });
+
+  it("muestra el progreso del trial que entrena: época, total y tiempo restante", async () => {
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/runs": () => [
+        { ...run(0, 0.01), id: "std_a-t000", study_id: "std_a", status: "running", metrics: {} },
+      ],
+      "GET /api/v1/projects/prj_1/datasets": () => [],
+      "GET /api/v1/projects/prj_1/symbolic": () => [],
+      "GET /api/v1/projects/prj_1/studies": () => [
+        {
+          study: { id: "std_a", project_id: "prj_1", name: "hpo", version: 1 },
+          status: "running",
+          job_id: "job_1",
+          trials_done: 0,
+          trials_total: 10,
+          resumable: false,
+        },
+      ],
+      "GET /api/v1/jobs/job_1": () => ({
+        id: "job_1",
+        kind: "study",
+        status: "running",
+        progress: {
+          last: "epoch",
+          run_id: "std_a-t000",
+          epoch: 6,
+          max_epochs: 20,
+          eta_s: 150,
+          metrics: { val_loss: 0.3 },
+        },
+      }),
+    });
+    render(
+      <Providers client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <App router={createTestRouter("/projects/prj_1/experiments")} />
+      </Providers>,
+    );
+    const row = await screen.findByTestId("progress-std_a-t000");
+    await waitFor(() => expect(row).toHaveTextContent("Época 7 de 20 · ~3 min restantes"));
+    expect(within(row).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "35");
+    // La tarjeta de estudios muestra el mismo progreso del trial en curso.
+    expect(await screen.findByTestId("progress-job_1")).toHaveTextContent("Época 7 de 20");
+  });
 });

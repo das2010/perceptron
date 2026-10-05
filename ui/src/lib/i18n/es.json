@@ -320,7 +320,13 @@
     "pipelineDiff": "Diferencias de pipeline",
     "sameConfig": "Los runs comparten arquitectura y pipeline: solo cambian los hiperparámetros.",
     "best": "mejor",
-    "bestHint": "Menor pérdida de validación del estudio: es el que conviene evaluar"
+    "bestHint": "Menor pérdida de validación del estudio: es el que conviene evaluar",
+    "preparing": "Preparando…",
+    "epochOf": "Época {{done}} de {{total}}",
+    "epochN": "Época {{done}}",
+    "etaSeconds": "~{{n}} s restantes",
+    "etaMinutes": "~{{n}} min restantes",
+    "etaHours": "~{{n}} h restantes"
   },
   "status": {
     "queued": "En cola",

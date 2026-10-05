@@ -50,6 +50,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | Wizard que diseña (ADR-0041, iteración 5): memo «Por qué esta arquitectura» en la revisión (motivo, requisitos que cumple y que no, aviso si se eligió otra) y botón para usar la búsqueda del diseño guiado en el paso HPO | ✅ |
 | Wizard que diseña (ADR-0041, iteración 6): «Aceptar y revisar» — un clic fija arquitectura, búsqueda y épocas del diseño guiado y pasa a la revisión con el memo | ✅ |
 | La `val_loss` se mide sin suavizado de etiquetas (el entrenamiento sí lo usa): comparable entre trials del HPO con distinto `label_smoothing` y sin sesgar su importancia en el análisis del estudio | ✅ |
+| Progreso del trial en curso en Entrenamientos y Estudios: barra con época actual, total y tiempo restante (del evento por época del job); la tabla se refresca con un estudio activo aunque se entre desde el menú | ✅ |
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 
