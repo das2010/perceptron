@@ -159,7 +159,12 @@ def _with_linear(request: LLMRequest) -> dict[str, Any]:
     base = out["proposals"][0]["archspec"]
     first = base["nodes"][0]
     head = {"id": "head", "block": "head.linear"}
-    linear = {**base, "name": "lineal", "nodes": [first, head], "edges": [[first["id"], "head"]]}
+    linear = {
+        **base,
+        "name": "lineal",
+        "nodes": [first, head],
+        "edges": [["input", first["id"]], [first["id"], "head"]],
+    }
     out["proposals"][1] = {
         "title": "Lineal",
         "archspec": linear,
