@@ -36,13 +36,44 @@
     - los requisitos del escenario;
     - la insignia «Recomendada» y qué requisitos cumple cada opción;
     - un aviso al elegir una opción no recomendada.
-  - **Iteraciones siguientes (mismo ADR):**
-    1. Cadena guiada: ficha → pipeline → propuestas → mini-torneo de las mejores → ganadora
-       con evidencia → estrategia de HPO → revisión, con «Aceptar todo».
-    2. Paso «Resultados y mejora»: diagnóstico y próximas acciones con un clic, más el
-       memo de diseño del LLM en la revisión.
-    3. Suite golden de escenarios con LLM real (`llm.yml`, `only_golden`) y ajuste de
-       prompts.
+  - **Iteraciones implementadas (mismo ADR):**
+    1. Requisitos, evaluación y recomendada (arriba).
+    2. **Diseño guiado** (`services/autodesign.py`, `POST /projects/{id}/draft/design`, job). La
+       cadena es:
+       - preparación;
+       - propuestas evaluadas;
+       - mini-torneo de hasta 3 que cumplan los obligatorios, con:
+         - una métrica que todas registran (las pérdidas no son comparables entre focal y
+           entropía cruzada);
+         - el 15 % de las épocas, con mínimo 2;
+         - todo train por época si hay menos de 5000 ejemplos;
+         - en modo `auto`, solo si se estima en 15 minutos o menos;
+       - elegida con evidencia;
+       - épocas por trial;
+       - estrategia de HPO.
+
+       El resultado queda en `values.design` del borrador (campo del sistema) y la persona lo
+       acepta. Se descarta si cambian los datos, la ficha o la preparación. El quickstart usa el
+       mismo criterio de torneo.
+    3. **Próximo paso desde el diagnóstico** (`services/improve.py`,
+       `GET/POST /runs/{id}/improvements`). Cada acción tipada del diagnosticador se traduce
+       en un cambio determinístico. Se parte de los hiperparámetros del mejor trial como
+       defaults y se ajusta:
+       - el learning rate;
+       - la regularización (dropout y luego weight decay);
+       - las épocas;
+       - el desbalance (pesos por clase y luego sobremuestreo).
+
+       Lo que no es de arquitectura (aumentar datos, cambiar de familia, más datos) indica dónde
+       hacerlo. La UI ofrece «Aplicar» y luego «Entrenar con esta mejora», con el presupuesto
+       del estudio.
+    4. **Golden de escenarios con LLM real** (`tests/golden/test_golden_design.py`):
+       - «Tabla 3» → la recomendada es lineal;
+       - «Tubos» → el LLM propone una preentrenada y queda recomendada;
+       - edge → todas bajo el tope.
+
+       Pasaron con OpenAI sin ajustar el prompt.
+    5. Memo «Por qué esta arquitectura» en la revisión y la búsqueda del diseño en el paso HPO.
 - Consecuencias:
   - El LLM sigue proponiendo y explicando; quien decide qué es obligatorio es el sistema, de
     forma determinística y testeable. Con reglas (L0) la recomendación funciona igual.
