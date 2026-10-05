@@ -1434,6 +1434,81 @@
     "candidates": "Other formulas evaluated",
     "candidate": "complexity {{complexity}} · val error {{rmse}}:"
   },
+  "design": {
+    "title": "Design requirements for this scenario",
+    "intro": "Perceptron derived them from your data, your hardware and the use-case brief. Each proposal is scored against them and the best one is recommended.",
+    "level": {
+      "must": "Required",
+      "should": "Recommended"
+    },
+    "code": {
+      "pretrained_backbone": "Pretrained network",
+      "no_pretrained_offline": "Small network, offline",
+      "small_model": "Small model",
+      "linear_option": "Linear option",
+      "edge_size": "Size for embedded device",
+      "low_latency": "Low latency",
+      "imbalance_handling": "Handle imbalance",
+      "explainable": "Explainable",
+      "epoch_time": "Time per epoch"
+    },
+    "recommended": "Recommended",
+    "checks": "Requirements met",
+    "met": "met",
+    "unmet": "not met",
+    "notRecommended": "You chose an option other than the recommended one (“{{best}}”). You can still go ahead.",
+    "unmetList": "Not met: {{list}}."
+  },
+  "guided": {
+    "title": "Guided design",
+    "intro": "Perceptron prepares the data, asks for proposals, scores them against the scenario requirements, compares the best ones with a short training run and proposes the architecture and the hyperparameter search. You decide.",
+    "compare": "Compare with a short training run",
+    "mode": {
+      "auto": "If quick",
+      "always": "Always",
+      "never": "No"
+    },
+    "run": "Design automatically",
+    "rerun": "Design again",
+    "stage": {
+      "start": "Starting…",
+      "pipeline": "Preparing the data…",
+      "architectures": "Requesting and scoring architecture proposals…",
+      "tournament": "Comparing the best ones with a short training run…",
+      "strategy": "Setting up the hyperparameter search…"
+    },
+    "skipped": {
+      "disabled": "No comparison run (disabled).",
+      "single_candidate": "No comparison run: only one candidate meets the requirements.",
+      "too_long": "No comparison run: it is estimated to be long. Choose “Always” to run it anyway."
+    },
+    "candidate": "Candidate",
+    "score": "Score",
+    "winner": "Won the comparison",
+    "mustUnmet": "Misses a requirement",
+    "chosen": "Chosen",
+    "pick": "Proposal: {{title}}.",
+    "plan": "Hyperparameter search: {{strategy}}, {{epochs}} epochs per trial.",
+    "accept": "Accept the design",
+    "accepted": "Design accepted",
+    "useStrategy": "Use the guided design’s search",
+    "memo": {
+      "title": "Why this architecture",
+      "notPick": "You chose it; the guided design proposed another one.",
+      "met": "Meets: {{list}}.",
+      "unmet": "Does not meet: {{list}}."
+    }
+  },
+  "improve": {
+    "title": "Next step",
+    "apply": "Apply",
+    "train": "Train with this improvement",
+    "hint": {
+      "pipeline": "Done in data preparation (Train → Preparation).",
+      "design": "Design again with the wizard’s guided design (Architecture step).",
+      "data": "More data is needed: add it in the Data tab."
+    }
+  },
   "studies": {
     "title": "Studies",
     "name": "Study",

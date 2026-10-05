@@ -15,7 +15,13 @@ import pytest
 
 from perceptron.api.context import EngineContext
 from perceptron.domain.enums import Origin, PrivacyLevel
-from perceptron.domain.models import ArchSpecRecord, LLMCall, ModelVersion, Project
+from perceptron.domain.models import (
+    ArchSpecRecord,
+    LLMCall,
+    ModelVersion,
+    Project,
+    ProjectDraft,
+)
 from perceptron.hpo.strategy import Budget
 from perceptron.llm.errors import LLMUnavailableError
 from perceptron.llm.providers.fake import FakeLLMProvider
@@ -111,6 +117,94 @@ def test_architect_falls_back_to_rules(
     assert not fake_llm.calls()
     with pytest.raises(LLMUnavailableError):
         wf.roles.propose_architectures(dv, pipe, mode="llm")
+
+
+def _tabla3(wf: Workflow, tmp_path: Path) -> tuple[str, str]:
+    """Caso «Tabla 3»: hay que descubrir la regla triple = 3 × numero y extrapolar."""
+    csv = tmp_path / "tabla 3 ñ.csv"
+    rows = "".join(f"{i},{3 * i}\n" for i in range(1, 121))
+    csv.write_text("numero,triple\n" + rows, encoding="utf-8")
+    p = wf.ctx.projects.add(Project(name="Tabla 3", goal="calcular el triple"))
+    wf.ctx.files.init_project(p)
+    wf.ctx.repo(ProjectDraft).add(
+        ProjectDraft(project_id=p.id, values={"brief": {"problem": "rule", "extrapolate": True}})
+    )
+    dv = wf.ingest(p.id, csv, target="triple")
+    wf.profile(dv.id)
+    return dv.id, wf.propose_pipeline(dv.id).id
+
+
+def _mlps(request: LLMRequest) -> dict[str, Any]:
+    base = datos(request)["constraints"]["base_archspec"]
+    return {
+        "proposals": [
+            {
+                "title": "MLP",
+                "archspec": {**base, "name": "mlp"},
+                "rationale": "r",
+                "confidence": 1,
+            },
+            {
+                "title": "MLP 2",
+                "archspec": {**base, "name": "mlp2"},
+                "rationale": "r",
+                "confidence": 0.5,
+            },
+        ]
+    }
+
+
+def _with_linear(request: LLMRequest) -> dict[str, Any]:
+    out = _mlps(request)
+    base = out["proposals"][0]["archspec"]
+    first = base["nodes"][0]
+    head = {"id": "head", "block": "head.linear"}
+    linear = {
+        **base,
+        "name": "lineal",
+        "nodes": [first, head],
+        "edges": [["input", first["id"]], [first["id"], "head"]],
+    }
+    out["proposals"][1] = {
+        "title": "Lineal",
+        "archspec": linear,
+        "rationale": "regla",
+        "confidence": 0.4,
+    }
+    return out
+
+
+def test_architect_meets_design_requirements_and_recommends(
+    wf: Workflow, fake_llm: FakeLLMProvider, tmp_path: Path
+) -> None:
+    dv, pipe = _tabla3(wf, tmp_path)
+    fake_llm.script("architect", _mlps, _with_linear)
+    res = wf.roles.propose_architectures(dv, pipe, mode="llm", n=2)
+    sent = datos(fake_llm.calls("architect")[0])["constraints"]
+    assert {r["code"] for r in sent["design_requirements"]} >= {"linear_option", "small_model"}
+    # Sin opción lineal el validador le pide una al arquitecto (requisito obligatorio).
+    assert "linear_option" in fake_llm.calls("architect")[1].messages[-1].content
+    assert res.fallback_reason is None and res.requirements is not None
+    # La lineal queda primera y recomendada aunque el LLM la puso segunda con menos confianza.
+    first = res.options[0]
+    assert first.title == "Lineal" and first.assessment and first.assessment.recommended
+    assert [o.assessment.recommended for o in res.options if o.assessment] == [True, False]
+
+
+def test_architect_supplements_unmet_must_with_template(
+    wf: Workflow, fake_llm: FakeLLMProvider, tmp_path: Path
+) -> None:
+    dv, pipe = _tabla3(wf, tmp_path)
+    fake_llm.script("architect", _mlps)  # nunca cumple: se repite en cada reintento
+    res = wf.roles.propose_architectures(dv, pipe, mode="llm", n=2)
+    assert res.origin is Origin.LLM and len(res.options) == 3
+    first = res.options[0]
+    assert first.title == "Regresión lineal" and first.assessment and first.assessment.recommended
+    record = wf.ctx.repo(ArchSpecRecord).get(first.record.id)
+    assert record.origin is Origin.RULES and first.validation.valid
+    # Por reglas (L0) también se completa y se evalúa.
+    rules = wf.roles.propose_architectures(dv, pipe, mode="rules")
+    assert rules.options[0].title == "Regresión lineal"
 
 
 def _strategy(request: LLMRequest) -> dict[str, Any]:

@@ -1647,6 +1647,30 @@ export interface paths {
         patch: operations["updateDraft"];
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/draft/design": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft Design
+         * @description Diseño guiado (ADR-0041): preparación, propuestas evaluadas contra los requisitos del
+         *     escenario, mini-torneo de las mejores y estrategia de HPO para la elegida.
+         *
+         *     El resultado queda en `values.design` del borrador; no fija la arquitectura: la persona lo
+         *     acepta con `PATCH /draft` (`archspec_id`, `strategy`, `max_epochs_per_trial`).
+         */
+        post: operations["draftDesign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/draft/intake": {
         parameters: {
             query?: never;
@@ -2615,6 +2639,47 @@ export interface paths {
         get: operations["getRunHistory"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/improvements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Improvements
+         * @description Acciones del diagnóstico traducidas a cambios concretos de la arquitectura (ADR-0041).
+         */
+        get: operations["listRunImprovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/improvements/{index}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Improvement
+         * @description Guarda la ArchSpec mejorada (desde el mejor punto del run). No entrena: eso lo decide la
+         *     persona con el presupuesto sugerido.
+         */
+        post: operations["applyRunImprovement"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3645,6 +3710,8 @@ export interface components {
         /** ArchProposal */
         ArchProposal: {
             archspec: components["schemas"]["ArchSpecRecord"];
+            /** @description Cuánto cumple los requisitos del escenario (ADR-0041) */
+            assessment?: components["schemas"]["DesignAssessment"] | null;
             /** Confidence */
             confidence?: number | null;
             /** Cons */
@@ -3672,6 +3739,7 @@ export interface components {
             origin: components["schemas"]["Origin"];
             /** Proposals */
             proposals: components["schemas"]["ArchProposal"][];
+            requirements?: components["schemas"]["DesignRequirements"] | null;
         };
         /** ArchSpec */
         ArchSpec: {
@@ -4024,6 +4092,41 @@ export interface components {
              * @enum {string}
              */
             source: "huggingface" | "torch";
+        };
+        /** Candidate */
+        Candidate: {
+            /** Archspec Id */
+            archspec_id: string;
+            /** Checks */
+            checks?: components["schemas"]["RequirementCheck"][];
+            /**
+             * Eligible
+             * @description Cumple todos los requisitos obligatorios
+             * @default true
+             */
+            eligible: boolean;
+            /** Estimates */
+            estimates?: {
+                [key: string]: number | null;
+            };
+            origin: components["schemas"]["Origin"];
+            /** Rationale */
+            rationale: string;
+            /**
+             * Recommended
+             * @default false
+             */
+            recommended: boolean;
+            /** Run Id */
+            run_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Title */
+            title: string;
+            /** Tournament Metric */
+            tournament_metric?: number | null;
+            /** Tournament Status */
+            tournament_status?: string | null;
         };
         /** CategoricalStats */
         CategoricalStats: {
@@ -4721,6 +4824,102 @@ export interface components {
          * @enum {string}
          */
         DeploymentStatus: "active" | "stopped";
+        /** DesignAssessment */
+        DesignAssessment: {
+            /** Checks */
+            checks?: components["schemas"]["RequirementCheck"][];
+            /**
+             * Recommended
+             * @default false
+             */
+            recommended: boolean;
+            /** Score */
+            score: number;
+        };
+        /** DesignOutcome */
+        DesignOutcome: {
+            /** Candidates */
+            candidates?: components["schemas"]["Candidate"][];
+            /** Created At */
+            created_at?: string;
+            /** Fallback Reason */
+            fallback_reason?: string | null;
+            /**
+             * Max Epochs Per Trial
+             * @default 15
+             */
+            max_epochs_per_trial: number;
+            origin: components["schemas"]["Origin"];
+            /** Pick */
+            pick?: string | null;
+            /**
+             * Pick Reason
+             * @default
+             */
+            pick_reason: string;
+            /** Pipeline Id */
+            pipeline_id: string;
+            requirements?: components["schemas"]["DesignRequirements"] | null;
+            /** Strategy */
+            strategy?: {
+                [key: string]: unknown;
+            } | null;
+            tournament?: components["schemas"]["TournamentSummary"] | null;
+            /**
+             * Tournament Skipped
+             * @description Por qué no hubo torneo (pocas candidatas, demasiado largo…)
+             */
+            tournament_skipped?: string | null;
+        };
+        /** DesignRequest */
+        DesignRequest: {
+            /**
+             * Tournament
+             * @description Mini-torneo de las mejores: auto = solo si se estima corto (≤ 15 min)
+             * @default auto
+             * @enum {string}
+             */
+            tournament: "auto" | "always" | "never";
+        };
+        /** DesignRequirement */
+        DesignRequirement: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "pretrained_backbone" | "no_pretrained_offline" | "small_model" | "linear_option" | "edge_size" | "low_latency" | "imbalance_handling" | "explainable" | "epoch_time";
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "must" | "should";
+            /**
+             * Message
+             * @description Qué se exige y por qué, en castellano (la UI lo traduce)
+             */
+            message: string;
+            /** Params */
+            params?: {
+                [key: string]: number | string;
+            };
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "each" | "any";
+        };
+        /** DesignRequirements */
+        DesignRequirements: {
+            /** Items */
+            items?: components["schemas"]["DesignRequirement"][];
+            /**
+             * Scenario
+             * @description Hechos del escenario que justifican los requisitos
+             */
+            scenario?: {
+                [key: string]: number | string | boolean | null;
+            };
+        };
         /**
          * Device
          * @enum {string}
@@ -4795,6 +4994,7 @@ export interface components {
             data_facts?: components["schemas"]["DataFacts"] | null;
             /** Dataset Version Id */
             dataset_version_id?: string | null;
+            design?: components["schemas"]["DesignOutcome"] | null;
             /** Device */
             device?: ("cpu" | "cuda" | "rocm" | "xpu" | "mps") | null;
             /** Goal */
@@ -5460,6 +5660,43 @@ export interface components {
              * @description Si difiere de size (OCR)
              */
             width?: number | null;
+        };
+        /** ImprovementApplied */
+        ImprovementApplied: {
+            archspec: components["schemas"]["ArchSpecRecord"];
+            /**
+             * Budget
+             * @description Presupuesto sugerido (el del estudio del run)
+             */
+            budget?: {
+                [key: string]: unknown;
+            };
+            /** Change */
+            change: string;
+        };
+        /** ImprovementOption */
+        ImprovementOption: {
+            /** Applicable */
+            applicable: boolean;
+            /**
+             * Change
+             * @description Qué cambia en la arquitectura
+             */
+            change?: string | null;
+            /**
+             * Hint
+             * @description Dónde se hace si no es de la arquitectura
+             */
+            hint?: ("design" | "pipeline" | "data") | null;
+            /**
+             * Index
+             * @description Posición de la acción en el diagnóstico
+             */
+            index: number;
+            /** Kind */
+            kind: string;
+            /** Rationale */
+            rationale: string;
         };
         /** IngestBody */
         IngestBody: {
@@ -7120,6 +7357,21 @@ export interface components {
              */
             mode: "auto" | "llm" | "rules";
         };
+        /** RequirementCheck */
+        RequirementCheck: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "pretrained_backbone" | "no_pretrained_offline" | "small_model" | "linear_option" | "edge_size" | "low_latency" | "imbalance_handling" | "explainable" | "epoch_time";
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "must" | "should";
+            /** Met */
+            met: boolean;
+        };
         /** RetentionBody */
         RetentionBody: {
             /**
@@ -8439,6 +8691,27 @@ export interface components {
              * @default 0.3
              */
             subset: number;
+        };
+        /** TournamentSummary */
+        TournamentSummary: {
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "minimize" | "maximize";
+            /**
+             * Epochs
+             * @description Épocas por archspec_id
+             */
+            epochs?: {
+                [key: string]: number;
+            };
+            /** Metric */
+            metric: string;
+            /** Subset */
+            subset: number;
+            /** Winner */
+            winner?: string | null;
         };
         /** TrainingSpec */
         TrainingSpec: {
@@ -12288,6 +12561,41 @@ export interface operations {
             };
         };
     };
+    draftDesign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     draftIntake: {
         parameters: {
             query?: never;
@@ -14145,6 +14453,69 @@ export interface operations {
                     "application/json": {
                         [key: string]: number;
                     }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listRunImprovements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOption"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    applyRunImprovement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                index: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementApplied"];
                 };
             };
             /** @description Validation Error */

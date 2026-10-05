@@ -64,6 +64,27 @@ Además:
 - Cuando el plan cambia, un aviso **El plan cambió** dice qué pasos se agregaron o quitaron y qué
   avisos son nuevos o se resolvieron.
 
+### Diseño guiado
+
+En el paso **Arquitectura**, **Diseñar automáticamente** arma el diseño completo por vos:
+
+1. prepara los datos (o usa la preparación que ya elegiste);
+2. pide propuestas de arquitectura y las evalúa contra los **requisitos de diseño** del escenario;
+3. compara las mejores con un **entrenamiento corto**: todas con la misma métrica y, si hay pocos
+   datos, con todo el conjunto de entrenamiento en cada época;
+4. propone la ganadora, con la evidencia, y prepara la búsqueda de hiperparámetros y las épocas
+   por trial.
+
+**Comparar con entrenamiento corto** tiene tres opciones:
+
+- **Si es rápido** (por defecto): se compara solo si se estima en menos de 15 minutos;
+- **Siempre**;
+- **No**.
+
+Nada se aplica solo. **Aceptar el diseño** fija la arquitectura y la búsqueda propuestas; también
+podés **Elegir** otra candidata de la tabla. Si cambiás los datos, la ficha o la preparación, el
+diseño se descarta porque ya no corresponde.
+
 ## Arquitecturas
 
 ### Propuestas: por reglas o por LLM
@@ -79,6 +100,25 @@ memoria y tiempo estimado por época.
 
 Toda propuesta se **valida** antes de mostrarse: esquema, compatibilidad de formas, memoria contra la
 disponible, y disponibilidad y licencia de pesos preentrenados.
+
+**Requisitos de diseño.** Arriba de las propuestas, Perceptron muestra qué exige tu escenario. Los
+deduce de tus datos, de tu equipo y de la ficha del caso. Algunos ejemplos:
+
+- con pocas imágenes, una red preentrenada;
+- con pocas filas, un modelo chico;
+- si hay que extrapolar o buscás una regla, una opción lineal;
+- si va a un equipo embebido, un tope de tamaño;
+- si las clases están desbalanceadas, compensarlo.
+
+Los requisitos son de dos tipos:
+
+- **Obligatorio:** si ninguna propuesta lo cumple, el arquitecto vuelve a intentar. Si sigue sin
+  cumplirse, Perceptron agrega una propuesta que sí lo cumple.
+- **Recomendable:** suma puntos, pero no bloquea.
+
+Cada propuesta muestra qué requisitos cumple (✓/✗). La que mejor los cumple aparece primera, con la
+insignia **Recomendada**. Podés elegir cualquiera: si elegís otra, se te avisa qué requisitos deja sin
+cumplir.
 
 El catálogo cubre, entre otras: MLP, ResNet-MLP y FT-Transformer (tabular); una CNN compacta o
 modelos preentrenados curados, como EfficientNet (imagen); detección, U-Net y CRNN para OCR (visión
@@ -152,6 +192,18 @@ En **Experimentos**:
 
 En la página de cada run, el **Diagnóstico del entrenamiento** detecta sobreajuste, subajuste,
 divergencia o tasa de aprendizaje mal calibrada y sugiere acciones (por LLM o **por reglas**).
+En **Próximo paso**, cada acción figura como un cambio concreto de la arquitectura, por ejemplo
+«lr: 0.01 → 0.003» o «epochs: 40 → 80».
+
+- **Aplicar** guarda una arquitectura nueva. Parte del mejor punto del run: sus hiperparámetros
+  pasan a ser los valores por defecto.
+- **Entrenar con esta mejora** la lanza con el presupuesto del estudio original.
+
+Las acciones que no son de la arquitectura indican dónde hacerlas:
+
+- aumentar los datos: en la preparación;
+- cambiar de familia de modelo: con el diseño guiado;
+- conseguir más datos: en la pestaña Datos.
 
 ## Agente autónomo
 

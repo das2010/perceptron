@@ -9,6 +9,10 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from perceptron.api.context import EngineContext
+from perceptron.domain.models import Run
+from perceptron.llm.schemas import Diagnosis, SuggestedAction
+
 API = "/api/v1"
 
 
@@ -221,3 +225,34 @@ def test_report_documents(client: TestClient, evaluated_run: str) -> None:
     assert md.status_code == 200 and md.text.strip()
     bad = client.get(f"{API}/runs/{evaluated_run}/report/document?format=docx")
     assert bad.status_code == 422
+
+
+def test_diagnosis_actions_become_one_click_improvements(
+    client: TestClient, evaluated_run: str, ctx: EngineContext
+) -> None:
+    """ADR-0041 it. 3: cada acción del diagnóstico es un cambio concreto, desde el mejor punto."""
+    run = ctx.repo(Run).get(evaluated_run)
+    diagnosis = Diagnosis(
+        summary="Sobreajusta y le faltan épocas.",
+        actions=[
+            SuggestedAction(kind="add_augmentation", rationale="Más variedad."),
+            SuggestedAction(kind="more_epochs", rationale="Seguía mejorando."),
+            SuggestedAction(kind="change_hparam", target="lr", value=1e-4, rationale="Oscila."),
+        ],
+    )
+    ctx.repo(Run).update(run.model_copy(update={"diagnosis": diagnosis.model_dump(mode="json")}))
+    options = _ok(client.get(f"{API}/runs/{evaluated_run}/improvements"))
+    assert [o["kind"] for o in options] == ["add_augmentation", "more_epochs", "change_hparam"]
+    assert not options[0]["applicable"] and options[0]["hint"] == "pipeline"
+    assert options[1]["applicable"] and options[1]["change"].startswith("epochs:")
+    assert options[2]["change"].endswith("→ 0.0001")
+    bad = client.post(f"{API}/runs/{evaluated_run}/improvements/0")
+    assert bad.status_code == 422
+    assert client.post(f"{API}/runs/{evaluated_run}/improvements/9").status_code == 404
+    applied = _ok(client.post(f"{API}/runs/{evaluated_run}/improvements/1"), 201)
+    assert applied["archspec"]["id"] != run.archspec_id
+    assert applied["archspec"]["name"].endswith("-mejora")
+    assert applied["budget"]["max_trials"] == 1  # el del estudio del run
+    assert applied["budget"]["max_epochs_per_trial"] >= 2
+    spec = applied["archspec"]["spec"]
+    assert evaluated_run in spec["provenance"]["rationale"]

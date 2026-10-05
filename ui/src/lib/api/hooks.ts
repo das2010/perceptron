@@ -483,6 +483,36 @@ export function useDiagnosis(runId: string, enabled: boolean) {
   });
 }
 
+/** Acciones del diagnóstico como cambios concretos de la arquitectura (ADR-0041, it. 3). */
+export function useImprovements(runId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["runs", runId, "improvements"],
+    enabled,
+    retry: false,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/runs/{run_id}/improvements", {
+          params: { path: { run_id: runId } },
+        }),
+      ),
+  });
+}
+
+export function useApplyImprovement(runId: string) {
+  return useMutation({
+    mutationFn: async (index: number) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/runs/{run_id}/improvements/{index}", {
+          params: { path: { run_id: runId, index } },
+        }),
+      ),
+  });
+}
+
 export function useReport(runId: string) {
   return useMutation({
     mutationFn: async () =>
@@ -610,6 +640,23 @@ export function useDraftReconcile(projectId: string) {
           await getApiClient()
         ).POST("/api/v1/projects/{project_id}/draft/reconcile", {
           params: { path: { project_id: projectId } },
+        }),
+      ),
+  });
+}
+
+export type DesignOutcome = NonNullable<DraftValues["design"]>;
+
+/** Diseño guiado (ADR-0041): job que deja propuestas, torneo y elegida en `values.design`. */
+export function useDraftDesign(projectId: string) {
+  return useMutation({
+    mutationFn: async (body: { tournament: "auto" | "always" | "never" }) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/draft/design", {
+          params: { path: { project_id: projectId } },
+          body,
         }),
       ),
   });

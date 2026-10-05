@@ -27,7 +27,9 @@ import { DefineWizard } from "@/features/arch/DefineWizard";
 import { UploadPanel } from "@/features/data/DataPage";
 import { ProfileView } from "@/features/data/ProfileView";
 import { useProjectId } from "@/features/projects/ProjectLayout";
+import { NotRecommendedNote, RequirementsPanel } from "@/features/train/DesignRequirements";
 import { ProposalCard } from "@/features/train/TrainPage";
+import { DesignMemo, GuidedDesign } from "@/features/wizard/GuidedDesign";
 import { getApiClient } from "@/lib/api/client";
 import {
   unwrap,
@@ -233,6 +235,7 @@ function StepArchitecture({
   return (
     <div className="space-y-4">
       <PlanSuggestion plan={plan} field="architecture_hint" />
+      <GuidedDesign projectId={projectId} values={values} save={save} />
       <div className="flex flex-wrap gap-2">
         <Button loading={pipeline.isPending || propose.isPending} onClick={run}>
           {t("train.proposeArch")}
@@ -262,6 +265,7 @@ function StepArchitecture({
           {t("train.fallback", { reason: proposals.fallback_reason })}
         </p>
       )}
+      {proposals && <RequirementsPanel requirements={proposals.requirements} />}
       <div className="grid gap-3 lg:grid-cols-2">
         {proposals?.proposals.map((p) => (
           <ProposalCard
@@ -273,6 +277,7 @@ function StepArchitecture({
           />
         ))}
       </div>
+      <NotRecommendedNote proposals={proposals?.proposals} chosenId={values.archspec_id} />
       {!proposals && values.archspec_id && (
         <p className="flex items-center gap-2 text-sm">
           <Check className="h-4 w-4 text-ok" aria-hidden="true" />
@@ -336,6 +341,19 @@ function StepHpo({ values, save }: { values: DraftValues; save: Save }) {
           {t("train.recommend")}
         </Button>
       </div>
+      {values.design?.strategy && !values.strategy && values.archspec_id === values.design.pick && (
+        <Button
+          variant="secondary"
+          onClick={() =>
+            save({
+              strategy: values.design?.strategy ?? null,
+              max_epochs_per_trial: values.design?.max_epochs_per_trial ?? null,
+            })
+          }
+        >
+          {t("guided.useStrategy")}
+        </Button>
+      )}
       <ErrorNote error={recommend.error} />
       {s && (
         <div
@@ -481,6 +499,7 @@ function StepReview({ values }: { values: DraftValues }) {
           </div>
         ))}
       </dl>
+      <DesignMemo values={values} />
       <p className="text-sm">
         {t(values.autonomous ? "wizard.review.summaryAgent" : "wizard.review.summary", budget)}
       </p>

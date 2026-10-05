@@ -11,7 +11,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
-from perceptron.archspec.schema import HP, ArchSpec
+from perceptron.archspec.defaults import spec_epochs
+from perceptron.archspec.schema import ArchSpec
 from perceptron.core.ids import new_id
 from perceptron.domain.enums import Device, Origin
 from perceptron.domain.models import ArchSpecRecord, Run
@@ -26,12 +27,6 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_FRACTION = 0.1
 DEFAULT_SUBSET = 0.3
-
-
-def spec_epochs(spec: ArchSpec) -> int:
-    epochs = spec.training.epochs
-    value = epochs.default if isinstance(epochs, HP) else epochs
-    return int(value) if isinstance(value, int | float) else 30
 
 
 @dataclass
@@ -68,6 +63,7 @@ def mini_tournament(
     subset: float = DEFAULT_SUBSET,
     metric: str = "val_loss",
     device: Device | None = None,
+    min_epochs: int = 1,
 ) -> TournamentResult:
     direction: Literal["minimize", "maximize"] = (
         "minimize" if monitor_mode(metric) == "min" else "maximize"
@@ -76,7 +72,7 @@ def mini_tournament(
     for archspec_id in archspec_ids:
         record = wf.ctx.repo(ArchSpecRecord).get(archspec_id)
         spec = ArchSpec.model_validate(record.spec)
-        epochs = max(1, round(spec_epochs(spec) * fraction))
+        epochs = max(min_epochs, round(spec_epochs(spec) * fraction))
         entry = TournamentEntry(archspec_id=archspec_id, name=spec.name, epochs=epochs)
         result.entries.append(entry)
         strategy = HPOStrategy(

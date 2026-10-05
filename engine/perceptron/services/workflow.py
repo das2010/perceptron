@@ -956,8 +956,18 @@ def quickstart(
         proposals = wf.roles.propose_architectures(dv.id, pipeline.id, mode="auto")
         chosen = proposals.options[0]
         if len(proposals.options) > 1:
+            from perceptron.services.autodesign import (
+                TOURNAMENT_FRACTION,
+                TOURNAMENT_MIN_EPOCHS,
+                common_metric,
+                tournament_subset,
+            )
             from perceptron.services.tournament import mini_tournament
 
+            # Como el diseño guiado (ADR-0041): métrica que todas registran y, con pocos
+            # datos, todo train en cada época.
+            specs = [ArchSpec.model_validate(o.record.spec) for o in proposals.options]
+            n_train = int(card.split_counts.get("train") or card.num_samples)
             t = mini_tournament(
                 wf,
                 project.id,
@@ -965,6 +975,10 @@ def quickstart(
                 pipeline.id,
                 [o.record.id for o in proposals.options],
                 device=device,
+                fraction=TOURNAMENT_FRACTION,
+                subset=tournament_subset(n_train),
+                metric=common_metric(specs),
+                min_epochs=TOURNAMENT_MIN_EPOCHS,
             )
             tournament = [
                 {"architecture": e.name, "metric": e.metric, "status": e.status} for e in t.entries

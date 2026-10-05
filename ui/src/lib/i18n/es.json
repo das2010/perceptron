@@ -1434,6 +1434,81 @@
     "candidates": "Otras fórmulas evaluadas",
     "candidate": "complejidad {{complexity}} · error val {{rmse}}:"
   },
+  "design": {
+    "title": "Requisitos de diseño de este escenario",
+    "intro": "Perceptron los dedujo de tus datos, tu equipo y la ficha del caso. Cada propuesta se evalúa contra ellos y la que mejor los cumple queda recomendada.",
+    "level": {
+      "must": "Obligatorio",
+      "should": "Recomendable"
+    },
+    "code": {
+      "pretrained_backbone": "Red preentrenada",
+      "no_pretrained_offline": "Red chica sin conexión",
+      "small_model": "Modelo chico",
+      "linear_option": "Opción lineal",
+      "edge_size": "Tamaño para equipo embebido",
+      "low_latency": "Baja latencia",
+      "imbalance_handling": "Compensar el desbalance",
+      "explainable": "Explicable",
+      "epoch_time": "Tiempo por época"
+    },
+    "recommended": "Recomendada",
+    "checks": "Requisitos que cumple",
+    "met": "cumple",
+    "unmet": "no cumple",
+    "notRecommended": "Elegiste una opción distinta de la recomendada («{{best}}»). Podés seguir igual.",
+    "unmetList": "No cumple: {{list}}."
+  },
+  "guided": {
+    "title": "Diseño guiado",
+    "intro": "Perceptron prepara los datos, pide propuestas, las evalúa contra los requisitos del escenario, compara las mejores con un entrenamiento corto y te propone la arquitectura y la búsqueda de hiperparámetros. Vos decidís.",
+    "compare": "Comparar con entrenamiento corto",
+    "mode": {
+      "auto": "Si es rápido",
+      "always": "Siempre",
+      "never": "No"
+    },
+    "run": "Diseñar automáticamente",
+    "rerun": "Volver a diseñar",
+    "stage": {
+      "start": "Empezando…",
+      "pipeline": "Preparando los datos…",
+      "architectures": "Pidiendo y evaluando propuestas de arquitectura…",
+      "tournament": "Comparando las mejores con un entrenamiento corto…",
+      "strategy": "Armando la búsqueda de hiperparámetros…"
+    },
+    "skipped": {
+      "disabled": "Sin entrenamiento de comparación (desactivado).",
+      "single_candidate": "Sin entrenamiento de comparación: hay una sola candidata que cumple los requisitos.",
+      "too_long": "Sin entrenamiento de comparación: se estima largo. Elegí «Siempre» para hacerlo igual."
+    },
+    "candidate": "Candidata",
+    "score": "Puntaje",
+    "winner": "Ganó la comparación",
+    "mustUnmet": "No cumple un obligatorio",
+    "chosen": "Elegida",
+    "pick": "Propuesta: {{title}}.",
+    "plan": "Búsqueda de hiperparámetros: {{strategy}}, {{epochs}} épocas por trial.",
+    "accept": "Aceptar el diseño",
+    "accepted": "Diseño aceptado",
+    "useStrategy": "Usar la búsqueda del diseño guiado",
+    "memo": {
+      "title": "Por qué esta arquitectura",
+      "notPick": "La elegiste vos; el diseño guiado proponía otra.",
+      "met": "Cumple: {{list}}.",
+      "unmet": "No cumple: {{list}}."
+    }
+  },
+  "improve": {
+    "title": "Próximo paso",
+    "apply": "Aplicar",
+    "train": "Entrenar con esta mejora",
+    "hint": {
+      "pipeline": "Se hace en la preparación de los datos (Entrenar → Preparación).",
+      "design": "Volvé a diseñar con el diseño guiado del wizard (paso Arquitectura).",
+      "data": "Hacen falta más datos: agregalos en la pestaña Datos."
+    }
+  },
   "studies": {
     "title": "Estudios",
     "name": "Estudio",

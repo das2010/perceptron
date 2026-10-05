@@ -577,6 +577,17 @@
           "archspec": {
             "$ref": "#/components/schemas/ArchSpecRecord"
           },
+          "assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignAssessment"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cuánto cumple los requisitos del escenario (ADR-0041)"
+          },
           "confidence": {
             "anyOf": [
               {
@@ -667,6 +678,16 @@
             },
             "title": "Proposals",
             "type": "array"
+          },
+          "requirements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignRequirements"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1571,6 +1592,109 @@
           "files"
         ],
         "title": "CachedModel",
+        "type": "object"
+      },
+      "Candidate": {
+        "properties": {
+          "archspec_id": {
+            "title": "Archspec Id",
+            "type": "string"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "eligible": {
+            "default": true,
+            "description": "Cumple todos los requisitos obligatorios",
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "estimates": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Estimates",
+            "type": "object"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "recommended": {
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tournament_metric": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tournament Metric"
+          },
+          "tournament_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tournament Status"
+          }
+        },
+        "required": [
+          "archspec_id",
+          "title",
+          "rationale",
+          "origin"
+        ],
+        "title": "Candidate",
         "type": "object"
       },
       "CategoricalStats": {
@@ -3354,6 +3478,257 @@
         "title": "DeploymentStatus",
         "type": "string"
       },
+      "DesignAssessment": {
+        "properties": {
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "recommended": {
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "score": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "score"
+        ],
+        "title": "DesignAssessment",
+        "type": "object"
+      },
+      "DesignOutcome": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          },
+          "max_epochs_per_trial": {
+            "default": 15,
+            "title": "Max Epochs Per Trial",
+            "type": "integer"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "pick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pick"
+          },
+          "pick_reason": {
+            "default": "",
+            "title": "Pick Reason",
+            "type": "string"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "requirements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignRequirements"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy"
+          },
+          "tournament": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TournamentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tournament_skipped": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por qué no hubo torneo (pocas candidatas, demasiado largo…)",
+            "title": "Tournament Skipped"
+          }
+        },
+        "required": [
+          "pipeline_id",
+          "origin"
+        ],
+        "title": "DesignOutcome",
+        "type": "object"
+      },
+      "DesignRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "tournament": {
+            "default": "auto",
+            "description": "Mini-torneo de las mejores: auto = solo si se estima corto (≤ 15 min)",
+            "enum": [
+              "auto",
+              "always",
+              "never"
+            ],
+            "title": "Tournament",
+            "type": "string"
+          }
+        },
+        "title": "DesignRequest",
+        "type": "object"
+      },
+      "DesignRequirement": {
+        "properties": {
+          "code": {
+            "enum": [
+              "pretrained_backbone",
+              "no_pretrained_offline",
+              "small_model",
+              "linear_option",
+              "edge_size",
+              "low_latency",
+              "imbalance_handling",
+              "explainable",
+              "epoch_time"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "must",
+              "should"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "message": {
+            "description": "Qué se exige y por qué, en castellano (la UI lo traduce)",
+            "title": "Message",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "Params",
+            "type": "object"
+          },
+          "scope": {
+            "enum": [
+              "each",
+              "any"
+            ],
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "level",
+          "scope",
+          "message"
+        ],
+        "title": "DesignRequirement",
+        "type": "object"
+      },
+      "DesignRequirements": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DesignRequirement"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "scenario": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Hechos del escenario que justifican los requisitos",
+            "title": "Scenario",
+            "type": "object"
+          }
+        },
+        "title": "DesignRequirements",
+        "type": "object"
+      },
       "Device": {
         "enum": [
           "cuda",
@@ -3561,6 +3936,16 @@
               }
             ],
             "title": "Dataset Version Id"
+          },
+          "design": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "device": {
             "anyOf": [
@@ -5375,6 +5760,87 @@
           }
         },
         "title": "ImageSpec",
+        "type": "object"
+      },
+      "ImprovementApplied": {
+        "properties": {
+          "archspec": {
+            "$ref": "#/components/schemas/ArchSpecRecord"
+          },
+          "budget": {
+            "additionalProperties": true,
+            "description": "Presupuesto sugerido (el del estudio del run)",
+            "title": "Budget",
+            "type": "object"
+          },
+          "change": {
+            "title": "Change",
+            "type": "string"
+          }
+        },
+        "required": [
+          "archspec",
+          "change"
+        ],
+        "title": "ImprovementApplied",
+        "type": "object"
+      },
+      "ImprovementOption": {
+        "properties": {
+          "applicable": {
+            "title": "Applicable",
+            "type": "boolean"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qué cambia en la arquitectura",
+            "title": "Change"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "enum": [
+                  "design",
+                  "pipeline",
+                  "data"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dónde se hace si no es de la arquitectura",
+            "title": "Hint"
+          },
+          "index": {
+            "description": "Posición de la acción en el diagnóstico",
+            "title": "Index",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "kind",
+          "rationale",
+          "applicable"
+        ],
+        "title": "ImprovementOption",
         "type": "object"
       },
       "IngestBody": {
@@ -9657,6 +10123,44 @@
         "title": "ReportBody",
         "type": "object"
       },
+      "RequirementCheck": {
+        "properties": {
+          "code": {
+            "enum": [
+              "pretrained_backbone",
+              "no_pretrained_offline",
+              "small_model",
+              "linear_option",
+              "edge_size",
+              "low_latency",
+              "imbalance_handling",
+              "explainable",
+              "epoch_time"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "must",
+              "should"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "met": {
+            "title": "Met",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "level",
+          "met"
+        ],
+        "title": "RequirementCheck",
+        "type": "object"
+      },
       "RetentionBody": {
         "additionalProperties": false,
         "properties": {
@@ -12831,6 +13335,52 @@
           "archspec_ids"
         ],
         "title": "TournamentBody",
+        "type": "object"
+      },
+      "TournamentSummary": {
+        "properties": {
+          "direction": {
+            "enum": [
+              "minimize",
+              "maximize"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "epochs": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Épocas por archspec_id",
+            "title": "Epochs",
+            "type": "object"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "subset": {
+            "title": "Subset",
+            "type": "number"
+          },
+          "winner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winner"
+          }
+        },
+        "required": [
+          "metric",
+          "direction",
+          "subset"
+        ],
+        "title": "TournamentSummary",
         "type": "object"
       },
       "TrainingSpec": {
@@ -19302,6 +19852,59 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/draft/design": {
+      "post": {
+        "description": "Diseño guiado (ADR-0041): preparación, propuestas evaluadas contra los requisitos del\nescenario, mini-torneo de las mejores y estrategia de HPO para la elegida.\n\nEl resultado queda en `values.design` del borrador; no fija la arquitectura: la persona lo\nacepta con `PATCH /draft` (`archspec_id`, `strategy`, `max_epochs_per_trial`).",
+        "operationId": "draftDesign",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Draft Design",
+        "tags": [
+          "wizard"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/draft/intake": {
       "post": {
         "description": "Entrevista del paso Objetivo (ADR-0040): cambios propuestos a la ficha y próxima pregunta.\n\nNo modifica el borrador: la persona acepta los cambios con `PATCH /draft` (`brief`).\nSin LLM utilizable responde 503 `llm_unavailable` y la ficha se completa a mano.",
@@ -22040,6 +22643,105 @@
           }
         },
         "summary": "Get Run History",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/improvements": {
+      "get": {
+        "description": "Acciones del diagnóstico traducidas a cambios concretos de la arquitectura (ADR-0041).",
+        "operationId": "listRunImprovements",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImprovementOption"
+                  },
+                  "title": "Response Listrunimprovements",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Improvements",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/improvements/{index}": {
+      "post": {
+        "description": "Guarda la ArchSpec mejorada (desde el mejor punto del run). No entrena: eso lo decide la\npersona con el presupuesto sugerido.",
+        "operationId": "applyRunImprovement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "index",
+            "required": true,
+            "schema": {
+              "title": "Index",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementApplied"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Improvement",
         "tags": [
           "runs"
         ]

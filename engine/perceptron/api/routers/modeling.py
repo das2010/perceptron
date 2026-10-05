@@ -37,6 +37,7 @@ from perceptron.sandbox.expert import starter_code
 from perceptron.sandbox.process import CodeCheck
 from perceptron.sandbox.static import StaticReport, check_source
 from perceptron.services.compare import ConfigDiff, config_diff
+from perceptron.services.design import DesignAssessment, DesignRequirements
 from perceptron.services.estimate import CostEstimate
 from perceptron.services.pipeline_advice import (
     PipelineChange,
@@ -234,6 +235,9 @@ class ArchProposal(BaseModel):
     risks: list[str] = Field(default_factory=list)
     confidence: float | None = None
     estimates: ArchEstimates = Field(default_factory=ArchEstimates)
+    assessment: DesignAssessment | None = Field(
+        default=None, description="Cuánto cumple los requisitos del escenario (ADR-0041)"
+    )
 
 
 class ArchProposals(BaseModel):
@@ -243,6 +247,7 @@ class ArchProposals(BaseModel):
     fallback_reason: str | None = Field(
         default=None, description="Por qué se usaron reglas o se descartaron propuestas"
     )
+    requirements: DesignRequirements | None = None
 
 
 class CodeResponse(BaseModel):
@@ -281,12 +286,14 @@ def propose_architecture(project_id: str, body: ProposeArchBody, ctx: Ctx) -> Ar
                 risks=o.risks,
                 confidence=o.confidence,
                 estimates=ArchEstimates(**o.estimates),
+                assessment=o.assessment,
             )
             for o in out.options
         ],
         origin=out.origin,
         llm_call_id=out.llm_call_id,
         fallback_reason=out.fallback_reason,
+        requirements=out.requirements,
     )
 
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from perceptron.archspec.schema import ArchSpec
+from perceptron.archspec.schema import HP, ArchSpec
 from perceptron.domain.enums import TaskType
 
 LINEAR_HEAD = "head.linear"
@@ -25,3 +25,10 @@ def without_linear_shrinkage(spec: ArchSpec) -> ArchSpec:
     return spec.model_copy(
         update={"optimizer": spec.optimizer.model_copy(update={"weight_decay": 0.0})}
     )
+
+
+def spec_epochs(spec: ArchSpec) -> int:
+    """Épocas que propone la arquitectura (el default del HP si se ajusta; 30 si no se sabe)."""
+    epochs = spec.training.epochs
+    value = epochs.default if isinstance(epochs, HP) else epochs
+    return int(value) if isinstance(value, int | float) else 30

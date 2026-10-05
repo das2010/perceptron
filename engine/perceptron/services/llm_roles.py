@@ -62,6 +62,16 @@ from perceptron.llm.schemas import (
     Report,
 )
 from perceptron.services.brief import project_use_case
+from perceptron.services.design import (
+    DesignAssessment,
+    DesignRequirements,
+    assess,
+    design_requirements,
+    missing_any_musts,
+    recommend_index,
+    supplement_spec,
+    unmet_musts,
+)
 from perceptron.services.estimate import estimate_epoch_time
 from perceptron.training.config import RESULT_FILE, RunResult
 from perceptron.training.diagnostics import rules_diagnosis
@@ -141,6 +151,7 @@ class ArchOption:
     risks: list[str] = field(default_factory=list)
     confidence: float | None = None
     estimates: dict[str, float | None] = field(default_factory=dict)
+    assessment: DesignAssessment | None = None
 
 
 @dataclass
@@ -149,6 +160,7 @@ class ArchProposals:
     origin: Origin
     llm_call_id: str | None = None
     fallback_reason: str | None = None
+    requirements: DesignRequirements | None = None
 
 
 class LLMRoles:
@@ -197,6 +209,21 @@ class LLMRoles:
             if device != "cpu"
             else hw.ram_available_gb
         )
+        use_case = project_use_case(self.ctx, project.id)
+        allow_pretrained = not offline_mode()
+        text, image = fitted.spec.text, fitted.spec.image
+        reqs = design_requirements(
+            card,
+            rec.spec.task.type,
+            use_case,
+            device=device,
+            allow_pretrained=allow_pretrained,
+            pretrained_text=text is not None and text.tokenizer == "hf",
+            image_size=image.size if image else None,
+        )
+
+        def finish(out: ArchProposals) -> ArchProposals:
+            return self._rank(out, reqs, rec.spec, card, device, project.id)
 
         def rules(reason: str | None) -> ArchProposals:
             record = wf.save_archspec(project.id, rec.spec, origin=Origin.RULES)
@@ -208,7 +235,7 @@ class LLMRoles:
                 validation=report,
                 estimates=self._estimates(rec.spec, report, card, device),
             )
-            return ArchProposals([option], Origin.RULES, fallback_reason=reason)
+            return finish(ArchProposals([option], Origin.RULES, fallback_reason=reason))
 
         skip = self._skip(mode, LLMPurpose.ARCHITECT, project)
         if skip:
@@ -227,13 +254,18 @@ class LLMRoles:
             return validate_archspec(fix(c), device_memory_gb=memory_gb)
 
         def validator(value: ArchProposalSet) -> str | None:
-            errors = [
-                f"Propuesta {i + 1} «{c.title}»:\n{r.feedback()}"
-                for i, c in enumerate(value.proposals)
-                if not (r := check(c)).valid
-            ]
+            errors: list[str] = []
+            valid: list[tuple[str, ArchSpec, float | None]] = []
+            for i, c in enumerate(value.proposals):
+                r = check(c)
+                if not r.valid:
+                    errors.append(f"Propuesta {i + 1} «{c.title}»:\n{r.feedback()}")
+                    continue
+                params = float(r.num_params) if r.num_params is not None else None
+                valid.append((c.title, fix(c), params))
             if len(value.proposals) < 2:
                 errors.append("Se piden al menos 2 propuestas distintas.")
+            errors += unmet_musts(reqs, valid)
             return "\n\n".join(errors) or None
 
         llm_ctx = LLMContext(
@@ -244,9 +276,10 @@ class LLMRoles:
             catalog=catalog_for(card, rec.spec.task.type, compact=compact),
             constraints={
                 "base_archspec": rec.spec.model_dump(mode="json", exclude={"provenance"}),
-                "allow_pretrained": not offline_mode(),
+                "allow_pretrained": allow_pretrained,
                 "commercial_use": True,
-                "use_case": project_use_case(self.ctx, project.id),
+                "use_case": use_case,
+                "design_requirements": reqs.for_llm(),
                 "device": device,
                 "n_train": card.split_counts.get("train"),
             },
@@ -298,7 +331,56 @@ class LLMRoles:
             )
         if not options:
             return rules(reason or "ninguna propuesta del LLM validó")
-        return ArchProposals(options, Origin.LLM, llm_call_id=call_id, fallback_reason=reason)
+        return finish(
+            ArchProposals(options, Origin.LLM, llm_call_id=call_id, fallback_reason=reason)
+        )
+
+    def _rank(
+        self,
+        out: ArchProposals,
+        reqs: DesignRequirements,
+        base: ArchSpec,
+        card: ProfileCard,
+        device: str,
+        project_id: str,
+    ) -> ArchProposals:
+        """Completa los `must` sin cubrir con una plantilla, evalúa cada propuesta contra los
+        requisitos y la mejor queda primera y marcada como recomendada (ADR-0041)."""
+        specs = [ArchSpec.model_validate(o.record.spec) for o in out.options]
+        for req in missing_any_musts(reqs, specs):
+            extra = supplement_spec(req, base, device)
+            if extra is None:
+                continue
+            title, spec = extra
+            report = validate_archspec(spec)
+            if not report.valid:
+                continue
+            specs.append(spec)
+            out.options.append(
+                ArchOption(
+                    record=self.wf.save_archspec(project_id, spec, origin=Origin.RULES),
+                    title=title,
+                    rationale=req.message,
+                    validation=report,
+                    estimates=self._estimates(spec, report, card, device),
+                )
+            )
+        for option, spec in zip(out.options, specs, strict=True):
+            option.assessment = assess(
+                reqs,
+                spec,
+                option.estimates.get("num_params"),
+                option.estimates.get("epoch_time_s"),
+                option.confidence,
+            )
+        best = recommend_index([o.assessment for o in out.options if o.assessment])
+        if best is not None:
+            chosen = out.options[best]
+            if chosen.assessment is not None:
+                chosen.assessment.recommended = True
+            out.options = [chosen] + [o for i, o in enumerate(out.options) if i != best]
+        out.requirements = reqs
+        return out
 
     @staticmethod
     def _estimates(

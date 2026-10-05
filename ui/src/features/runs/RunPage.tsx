@@ -32,6 +32,7 @@ import { formatNumber } from "@/lib/format";
 import { AnalysisPanel } from "./AnalysisPanel";
 import { CostThreshold } from "./CostThreshold";
 import { ExportPanel } from "./ExportPanel";
+import { Improvements } from "./Improvements";
 import { PlaygroundPanel } from "./PlaygroundPanel";
 
 /** Error del worker guardado en `Run.diagnosis.error` (tipo, mensaje, pista). */
@@ -214,6 +215,12 @@ export function RunPage() {
             ))}
           </ul>
           {d.origin !== "llm" && <p className="mt-2 text-xs text-muted">{t("run.byRules")}</p>}
+          <Improvements
+            runId={runId}
+            projectId={projectId}
+            datasetVersionId={r.dataset_version_id}
+            pipelineId={r.pipeline_id}
+          />
         </AiSuggestion>
       )}
 
