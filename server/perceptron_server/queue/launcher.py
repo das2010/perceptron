@@ -10,6 +10,7 @@ El Engine delega en `ctx.launch_study`. El servidor instala `QueueLauncher`, que
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from collections.abc import Callable
@@ -31,6 +32,8 @@ if TYPE_CHECKING:
     from perceptron_server.settings import ServerSettings
 
 # Quién hace el request en curso (lo fija el middleware de sesión).
+logger = logging.getLogger(__name__)
+
 CURRENT_PRINCIPAL: ContextVar[Principal | None] = ContextVar("perceptron_principal", default=None)
 
 
@@ -153,10 +156,60 @@ class QueueLauncher:
         return len(jobs)
 
 
+LOST_MESSAGE = (
+    "El worker se reinició o se cayó durante el entrenamiento y el estudio quedó interrumpido. "
+    "Los trials terminados se conservan: podés reanudarlo."
+)
+LOST_MISSES = 2  # latidos seguidos del worker sin el job para darlo por perdido
+
+
+class LostJobDetector:
+    """Jobs «en curso» que su worker ya no está entrenando (se reinició o se cayó).
+
+    El mensaje de Celery queda sin confirmar y la cola recién lo devuelve tras el visibility
+    timeout (días): sin esto el estudio figuraba en curso para siempre y ocupaba la cuota.
+    Se da por perdido cuando, pasado el margen desde que empezó, dos latidos seguidos del mismo
+    worker no lo informan como su job.
+    """
+
+    def __init__(self, ctx: EngineContext, grace_s: float) -> None:
+        self.ctx = ctx
+        self.grace_s = grace_s
+        self._misses: dict[str, int] = {}
+
+    def on_heartbeat(self, heartbeat: dict[str, Any]) -> list[str]:
+        worker, busy = heartbeat.get("worker"), heartbeat.get("busy_job")
+        now = utcnow()
+        lost: list[str] = []
+        for job in self.ctx.jobs.list():
+            if job.status != "running" or job.worker != worker or job.id == busy:
+                self._misses.pop(job.id, None)
+                continue
+            if job.started_at and (now - job.started_at).total_seconds() < self.grace_s:
+                continue
+            self._misses[job.id] = self._misses.get(job.id, 0) + 1
+            if self._misses[job.id] >= LOST_MISSES:
+                self._misses.pop(job.id, None)
+                self._lose(job)
+                lost.append(job.id)
+        return lost
+
+    def _lose(self, job: Job) -> None:
+        from perceptron.services.study_control import WORKER_LOST, mark_interrupted
+
+        logger.warning("job perdido: su worker ya no lo entrena", extra={"job_id": job.id})
+        error = {"type": WORKER_LOST, "message": LOST_MESSAGE}
+        self.ctx.jobs.apply(job.id, "finished", {"status": "failed", "error": error})
+        study_id = job.refs.get("study_id")
+        if study_id:
+            mark_interrupted(self.ctx, study_id)
+
+
 def start_event_bridge(
     ctx: EngineContext, relay: Relay, workers: WorkerRegistry
 ) -> Callable[[], None]:
     """Re-publica en el servidor lo que emiten los workers (progreso, épocas, latidos)."""
+    detector = LostJobDetector(ctx, grace_s=workers.stale_after_s)
 
     def on_event(message: dict[str, Any]) -> None:
         topic = message.get("topic")
@@ -169,6 +222,7 @@ def start_event_bridge(
             )
         elif topic == HEARTBEAT_TOPIC:
             workers.update(payload)
+            detector.on_heartbeat(payload)
         else:
             ctx.events.publish(topic, **payload)
 

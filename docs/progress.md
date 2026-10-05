@@ -206,6 +206,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | MLflow server (PostgreSQL + artefactos) e imagen GPU (`TORCH_VARIANT`) en Compose | ✅ |
 | Robustez: cancelación persistida (un estudio cancelado en la cola no entrena); agente y mini-torneo por la cola y las cuotas; jobs que esperan estudios en hilo propio (sin deadlock del pool); WS con reconexión | ✅ |
 | Jobs de la cola persistidos: tras reiniciar el servidor se retoman (visibles, cancelables y contando para las cuotas); el worker anota inicio y fin en la base | ✅ |
+| Control de estudios: estado (en curso, detenido, interrumpido, terminado), Detener/Reanudar desde Experimentos (reanudar conserva los trials), detección de jobs huérfanos cuando el worker se reinicia | ✅ |
 
 ## Capa 5c — SSO, Helm, backups y sync
 

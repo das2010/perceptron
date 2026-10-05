@@ -182,6 +182,8 @@ checkpoints del mejor y del último, semillas fijas y tamaño de batch automáti
 
 En **Experimentos**:
 
+**Estudios** lista cada búsqueda con su estado: entrenando, en cola, detenido, interrumpido (por ejemplo, si el worker se reinició), terminado o con error. **Detener** frena un estudio conservando los trials terminados; **Reanudar** sigue desde donde quedó.
+
 - **Entrenamiento en vivo:** época, métricas y **Curvas de validación por intento** mientras corre.
 - **Entrenamientos:** cada run con su **Estado** (En cola, Entrenando, En pausa, Terminado, Falló,
   Cancelado) e **Inicio**.

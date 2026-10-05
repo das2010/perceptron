@@ -1501,5 +1501,24 @@
       "design": "Design again with the wizard’s guided design (Architecture step).",
       "data": "More data is needed: add it in the Data tab."
     }
+  },
+  "studies": {
+    "title": "Studies",
+    "name": "Study",
+    "status": "Status",
+    "trials": "Trials",
+    "best": "Best run",
+    "trialsOf": "{{done}} of {{total}}",
+    "stop": "Stop",
+    "resume": "Resume",
+    "stopHint": "Stops the study; finished trials are kept and you can resume it later.",
+    "state": {
+      "queued": "Queued",
+      "running": "Training",
+      "stopped": "Stopped",
+      "interrupted": "Interrupted",
+      "finished": "Finished",
+      "failed": "Failed"
+    }
   }
 }

@@ -300,3 +300,42 @@ def test_celery_worker_process(
             worker.wait(timeout=30)
             log.close()
             print((tmp_path / "worker.log").read_text(encoding="utf-8")[-5000:])
+
+
+def test_lost_worker_job_is_marked_interrupted(settings: Settings) -> None:
+    """Caso «Tubos»: el worker se reinició en medio del estudio. Dos latidos seguidos sin el
+    job lo dan por perdido: queda interrumpido, sus runs cerrados y la cancelación persistida
+    (el mensaje que vuelve de la cola tras el visibility timeout no lo entrena de nuevo)."""
+    from perceptron.api.context import EngineContext
+    from perceptron.domain.enums import RunStatus
+    from perceptron.domain.models import Run, Study
+    from perceptron_server.queue.launcher import LostJobDetector
+
+    ctx = EngineContext.create(settings)
+    try:
+        study = ctx.repo(Study).add(Study(project_id="prj_x", name="tubos"))
+        ctx.repo(Run).add(
+            Run(
+                id=f"{study.id}-t005",
+                project_id="prj_x",
+                study_id=study.id,
+                archspec_id="arc_x",
+                pipeline_id="pip_x",
+                dataset_version_id="dsv_x",
+                status=RunStatus.RUNNING,
+            )
+        )
+        job = ctx.jobs.track("study", refs={"study_id": study.id}, runner="queue:cpu")
+        ctx.jobs.apply(job.id, "started", {"worker": "cpu-1"})
+        detector = LostJobDetector(ctx, grace_s=0)
+        assert detector.on_heartbeat({"worker": "cpu-1", "busy_job": job.id}) == []  # lo entrena
+        assert detector.on_heartbeat({"worker": "cpu-2", "busy_job": None}) == []  # otro worker
+        assert detector.on_heartbeat({"worker": "cpu-1", "busy_job": None}) == []  # 1.er latido
+        assert detector.on_heartbeat({"worker": "cpu-1", "busy_job": None}) == [job.id]
+        current = ctx.jobs.get(job.id)
+        assert current is not None and current.status == "failed"
+        assert (current.error or {}).get("type") == "WorkerLost"
+        assert ctx.repo(Run).get(f"{study.id}-t005").status is RunStatus.FAILED
+        assert ctx.repo(Study).get(study.id).cancel_requested_at is not None
+    finally:
+        ctx.close()

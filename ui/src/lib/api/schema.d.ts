@@ -2134,7 +2134,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Studies
+         * @description Estudios del proyecto con su estado (en curso, detenido, interrumpido, terminado).
+         */
+        get: operations["listStudies"];
         put?: never;
         /** Create Study */
         post: operations["createStudy"];
@@ -8129,6 +8133,36 @@ export interface components {
             job: components["schemas"]["Job"];
             study: components["schemas"]["Study"];
         };
+        /** StudyView */
+        StudyView: {
+            /** Best Run Id */
+            best_run_id?: string | null;
+            /** Job Id */
+            job_id?: string | null;
+            /**
+             * Reason
+             * @description Por qué se interrumpió o falló
+             */
+            reason?: string | null;
+            /**
+             * Resumable
+             * @default false
+             */
+            resumable: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "stopped" | "interrupted" | "finished" | "failed";
+            study: components["schemas"]["Study"];
+            /**
+             * Trials Done
+             * @default 0
+             */
+            trials_done: number;
+            /** Trials Total */
+            trials_total?: number | null;
+        };
         /** SuggestBody */
         SuggestBody: {
             /** Dataset Version Id */
@@ -13343,6 +13377,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DataSource"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listStudies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudyView"][];
                 };
             };
             /** @description Validation Error */
