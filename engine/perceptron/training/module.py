@@ -7,10 +7,13 @@ overrides del trial de HPO.
 
 from __future__ import annotations
 
+from functools import partial
 from typing import Any, cast
 
 import lightning as L
 import torch
+import torch.nn.functional as F
+from torch import nn
 
 from perceptron.archspec.builder import ArchModel, build_model, num_outputs
 from perceptron.archspec.schema import ArchSpec, Scalar, resolve
@@ -64,8 +67,28 @@ class PerceptronModule(L.LightningModule):
         out: torch.Tensor = self.model(*inputs)
         return out
 
+    def _val_loss_fn(self) -> Any:
+        """La `val_loss` se mide sin suavizado de etiquetas (el entrenamiento sí lo usa).
+
+        Con suavizado ε la entropía cruzada mínima ya no es 0: comparar `val_loss` entre trials
+        con distinto `label_smoothing` premiaba no suavizar y el análisis del estudio lo
+        mostraba como el hiperparámetro más importante. Sin suavizado la comparación es justa
+        (y también el early stopping). Es una función, no un submódulo: no cambia el
+        `state_dict` de los checkpoints.
+        """
+        fn = self.loss_fn
+        if isinstance(fn, nn.CrossEntropyLoss) and fn.label_smoothing > 0:
+            return partial(
+                F.cross_entropy,
+                weight=fn.weight,
+                ignore_index=fn.ignore_index,
+                reduction=fn.reduction,
+            )
+        return fn
+
     def _step(self, batch: Any, stage: str) -> torch.Tensor:
-        res = self.adapter.step(self.model, self.loss_fn, batch)
+        loss_fn = self.loss_fn if stage == "train" else self._val_loss_fn()
+        res = self.adapter.step(self.model, loss_fn, batch)
         metrics = self.train_metrics if stage == "train" else self.val_metrics
         args = res.metric_args
         if self.target_scale is not None:

@@ -178,6 +178,8 @@ reanudar.
 Por defecto cada entrenamiento usa precisión mixta si el hardware lo permite, early stopping,
 checkpoints del mejor y del último, semillas fijas y tamaño de batch automático.
 
+La `val_loss` se mide **sin suavizado de etiquetas** (el entrenamiento sí lo usa). Así es comparable entre intentos aunque `label_smoothing` esté en la búsqueda, y el análisis del estudio no lo muestra como importante solo por cómo se mide.
+
 ## Experimentos
 
 En **Experimentos**:
