@@ -1497,7 +1497,8 @@
       "notPick": "You chose it; the guided design proposed another one.",
       "met": "Meets: {{list}}.",
       "unmet": "Does not meet: {{list}}."
-    }
+    },
+    "acceptReview": "Accept and review"
   },
   "improve": {
     "title": "Next step",

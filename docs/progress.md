@@ -48,6 +48,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | Wizard que diseña (ADR-0041, iteración 2): diseño guiado de punta a punta en un job (`POST /projects/{id}/draft/design`): preparación, propuestas evaluadas, mini-torneo de las mejores que cumplen los obligatorios (métrica común, presupuesto según el tamaño de los datos), elegida con evidencia, épocas por trial y estrategia de HPO; queda en el borrador para aceptar | ✅ |
 | Wizard que diseña (ADR-0041, iteración 3): «Próximo paso» en cada run — las acciones del diagnóstico como cambios concretos de la arquitectura desde el mejor punto (lr, regularización, épocas, desbalance), aplicar y entrenar con un clic; lo que no es de la arquitectura indica dónde hacerlo | ✅ |
 | Wizard que diseña (ADR-0041, iteración 5): memo «Por qué esta arquitectura» en la revisión (motivo, requisitos que cumple y que no, aviso si se eligió otra) y botón para usar la búsqueda del diseño guiado en el paso HPO | ✅ |
+| Wizard que diseña (ADR-0041, iteración 6): «Aceptar y revisar» — un clic fija arquitectura, búsqueda y épocas del diseño guiado y pasa a la revisión con el memo | ✅ |
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 

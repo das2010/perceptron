@@ -569,4 +569,51 @@ describe("wizard adaptativo, fase 2", () => {
     expect(memo).toHaveTextContent("el diseño guiado proponía otra");
     expect(memo).toHaveTextContent("No cumple: Red preentrenada.");
   });
+
+  it("«Aceptar y revisar» fija el diseño y pasa a la revisión en un clic", async () => {
+    const design = {
+      pipeline_id: "pip_1",
+      origin: "rules",
+      candidates: [
+        {
+          archspec_id: "arc_l",
+          title: "Regresión lineal",
+          rationale: "r",
+          origin: "rules",
+          score: 97,
+          recommended: true,
+          eligible: true,
+          checks: [{ code: "linear_option", level: "must", met: true }],
+        },
+      ],
+      pick: "arc_l",
+      pick_reason: "Es la que mejor cumple los requisitos de diseño del escenario.",
+      max_epochs_per_trial: 80,
+      strategy: { strategy: "tpe" },
+    };
+    let current = draft("architecture", { dataset_version_id: "dsv_1", design }, 2);
+    const patches: Record<string, unknown>[] = [];
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/draft": () => current,
+      "PATCH /api/v1/projects/prj_1/draft": async (req) => {
+        const body = (await req.json()) as { step?: string; values?: Record<string, unknown> };
+        patches.push(body);
+        current = draft(body.step ?? "architecture", { ...current.values, ...body.values }, 3);
+        return current;
+      },
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/wizard");
+    await user.click(await screen.findByRole("button", { name: "Aceptar y revisar" }));
+    await waitFor(() => expect(patches).toHaveLength(1));
+    expect(patches[0]).toMatchObject({
+      step: "review",
+      values: { archspec_id: "arc_l", max_epochs_per_trial: 80, strategy: { strategy: "tpe" } },
+    });
+    const memo = await screen.findByRole("region", { name: "Por qué esta arquitectura" });
+    expect(memo).toHaveTextContent("Regresión lineal");
+    expect(memo).toHaveTextContent("Cumple: Opción lineal.");
+  });
 });

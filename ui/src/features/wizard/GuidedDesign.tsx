@@ -11,7 +11,13 @@ import { useTranslation } from "react-i18next";
 
 import { Badge, Button, ErrorNote, Field, Select, Table, Td, Th } from "@/components/ui";
 import { RequirementsPanel } from "@/features/train/DesignRequirements";
-import { type DesignOutcome, type DraftValues, useDraftDesign, useJob } from "@/lib/api/hooks";
+import {
+  type DesignOutcome,
+  type DraftValues,
+  useDraftDesign,
+  useJob,
+  useUpdateDraft,
+} from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
 
 type Mode = "auto" | "always" | "never";
@@ -76,7 +82,9 @@ export function GuidedDesign({
       )}
       {status === "failed" && <ErrorNote error={job.data?.error} />}
       <ErrorNote error={start.error} />
-      {values.design && !running && <Outcome design={values.design} values={values} save={save} />}
+      {values.design && !running && (
+        <Outcome projectId={projectId} design={values.design} values={values} save={save} />
+      )}
     </section>
   );
 }
@@ -86,10 +94,12 @@ function isDone(status: string): boolean {
 }
 
 function Outcome({
+  projectId,
   design,
   values,
   save,
 }: {
+  projectId: string;
   design: DesignOutcome;
   values: DraftValues;
   save: Save;
@@ -99,12 +109,15 @@ function Outcome({
   const pick = candidates.find((c) => c.archspec_id === design.pick);
   const accepted = Boolean(pick && values.archspec_id === pick.archspec_id);
   const winner = design.tournament?.winner;
-  const accept = () =>
-    save({
-      archspec_id: design.pick ?? null,
-      strategy: design.strategy ?? null,
-      max_epochs_per_trial: design.max_epochs_per_trial ?? null,
-    });
+  const update = useUpdateDraft(projectId);
+  const chosen = {
+    archspec_id: design.pick ?? null,
+    strategy: design.strategy ?? null,
+    max_epochs_per_trial: design.max_epochs_per_trial ?? null,
+  };
+  const accept = () => save(chosen);
+  // Un clic: acepta el diseño (arquitectura, búsqueda y épocas) y va a la revisión.
+  const acceptAndReview = () => update.mutate({ values: chosen, step: "review" });
   return (
     <div className="space-y-3">
       <RequirementsPanel requirements={design.requirements} />
@@ -181,9 +194,14 @@ function Outcome({
                 {t("guided.accepted")}
               </span>
             ) : (
-              <Button size="sm" onClick={accept}>
-                {t("guided.accept")}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" loading={update.isPending} onClick={acceptAndReview}>
+                  {t("guided.acceptReview")}
+                </Button>
+                <Button size="sm" variant="secondary" onClick={accept}>
+                  {t("guided.accept")}
+                </Button>
+              </div>
             )}
           </div>
         </div>
