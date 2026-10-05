@@ -5762,6 +5762,87 @@
         "title": "ImageSpec",
         "type": "object"
       },
+      "ImprovementApplied": {
+        "properties": {
+          "archspec": {
+            "$ref": "#/components/schemas/ArchSpecRecord"
+          },
+          "budget": {
+            "additionalProperties": true,
+            "description": "Presupuesto sugerido (el del estudio del run)",
+            "title": "Budget",
+            "type": "object"
+          },
+          "change": {
+            "title": "Change",
+            "type": "string"
+          }
+        },
+        "required": [
+          "archspec",
+          "change"
+        ],
+        "title": "ImprovementApplied",
+        "type": "object"
+      },
+      "ImprovementOption": {
+        "properties": {
+          "applicable": {
+            "title": "Applicable",
+            "type": "boolean"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qué cambia en la arquitectura",
+            "title": "Change"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "enum": [
+                  "design",
+                  "pipeline",
+                  "data"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dónde se hace si no es de la arquitectura",
+            "title": "Hint"
+          },
+          "index": {
+            "description": "Posición de la acción en el diagnóstico",
+            "title": "Index",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "kind",
+          "rationale",
+          "applicable"
+        ],
+        "title": "ImprovementOption",
+        "type": "object"
+      },
       "IngestBody": {
         "additionalProperties": false,
         "properties": {
@@ -22562,6 +22643,105 @@
           }
         },
         "summary": "Get Run History",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/improvements": {
+      "get": {
+        "description": "Acciones del diagnóstico traducidas a cambios concretos de la arquitectura (ADR-0041).",
+        "operationId": "listRunImprovements",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImprovementOption"
+                  },
+                  "title": "Response Listrunimprovements",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Improvements",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/improvements/{index}": {
+      "post": {
+        "description": "Guarda la ArchSpec mejorada (desde el mejor punto del run). No entrena: eso lo decide la\npersona con el presupuesto sugerido.",
+        "operationId": "applyRunImprovement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "index",
+            "required": true,
+            "schema": {
+              "title": "Index",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementApplied"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Improvement",
         "tags": [
           "runs"
         ]

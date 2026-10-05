@@ -2645,6 +2645,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/improvements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Improvements
+         * @description Acciones del diagnóstico traducidas a cambios concretos de la arquitectura (ADR-0041).
+         */
+        get: operations["listRunImprovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/improvements/{index}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Improvement
+         * @description Guarda la ArchSpec mejorada (desde el mejor punto del run). No entrena: eso lo decide la
+         *     persona con el presupuesto sugerido.
+         */
+        post: operations["applyRunImprovement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/mlflow": {
         parameters: {
             query?: never;
@@ -5619,6 +5660,43 @@ export interface components {
              * @description Si difiere de size (OCR)
              */
             width?: number | null;
+        };
+        /** ImprovementApplied */
+        ImprovementApplied: {
+            archspec: components["schemas"]["ArchSpecRecord"];
+            /**
+             * Budget
+             * @description Presupuesto sugerido (el del estudio del run)
+             */
+            budget?: {
+                [key: string]: unknown;
+            };
+            /** Change */
+            change: string;
+        };
+        /** ImprovementOption */
+        ImprovementOption: {
+            /** Applicable */
+            applicable: boolean;
+            /**
+             * Change
+             * @description Qué cambia en la arquitectura
+             */
+            change?: string | null;
+            /**
+             * Hint
+             * @description Dónde se hace si no es de la arquitectura
+             */
+            hint?: ("design" | "pipeline" | "data") | null;
+            /**
+             * Index
+             * @description Posición de la acción en el diagnóstico
+             */
+            index: number;
+            /** Kind */
+            kind: string;
+            /** Rationale */
+            rationale: string;
         };
         /** IngestBody */
         IngestBody: {
@@ -14375,6 +14453,69 @@ export interface operations {
                     "application/json": {
                         [key: string]: number;
                     }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listRunImprovements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOption"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    applyRunImprovement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                index: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementApplied"];
                 };
             };
             /** @description Validation Error */
