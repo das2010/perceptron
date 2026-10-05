@@ -172,12 +172,17 @@ def test_full_flow_uc01(client: TestClient, fixtures_dir: Path) -> None:
     job_id = launch["job"]["id"]
     with client.websocket_connect(f"{API}/jobs/{job_id}") as ws:
         kinds = []
+        epochs: list[dict[str, Any]] = []
         while True:
             msg = ws.receive_json()
             kinds.append(msg["kind"])
+            if msg["kind"] == "epoch":
+                epochs.append(msg["data"])
             if msg["kind"] == "finished":
                 break
     assert "epoch" in kinds
+    # Con el total de épocas y el tiempo restante: la UI muestra el progreso del trial.
+    assert epochs[0]["max_epochs"] == 1 and epochs[0]["run_id"] and "eta_s" in epochs[0]
 
     job = _wait_job(client, job_id)
     assert job["status"] == "succeeded", job["error"]

@@ -20,10 +20,11 @@ import { useProjectId } from "@/features/projects/ProjectLayout";
 
 import { bestRunIds } from "./best";
 import { CompareRuns } from "./CompareRuns";
+import { RunProgress } from "./RunProgress";
 import { StudiesCard } from "./StudiesCard";
 import { StudyInsights } from "./StudyInsights";
 import { SymbolicCard } from "./SymbolicCard";
-import { keys, useJob, useRuns, useStudyAction, type Run } from "@/lib/api/hooks";
+import { keys, useJob, useRuns, useStudies, useStudyAction, type Run } from "@/lib/api/hooks";
 import { useEngineSocket } from "@/lib/api/ws";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -152,7 +153,22 @@ export function ExperimentsPage() {
   const jobState = useJob(job);
   const running =
     jobState.data && !["succeeded", "failed", "cancelled"].includes(jobState.data.status);
-  const { data, isPending, error } = useRuns(projectId, running ? 4000 : undefined);
+  // Job del estudio activo de cada estudio: de ahí sale el progreso por época de su trial.
+  const studies = useStudies(projectId);
+  const activeJobs = useMemo(
+    () =>
+      new Map(
+        (studies.data ?? []).flatMap((v) =>
+          v.job_id && v.study.id ? [[v.study.id, v.job_id] as const] : [],
+        ),
+      ),
+    [studies.data],
+  );
+  // También sin `?job=` (se entró desde el menú): con un estudio activo la tabla se refresca.
+  const { data, isPending, error } = useRuns(
+    projectId,
+    running || activeJobs.size > 0 ? 4000 : undefined,
+  );
   // Al terminar el job, una última lectura: el sondeo se corta y el último trial quedaba
   // «Entrenando» en la tabla aunque ya había terminado.
   const qc = useQueryClient();
@@ -222,6 +238,9 @@ export function ExperimentsPage() {
                   </Td>
                   <Td>
                     <Badge tone={STATUS_TONE[r.status]}>{t(`status.${r.status}`)}</Badge>
+                    {r.status === "running" && r.study_id && activeJobs.get(r.study_id) && (
+                      <RunProgress jobId={activeJobs.get(r.study_id) ?? ""} runId={r.id} />
+                    )}
                   </Td>
                   {cols.map((c) => (
                     <Td key={c}>{formatNumber(r.metrics?.[c], i18n.language)}</Td>

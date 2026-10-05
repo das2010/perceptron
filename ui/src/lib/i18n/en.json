@@ -320,7 +320,13 @@
     "pipelineDiff": "Pipeline differences",
     "sameConfig": "The runs share architecture and pipeline: only hyperparameters change.",
     "best": "best",
-    "bestHint": "Lowest validation loss in the study: the one to evaluate"
+    "bestHint": "Lowest validation loss in the study: the one to evaluate",
+    "preparing": "Preparing…",
+    "epochOf": "Epoch {{done}} of {{total}}",
+    "epochN": "Epoch {{done}}",
+    "etaSeconds": "~{{n}} s left",
+    "etaMinutes": "~{{n}} min left",
+    "etaHours": "~{{n}} h left"
   },
   "status": {
     "queued": "Queued",

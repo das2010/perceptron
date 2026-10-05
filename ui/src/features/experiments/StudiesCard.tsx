@@ -8,6 +8,8 @@ import { useTranslation } from "react-i18next";
 import { Badge, Button, Card, CardTitle, ErrorNote, Table, Td, Th } from "@/components/ui";
 import { type StudyView, useStudies, useStudyAction } from "@/lib/api/hooks";
 
+import { RunProgress } from "./RunProgress";
+
 const TONE = {
   queued: "neutral",
   running: "brand",
@@ -46,6 +48,7 @@ export function StudiesCard({ projectId }: { projectId: string }) {
               <Td>
                 <Badge tone={TONE[v.status]}>{t(`studies.state.${v.status}`)}</Badge>
                 {v.reason && <p className="mt-1 max-w-md text-xs text-muted">{v.reason}</p>}
+                {v.status === "running" && v.job_id && <RunProgress jobId={v.job_id} />}
               </Td>
               <Td>
                 {v.trials_total
