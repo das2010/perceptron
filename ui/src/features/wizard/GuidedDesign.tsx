@@ -191,3 +191,39 @@ function Outcome({
     </div>
   );
 }
+
+/** Memo del diseño en la revisión: qué se eligió, por qué y qué requisitos cumple. */
+export function DesignMemo({ values }: { values: DraftValues }) {
+  const { t } = useTranslation();
+  const design = values.design;
+  if (!design || !values.archspec_id) return null;
+  const chosen = (design.candidates ?? []).find((c) => c.archspec_id === values.archspec_id);
+  if (!chosen) return null;
+  const isPick = chosen.archspec_id === design.pick;
+  const unmet = (chosen.checks ?? []).filter((c) => !c.met);
+  const met = (chosen.checks ?? []).filter((c) => c.met);
+  return (
+    <section
+      aria-label={t("guided.memo.title")}
+      className="rounded-pt border border-line bg-canvas p-4 text-sm"
+    >
+      <h3 className="font-semibold">{t("guided.memo.title")}</h3>
+      <p className="mt-1">
+        <span className="font-semibold">{chosen.title}.</span>{" "}
+        {isPick ? design.pick_reason : t("guided.memo.notPick")}
+      </p>
+      {met.length > 0 && (
+        <p className="mt-1 text-xs text-ok">
+          {t("guided.memo.met", { list: met.map((c) => t(`design.code.${c.code}`)).join(", ") })}
+        </p>
+      )}
+      {unmet.length > 0 && (
+        <p className="mt-1 text-xs text-bad">
+          {t("guided.memo.unmet", {
+            list: unmet.map((c) => t(`design.code.${c.code}`)).join(", "),
+          })}
+        </p>
+      )}
+    </section>
+  );
+}

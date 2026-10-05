@@ -1490,7 +1490,14 @@
     "pick": "Propuesta: {{title}}.",
     "plan": "Búsqueda de hiperparámetros: {{strategy}}, {{epochs}} épocas por trial.",
     "accept": "Aceptar el diseño",
-    "accepted": "Diseño aceptado"
+    "accepted": "Diseño aceptado",
+    "useStrategy": "Usar la búsqueda del diseño guiado",
+    "memo": {
+      "title": "Por qué esta arquitectura",
+      "notPick": "La elegiste vos; el diseño guiado proponía otra.",
+      "met": "Cumple: {{list}}.",
+      "unmet": "No cumple: {{list}}."
+    }
   },
   "improve": {
     "title": "Próximo paso",

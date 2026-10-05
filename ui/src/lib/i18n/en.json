@@ -1490,7 +1490,14 @@
     "pick": "Proposal: {{title}}.",
     "plan": "Hyperparameter search: {{strategy}}, {{epochs}} epochs per trial.",
     "accept": "Accept the design",
-    "accepted": "Design accepted"
+    "accepted": "Design accepted",
+    "useStrategy": "Use the guided design’s search",
+    "memo": {
+      "title": "Why this architecture",
+      "notPick": "You chose it; the guided design proposed another one.",
+      "met": "Meets: {{list}}.",
+      "unmet": "Does not meet: {{list}}."
+    }
   },
   "improve": {
     "title": "Next step",

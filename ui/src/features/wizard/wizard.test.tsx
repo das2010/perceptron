@@ -529,4 +529,44 @@ describe("wizard adaptativo, fase 2", () => {
     });
     expect(await screen.findByText("Diseño aceptado")).toBeInTheDocument();
   });
+
+  it("la revisión explica por qué esta arquitectura (memo del diseño)", async () => {
+    const values = {
+      dataset_version_id: "dsv_1",
+      pipeline_id: "pip_1",
+      archspec_id: "arc_e",
+      design: {
+        pipeline_id: "pip_1",
+        origin: "llm",
+        candidates: [
+          {
+            archspec_id: "arc_m",
+            title: "MobileNetV3 preentrenada",
+            rationale: "r",
+            origin: "llm",
+            checks: [{ code: "pretrained_backbone", level: "must", met: true }],
+          },
+          {
+            archspec_id: "arc_e",
+            title: "CNN desde cero",
+            rationale: "r",
+            origin: "llm",
+            checks: [{ code: "pretrained_backbone", level: "must", met: false }],
+          },
+        ],
+        pick: "arc_m",
+        pick_reason: "Ganó la comparación.",
+      },
+    };
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/draft": () => draft("review", values, 7),
+    });
+    renderAt("/projects/prj_1/wizard");
+    const memo = await screen.findByRole("region", { name: "Por qué esta arquitectura" });
+    expect(memo).toHaveTextContent("CNN desde cero");
+    expect(memo).toHaveTextContent("el diseño guiado proponía otra");
+    expect(memo).toHaveTextContent("No cumple: Red preentrenada.");
+  });
 });
