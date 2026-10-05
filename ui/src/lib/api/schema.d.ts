@@ -1647,6 +1647,30 @@ export interface paths {
         patch: operations["updateDraft"];
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/draft/design": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft Design
+         * @description Diseño guiado (ADR-0041): preparación, propuestas evaluadas contra los requisitos del
+         *     escenario, mini-torneo de las mejores y estrategia de HPO para la elegida.
+         *
+         *     El resultado queda en `values.design` del borrador; no fija la arquitectura: la persona lo
+         *     acepta con `PATCH /draft` (`archspec_id`, `strategy`, `max_epochs_per_trial`).
+         */
+        post: operations["draftDesign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/draft/intake": {
         parameters: {
             query?: never;
@@ -4024,6 +4048,41 @@ export interface components {
              */
             source: "huggingface" | "torch";
         };
+        /** Candidate */
+        Candidate: {
+            /** Archspec Id */
+            archspec_id: string;
+            /** Checks */
+            checks?: components["schemas"]["RequirementCheck"][];
+            /**
+             * Eligible
+             * @description Cumple todos los requisitos obligatorios
+             * @default true
+             */
+            eligible: boolean;
+            /** Estimates */
+            estimates?: {
+                [key: string]: number | null;
+            };
+            origin: components["schemas"]["Origin"];
+            /** Rationale */
+            rationale: string;
+            /**
+             * Recommended
+             * @default false
+             */
+            recommended: boolean;
+            /** Run Id */
+            run_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Title */
+            title: string;
+            /** Tournament Metric */
+            tournament_metric?: number | null;
+            /** Tournament Status */
+            tournament_status?: string | null;
+        };
         /** CategoricalStats */
         CategoricalStats: {
             /**
@@ -4732,6 +4791,51 @@ export interface components {
             /** Score */
             score: number;
         };
+        /** DesignOutcome */
+        DesignOutcome: {
+            /** Candidates */
+            candidates?: components["schemas"]["Candidate"][];
+            /** Created At */
+            created_at?: string;
+            /** Fallback Reason */
+            fallback_reason?: string | null;
+            /**
+             * Max Epochs Per Trial
+             * @default 15
+             */
+            max_epochs_per_trial: number;
+            origin: components["schemas"]["Origin"];
+            /** Pick */
+            pick?: string | null;
+            /**
+             * Pick Reason
+             * @default
+             */
+            pick_reason: string;
+            /** Pipeline Id */
+            pipeline_id: string;
+            requirements?: components["schemas"]["DesignRequirements"] | null;
+            /** Strategy */
+            strategy?: {
+                [key: string]: unknown;
+            } | null;
+            tournament?: components["schemas"]["TournamentSummary"] | null;
+            /**
+             * Tournament Skipped
+             * @description Por qué no hubo torneo (pocas candidatas, demasiado largo…)
+             */
+            tournament_skipped?: string | null;
+        };
+        /** DesignRequest */
+        DesignRequest: {
+            /**
+             * Tournament
+             * @description Mini-torneo de las mejores: auto = solo si se estima corto (≤ 15 min)
+             * @default auto
+             * @enum {string}
+             */
+            tournament: "auto" | "always" | "never";
+        };
         /** DesignRequirement */
         DesignRequirement: {
             /**
@@ -4845,6 +4949,7 @@ export interface components {
             data_facts?: components["schemas"]["DataFacts"] | null;
             /** Dataset Version Id */
             dataset_version_id?: string | null;
+            design?: components["schemas"]["DesignOutcome"] | null;
             /** Device */
             device?: ("cpu" | "cuda" | "rocm" | "xpu" | "mps") | null;
             /** Goal */
@@ -8474,6 +8579,27 @@ export interface components {
              * @default 0.3
              */
             subset: number;
+        };
+        /** TournamentSummary */
+        TournamentSummary: {
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "minimize" | "maximize";
+            /**
+             * Epochs
+             * @description Épocas por archspec_id
+             */
+            epochs?: {
+                [key: string]: number;
+            };
+            /** Metric */
+            metric: string;
+            /** Subset */
+            subset: number;
+            /** Winner */
+            winner?: string | null;
         };
         /** TrainingSpec */
         TrainingSpec: {
@@ -12310,6 +12436,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DraftView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draftDesign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DesignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
                 };
             };
             /** @description Validation Error */

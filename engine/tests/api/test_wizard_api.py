@@ -259,8 +259,18 @@ def _two_mlps(request: Any) -> dict[str, Any]:
     base = data["constraints"]["base_archspec"]
     return {
         "proposals": [
-            {"title": "MLP", "archspec": {**base, "name": "mlp"}, "rationale": "base"},
-            {"title": "MLP bis", "archspec": {**base, "name": "mlp-bis"}, "rationale": "otra"},
+            {
+                "title": "MLP",
+                "archspec": {**base, "name": "mlp"},
+                "rationale": "base",
+                "confidence": 0.6,
+            },
+            {
+                "title": "MLP bis",
+                "archspec": {**base, "name": "mlp-bis"},
+                "rationale": "otra",
+                "confidence": 0.5,
+            },
         ]
     }
 

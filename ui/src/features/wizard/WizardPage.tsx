@@ -29,6 +29,7 @@ import { ProfileView } from "@/features/data/ProfileView";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import { NotRecommendedNote, RequirementsPanel } from "@/features/train/DesignRequirements";
 import { ProposalCard } from "@/features/train/TrainPage";
+import { GuidedDesign } from "@/features/wizard/GuidedDesign";
 import { getApiClient } from "@/lib/api/client";
 import {
   unwrap,
@@ -234,6 +235,7 @@ function StepArchitecture({
   return (
     <div className="space-y-4">
       <PlanSuggestion plan={plan} field="architecture_hint" />
+      <GuidedDesign projectId={projectId} values={values} save={save} />
       <div className="flex flex-wrap gap-2">
         <Button loading={pipeline.isPending || propose.isPending} onClick={run}>
           {t("train.proposeArch")}

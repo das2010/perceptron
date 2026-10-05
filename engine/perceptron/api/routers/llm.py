@@ -7,18 +7,27 @@ guardada (RF-LLM-08). La auditoría muestra exactamente qué salió en cada llam
 from __future__ import annotations
 
 import time
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from perceptron.api.context import EngineContext, get_context
-from perceptron.domain.enums import LLMPurpose, PrivacyLevel
-from perceptron.domain.models import LabelSet, LLMCall, Project
+from perceptron.archspec.defaults import spec_epochs
+from perceptron.archspec.schema import ArchSpec, Provenance
+from perceptron.core.errors import NotFoundError, ValidationError
+from perceptron.domain.enums import LLMPurpose, Origin, PrivacyLevel
+from perceptron.domain.models import ArchSpecRecord, LabelSet, LLMCall, Project
 from perceptron.llm.config import LLMProfile, ModelInfo, ProviderInfo, ProviderKind
 from perceptron.llm.errors import LLMBudgetExceededError, LLMProviderError, LLMUnavailableError
 from perceptron.llm.privacy import LLMContext
 from perceptron.llm.schemas import Diagnosis, LabelingGuide, Report
+from perceptron.services.improve import (
+    ImprovementOption,
+    apply_action,
+    improvement_options,
+    with_defaults,
+)
 from perceptron.services.workflow import Workflow
 
 router = APIRouter()
@@ -195,6 +204,82 @@ def get_diagnosis(run_id: str, ctx: Ctx, mode: Mode = "auto", refresh: bool = Fa
     if run.diagnosis and "summary" in run.diagnosis and not refresh:
         return Diagnosis.model_validate(run.diagnosis)
     return Workflow(ctx).roles.diagnose(run_id, mode=mode)
+
+
+def _diagnosis(ctx: EngineContext, run_id: str) -> Diagnosis:
+    from perceptron.domain.models import Run
+
+    run = ctx.repo(Run).get(run_id)
+    if run.diagnosis and "summary" in run.diagnosis:
+        return Diagnosis.model_validate(run.diagnosis)
+    return Workflow(ctx).roles.diagnose(run_id)
+
+
+class ImprovementApplied(BaseModel):
+    archspec: ArchSpecRecord
+    change: str
+    budget: dict[str, Any] = Field(
+        default_factory=dict, description="Presupuesto sugerido (el del estudio del run)"
+    )
+
+
+@router.get(
+    "/runs/{run_id}/improvements",
+    tags=["runs"],
+    operation_id="listRunImprovements",
+)
+def list_improvements(run_id: str, ctx: Ctx) -> list[ImprovementOption]:
+    """Acciones del diagnóstico traducidas a cambios concretos de la arquitectura (ADR-0041)."""
+    from perceptron.domain.models import Run
+
+    run = ctx.repo(Run).get(run_id)
+    spec = ArchSpec.model_validate(ctx.repo(ArchSpecRecord).get(run.archspec_id).spec)
+    return improvement_options(spec, _diagnosis(ctx, run_id), run.hyperparams)
+
+
+@router.post(
+    "/runs/{run_id}/improvements/{index}",
+    status_code=201,
+    tags=["runs"],
+    operation_id="applyRunImprovement",
+)
+def apply_improvement(run_id: str, index: int, ctx: Ctx) -> ImprovementApplied:
+    """Guarda la ArchSpec mejorada (desde el mejor punto del run). No entrena: eso lo decide la
+    persona con el presupuesto sugerido."""
+    from perceptron.domain.models import Run, Study
+
+    run = ctx.repo(Run).get(run_id)
+    diagnosis = _diagnosis(ctx, run_id)
+    if not 0 <= index < len(diagnosis.actions):
+        raise NotFoundError(f"el diagnóstico no tiene la acción {index}")
+    record = ctx.repo(ArchSpecRecord).get(run.archspec_id)
+    base = with_defaults(ArchSpec.model_validate(record.spec), run.hyperparams)
+    action = diagnosis.actions[index]
+    applied = apply_action(base, action)
+    if applied is None:
+        raise ValidationError(
+            "esa acción no se aplica sobre la arquitectura", details={"kind": action.kind}
+        )
+    spec, change = applied
+    origin = Origin.LLM if diagnosis.origin == "llm" else Origin.RULES
+    spec = spec.model_copy(
+        update={
+            "name": f"{base.name[:110]}-mejora",
+            "provenance": Provenance(
+                origin=origin,
+                llm_call_id=diagnosis.llm_call_id,
+                rationale=f"Mejora del run {run_id}: {change}. {action.rationale}",
+            ),
+        }
+    )
+    saved = Workflow(ctx).save_archspec(run.project_id, spec, origin=origin)
+    budget: dict[str, Any] = {}
+    if run.study_id:
+        study = ctx.repo(Study).find(run.study_id)
+        budget = dict(study.budget) if study else {}
+    if action.kind in ("more_epochs", "fewer_epochs"):
+        budget["max_epochs_per_trial"] = int(spec_epochs(spec))
+    return ImprovementApplied(archspec=saved, change=change, budget=budget)
 
 
 class ReportBody(BaseModel):

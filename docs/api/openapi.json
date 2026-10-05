@@ -1594,6 +1594,109 @@
         "title": "CachedModel",
         "type": "object"
       },
+      "Candidate": {
+        "properties": {
+          "archspec_id": {
+            "title": "Archspec Id",
+            "type": "string"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "eligible": {
+            "default": true,
+            "description": "Cumple todos los requisitos obligatorios",
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "estimates": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Estimates",
+            "type": "object"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "recommended": {
+            "default": false,
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tournament_metric": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tournament Metric"
+          },
+          "tournament_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tournament Status"
+          }
+        },
+        "required": [
+          "archspec_id",
+          "title",
+          "rationale",
+          "origin"
+        ],
+        "title": "Candidate",
+        "type": "object"
+      },
       "CategoricalStats": {
         "properties": {
           "other_count": {
@@ -3402,6 +3505,128 @@
         "title": "DesignAssessment",
         "type": "object"
       },
+      "DesignOutcome": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          },
+          "max_epochs_per_trial": {
+            "default": 15,
+            "title": "Max Epochs Per Trial",
+            "type": "integer"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "pick": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pick"
+          },
+          "pick_reason": {
+            "default": "",
+            "title": "Pick Reason",
+            "type": "string"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "requirements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignRequirements"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy"
+          },
+          "tournament": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TournamentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tournament_skipped": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por qué no hubo torneo (pocas candidatas, demasiado largo…)",
+            "title": "Tournament Skipped"
+          }
+        },
+        "required": [
+          "pipeline_id",
+          "origin"
+        ],
+        "title": "DesignOutcome",
+        "type": "object"
+      },
+      "DesignRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "tournament": {
+            "default": "auto",
+            "description": "Mini-torneo de las mejores: auto = solo si se estima corto (≤ 15 min)",
+            "enum": [
+              "auto",
+              "always",
+              "never"
+            ],
+            "title": "Tournament",
+            "type": "string"
+          }
+        },
+        "title": "DesignRequest",
+        "type": "object"
+      },
       "DesignRequirement": {
         "properties": {
           "code": {
@@ -3711,6 +3936,16 @@
               }
             ],
             "title": "Dataset Version Id"
+          },
+          "design": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "device": {
             "anyOf": [
@@ -12941,6 +13176,52 @@
         "title": "TournamentBody",
         "type": "object"
       },
+      "TournamentSummary": {
+        "properties": {
+          "direction": {
+            "enum": [
+              "minimize",
+              "maximize"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "epochs": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Épocas por archspec_id",
+            "title": "Epochs",
+            "type": "object"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "subset": {
+            "title": "Subset",
+            "type": "number"
+          },
+          "winner": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winner"
+          }
+        },
+        "required": [
+          "metric",
+          "direction",
+          "subset"
+        ],
+        "title": "TournamentSummary",
+        "type": "object"
+      },
       "TrainingSpec": {
         "additionalProperties": false,
         "properties": {
@@ -19405,6 +19686,59 @@
           }
         },
         "summary": "Update Draft",
+        "tags": [
+          "wizard"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/draft/design": {
+      "post": {
+        "description": "Diseño guiado (ADR-0041): preparación, propuestas evaluadas contra los requisitos del\nescenario, mini-torneo de las mejores y estrategia de HPO para la elegida.\n\nEl resultado queda en `values.design` del borrador; no fija la arquitectura: la persona lo\nacepta con `PATCH /draft` (`archspec_id`, `strategy`, `max_epochs_per_trial`).",
+        "operationId": "draftDesign",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DesignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Draft Design",
         "tags": [
           "wizard"
         ]

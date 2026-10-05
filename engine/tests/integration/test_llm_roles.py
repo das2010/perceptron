@@ -144,7 +144,12 @@ def _mlps(request: LLMRequest) -> dict[str, Any]:
                 "rationale": "r",
                 "confidence": 1,
             },
-            {"title": "MLP 2", "archspec": {**base, "name": "mlp2"}, "rationale": "r"},
+            {
+                "title": "MLP 2",
+                "archspec": {**base, "name": "mlp2"},
+                "rationale": "r",
+                "confidence": 0.5,
+            },
         ]
     }
 
@@ -155,7 +160,12 @@ def _with_linear(request: LLMRequest) -> dict[str, Any]:
     first = base["nodes"][0]
     head = {"id": "head", "block": "head.linear"}
     linear = {**base, "name": "lineal", "nodes": [first, head], "edges": [[first["id"], "head"]]}
-    out["proposals"][1] = {"title": "Lineal", "archspec": linear, "rationale": "regla"}
+    out["proposals"][1] = {
+        "title": "Lineal",
+        "archspec": linear,
+        "rationale": "regla",
+        "confidence": 0.4,
+    }
     return out
 
 

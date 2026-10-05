@@ -431,4 +431,102 @@ describe("wizard adaptativo, fase 2", () => {
       error_cost_ratio: 10,
     });
   });
+
+  it("diseño guiado: corre el job, muestra la ganadora con evidencia y se acepta", async () => {
+    const design = {
+      pipeline_id: "pip_1",
+      origin: "llm",
+      requirements: {
+        items: [
+          {
+            code: "pretrained_backbone",
+            level: "must",
+            scope: "any",
+            message: "Con 300 imágenes, una red preentrenada generaliza mejor.",
+          },
+        ],
+      },
+      candidates: [
+        {
+          archspec_id: "arc_m",
+          title: "MobileNetV3 preentrenada",
+          rationale: "r",
+          origin: "llm",
+          score: 97,
+          recommended: true,
+          eligible: true,
+          checks: [{ code: "pretrained_backbone", level: "must", met: true }],
+          tournament_metric: 0.91,
+          tournament_status: "complete",
+        },
+        {
+          archspec_id: "arc_e",
+          title: "EfficientNet-B0 preentrenada",
+          rationale: "r",
+          origin: "llm",
+          score: 95,
+          recommended: false,
+          eligible: true,
+          checks: [{ code: "pretrained_backbone", level: "must", met: true }],
+          tournament_metric: 0.84,
+          tournament_status: "complete",
+        },
+      ],
+      tournament: { metric: "val_f1_macro", direction: "maximize", subset: 1, winner: "arc_m" },
+      pick: "arc_m",
+      pick_reason: "Ganó el entrenamiento corto de comparación con val_f1_macro = 0.91.",
+      max_epochs_per_trial: 20,
+      strategy: { strategy: "tpe", pruner: "median" },
+    };
+    let values: Record<string, unknown> = { dataset_version_id: "dsv_1" };
+    let jobPolls = 0;
+    const patches: Record<string, unknown>[] = [];
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/draft": () => draft("architecture", values, 3),
+      "POST /api/v1/projects/prj_1/draft/design": () => ({
+        id: "job_1",
+        kind: "design",
+        status: "queued",
+      }),
+      "GET /api/v1/jobs/job_1": () => {
+        jobPolls += 1;
+        if (jobPolls < 2)
+          return {
+            id: "job_1",
+            kind: "design",
+            status: "running",
+            progress: { stage: "tournament" },
+          };
+        values = { ...values, design };
+        return { id: "job_1", kind: "design", status: "succeeded" };
+      },
+      "PATCH /api/v1/projects/prj_1/draft": async (req) => {
+        const body = (await req.json()) as { values?: Record<string, unknown> };
+        patches.push(body.values ?? {});
+        values = { ...values, ...body.values };
+        return draft("architecture", values, 4);
+      },
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/wizard");
+    await user.click(await screen.findByRole("button", { name: "Diseñar automáticamente" }));
+    expect(
+      await screen.findByText("Comparando las mejores con un entrenamiento corto…"),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText("Ganó la comparación", {}, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/val_f1_macro = 0.91/)).toBeInTheDocument();
+    expect(screen.getByText(/tpe, 20 épocas por trial/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Aceptar el diseño" }));
+    await waitFor(() => expect(patches).toHaveLength(1));
+    expect(patches[0]).toMatchObject({
+      archspec_id: "arc_m",
+      strategy: { strategy: "tpe" },
+      max_epochs_per_trial: 20,
+    });
+    expect(await screen.findByText("Diseño aceptado")).toBeInTheDocument();
+  });
 });

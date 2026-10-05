@@ -1458,5 +1458,48 @@
     "unmet": "not met",
     "notRecommended": "You chose an option other than the recommended one (“{{best}}”). You can still go ahead.",
     "unmetList": "Not met: {{list}}."
+  },
+  "guided": {
+    "title": "Guided design",
+    "intro": "Perceptron prepares the data, asks for proposals, scores them against the scenario requirements, compares the best ones with a short training run and proposes the architecture and the hyperparameter search. You decide.",
+    "compare": "Compare with a short training run",
+    "mode": {
+      "auto": "If quick",
+      "always": "Always",
+      "never": "No"
+    },
+    "run": "Design automatically",
+    "rerun": "Design again",
+    "stage": {
+      "start": "Starting…",
+      "pipeline": "Preparing the data…",
+      "architectures": "Requesting and scoring architecture proposals…",
+      "tournament": "Comparing the best ones with a short training run…",
+      "strategy": "Setting up the hyperparameter search…"
+    },
+    "skipped": {
+      "disabled": "No comparison run (disabled).",
+      "single_candidate": "No comparison run: only one candidate meets the requirements.",
+      "too_long": "No comparison run: it is estimated to be long. Choose “Always” to run it anyway."
+    },
+    "candidate": "Candidate",
+    "score": "Score",
+    "winner": "Won the comparison",
+    "mustUnmet": "Misses a requirement",
+    "chosen": "Chosen",
+    "pick": "Proposal: {{title}}.",
+    "plan": "Hyperparameter search: {{strategy}}, {{epochs}} epochs per trial.",
+    "accept": "Accept the design",
+    "accepted": "Design accepted"
+  },
+  "improve": {
+    "title": "Next step",
+    "apply": "Apply",
+    "train": "Train with this improvement",
+    "hint": {
+      "pipeline": "Done in data preparation (Train → Preparation).",
+      "design": "Design again with the wizard’s guided design (Architecture step).",
+      "data": "More data is needed: add it in the Data tab."
+    }
   }
 }
