@@ -1497,7 +1497,8 @@
       "notPick": "La elegiste vos; el diseño guiado proponía otra.",
       "met": "Cumple: {{list}}.",
       "unmet": "No cumple: {{list}}."
-    }
+    },
+    "acceptReview": "Aceptar y revisar"
   },
   "improve": {
     "title": "Próximo paso",

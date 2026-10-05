@@ -81,7 +81,7 @@ En el paso **Arquitectura**, **Diseñar automáticamente** arma el diseño compl
 - **Siempre**;
 - **No**.
 
-Nada se aplica solo. **Aceptar el diseño** fija la arquitectura y la búsqueda propuestas; también
+Nada se aplica solo. **Aceptar y revisar** hace lo mismo y te lleva directo a la revisión, donde **Por qué esta arquitectura** resume la elección. **Aceptar el diseño** fija la arquitectura y la búsqueda propuestas; también
 podés **Elegir** otra candidata de la tabla. Si cambiás los datos, la ficha o la preparación, el
 diseño se descarta porque ya no corresponde.
 
