@@ -13,6 +13,7 @@ que llega en un paquete importado no puede ejecutar código.
 from __future__ import annotations
 
 import ast
+import functools
 import math
 import operator
 import re
@@ -36,6 +37,9 @@ COLLINEAR = 0.98  # correlación de rangos entre entradas a partir de la cual se
 LOW_R2 = 0.9
 PARITY_POINTS = 500
 TINY = 1e-5  # constantes menores se anulan al redondear (si la fórmula sigue prediciendo igual)
+REL_TINY = 1e-6  # ... o menores que esto × la escala del objetivo (0,00035 frente a ±1785)
+CONST_RTOL = 1e-6  # tolerancia relativa para reconocer una constante conocida (3^(1/5), π…)
+LONG_DIGITS = 5  # una constante con más cifras significativas cuenta como «fea» al elegir
 _VAR = re.compile(r"^x(\d+)$")
 _NOT_ALLOWED = "la fórmula tiene una construcción no permitida"
 
@@ -86,6 +90,11 @@ _FUNCS: dict[str, Callable[[Any], Any]] = {
     "abs": np.abs,
 }
 
+# Constantes con nombre que puede producir la forma cerrada (sympy las escribe así).
+_CONSTS: dict[str, float] = {"pi": math.pi, "E": math.e}
+_CONST_EXCEL = {"pi": "PI()", "E": "EXP(1)"}
+_CONST_PYTHON = {"pi": "math.pi", "E": "math.e"}
+
 
 def parse_expression(text: str) -> ast.Expression:
     """Valida la fórmula: cualquier otra construcción (atributos, llamadas, nombres) se rechaza."""
@@ -102,7 +111,9 @@ def parse_expression(text: str) -> ast.Expression:
             continue
         if isinstance(node, ast.Constant) and isinstance(node.value, int | float):
             continue
-        if isinstance(node, ast.Name) and (_VAR.match(node.id) or node.id in _FUNCS):
+        if isinstance(node, ast.Name) and (
+            _VAR.match(node.id) or node.id in _FUNCS or node.id in _CONSTS
+        ):
             continue
         if (
             isinstance(node, ast.Call)
@@ -145,6 +156,8 @@ def evaluate_expression(text: str, x: np.ndarray) -> np.ndarray:
             return ev(node.body)
         if isinstance(node, ast.Constant):
             return _number(node)
+        if isinstance(node, ast.Name) and node.id in _CONSTS:
+            return _CONSTS[node.id]
         if isinstance(node, ast.Name):
             i = _var(node) - 1
             if not 0 <= i < x.shape[1]:
@@ -180,6 +193,8 @@ def to_excel(text: str, *, spanish: bool) -> str:
             return em(node.body)
         if isinstance(node, ast.Constant):
             return num(_number(node))
+        if isinstance(node, ast.Name) and node.id in _CONSTS:
+            return _CONST_EXCEL[node.id]
         if isinstance(node, ast.Name):
             return f"{_column_letter(_var(node))}2"
         if isinstance(node, ast.BinOp):
@@ -222,6 +237,8 @@ def _to_sympy(text: str) -> Any:
             return conv(node.body)
         if isinstance(node, ast.Constant):
             return sp.Float(_number(node))
+        if isinstance(node, ast.Name) and node.id in _CONSTS:
+            return {"pi": sp.pi, "E": sp.E}[node.id]
         if isinstance(node, ast.Name):
             return sp.Symbol(node.id)
         if isinstance(node, ast.BinOp):
@@ -267,17 +284,85 @@ def simplify(text: str, *, snap: bool) -> str:
     return out
 
 
+@functools.cache
+def _known_constants() -> tuple[tuple[float, Any], ...]:
+    """Constantes con forma cerrada: raíces de enteros chicos (y sus inversas), múltiplos
+    simples de π, e y logaritmos comunes. Caso «Tabla X»: 1,2457309… = 3^(1/5)."""
+    import sympy as sp
+
+    found: list[Any] = []
+    for k in range(2, 13):
+        for n in range(2, 6):
+            if round(k ** (1 / n)) ** n == k:
+                continue  # raíz exacta (4^(1/2) = 2): la resuelve el redondeo
+            root = sp.Integer(k) ** sp.Rational(1, n)
+            found += [root, 1 / root]
+    for num in range(1, 5):
+        for den in range(1, 5):
+            if math.gcd(num, den) == 1:
+                found += [sp.pi * sp.Rational(num, den), sp.Rational(den, num) / sp.pi]
+    found += [sp.E, 1 / sp.E, sp.log(2), sp.log(10)]
+    return tuple((float(c), c) for c in found)
+
+
+def _recognize(value: float) -> Any | None:
+    for v, c in _known_constants():
+        if abs(abs(value) - v) <= CONST_RTOL * v:
+            return c if value > 0 else -c
+    return None
+
+
+def closed_form(text: str, scale: float) -> str:
+    """Anula constantes despreciables frente a la escala del objetivo y reemplaza las que tienen
+    forma cerrada conocida (1,24573093… → 3^(1/5)). Quien llama la acepta solo si predice igual
+    de bien que la original; si no es una fórmula permitida, queda la original."""
+    import sympy as sp
+
+    try:
+        expr = sp.simplify(_to_sympy(text))
+        replace: dict[Any, Any] = {}
+        for f in expr.atoms(sp.Float):
+            v = float(f)
+            if abs(v) < max(TINY, REL_TINY * scale):
+                replace[f] = sp.Integer(0)
+            elif abs(v - round(v)) <= 1e-9 * max(1.0, abs(v)):
+                replace[f] = sp.Integer(round(v))
+            elif (c := _recognize(v)) is not None:
+                replace[f] = c
+        expr = sp.simplify(expr.xreplace(replace))
+        out = str(sp.sstr(expr.xreplace({f: sp.Float(f, 12) for f in expr.atoms(sp.Float)})))
+        parse_expression(out)
+    except (ValidationError, TypeError, ValueError, ZeroDivisionError, OverflowError):
+        return text
+    return out
+
+
+def _ugliness(text: str) -> tuple[int, int]:
+    """(constantes con muchas cifras, nodos): para preferir la forma más legible."""
+    long_floats = sum(
+        1
+        for node in ast.walk(parse_expression(text))
+        if isinstance(node, ast.Constant)
+        and isinstance(node.value, float)
+        and len(f"{node.value:.12g}".replace("-", "").replace(".", "").lstrip("0")) > LONG_DIGITS
+    )
+    return long_floats, sum(1 for _ in ast.walk(parse_expression(text)))
+
+
 def _rename(text: str, names: list[str]) -> str:
     """x1…xn → nombres, en una sola pasada (un nombre nunca pisa a otro)."""
     return re.sub(r"\bx(\d+)\b", lambda m: names[int(m.group(1)) - 1], text)
 
 
 def readable(text: str, names: list[str]) -> str:
+    text = re.sub(r"\b(pi|E)\b", lambda m: {"pi": "π", "E": "e"}[m.group(1)], text)
     return _rename(text, names).replace("**", "^").replace("*", "·")
 
 
 def to_python(text: str, names: list[str]) -> str:
     args = [_identifier(n, i) for i, n in enumerate(names)]
+    # Las constantes antes que las variables: un nombre de columna podría llamarse «pi».
+    text = re.sub(r"\b(pi|E)\b", lambda m: _CONST_PYTHON[m.group(1)], text)
     body = _rename(text, args)
     body = re.sub(r"\b(sqrt|exp|log)\(", r"math.\1(", body).replace("Abs(", "abs(")
     return f"import math\n\n\ndef formula({', '.join(args)}):\n    return {body}\n"
@@ -378,18 +463,21 @@ def _search(x: np.ndarray, y: np.ndarray, cfg: SymbolicConfig, progress: Any) ->
 
 
 def _choose(raw: list[str], x_va: np.ndarray, y_va: np.ndarray) -> list[tuple[int, float, str]]:
-    """Cada candidata simplificada; si la versión redondeada (3,00001 → 3) predice igual de bien
-    en validación, se queda esa: es la regla, no una aproximación. Devuelve (nodos, rmse, f)."""
+    """Cada candidata simplificada. Variantes: la exacta, la redondeada (3,00001 → 3) y la de
+    forma cerrada (1,2457309 → 3^(1/5), sin términos despreciables). Entre las que predicen
+    igual de bien que la exacta en validación, la más legible: es la regla, no una
+    aproximación. Devuelve (nodos, rmse, fórmula)."""
     scale = float(np.std(y_va)) or 1.0
     out: list[tuple[int, float, str]] = []
     for text in raw:
         exact = simplify(text, snap=False)
-        snapped = simplify(text, snap=True)
         e_rmse = _rmse(y_va, evaluate_expression(exact, x_va))
-        s_rmse = _rmse(y_va, evaluate_expression(snapped, x_va))
-        best, rmse = (
-            (snapped, s_rmse) if s_rmse <= e_rmse * 1.01 + 1e-9 * scale else (exact, e_rmse)
-        )
+        variants = [(exact, e_rmse)]
+        for other in (simplify(text, snap=True), closed_form(exact, scale)):
+            if other != exact:
+                variants.append((other, _rmse(y_va, evaluate_expression(other, x_va))))
+        ok = [v for v in variants if v[1] <= e_rmse * 1.01 + 1e-9 * scale]
+        best, rmse = min(ok, key=lambda v: _ugliness(v[0]))
         out.append((sum(1 for _ in ast.walk(parse_expression(best))), rmse, best))
     return out
 

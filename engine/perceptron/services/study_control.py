@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 WORKER_LOST = "WorkerLost"
 StudyStatus = Literal["queued", "running", "stopped", "interrupted", "finished", "failed"]
-_DONE = {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELLED}
+_DONE = {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELLED, RunStatus.PRUNED}
 _OPEN = {RunStatus.RUNNING, RunStatus.QUEUED, RunStatus.PAUSED}
 
 

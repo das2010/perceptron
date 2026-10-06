@@ -334,7 +334,8 @@
     "paused": "En pausa",
     "succeeded": "Terminado",
     "failed": "Falló",
-    "cancelled": "Cancelado"
+    "cancelled": "Cancelado",
+    "pruned": "Podado"
   },
   "run": {
     "title": "Run",

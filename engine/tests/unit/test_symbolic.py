@@ -73,3 +73,29 @@ def test_search_recovers_the_sensor_rule() -> None:
     assert rmse < 1e-6
     far = np.array([[10.0, 0.25], [5.0, 3.0]])  # muy fuera del rango de entrenamiento
     assert sym.evaluate_expression(best, far) == pytest.approx(rule(far), rel=1e-4)
+
+
+def test_closed_form_recognizes_known_constants() -> None:
+    """Caso «Tabla X»: salida = entrada × 3^(1/5); se encontraba 1,24573112574·x + 0,00035."""
+    found = "1.24573112574*x1 + 0.000349473820465"
+    assert sym.closed_form(found, scale=1785.0) == "3**(1/5)*x1"
+    assert sym.readable("3**(1/5)*x1", ["entrada"]) == "3^(1/5)·entrada"
+    assert sym.to_excel("3**(1/5)*x1", spanish=True) == "=((3^(1/5))*A2)"
+    assert sym.closed_form("3.14159265*x1**2", scale=1.0) == "pi*x1**2"
+    assert sym.readable("pi*x1**2", ["r"]) == "π·r^2"
+    assert sym.to_excel("pi*x1**2", spanish=False) == "=(PI()*(A2^2))"
+    assert "math.pi" in sym.to_python("pi*x1**2", ["r"])
+    assert sym.evaluate_expression("pi*x1", np.array([[2.0]]))[0] == pytest.approx(2 * np.pi)
+    # Una constante cualquiera queda como está (solo se reconocen formas cerradas).
+    assert sym.closed_form("1.2345678*x1", scale=1.0) == "1.2345678*x1"
+
+
+def test_choose_prefers_the_closed_form_when_it_predicts_as_well() -> None:
+    x = np.arange(3, 5001, 7, dtype=float).reshape(-1, 1)
+    y = x[:, 0] * 3 ** (1 / 5)
+    [(_, rmse, best)] = sym._choose(["1.24573112574*x1 + 0.000349473820465"], x, y)
+    assert best == "3**(1/5)*x1" and rmse < 1e-9
+    # Con ruido, una constante parecida pero no reconocible se conserva.
+    noisy = x[:, 0] * 1.31 + np.random.default_rng(0).normal(0, 1, len(x))
+    [(_, _, kept)] = sym._choose(["1.31000412*x1"], x, noisy)
+    assert "3**" not in kept and "pi" not in kept

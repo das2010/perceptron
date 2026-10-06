@@ -42,6 +42,7 @@ const STATUS_TONE = {
   succeeded: "ok",
   failed: "bad",
   cancelled: "warn",
+  pruned: "neutral",
   paused: "warn",
 } as const;
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from perceptron.archspec.defaults import is_linear_regression
 from perceptron.archspec.schema import ArchSpec, resolve
 from perceptron.domain.enums import Origin
 from perceptron.hpo.strategy import Budget, HPOStrategy, Objective, default_search_space
@@ -57,6 +58,21 @@ def recommend_strategy(
             budget=budget,
             origin=Origin.RULES,
             rationale="Hay más de un objetivo: NSGA-II busca el frente de Pareto.",
+        )
+    if is_linear_regression(spec) and not extra_objectives:
+        # El entrenamiento termina con el ajuste exacto por mínimos cuadrados
+        # (`training.exact`): el resultado no depende de los hiperparámetros.
+        return HPOStrategy(
+            strategy="single",
+            pruner="none",
+            search_space=[],
+            objectives=objectives,
+            budget=budget.model_copy(update={"max_trials": 1}),
+            origin=Origin.RULES,
+            rationale=(
+                "Regresión lineal: el entrenamiento termina con el ajuste exacto por mínimos "
+                "cuadrados, que no depende de los hiperparámetros. Alcanza con un intento."
+            ),
         )
     if trials <= 1 or not space:
         return HPOStrategy(

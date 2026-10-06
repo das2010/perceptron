@@ -188,7 +188,9 @@ def test_resume_counts_previous_trials(tmp_path: Path) -> None:
     again = _run(tmp_path, s.model_copy(update={"budget": Budget(max_trials=5)}), launcher=launcher)
     assert len(again.trials) == 5
     assert len(calls) == 2  # solo los faltantes
-    assert calls[0].endswith("t003")
+    # Nuevos (al reanudar, el sampler con semilla vuelve a proponer los primeros puntos:
+    # se detectan como repetidos y no se entrenan de nuevo).
+    assert not set(calls) & {t.run_id for t in first.trials}
 
 
 def test_grid_is_exhaustive(tmp_path: Path) -> None:
@@ -387,3 +389,52 @@ def test_only_rank_zero_emits_events(monkeypatch: pytest.MonkeyPatch) -> None:
     loud = io.StringIO()
     EventEmitter("run", loud).emit("started")
     assert '"event":"started"' in loud.getvalue()
+
+
+def test_small_studies_are_not_pruned(tmp_path: Path) -> None:
+    """Caso «Tabla X»: con 10 trials el pruner cortó el que tenía la mejor val_loss."""
+    s = HPOStrategy(
+        strategy="random", pruner="median", search_space=SPACE, budget=Budget(max_trials=10)
+    )
+    res = _run(tmp_path, s)
+    assert [t.state for t in res.trials] == ["complete"] * 10
+
+
+def test_repeated_suggestions_are_not_trained_again(tmp_path: Path) -> None:
+    """Caso «Tabla X»: TPE propuso lr 0,0020513 y 0,0020511, dos entrenamientos iguales."""
+    from perceptron.hpo.study import _twin
+
+    trained: list[object] = []
+
+    def launcher(cfg: RunConfig) -> FakeHandle:
+        trained.append(cfg.overrides.get("lr"))
+        return FakeHandle(cfg)
+
+    space = [SearchParam(name="lr", type="categorical", choices=[0.01, 0.001])]
+    s = HPOStrategy(
+        strategy="random", pruner="none", search_space=space, budget=Budget(max_trials=3)
+    )
+    res = _run(tmp_path, s, launcher=launcher)
+    # Con 2 valores posibles hay a lo sumo 2 distintos: el tercero se entrena recién tras
+    # varias sugerencias repetidas, que no cuentan para el presupuesto ni figuran como trials.
+    assert len(trained) == 3 and set(trained) == {0.01, 0.001}
+    assert len(res.trials) == 3
+
+    import optuna
+
+    study = optuna.create_study()
+    trial = study.ask()
+    trial.suggest_float("lr", 1e-4, 1e-1, log=True)
+    study.tell(trial, 1.0)
+    done = study.trials[0]
+    assert _twin(study, {"lr": done.params["lr"] * (1 + 1e-4)}) is not None
+    assert _twin(study, {"lr": done.params["lr"] * 1.5}) is None
+
+
+def test_linear_regression_trains_once() -> None:
+    """La regresión lineal termina con el ajuste exacto: no hay hiperparámetros que buscar."""
+    spec = tabular_template(
+        "linear", task=TaskType.REGRESSION, num_classes=None, num_numeric=1, cardinalities=[]
+    )
+    s = recommend_strategy(spec, Budget(max_trials=10, max_epochs_per_trial=60))
+    assert s.strategy == "single" and s.budget.max_trials == 1 and not s.search_space

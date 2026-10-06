@@ -134,6 +134,9 @@ exporta o despliega.
 - **Calcular** evalúa la fórmula con valores nuevos, también fuera del rango de los datos: una
   fórmula que captura la regla extrapola, una red no.
 - **Copiar como Python** o **Copiar como Excel** (las columnas van en A2, B2…).
+- Las constantes con forma conocida se muestran exactas. Por ejemplo, 1,2457309… aparece como
+  `3^(1/5)` (raíz quinta de 3), 3,14159… como `π`, y se descartan los términos despreciables frente
+  a la escala del objetivo. Esto se hace solo si la fórmula predice igual de bien.
 
 Si la fórmula avisa que **hay entradas que varían juntas**, muchas fórmulas explican igual esos
 datos: para inferir la regla real hacen falta datos donde cada columna varíe por separado.
