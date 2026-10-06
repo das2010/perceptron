@@ -32,6 +32,7 @@ import {
   type Schemas,
 } from "@/lib/api/hooks";
 import { formatNumber } from "@/lib/format";
+import { BudgetPlanner } from "./BudgetPlanner";
 import { CostEstimate } from "./CostEstimate";
 import { AssessmentChecks, NotRecommendedNote, RequirementsPanel } from "./DesignRequirements";
 
@@ -262,6 +263,20 @@ export function TrainPage() {
 
       {archspecId && (
         <Step n={3} title={t("train.step.hpo")} done={Boolean(strategy)}>
+          {archspecId && (
+            <BudgetPlanner
+              projectId={projectId}
+              archspecId={archspecId}
+              datasetVersionId={dvId}
+              trials={trials}
+              epochs={epochs}
+              onPlan={(p) => {
+                setTrials(p.max_trials);
+                setEpochs(p.max_epochs_per_trial);
+                setStrategy(null);
+              }}
+            />
+          )}
           <div className="flex flex-wrap items-end gap-3">
             <Field label={t("train.trials")}>
               <Input
@@ -286,7 +301,14 @@ export function TrainPage() {
               onClick={() =>
                 recommend.mutate(
                   { archspec_id: archspecId, budget, mode: "auto", dataset_version_id: dvId },
-                  { onSuccess: setStrategy },
+                  {
+                    onSuccess: (s) => {
+                      setStrategy(s);
+                      // El estratega puede bajar intentos o épocas: los campos lo reflejan.
+                      if (s.budget?.max_trials) setTrials(s.budget.max_trials);
+                      if (s.budget?.max_epochs_per_trial) setEpochs(s.budget.max_epochs_per_trial);
+                    },
+                  },
                 )
               }
             >

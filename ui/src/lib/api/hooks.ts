@@ -343,6 +343,24 @@ export function useHpoStrategy(projectId: string) {
   });
 }
 
+export type BudgetPlan = Schemas["BudgetPlan"];
+
+/** Intentos y épocas propuestos según los hiperparámetros, el tiempo por época y el tiempo
+ * disponible, con sus motivos (ADR-0041). */
+export function usePlanHpo(projectId: string) {
+  return useMutation({
+    mutationFn: async (body: Schemas["PlanBody"]) =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).POST("/api/v1/projects/{project_id}/hpo/plan", {
+          params: { path: { project_id: projectId } },
+          body,
+        }),
+      ),
+  });
+}
+
 export function useCreateStudy(projectId: string) {
   const qc = useQueryClient();
   return useMutation({

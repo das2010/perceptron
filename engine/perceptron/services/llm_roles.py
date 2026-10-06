@@ -416,6 +416,13 @@ class LLMRoles:
         space = HPOSpace.of(spec)
         tunable, metrics = space.tunable, space.metrics
         card = self.wf.profile_card(dataset_version_id) if dataset_version_id else None
+        plan = None
+        if dataset_version_id:
+            from perceptron.services.autodesign import budget_plan_for
+
+            plan = budget_plan_for(
+                self.wf, archspec_id, dataset_version_id, time_budget_s=budget.max_time_s
+            )
 
         def validator(p: HPOProposal) -> str | None:
             return "\n".join(space.errors(space.repair(p, budget)[0], budget)) or None
@@ -432,6 +439,7 @@ class LLMRoles:
                 "objective_metrics": sorted(metrics),
                 "use_case": project_use_case(self.ctx, project.id),
                 "rules_strategy": base.model_dump(mode="json", exclude={"search_space"}),
+                "budget_plan": plan.model_dump(mode="json") if plan else None,
             },
         )
         try:

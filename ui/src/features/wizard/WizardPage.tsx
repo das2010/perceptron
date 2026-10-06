@@ -28,6 +28,7 @@ import { UploadPanel } from "@/features/data/DataPage";
 import { ProfileView } from "@/features/data/ProfileView";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import { NotRecommendedNote, RequirementsPanel } from "@/features/train/DesignRequirements";
+import { BudgetPlanner } from "@/features/train/BudgetPlanner";
 import { ProposalCard } from "@/features/train/TrainPage";
 import { DesignMemo, GuidedDesign } from "@/features/wizard/GuidedDesign";
 import { getApiClient } from "@/lib/api/client";
@@ -295,6 +296,22 @@ function StepHpo({ values, save }: { values: DraftValues; save: Save }) {
   const [trials, setTrials] = useState(values.max_trials ?? 10);
   const [epochs, setEpochs] = useState(values.max_epochs_per_trial ?? 15);
   if (!values.archspec_id) return <EmptyState>{t("wizard.hpo.needArch")}</EmptyState>;
+  const planner = values.dataset_version_id ? (
+    <BudgetPlanner
+      projectId={projectId}
+      archspecId={values.archspec_id}
+      datasetVersionId={values.dataset_version_id}
+      trials={trials}
+      epochs={epochs}
+      timeBudgetS={values.max_time_s}
+      onTimeBudget={(seconds) => save({ max_time_s: seconds })}
+      onPlan={(p) => {
+        setTrials(p.max_trials);
+        setEpochs(p.max_epochs_per_trial);
+        save({ max_trials: p.max_trials, max_epochs_per_trial: p.max_epochs_per_trial });
+      }}
+    />
+  ) : null;
   const s = values.strategy as {
     strategy?: string;
     pruner?: string;
@@ -303,6 +320,7 @@ function StepHpo({ values, save }: { values: DraftValues; save: Save }) {
   } | null;
   return (
     <div className="space-y-4">
+      {planner}
       <div className="flex flex-wrap items-end gap-3">
         <Field label={t("train.trials")}>
           <Input

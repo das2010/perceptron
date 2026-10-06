@@ -16,7 +16,6 @@ persona la acepta (o elige otra). Nada del LLM se aplica solo.
 from __future__ import annotations
 
 import logging
-import math
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Literal
@@ -26,6 +25,7 @@ from pydantic import BaseModel, Field
 from perceptron.archspec.defaults import spec_epochs
 from perceptron.archspec.schema import ArchSpec
 from perceptron.domain.enums import Device, Origin
+from perceptron.hpo.plan import BudgetPlan, plan_budget
 from perceptron.hpo.strategy import Budget
 from perceptron.services.design import DesignRequirements, RequirementCheck
 
@@ -42,10 +42,8 @@ TOURNAMENT_MIN_EPOCHS = 2
 SMALL_TRAIN = 5_000  # con menos ejemplos el torneo usa todo train en cada época
 LARGE_SUBSET = 0.3
 TOURNAMENT_BUDGET_S = 15 * 60  # en modo auto, más que esto estimado → sin torneo
-STUDY_BUDGET_S = 20 * 60  # como `suggestEpochs` de la UI
 DEFAULT_EPOCHS = 15
 DEFAULT_TRIALS = 10
-MAX_EPOCHS = 500
 PREFERRED_METRICS = {
     "classification": ("f1_macro", "accuracy", "auroc"),
     "regression": ("mae", "rmse", "r2"),
@@ -90,6 +88,10 @@ class DesignOutcome(BaseModel):
     pick: str | None = None
     pick_reason: str = ""
     max_epochs_per_trial: int = DEFAULT_EPOCHS
+    max_trials: int = DEFAULT_TRIALS
+    budget_plan: BudgetPlan | None = Field(
+        default=None, description="Intentos y épocas propuestos, con sus motivos"
+    )
     strategy: dict[str, Any] | None = None
     created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
@@ -133,15 +135,25 @@ def estimated_tournament_s(
     return total
 
 
-def suggest_epochs(spec: ArchSpec, epoch_time_s: float | None, trials: int) -> int:
-    """Épocas por trial: las que propone la arquitectura si el estudio entra en el presupuesto
-    de tiempo; si no, las que entren (nunca menos que el default). Igual que la UI."""
-    proposed = spec_epochs(spec)
-    if not epoch_time_s or epoch_time_s <= 0:
-        return DEFAULT_EPOCHS
-    affordable = math.floor(STUDY_BUDGET_S / (max(trials, 1) * epoch_time_s))
-    floor = min(proposed, DEFAULT_EPOCHS)
-    return min(MAX_EPOCHS, max(floor, min(proposed, affordable)))
+def budget_plan_for(
+    wf: Workflow,
+    archspec_id: str,
+    dataset_version_id: str,
+    *,
+    time_budget_s: float | None = None,
+    device: str | None = None,
+) -> BudgetPlan:
+    """Plan de intentos y épocas para una arquitectura y un dataset (mide el tiempo por época)."""
+    from perceptron.domain.models import ArchSpecRecord
+    from perceptron.services.estimate import estimate_epoch_time
+    from perceptron.training.hardware import detect_hardware
+
+    spec = ArchSpec.model_validate(wf.ctx.repo(ArchSpecRecord).get(archspec_id).spec)
+    card = wf.profile_card(dataset_version_id)
+    n_train = int(card.split_counts.get("train") or card.num_samples)
+    dev = device or detect_hardware(wf.ctx.settings.workspace_dir).recommended_device.value
+    epoch_s = estimate_epoch_time(spec, n_train, device=dev)
+    return plan_budget(spec, epoch_time_s=epoch_s, time_budget_s=time_budget_s)
 
 
 def _fmt(value: float) -> str:
@@ -250,19 +262,32 @@ def auto_design(
     pick = _pick(out, top)
     if pick is not None:
         say("strategy")
-        spec = specs[pick.archspec_id]
-        trials = int(values.get("max_trials") or DEFAULT_TRIALS)
-        epochs = int(
-            values.get("max_epochs_per_trial")
-            or suggest_epochs(spec, pick.estimates.get("epoch_time_s"), trials)
+        # Intentos y épocas los propone el plan (no los del borrador): al aceptar el diseño se
+        # fijan los tres juntos, arquitectura, búsqueda y presupuesto.
+        time_s = values.get("max_time_s")
+        plan = plan_budget(
+            specs[pick.archspec_id],
+            epoch_time_s=pick.estimates.get("epoch_time_s"),
+            time_budget_s=float(time_s) if time_s else None,
         )
-        out.max_epochs_per_trial = epochs
+        out.budget_plan = plan
+        out.max_trials, out.max_epochs_per_trial = plan.max_trials, plan.max_epochs_per_trial
         strategy = wf.roles.hpo_strategy(
             pick.archspec_id,
-            Budget(max_trials=trials, max_epochs_per_trial=epochs),
+            Budget(
+                max_trials=plan.max_trials,
+                max_epochs_per_trial=plan.max_epochs_per_trial,
+                max_time_s=float(time_s) if time_s else None,
+            ),
             mode="auto",
             dataset_version_id=str(dv_id),
         )
+        # El estratega puede bajar intentos o épocas (con su justificación): eso queda.
+        out.max_trials = min(out.max_trials, strategy.budget.max_trials)
+        if strategy.budget.max_epochs_per_trial:
+            out.max_epochs_per_trial = min(
+                out.max_epochs_per_trial, strategy.budget.max_epochs_per_trial
+            )
         out.strategy = strategy.model_dump(mode="json")
     logger.info(
         "diseño guiado",

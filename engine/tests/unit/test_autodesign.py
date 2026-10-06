@@ -11,7 +11,6 @@ from perceptron.services.autodesign import (
     _pick,
     common_metric,
     estimated_tournament_s,
-    suggest_epochs,
     tournament_epochs,
     tournament_subset,
 )
@@ -43,13 +42,6 @@ def test_tournament_budget_adapts_to_data_size() -> None:
     assert tournament_epochs(spec) >= 2
     assert estimated_tournament_s([spec, spec], [10.0, None], 1.0) is None
     assert estimated_tournament_s([spec], [10.0], 0.5) == 10.0 * tournament_epochs(spec) * 0.5
-
-
-def test_suggest_epochs_matches_ui_rule() -> None:
-    linear = _tab("linear", TaskType.REGRESSION)
-    assert suggest_epochs(linear, 0.01, 10) == 80  # caso Tabla 3: las que pide la lineal
-    assert suggest_epochs(linear, None, 10) == 15
-    assert suggest_epochs(linear, 60.0, 10) == 15  # no entra: nunca menos que el default
 
 
 def _c(

@@ -316,6 +316,9 @@ def test_guided_design_runs_the_chain_and_waits_for_acceptance(
     assert design["pick"] == t["winner"] and design["pick_reason"].startswith("Ganó")
     assert all(c["tournament_status"] == "complete" for c in design["candidates"])
     assert design["strategy"]["strategy"] and design["max_epochs_per_trial"] >= 1
+    # Intentos y épocas los propone el plan de presupuesto, con sus motivos.
+    assert design["budget_plan"]["reasons"] and design["max_trials"] >= 1
+    assert design["max_trials"] <= design["budget_plan"]["max_trials"]
     # El diseño lo calcula el sistema: no se edita por PATCH.
     version = after["draft"]["version"]
     bad = client.patch(

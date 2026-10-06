@@ -1495,7 +1495,7 @@
     "mustUnmet": "No cumple un obligatorio",
     "chosen": "Elegida",
     "pick": "Propuesta: {{title}}.",
-    "plan": "Búsqueda de hiperparámetros: {{strategy}}, {{epochs}} épocas por trial.",
+    "plan": "Búsqueda de hiperparámetros: {{strategy}}, {{trials}} intentos de hasta {{epochs}} épocas.",
     "accept": "Aceptar el diseño",
     "accepted": "Diseño aceptado",
     "useStrategy": "Usar la búsqueda del diseño guiado",
@@ -1535,5 +1535,14 @@
       "finished": "Terminado",
       "failed": "Con error"
     }
+  },
+  "plan": {
+    "title": "Intentos y épocas",
+    "wait": "¿Cuánto querés esperar? (min)",
+    "waitHint": "Se proponen los intentos y las épocas que entran en ese tiempo.",
+    "propose": "Proponer intentos y épocas",
+    "summary": "Propuesta: {{trials}} intentos de hasta {{epochs}} épocas.",
+    "estimate": "Hasta ~{{minutes}} min de tus {{budget}} (el early stopping suele cortar antes).",
+    "estimateEdited": "Con estos valores: hasta ~{{minutes}} min (tu tiempo: {{budget}} min)."
   }
 }

@@ -114,6 +114,7 @@ function Outcome({
     archspec_id: design.pick ?? null,
     strategy: design.strategy ?? null,
     max_epochs_per_trial: design.max_epochs_per_trial ?? null,
+    max_trials: design.max_trials ?? null,
   };
   const accept = () => save(chosen);
   // Un clic: acepta el diseño (arquitectura, búsqueda y épocas) y va a la revisión.
@@ -183,6 +184,7 @@ function Outcome({
           </p>
           <p className="mt-1 text-xs text-muted">
             {t("guided.plan", {
+              trials: design.max_trials,
               epochs: design.max_epochs_per_trial,
               strategy: (design.strategy as { strategy?: string } | null)?.strategy ?? "—",
             })}
