@@ -1495,7 +1495,7 @@
     "mustUnmet": "Misses a requirement",
     "chosen": "Chosen",
     "pick": "Proposal: {{title}}.",
-    "plan": "Hyperparameter search: {{strategy}}, {{epochs}} epochs per trial.",
+    "plan": "Hyperparameter search: {{strategy}}, {{trials}} trials of up to {{epochs}} epochs.",
     "accept": "Accept the design",
     "accepted": "Design accepted",
     "useStrategy": "Use the guided design’s search",
@@ -1535,5 +1535,14 @@
       "finished": "Finished",
       "failed": "Failed"
     }
+  },
+  "plan": {
+    "title": "Trials and epochs",
+    "wait": "How long do you want to wait? (min)",
+    "waitHint": "Trials and epochs are proposed to fit that time.",
+    "propose": "Propose trials and epochs",
+    "summary": "Proposal: {{trials}} trials of up to {{epochs}} epochs.",
+    "estimate": "Up to ~{{minutes}} min of your {{budget}} (early stopping usually cuts it short).",
+    "estimateEdited": "With these values: up to ~{{minutes}} min (your time: {{budget}} min)."
   }
 }

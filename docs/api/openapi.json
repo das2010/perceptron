@@ -1468,6 +1468,70 @@
         "title": "Budget",
         "type": "object"
       },
+      "BudgetPlan": {
+        "properties": {
+          "epoch_time_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Medido o estimado",
+            "title": "Epoch Time S"
+          },
+          "estimated_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tope: intentos × épocas × s/época (el early stopping lo baja)",
+            "title": "Estimated S"
+          },
+          "max_epochs_per_trial": {
+            "minimum": 1.0,
+            "title": "Max Epochs Per Trial",
+            "type": "integer"
+          },
+          "max_trials": {
+            "minimum": 1.0,
+            "title": "Max Trials",
+            "type": "integer"
+          },
+          "reasons": {
+            "description": "Por qué cada número",
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "time_budget_s": {
+            "title": "Time Budget S",
+            "type": "number"
+          },
+          "tuned_params": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tuned Params",
+            "type": "array"
+          }
+        },
+        "required": [
+          "max_trials",
+          "max_epochs_per_trial",
+          "time_budget_s"
+        ],
+        "title": "BudgetPlan",
+        "type": "object"
+      },
       "CPUInfo": {
         "properties": {
           "arch": {
@@ -3507,6 +3571,17 @@
       },
       "DesignOutcome": {
         "properties": {
+          "budget_plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BudgetPlan"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Intentos y épocas propuestos, con sus motivos"
+          },
           "candidates": {
             "items": {
               "$ref": "#/components/schemas/Candidate"
@@ -3532,6 +3607,11 @@
           "max_epochs_per_trial": {
             "default": 15,
             "title": "Max Epochs Per Trial",
+            "type": "integer"
+          },
+          "max_trials": {
+            "default": 10,
+            "title": "Max Trials",
             "type": "integer"
           },
           "origin": {
@@ -8275,6 +8355,48 @@
           "graph"
         ],
         "title": "PipelineUpdate",
+        "type": "object"
+      },
+      "PlanBody": {
+        "additionalProperties": false,
+        "properties": {
+          "archspec_id": {
+            "title": "Archspec Id",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "device": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Device"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "time_budget_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cuánto se quiere esperar el estudio (default 20 min)",
+            "title": "Time Budget S"
+          }
+        },
+        "required": [
+          "archspec_id",
+          "dataset_version_id"
+        ],
+        "title": "PlanBody",
         "type": "object"
       },
       "PlanCheck": {
@@ -20052,6 +20174,59 @@
         "summary": "Duplicate",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/hpo/plan": {
+      "post": {
+        "description": "Intentos y épocas por intento propuestos para la arquitectura, con sus motivos: según\nlos hiperparámetros a buscar, el tiempo medido por época y el tiempo disponible (ADR-0041).",
+        "operationId": "planHpoBudget",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hpo Plan",
+        "tags": [
+          "hpo"
         ]
       }
     },

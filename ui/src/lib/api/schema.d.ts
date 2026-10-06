@@ -1737,6 +1737,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/hpo/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hpo Plan
+         * @description Intentos y épocas por intento propuestos para la arquitectura, con sus motivos: según
+         *     los hiperparámetros a buscar, el tiempo medido por época y el tiempo disponible (ADR-0041).
+         */
+        post: operations["planHpoBudget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/hpo/strategy": {
         parameters: {
             query?: never;
@@ -4045,6 +4066,32 @@ export interface components {
             /** Trial Timeout S */
             trial_timeout_s?: number | null;
         };
+        /** BudgetPlan */
+        BudgetPlan: {
+            /**
+             * Epoch Time S
+             * @description Medido o estimado
+             */
+            epoch_time_s?: number | null;
+            /**
+             * Estimated S
+             * @description Tope: intentos × épocas × s/época (el early stopping lo baja)
+             */
+            estimated_s?: number | null;
+            /** Max Epochs Per Trial */
+            max_epochs_per_trial: number;
+            /** Max Trials */
+            max_trials: number;
+            /**
+             * Reasons
+             * @description Por qué cada número
+             */
+            reasons?: string[];
+            /** Time Budget S */
+            time_budget_s: number;
+            /** Tuned Params */
+            tuned_params?: string[];
+        };
         /** CPUInfo */
         CPUInfo: {
             /** Arch */
@@ -4838,6 +4885,8 @@ export interface components {
         };
         /** DesignOutcome */
         DesignOutcome: {
+            /** @description Intentos y épocas propuestos, con sus motivos */
+            budget_plan?: components["schemas"]["BudgetPlan"] | null;
             /** Candidates */
             candidates?: components["schemas"]["Candidate"][];
             /** Created At */
@@ -4849,6 +4898,11 @@ export interface components {
              * @default 15
              */
             max_epochs_per_trial: number;
+            /**
+             * Max Trials
+             * @default 10
+             */
+            max_trials: number;
             origin: components["schemas"]["Origin"];
             /** Pick */
             pick?: string | null;
@@ -6683,6 +6737,19 @@ export interface components {
             graph: components["schemas"]["PipelineSpec"];
             /** Version */
             version: number;
+        };
+        /** PlanBody */
+        PlanBody: {
+            /** Archspec Id */
+            archspec_id: string;
+            /** Dataset Version Id */
+            dataset_version_id: string;
+            device?: components["schemas"]["Device"] | null;
+            /**
+             * Time Budget S
+             * @description Cuánto se quiere esperar el estudio (default 20 min)
+             */
+            time_budget_s?: number | null;
         };
         /** PlanCheck */
         PlanCheck: {
@@ -12684,6 +12751,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Project"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    planHpoBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetPlan"];
                 };
             };
             /** @description Validation Error */

@@ -230,6 +230,75 @@ describe("pantallas", () => {
     expect(note).toHaveTextContent("No cumple: Red preentrenada.");
   });
 
+  it("Entrenar: propone intentos y épocas con sus motivos y los recalcula con otro tiempo", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    mockEngine({
+      ...base,
+      "POST /api/v1/projects/prj_1/pipelines/propose": () => ({
+        id: "pip_1",
+        project_id: "prj_1",
+        name: "p",
+        graph: { rationale: [] },
+        version: 1,
+      }),
+      "POST /api/v1/projects/prj_1/arch/propose": () => ({
+        origin: "rules",
+        proposals: [
+          {
+            archspec: {
+              id: "arc_a",
+              project_id: "prj_1",
+              name: "mlp",
+              origin: "rules",
+              content_hash: "a",
+              version: 1,
+            },
+            title: "MLP",
+            rationale: "r",
+            validation: { valid: true, issues: [] },
+            estimates: { num_params: 1000, memory_mb: 1, epoch_time_s: 0.5 },
+          },
+        ],
+      }),
+      "POST /api/v1/projects/prj_1/hpo/plan": async (req) => {
+        const body = (await req.json()) as Record<string, unknown>;
+        bodies.push(body);
+        const short = body.time_budget_s === 300;
+        return {
+          max_trials: short ? 6 : 22,
+          max_epochs_per_trial: short ? 20 : 40,
+          tuned_params: ["lr", "dropout", "weight_decay"],
+          epoch_time_s: 0.5,
+          time_budget_s: body.time_budget_s,
+          estimated_s: short ? 60 : 440,
+          reasons: ["3 hiperparámetro(s) a buscar (lr, dropout, weight_decay): 22 intentos."],
+        };
+      },
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/train");
+    await user.click(await screen.findByRole("button", { name: "Proponer preparación" }));
+    await user.click(await screen.findByRole("button", { name: "Proponer arquitecturas" }));
+    expect(
+      await screen.findByText("Propuesta: 22 intentos de hasta 40 épocas."),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/3 hiperparámetro\(s\) a buscar/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Intentos (trials)")).toHaveValue(22);
+    expect(bodies[0]).toMatchObject({ archspec_id: "arc_a", time_budget_s: 1200 });
+    const wait = screen.getByLabelText("¿Cuánto querés esperar? (min)");
+    await user.clear(wait);
+    await user.type(wait, "5");
+    await user.click(screen.getByRole("button", { name: "Proponer intentos y épocas" }));
+    expect(
+      await screen.findByText("Propuesta: 6 intentos de hasta 20 épocas."),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Intentos (trials)")).toHaveValue(6);
+    // Si se edita a mano, la duración estimada se recalcula.
+    await user.clear(screen.getByLabelText("Intentos (trials)"));
+    await user.type(screen.getByLabelText("Intentos (trials)"), "60");
+    expect(screen.getByText(/Con estos valores: hasta ~10 min/)).toBeInTheDocument();
+  });
+
   it("Entrenar elige por defecto la versión de datos más nueva (la API lista de nueva a vieja)", async () => {
     const newer = { ...dataset, id: "dsv_2", content_hash: "ffff00001111", num_samples: 16938 };
     const bodies: unknown[] = [];

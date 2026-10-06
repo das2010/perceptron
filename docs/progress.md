@@ -52,6 +52,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | La `val_loss` se mide sin suavizado de etiquetas (el entrenamiento sí lo usa): comparable entre trials del HPO con distinto `label_smoothing` y sin sesgar su importancia en el análisis del estudio | ✅ |
 | Progreso del trial en curso en Entrenamientos y Estudios: barra con época actual, total y tiempo restante (del evento por época del job); la tabla se refresca con un estudio activo aunque se entre desde el menú | ✅ |
 | Caso «Tabla X»: ajuste exacto por mínimos cuadrados al final de una regresión lineal (y un solo intento), constantes con forma cerrada en la fórmula sugerida (3^(1/5), π, e) y sin términos despreciables, estado «Podado», sin poda con menos de 15 trials y con el mejor valor de cada curva, sugerencias repetidas del HPO sin reentrenar | ✅ |
+| Plan de intentos y épocas del HPO (ADR-0041): el sistema los propone según los hiperparámetros a buscar, el tiempo medido por época y el tiempo que se quiere esperar (`POST /projects/{id}/hpo/plan`), con sus motivos; el estratega LLM parte del plan y puede bajarlo con justificación; Entrenar, el paso HPO del wizard y el diseño guiado lo usan | ✅ |
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 

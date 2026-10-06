@@ -32,6 +32,7 @@ from perceptron.domain.models import (
 )
 from perceptron.evaluation.evaluate import EvaluationReport
 from perceptron.hpo.analysis import StudyAnalysis, analyze
+from perceptron.hpo.plan import BudgetPlan
 from perceptron.hpo.strategy import Budget, HPOStrategy
 from perceptron.sandbox.expert import starter_code
 from perceptron.sandbox.process import CodeCheck
@@ -474,6 +475,32 @@ def hpo_strategy(project_id: str, body: StrategyBody, ctx: Ctx) -> HPOStrategy:
         body.budget,
         mode=body.mode,
         dataset_version_id=body.dataset_version_id,
+    )
+
+
+class PlanBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    archspec_id: str
+    dataset_version_id: str
+    time_budget_s: float | None = Field(
+        default=None, gt=0, description="Cuánto se quiere esperar el estudio (default 20 min)"
+    )
+    device: Device | None = None
+
+
+@router.post("/projects/{project_id}/hpo/plan", tags=["hpo"], operation_id="planHpoBudget")
+def hpo_plan(project_id: str, body: PlanBody, ctx: Ctx) -> BudgetPlan:
+    """Intentos y épocas por intento propuestos para la arquitectura, con sus motivos: según
+    los hiperparámetros a buscar, el tiempo medido por época y el tiempo disponible (ADR-0041)."""
+    from perceptron.services.autodesign import budget_plan_for
+
+    ctx.projects.get(project_id)
+    return budget_plan_for(
+        Workflow(ctx),
+        body.archspec_id,
+        body.dataset_version_id,
+        time_budget_s=body.time_budget_s,
+        device=body.device.value if body.device else None,
     )
 
 

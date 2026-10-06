@@ -476,6 +476,7 @@ describe("wizard adaptativo, fase 2", () => {
       pick: "arc_m",
       pick_reason: "Ganó el entrenamiento corto de comparación con val_f1_macro = 0.91.",
       max_epochs_per_trial: 20,
+      max_trials: 12,
       strategy: { strategy: "tpe", pruner: "median" },
     };
     let values: Record<string, unknown> = { dataset_version_id: "dsv_1" };
@@ -519,13 +520,14 @@ describe("wizard adaptativo, fase 2", () => {
       await screen.findByText("Ganó la comparación", {}, { timeout: 5000 }),
     ).toBeInTheDocument();
     expect(screen.getByText(/val_f1_macro = 0.91/)).toBeInTheDocument();
-    expect(screen.getByText(/tpe, 20 épocas por trial/)).toBeInTheDocument();
+    expect(screen.getByText(/tpe, 12 intentos de hasta 20 épocas/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Aceptar el diseño" }));
     await waitFor(() => expect(patches).toHaveLength(1));
     expect(patches[0]).toMatchObject({
       archspec_id: "arc_m",
       strategy: { strategy: "tpe" },
       max_epochs_per_trial: 20,
+      max_trials: 12,
     });
     expect(await screen.findByText("Diseño aceptado")).toBeInTheDocument();
   });
