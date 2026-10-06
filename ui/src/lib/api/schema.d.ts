@@ -7686,7 +7686,7 @@ export interface components {
          * RunStatus
          * @enum {string}
          */
-        RunStatus: "queued" | "running" | "paused" | "succeeded" | "failed" | "cancelled";
+        RunStatus: "queued" | "running" | "paused" | "succeeded" | "failed" | "cancelled" | "pruned";
         /**
          * RuntimeMode
          * @description Dónde corre este Engine (SPEC §4.3).
