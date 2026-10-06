@@ -10794,7 +10794,8 @@
           "paused",
           "succeeded",
           "failed",
-          "cancelled"
+          "cancelled",
+          "pruned"
         ],
         "title": "RunStatus",
         "type": "string"

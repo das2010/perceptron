@@ -93,6 +93,12 @@ class StudyControl:
                 handle.stop()
 
 
+PRUNE_MIN_TRIALS = 15  # con menos trials no se poda
+DUPLICATE_RTOL = 1e-3  # parámetros a menos de esto (relativo) cuentan como el mismo punto
+MAX_DUPLICATES = 5  # sugerencias repetidas seguidas antes de entrenarla igual
+DUPLICATE_ATTR = "duplicate_of"
+
+
 def _sampler(s: HPOStrategy) -> optuna.samplers.BaseSampler:
     match s.strategy:
         case "random" | "single":
@@ -115,6 +121,11 @@ def _sampler(s: HPOStrategy) -> optuna.samplers.BaseSampler:
 
 def _pruner(s: HPOStrategy) -> optuna.pruners.BasePruner:
     max_epochs = s.budget.max_epochs_per_trial or 30
+    if s.budget.max_trials < PRUNE_MIN_TRIALS:
+        # Con pocos trials podar ahorra poco y arriesga mucho: la mediana sale de 3–4 curvas y
+        # una que oscila o converge más lento se corta antes de llegar a su mejor época
+        # (caso «Tabla X»: el trial podado tenía la mejor val_loss del estudio).
+        return optuna.pruners.NopPruner()
     match s.pruner:
         case "median":
             return optuna.pruners.MedianPruner(
@@ -146,6 +157,25 @@ def _suggest(trial: optuna.Trial, space: list[SearchParam]) -> dict[str, Scalar]
     return params
 
 
+def _same(a: Scalar, b: Scalar) -> bool:
+    if not (isinstance(a, float) or isinstance(b, float)):
+        return a == b  # enteros, categóricas y booleanos: iguales o no
+    if not isinstance(a, int | float) or not isinstance(b, int | float):
+        return False
+    return abs(float(a) - float(b)) <= DUPLICATE_RTOL * max(abs(float(a)), abs(float(b)))
+
+
+def _twin(study: optuna.Study, params: dict[str, Scalar]) -> optuna.trial.FrozenTrial | None:
+    """Un trial terminado con (casi) los mismos parámetros: entrenarlo de nuevo no aporta.
+    Caso «Tabla X»: TPE propuso lr = 0,0020513 y lr = 0,0020511, dos entrenamientos iguales."""
+    for t in study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,)):
+        if DUPLICATE_ATTR in t.user_attrs or set(t.params) != set(params):
+            continue
+        if all(_same(t.params[k], v) for k, v in params.items()):
+            return t
+    return None
+
+
 class _TrialMonitor:
     """Recibe los eventos de un trial: reporta a Optuna y decide el pruning."""
 
@@ -163,6 +193,8 @@ class _TrialMonitor:
         self.handle: Handle | None = None
         self.pruned = False
         self.extra: dict[str, float] = {}
+        self.best: float | None = None
+        self.minimize = strategy.objectives[0].direction == "minimize"
 
     def __call__(self, ev: RunEvent) -> None:
         if self.forward is not None:
@@ -175,7 +207,12 @@ class _TrialMonitor:
             and self.metric in ev.metrics
             and ev.epoch is not None
         ):
-            self.trial.report(ev.metrics[self.metric], step=ev.epoch)
+            # Se reporta el mejor valor hasta ahora, no el de la época: el pruner compara
+            # curvas, y una que oscila no debe cortarse por una época mala.
+            value = float(ev.metrics[self.metric])
+            if self.best is None or (value < self.best if self.minimize else value > self.best):
+                self.best = value
+            self.trial.report(self.best, step=ev.epoch)
             if self.trial.should_prune() and not self.pruned and self.handle is not None:
                 self.pruned = True
                 self.handle.prune()
@@ -270,7 +307,12 @@ def run_study(
     free: list[int | None] = [gpus[k % len(gpus)] if gpus else None for k in range(workers)]
 
     def should_stop(launched: int) -> StopReason | None:
-        done = [t for t in study.get_trials(deepcopy=False) if t.state in finished_states]
+        # Las sugerencias repetidas no cuentan: no se entrenaron.
+        done = [
+            t
+            for t in study.get_trials(deepcopy=False)
+            if t.state in finished_states and DUPLICATE_ATTR not in t.user_attrs
+        ]
         if len(done) + launched >= budget.max_trials:
             return "max_trials"
         if grid_total is not None and len(done) + launched >= grid_total:
@@ -291,6 +333,19 @@ def run_study(
     def launch_trial(slot: int | None) -> _Pending:
         trial = study.ask()
         overrides = _suggest(trial, strategy.search_space) if strategy.strategy != "single" else {}
+        repeats = 0
+        while (
+            overrides
+            and strategy.strategy not in ("single", "grid")
+            and repeats < MAX_DUPLICATES
+            and (twin := _twin(study, overrides)) is not None
+        ):
+            # Se le informa al sampler el resultado que ya conoce y se pide otro punto.
+            trial.set_user_attr(DUPLICATE_ATTR, twin.user_attrs.get("run_id"))
+            study.tell(trial, twin.values if strategy.multi_objective else twin.value)
+            repeats += 1
+            trial = study.ask()
+            overrides = _suggest(trial, strategy.search_space)
         run_id = f"{base.run_id}-t{trial.number:03d}"
         cfg = base.model_copy(
             update={
@@ -409,17 +464,17 @@ def _summarize(
             values=list(t.values) if t.values else None,
         )
 
-    all_trials = [rec(t) for t in study.get_trials(deepcopy=False) if t.state.is_finished()]
-    complete = [
-        t for t in study.get_trials(deepcopy=False) if t.state == optuna.trial.TrialState.COMPLETE
-    ]
+    real = [t for t in study.get_trials(deepcopy=False) if DUPLICATE_ATTR not in t.user_attrs]
+    all_trials = [rec(t) for t in real if t.state.is_finished()]
+    complete = [t for t in real if t.state == optuna.trial.TrialState.COMPLETE]
     best = None
     pareto: list[TrialRecord] = []
     if complete:
         if strategy.multi_objective:
-            pareto = [rec(t) for t in study.best_trials]
+            pareto = [rec(t) for t in study.best_trials if DUPLICATE_ATTR not in t.user_attrs]
         else:
-            best = rec(study.best_trial)
+            pick = min if strategy.objectives[0].direction == "minimize" else max
+            best = rec(pick(complete, key=lambda t: float(t.value or 0.0)))
     return StudyResult(
         study_name=name,
         strategy=strategy,

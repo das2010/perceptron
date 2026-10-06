@@ -104,6 +104,7 @@ class RunStatus(StrEnum):
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    PRUNED = "pruned"  # lo cortó el pruner del HPO por ir peor que la mediana
 
 
 class AgentState(StrEnum):

@@ -294,6 +294,21 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         best_metrics[monitor] = float(best_score)
     last = ckpt_dir / f"{LAST_CKPT}"
     best = Path(best_ckpt.best_model_path) if best_ckpt.best_model_path else None
+    if status == "succeeded" and best is not None and not ddp and cfg.code is None:
+        exact = _exact_linear_fit(spec, module, trainer, train_ds, val_dl, best, batch_size, cfg)
+        exact_ckpt = best.with_name(EXACT_CKPT)
+        if exact is not None and _better(exact.get(monitor), best_metrics.get(monitor), mode):
+            exact_ckpt.replace(best)  # el ajuste exacto pasa a ser el mejor checkpoint
+            best_metrics.update(exact)
+            env["exact_fit"] = "least_squares"
+            emitter.emit(
+                "log",
+                data={
+                    "message": "Regresión lineal: pesos finales por mínimos cuadrados (ajuste "
+                    "exacto, sin la oscilación del optimizador)."
+                },
+            )
+        exact_ckpt.unlink(missing_ok=True)
     result = RunResult(
         run_id=cfg.run_id,
         status=status,  # type: ignore[arg-type]
@@ -313,6 +328,51 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
         "paused" if status == "paused" else "finished", data=json.loads(result.model_dump_json())
     )
     return 0
+
+
+EXACT_CKPT = "exact.ckpt"
+
+
+def _better(new: float | None, old: float | None, mode: str) -> bool:
+    if new is None:
+        return False
+    if old is None:
+        return True
+    return new <= old if mode == "min" else new >= old
+
+
+def _exact_linear_fit(
+    spec: Any,
+    module: Any,
+    trainer: Any,
+    train_ds: Any,
+    val_dl: Any,
+    best: Path,
+    batch_size: int,
+    cfg: Any,
+) -> dict[str, float] | None:
+    """Regresión lineal pura: parte del mejor checkpoint, calcula la capa lineal exacta por
+    mínimos cuadrados y, si mejora la validación, la guarda como el mejor checkpoint.
+    Devuelve las métricas de validación del ajuste exacto (o None si no aplica)."""
+    import torch
+
+    from perceptron.archspec.defaults import is_linear_regression
+    from perceptron.training.data import make_loader
+    from perceptron.training.exact import least_squares_head
+
+    if not is_linear_regression(spec):
+        return None
+    state = torch.load(best, map_location="cpu", weights_only=True)["state_dict"]
+    module.load_state_dict(state)
+    loader = make_loader(train_ds, batch_size, shuffle=False, num_workers=0, seed=cfg.seed)
+    if not least_squares_head(module.model, loader):
+        return None
+    results = trainer.validate(module, val_dl, verbose=False)
+    metrics = {k: float(v) for k, v in (results[0] if results else {}).items()}
+    if not metrics:
+        return None
+    trainer.save_checkpoint(str(best.with_name(EXACT_CKPT)))
+    return metrics
 
 
 def _enter_sandbox(cfg: Any, run_dir: Path) -> None:

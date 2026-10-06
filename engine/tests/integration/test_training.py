@@ -213,3 +213,38 @@ def test_training_uses_streaming_for_large_tabular(
     result = run_sync(cfg, EventBus(), timeout=300)
     assert result.status == "succeeded", result.error
     assert len(result.history) == 2 and "val_loss" in result.best_metrics
+
+
+def test_linear_regression_ends_with_the_exact_fit(workspace_dir: Path, tmp_path: Path) -> None:
+    """Caso «Tabla X» (salida = entrada × 3^(1/5)): el optimizador oscilaba y quedaba ±8 de
+    error; al terminar, los pesos se calculan por mínimos cuadrados y el error es ~0."""
+    from perceptron.archspec.defaults import without_linear_shrinkage
+    from perceptron.catalog.templates import tabular_template
+    from perceptron.domain.enums import TaskType
+
+    csv = tmp_path / "tabla x.csv"
+    csv.write_text(
+        "entrada,salida\n" + "".join(f"{i},{i * 3 ** (1 / 5)!r}\n" for i in range(3, 5001, 7)),
+        encoding="utf-8",
+    )
+    cfg = _config(workspace_dir, csv, "run_lin", max_epochs=4)
+    spec = without_linear_shrinkage(
+        tabular_template(
+            "linear", task=TaskType.REGRESSION, num_classes=None, num_numeric=1, cardinalities=[]
+        )
+    )
+    cfg = cfg.model_copy(update={"archspec": spec.model_dump(mode="json")})
+    seen: list[RunEvent] = []
+    result = run_sync(cfg, EventBus(), on_event=seen.append, timeout=300)
+
+    assert result.status == "succeeded", result.error
+    assert result.environment.get("exact_fit") == "least_squares"
+    assert result.best_metrics["val_mae"] < 1e-2  # en unidades de la salida (hasta ~6228)
+    assert any(e.event == "log" and "mínimos cuadrados" in e.data["message"] for e in seen)
+    # El checkpoint guardado es el exacto: predice 500 → 500 × 3^(1/5) en el test.
+    trained = load_trained(cfg.run_dir)
+    view = DatasetView(cfg.dataset_dir)
+    ds = make_dataset(view, trained.pipeline, "test", train=False, purpose=Purpose.FINAL_EVALUATION)
+    preds = predict(trained, ds)
+    assert preds.y_true is not None
+    assert abs(preds.y_pred - preds.y_true).max() < 0.05

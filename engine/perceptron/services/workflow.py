@@ -101,7 +101,7 @@ _RUN_STATUS = {
     "succeeded": RunStatus.SUCCEEDED,
     "failed": RunStatus.FAILED,
     "cancelled": RunStatus.CANCELLED,
-    "pruned": RunStatus.CANCELLED,
+    "pruned": RunStatus.PRUNED,
     "paused": RunStatus.PAUSED,
 }
 
@@ -513,7 +513,11 @@ class Workflow:
             self.ctx.repo(Run).update(
                 run.model_copy(
                     update={
-                        "status": _RUN_STATUS.get(result.status, RunStatus.FAILED),
+                        # El pruner corta el trial como una cancelación: se informa como
+                        # «podado» (antes figuraba «cancelado» y confundía).
+                        "status": RunStatus.PRUNED
+                        if rec.state == "pruned"
+                        else _RUN_STATUS.get(result.status, RunStatus.FAILED),
                         "metrics": result.best_metrics,
                         "environment": result.environment,
                         "mlflow_run_id": mlflow_id,

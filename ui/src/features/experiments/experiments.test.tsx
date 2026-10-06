@@ -320,4 +320,22 @@ describe("control de estudios", () => {
     // La tarjeta de estudios muestra el mismo progreso del trial en curso.
     expect(await screen.findByTestId("progress-job_1")).toHaveTextContent("Época 7 de 20");
   });
+
+  it("un trial cortado por el pruner figura como «Podado», con su métrica", async () => {
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      "GET /api/v1/projects/prj_1/runs": () => [{ ...run(7, 0.0013), status: "pruned" }],
+      "GET /api/v1/projects/prj_1/datasets": () => [],
+      "GET /api/v1/projects/prj_1/symbolic": () => [],
+      "GET /api/v1/projects/prj_1/studies": () => [],
+    });
+    render(
+      <Providers client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <App router={createTestRouter("/projects/prj_1/experiments")} />
+      </Providers>,
+    );
+    expect(await screen.findByText("Podado")).toBeInTheDocument();
+    expect(screen.queryByText("Cancelado")).not.toBeInTheDocument();
+  });
 });

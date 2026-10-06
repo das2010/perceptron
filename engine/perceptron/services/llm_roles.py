@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import ValidationError as PydanticValidationError
 
-from perceptron.archspec.defaults import without_linear_shrinkage
+from perceptron.archspec.defaults import is_linear_regression, without_linear_shrinkage
 from perceptron.archspec.schema import ArchSpec, Provenance
 from perceptron.archspec.validate import ValidationReport, offline_mode, validate_archspec
 from perceptron.catalog.registry import HF_TEXT_MODELS, TIMM_WEIGHTS, blocks_for
@@ -407,6 +407,8 @@ class LLMRoles:
         record = self.ctx.repo(ArchSpecRecord).get(archspec_id)
         spec = ArchSpec.model_validate(record.spec)
         base = recommend_strategy(spec, budget)
+        if is_linear_regression(spec):
+            return base  # ajuste exacto: no hay nada que buscar (ni que pedirle al LLM)
         project = self.wf.project(record.project_id)
         skip = self._skip(mode, LLMPurpose.HPO_STRATEGIST, project)
         if skip:

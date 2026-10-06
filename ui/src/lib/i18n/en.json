@@ -334,7 +334,8 @@
     "paused": "Paused",
     "succeeded": "Finished",
     "failed": "Failed",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "pruned": "Pruned"
   },
   "run": {
     "title": "Run",

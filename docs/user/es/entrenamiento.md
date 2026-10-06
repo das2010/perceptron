@@ -178,6 +178,18 @@ reanudar.
 Por defecto cada entrenamiento usa precisión mixta si el hardware lo permite, early stopping,
 checkpoints del mejor y del último, semillas fijas y tamaño de batch automático.
 
+Una **regresión lineal pura** termina con un **ajuste exacto por mínimos cuadrados**: los pesos
+finales se calculan con todo el conjunto de entrenamiento, sin depender del learning rate ni de la
+oscilación del optimizador. Por eso su estrategia recomendada es **un solo intento**.
+
+En la búsqueda:
+
+- Los intentos que corta el pruner figuran como **Podado**, con la mejor métrica que alcanzaron.
+- Con menos de 15 intentos no se poda: la mediana de pocas curvas no es confiable.
+- Para decidir si poda, el pruner compara el mejor valor de cada curva hasta esa época, así que
+  una época mala no basta para cortar un intento.
+- Una sugerencia casi idéntica a un intento ya entrenado no se vuelve a entrenar.
+
 La `val_loss` se mide **sin suavizado de etiquetas** (el entrenamiento sí lo usa). Así es comparable entre intentos aunque `label_smoothing` esté en la búsqueda, y el análisis del estudio no lo muestra como importante solo por cómo se mide.
 
 ## Experimentos
