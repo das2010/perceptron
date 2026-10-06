@@ -63,7 +63,10 @@ export function BudgetPlanner({
   const edited = p && (trials !== p.max_trials || epochs !== p.max_epochs_per_trial);
 
   return (
-    <section aria-label={t("plan.title")} className="mb-4 rounded-pt border border-line p-4 text-sm">
+    <section
+      aria-label={t("plan.title")}
+      className="mb-4 rounded-pt border border-line p-4 text-sm"
+    >
       <div className="flex flex-wrap items-end gap-3">
         <Field label={t("plan.wait")} hint={t("plan.waitHint")}>
           <Input
