@@ -514,7 +514,9 @@ def hpo_plan(project_id: str, body: PlanBody, ctx: Ctx) -> BudgetPlan:
 def create_study(project_id: str, body: StudyCreate, ctx: Ctx) -> StudyLaunch:
     ctx.projects.get(project_id)
     wf = Workflow(ctx)
-    strategy = body.strategy or wf.hpo_strategy(body.archspec_id, body.budget)
+    strategy = body.strategy or wf.hpo_strategy(
+        body.archspec_id, body.budget, dataset_version_id=body.dataset_version_id
+    )
     record = ctx.repo(ArchSpecRecord).get(body.archspec_id)
     study = ctx.repo(Study).add(
         Study(

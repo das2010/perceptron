@@ -101,6 +101,20 @@ memoria y tiempo estimado por época.
 Toda propuesta se **valida** antes de mostrarse: esquema, compatibilidad de formas, memoria contra la
 disponible, y disponibilidad y licencia de pesos preentrenados.
 
+**Forma de los datos.** En regresión, Perceptron compara cuánto explica una recta y cuánto una
+curva:
+
+- Si los datos son curvos, exige una propuesta con capas ocultas.
+- Si una recta lo explica todo, exige la lineal.
+- Si los datos son **casi determinísticos** (más del 99,99 %), te sugiere **Buscar la fórmula**:
+  una fórmula exacta suele ser mucho más precisa que una red y sirve fuera del rango de los datos.
+  En ese caso la búsqueda de hiperparámetros deja el dropout en 0.
+
+**Objetivo en escala logarítmica.** Si el objetivo es positivo y abarca varios órdenes de magnitud
+(por ejemplo, de 13 a 194.000), la preparación lo entrena con log(1 + y). Así el error es relativo:
+no da valores negativos y la precisión es pareja en valores chicos y grandes. Al predecir se vuelve
+a la escala original. No se aplica si la relación es una recta.
+
 **Requisitos de diseño.** Arriba de las propuestas, Perceptron muestra qué exige tu escenario. Los
 deduce de tus datos, de tu equipo y de la ficha del caso. Algunos ejemplos:
 

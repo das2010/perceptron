@@ -32,6 +32,11 @@ class TargetSpec(BaseModel):
     name: str
     task: TaskType
     standardize: bool = Field(default=False, description="Solo regresión")
+    log: bool = Field(
+        default=False,
+        description="Regresión: se entrena con log(1 + y) (objetivo positivo que abarca varios "
+        "órdenes de magnitud: el error pasa a ser relativo). Se deshace al predecir.",
+    )
     classes: list[str] | None = Field(
         default=None, description="Clases fijas (detección/segmentación)"
     )
@@ -110,6 +115,7 @@ class FittedPipeline(BaseModel):
     classes: list[str] | None = None
     target_mean: float | None = None
     target_std: float | None = None
+    target_log: bool = Field(default=False, description="El objetivo se entrenó con log(1 + y)")
     image_mean: list[float] | None = None
     image_std: list[float] | None = None
     vocab: list[str] | None = None
@@ -136,8 +142,15 @@ class TabularArrays:
 def _fit_target(spec: TargetSpec, s: pl.Series) -> dict[str, Any]:
     if spec.task is TaskType.REGRESSION:
         x = s.cast(pl.Float64).drop_nulls()
+        # log(1 + y) solo si ningún valor de train es negativo (si no, se entrena sin log).
+        use_log = spec.log and x.len() > 0 and float(x.min() or 0.0) >= 0  # type: ignore[arg-type]
+        if use_log:
+            x = x.log1p()
         mean, std = float(x.mean() or 0.0), float(x.std() or 1.0)  # type: ignore[arg-type]
-        return {"target_mean": mean, "target_std": std or 1.0} if spec.standardize else {}
+        out: dict[str, Any] = {"target_log": True} if use_log else {}
+        if spec.standardize:
+            out |= {"target_mean": mean, "target_std": std or 1.0}
+        return out
     if spec.classes is not None:
         return {"classes": list(spec.classes)}
     if spec.task is TaskType.OCR:
@@ -153,6 +166,8 @@ def encode_target(fitted: FittedPipeline, s: pl.Series) -> np.ndarray:
         raise ValueError("el pipeline no tiene target")
     if target.task is TaskType.REGRESSION:
         y = s.cast(pl.Float64).to_numpy().astype(np.float32)
+        if fitted.target_log:
+            y = np.log1p(np.clip(y, 0.0, None))
         if fitted.target_mean is not None and fitted.target_std:
             y = (y - fitted.target_mean) / fitted.target_std
         return y.astype(np.float32)
@@ -162,7 +177,9 @@ def encode_target(fitted: FittedPipeline, s: pl.Series) -> np.ndarray:
 
 def decode_regression(fitted: FittedPipeline, y: np.ndarray) -> np.ndarray:
     if fitted.target_mean is not None and fitted.target_std:
-        return y * fitted.target_std + fitted.target_mean
+        y = y * fitted.target_std + fitted.target_mean
+    if fitted.target_log:
+        y = np.expm1(y)
     return y
 
 
