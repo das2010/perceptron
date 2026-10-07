@@ -51,6 +51,9 @@ def test_curved_data_linear_model_is_flagged(
         ),
         201,
     )
+    # Objetivo de 1,5 a 194 000: se entrena con log(1 + y) (error relativo).
+    assert pipe["graph"]["target"]["log"] is True
+    assert any("órdenes de magnitud" in r for r in pipe["graph"]["rationale"])
     props = _ok(
         client.post(
             f"{API}/projects/{pid}/arch/propose",
@@ -61,6 +64,21 @@ def test_curved_data_linear_model_is_flagged(
     reqs = {r["code"]: r["level"] for r in props["requirements"]["items"]}
     assert reqs.get("nonlinear_capacity") == "must", reqs
     assert props["requirements"]["scenario"]["r2_curved"] > 0.9999
+    assert props["requirements"]["scenario"]["deterministic"] is True
+    # Datos sin ruido: la búsqueda no prueba dropout (queda en 0).
+    strategy = _ok(
+        client.post(
+            f"{API}/projects/{pid}/hpo/strategy",
+            json={
+                "archspec_id": props["proposals"][0]["archspec"]["id"],
+                "budget": {"max_trials": 20, "max_epochs_per_trial": 10},
+                "mode": "rules",
+                "dataset_version_id": dv["id"],
+            },
+        )
+    )
+    drops = [p for p in strategy["search_space"] if "dropout" in p["name"]]
+    assert drops and all(p["choices"] == [0.0] for p in drops)
     best = props["proposals"][0]
     assert best["assessment"]["recommended"]
     assert [n["block"] for n in best["archspec"]["spec"]["nodes"]] != [
@@ -95,6 +113,12 @@ def test_curved_data_linear_model_is_flagged(
     job = _wait_job(client, launch["job"]["id"])
     assert job["status"] == "succeeded", job["error"]
     run_id = job["result"]["best_trial"]["run_id"]
+
+    # Sin fórmula todavía: el diagnóstico sugiere buscarla (datos casi determinísticos).
+    first = _ok(client.get(f"{API}/runs/{run_id}/diagnosis", params={"refresh": True}))
+    assert "try_formula" in [a["kind"] for a in first["actions"]]
+    options = _ok(client.get(f"{API}/runs/{run_id}/improvements"))
+    assert any(o["kind"] == "try_formula" and o["hint"] == "formula" for o in options)
 
     # La fórmula sugerida del proyecto (como la que encontró la búsqueda real).
     ctx.repo(SymbolicFit).add(

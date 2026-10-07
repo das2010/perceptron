@@ -27,7 +27,7 @@ from pydantic import BaseModel, Field
 from perceptron.archspec.defaults import is_linear_regression
 from perceptron.domain.enums import Modality, TaskType
 from perceptron.services.brief import UseCaseBrief, prefers_linear
-from perceptron.services.fit_checks import Linearity
+from perceptron.services.fit_checks import Linearity, deterministic
 
 if TYPE_CHECKING:
     from perceptron.archspec.schema import ArchSpec
@@ -279,6 +279,8 @@ def design_requirements(
         "deployment": brief.deployment,
         "r2_linear": linearity.r2_linear if linearity else None,
         "r2_curved": linearity.r2_curved if linearity else None,
+        # Casi sin ruido: una fórmula exacta puede ganarle a cualquier red (y extrapola).
+        "deterministic": deterministic(linearity),
     }
     return DesignRequirements(scenario=scenario, items=items)
 

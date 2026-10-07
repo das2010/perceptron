@@ -1467,7 +1467,9 @@
     "met": "cumple",
     "unmet": "no cumple",
     "notRecommended": "Elegiste una opción distinta de la recomendada («{{best}}»). Podés seguir igual.",
-    "unmetList": "No cumple: {{list}}."
+    "unmetList": "No cumple: {{list}}.",
+    "formulaHint": "Los datos son casi determinísticos: una curva de las entradas explica el {{pct}} % de la variación. Una fórmula exacta puede ser mucho más precisa que cualquier red y, a diferencia de ella, sirve fuera del rango de los datos.",
+    "formulaLink": "Buscar la fórmula"
   },
   "guided": {
     "title": "Diseño guiado",
@@ -1517,7 +1519,8 @@
     "hint": {
       "pipeline": "Se hace en la preparación de los datos (Entrenar → Preparación).",
       "design": "Volvé a diseñar con el diseño guiado del wizard (paso Arquitectura).",
-      "data": "Hacen falta más datos: agregalos en la pestaña Datos."
+      "data": "Hacen falta más datos: agregalos en la pestaña Datos.",
+      "formula": "Buscá la fórmula en Experimentos → Fórmula sugerida."
     }
   },
   "studies": {
