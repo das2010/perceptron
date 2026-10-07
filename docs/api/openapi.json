@@ -5890,7 +5890,8 @@
                 "enum": [
                   "design",
                   "pipeline",
-                  "data"
+                  "data",
+                  "formula"
                 ],
                 "type": "string"
               },
@@ -12437,6 +12438,7 @@
               "fewer_epochs",
               "rebalance",
               "more_data",
+              "try_formula",
               "none"
             ],
             "title": "Kind",
@@ -13001,6 +13003,12 @@
             ],
             "description": "Clases fijas (detección/segmentación)",
             "title": "Classes"
+          },
+          "log": {
+            "default": false,
+            "description": "Regresión: se entrena con log(1 + y) (objetivo positivo que abarca varios órdenes de magnitud: el error pasa a ser relativo). Se deshace al predecir.",
+            "title": "Log",
+            "type": "boolean"
           },
           "name": {
             "title": "Name",

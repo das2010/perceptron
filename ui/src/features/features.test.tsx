@@ -160,6 +160,45 @@ describe("pantallas", () => {
     ).toBeInTheDocument();
   });
 
+  it("Entrenar: con datos casi determinísticos sugiere buscar la fórmula (caso Tabla X)", async () => {
+    mockEngine({
+      ...base,
+      "POST /api/v1/projects/prj_1/pipelines/propose": () => ({
+        id: "pip_1",
+        project_id: "prj_1",
+        name: "p",
+        graph: { rationale: [] },
+        version: 1,
+      }),
+      "POST /api/v1/projects/prj_1/arch/propose": () => ({
+        origin: "rules",
+        proposals: [],
+        requirements: {
+          scenario: { r2_linear: 0.98, r2_curved: 0.99998, deterministic: true },
+          items: [
+            {
+              code: "nonlinear_capacity",
+              level: "must",
+              scope: "any",
+              message: "Los datos son curvos.",
+            },
+          ],
+        },
+      }),
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/train");
+    await user.click(await screen.findByRole("button", { name: "Proponer preparación" }));
+    await user.click(await screen.findByRole("button", { name: "Proponer arquitecturas" }));
+    const note = await screen.findByRole("note");
+    expect(note).toHaveTextContent("casi determinísticos");
+    expect(note).toHaveTextContent("99,998 %");
+    expect(within(note).getByRole("link", { name: "Buscar la fórmula" })).toHaveAttribute(
+      "href",
+      "/projects/prj_1/experiments",
+    );
+  });
+
   it("Entrenar: muestra los requisitos, recomienda y avisa al elegir otra (caso Tubos)", async () => {
     const proposal = (id: string, title: string, recommended: boolean, met: boolean) => ({
       archspec: {

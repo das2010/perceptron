@@ -5762,7 +5762,7 @@ export interface components {
              * Hint
              * @description Dónde se hace si no es de la arquitectura
              */
-            hint?: ("design" | "pipeline" | "data") | null;
+            hint?: ("design" | "pipeline" | "data" | "formula") | null;
             /**
              * Index
              * @description Posición de la acción en el diagnóstico
@@ -8353,7 +8353,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "change_hparam" | "add_regularization" | "add_augmentation" | "change_architecture" | "more_epochs" | "fewer_epochs" | "rebalance" | "more_data" | "none";
+            kind: "change_hparam" | "add_regularization" | "add_augmentation" | "change_architecture" | "more_epochs" | "fewer_epochs" | "rebalance" | "more_data" | "try_formula" | "none";
             /** Rationale */
             rationale: string;
             /**
@@ -8575,6 +8575,12 @@ export interface components {
              * @description Clases fijas (detección/segmentación)
              */
             classes?: string[] | null;
+            /**
+             * Log
+             * @description Regresión: se entrena con log(1 + y) (objetivo positivo que abarca varios órdenes de magnitud: el error pasa a ser relativo). Se deshace al predecir.
+             * @default false
+             */
+            log: boolean;
             /** Name */
             name: string;
             /**
