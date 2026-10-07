@@ -368,7 +368,9 @@
       "missed": "Missed",
       "falseAlarms": "False alarms",
       "cost": "Cost"
-    }
+    },
+    "registerWarning": "Before registering this model:",
+    "registerAnyway": "Register anyway"
   },
   "models": {
     "title": "Registered models",
@@ -1457,7 +1459,8 @@
       "low_latency": "Low latency",
       "imbalance_handling": "Handle imbalance",
       "explainable": "Explainable",
-      "epoch_time": "Time per epoch"
+      "epoch_time": "Time per epoch",
+      "nonlinear_capacity": "Hidden layers (curved data)"
     },
     "recommended": "Recommended",
     "checks": "Requirements met",

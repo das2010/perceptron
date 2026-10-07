@@ -485,6 +485,23 @@ export function useRegister(runId: string, projectId: string) {
   });
 }
 
+/** Avisos antes de registrar un run (p. ej. la fórmula sugerida explica mucho más). */
+export function useRegistrationCheck(runId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["runs", runId, "registration-check"],
+    enabled,
+    retry: false,
+    queryFn: async () =>
+      unwrap(
+        await (
+          await getApiClient()
+        ).GET("/api/v1/runs/{run_id}/registration-check", {
+          params: { path: { run_id: runId } },
+        }),
+      ),
+  });
+}
+
 export function useDiagnosis(runId: string, enabled: boolean) {
   return useQuery({
     queryKey: ["runs", runId, "diagnosis"],

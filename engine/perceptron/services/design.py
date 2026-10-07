@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 from perceptron.archspec.defaults import is_linear_regression
 from perceptron.domain.enums import Modality, TaskType
 from perceptron.services.brief import UseCaseBrief, prefers_linear
+from perceptron.services.fit_checks import Linearity
 
 if TYPE_CHECKING:
     from perceptron.archspec.schema import ArchSpec
@@ -39,6 +40,7 @@ RequirementCode = Literal[
     "no_pretrained_offline",
     "small_model",
     "linear_option",
+    "nonlinear_capacity",
     "edge_size",
     "low_latency",
     "imbalance_handling",
@@ -117,6 +119,7 @@ def design_requirements(
     allow_pretrained: bool,
     pretrained_text: bool = False,
     image_size: int | None = None,
+    linearity: Linearity | None = None,
 ) -> DesignRequirements:
     """Qué exige el escenario. Puro: mismos hechos, mismos requisitos."""
     brief = _brief(use_case)
@@ -172,14 +175,47 @@ def design_requirements(
             n_train=n_train,
             max_params=cap,
         )
-    if card.modality is Modality.TABULAR and task is TaskType.REGRESSION and prefers_linear(brief):
-        why = "buscás una regla" if brief.problem == "rule" else "vas a predecir fuera del rango"
+    tabular_reg = card.modality is Modality.TABULAR and task is TaskType.REGRESSION
+    curved = linearity is not None and linearity.evident_curvature
+    if tabular_reg and linearity is not None and linearity.linear_explains:
         add(
             "linear_option",
             "must",
             "any",
-            f"La ficha dice que {why}: las redes solo interpolan dentro de lo visto, así que hace "
-            "falta una opción lineal (y conviene probar la regresión simbólica).",
+            f"Una recta explica el {linearity.r2_linear:.2%} de la variación en los datos: la "
+            "relación es lineal y una regresión lineal la captura exacta.",
+            r2_linear=linearity.r2_linear,
+        )
+    elif tabular_reg and prefers_linear(brief):
+        why = "buscás una regla" if brief.problem == "rule" else "vas a predecir fuera del rango"
+        if curved:
+            add(
+                "linear_option",
+                "should",
+                "any",
+                f"La ficha dice que {why}, pero los datos son curvos: una opción lineal sirve de "
+                "referencia y la regla conviene buscarla con la fórmula sugerida.",
+            )
+        else:
+            add(
+                "linear_option",
+                "must",
+                "any",
+                f"La ficha dice que {why}: las redes solo interpolan dentro de lo visto, así que "
+                "hace falta una opción lineal (y conviene probar la regresión simbólica).",
+            )
+    if tabular_reg and curved and linearity is not None:
+        # Caso «Tabla X» (entrada + √(2/7)·entrada^1,5): se recomendó una lineal sin medir la
+        # forma de los datos y quedó con R² 0,982.
+        add(
+            "nonlinear_capacity",
+            "must",
+            "any",
+            f"Los datos son curvos: una recta explica el {linearity.r2_linear:.2%} y una curva el "
+            f"{linearity.r2_curved:.2%}. Hace falta un modelo con capas ocultas (y conviene "
+            "probar la fórmula sugerida).",
+            r2_linear=linearity.r2_linear,
+            r2_curved=linearity.r2_curved,
         )
     if brief.deployment == "edge":
         add(
@@ -241,6 +277,8 @@ def design_requirements(
         "device": device,
         "allow_pretrained": allow_pretrained,
         "deployment": brief.deployment,
+        "r2_linear": linearity.r2_linear if linearity else None,
+        "r2_curved": linearity.r2_curved if linearity else None,
     }
     return DesignRequirements(scenario=scenario, items=items)
 
@@ -281,6 +319,8 @@ def meets(
             return small
         case "linear_option":
             return is_linear(spec)
+        case "nonlinear_capacity":
+            return not is_linear(spec)
         case "imbalance_handling":
             return handles_imbalance(spec)
         case "explainable":
@@ -361,6 +401,16 @@ def supplement_spec(
     from perceptron.catalog.templates import image_template, tabular_template
 
     task, inp = base.task, base.input
+    if req.code == "nonlinear_capacity" and inp.kind == "tabular":
+        spec = tabular_template(
+            "mlp",
+            task=task.type,
+            num_classes=task.num_classes,
+            num_numeric=inp.num_numeric or 0,
+            cardinalities=list(inp.cardinalities or []),
+            rationale=req.message,
+        )
+        return "MLP chico", spec.model_copy(update={"input": inp})
     if req.code == "linear_option" and inp.kind == "tabular":
         spec = tabular_template(
             "linear",

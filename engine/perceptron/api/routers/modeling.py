@@ -40,6 +40,7 @@ from perceptron.sandbox.static import StaticReport, check_source
 from perceptron.services.compare import ConfigDiff, config_diff
 from perceptron.services.design import DesignAssessment, DesignRequirements
 from perceptron.services.estimate import CostEstimate
+from perceptron.services.fit_checks import RegistrationWarning
 from perceptron.services.pipeline_advice import (
     PipelineChange,
     SuggestionsResult,
@@ -730,6 +731,20 @@ def list_evaluations(run_id: str, ctx: Ctx) -> list[Evaluation]:
 )
 def register_model(run_id: str, ctx: Ctx) -> ModelVersion:
     return Workflow(ctx).register(run_id)
+
+
+@router.get(
+    "/runs/{run_id}/registration-check",
+    tags=["models"],
+    operation_id="checkRegistration",
+)
+def check_registration(run_id: str, ctx: Ctx) -> list[RegistrationWarning]:
+    """Avisos antes de registrar el run como candidato: por ejemplo, si la fórmula sugerida del
+    proyecto explica mucho más que el modelo (caso «Tabla X»). No bloquea el registro."""
+    from perceptron.services.fit_checks import registration_warnings
+
+    wf = Workflow(ctx)
+    return registration_warnings(wf, ctx.repo(Run).get(run_id))
 
 
 @router.get("/projects/{project_id}/models", tags=["models"], operation_id="listModels")

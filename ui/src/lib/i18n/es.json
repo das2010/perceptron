@@ -368,7 +368,9 @@
       "missed": "No detectados",
       "falseAlarms": "Falsas alarmas",
       "cost": "Costo"
-    }
+    },
+    "registerWarning": "Antes de registrar este modelo:",
+    "registerAnyway": "Registrar igual"
   },
   "models": {
     "title": "Modelos registrados",
@@ -1457,7 +1459,8 @@
       "low_latency": "Baja latencia",
       "imbalance_handling": "Compensar el desbalance",
       "explainable": "Explicable",
-      "epoch_time": "Tiempo por época"
+      "epoch_time": "Tiempo por época",
+      "nonlinear_capacity": "Capas ocultas (datos curvos)"
     },
     "recommended": "Recomendada",
     "checks": "Requisitos que cumple",

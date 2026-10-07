@@ -39,6 +39,7 @@ PARITY_POINTS = 500
 TINY = 1e-5  # constantes menores se anulan al redondear (si la fórmula sigue prediciendo igual)
 REL_TINY = 1e-6  # ... o menores que esto × la escala del objetivo (0,00035 frente a ±1785)
 CONST_RTOL = 1e-6  # tolerancia relativa para reconocer una constante conocida (3^(1/5), π…)
+NEAR_INTEGER = 1e-5  # 0,99999833 → 1 (se acepta solo si la fórmula predice igual de bien)
 LONG_DIGITS = 5  # una constante con más cifras significativas cuenta como «fea» al elegir
 _VAR = re.compile(r"^x(\d+)$")
 _NOT_ALLOWED = "la fórmula tiene una construcción no permitida"
@@ -301,6 +302,13 @@ def _known_constants() -> tuple[tuple[float, Any], ...]:
         for den in range(1, 5):
             if math.gcd(num, den) == 1:
                 found += [sp.pi * sp.Rational(num, den), sp.Rational(den, num) / sp.pi]
+    # Raíces de fracciones chicas: caso «Tabla X» (0,5345225… = √(2/7)).
+    for num in range(1, 13):
+        for den in range(2, 13):
+            frac = sp.Rational(num, den)
+            if frac.q == 1 or math.gcd(num, den) != 1 or sp.sqrt(frac).is_rational:
+                continue
+            found.append(sp.sqrt(frac))
     found += [sp.E, 1 / sp.E, sp.log(2), sp.log(10)]
     return tuple((float(c), c) for c in found)
 
@@ -325,7 +333,7 @@ def closed_form(text: str, scale: float) -> str:
             v = float(f)
             if abs(v) < max(TINY, REL_TINY * scale):
                 replace[f] = sp.Integer(0)
-            elif abs(v - round(v)) <= 1e-9 * max(1.0, abs(v)):
+            elif round(v) != 0 and abs(v - round(v)) <= NEAR_INTEGER * max(1.0, abs(v)):
                 replace[f] = sp.Integer(round(v))
             elif (c := _recognize(v)) is not None:
                 replace[f] = c
