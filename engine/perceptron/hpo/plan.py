@@ -61,10 +61,16 @@ def plan_budget(
     *,
     epoch_time_s: float | None,
     time_budget_s: float | None = None,
+    noise_free: bool = False,
 ) -> BudgetPlan:
     budget = float(time_budget_s or DEFAULT_TIME_S)
     reasons: list[str] = []
     params = [p.name for p in default_search_space(spec)]
+    if noise_free and any("dropout" in p for p in params):
+        params = [p for p in params if "dropout" not in p]
+        reasons.append(
+            "Datos casi sin ruido: el dropout queda en 0 y no se busca (solo empeoraría el ajuste)."
+        )
 
     epochs = spec_epochs(spec)
     if is_linear_regression(spec):

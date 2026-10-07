@@ -159,6 +159,7 @@ def _train(cfg: Any, emitter: Any, start: float) -> int:
             if fitted.target_mean is not None and fitted.target_std
             else None
         ),
+        target_log=fitted.target_log,
     )
 
     epochs = cfg.max_epochs or int(resolve(spec.training.epochs, cfg.overrides))

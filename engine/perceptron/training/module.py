@@ -38,12 +38,14 @@ class PerceptronModule(L.LightningModule):
         class_weights: torch.Tensor | None = None,
         pretrained_allowed: bool = True,
         target_scale: tuple[float, float] | None = None,
+        target_log: bool = False,
     ) -> None:
         super().__init__()
         self.spec = spec
         # Regresión con target estandarizado: (media, desvío) para informar MAE/RMSE en las
         # unidades del dato, igual que la evaluación en test. La loss sigue estandarizada.
         self.target_scale = target_scale
+        self.target_log = target_log  # métricas en unidades del dato: deshacer log(1 + y)
         self.overrides = dict(overrides or {})
         built = build_model(spec, self.overrides, pretrained_allowed=pretrained_allowed)
         self.model = cast(ArchModel, built.model)
@@ -94,6 +96,8 @@ class PerceptronModule(L.LightningModule):
         if self.target_scale is not None:
             mean, std = self.target_scale
             args = tuple(a * std + mean for a in args)
+        if self.target_log:
+            args = tuple(torch.expm1(a) for a in args)
         metrics.update(*args)
         self.log(
             f"{stage}_loss",

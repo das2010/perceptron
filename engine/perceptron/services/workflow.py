@@ -245,6 +245,17 @@ class Workflow:
         spec = propose_pipeline(
             card, pretrained=use_pretrained and self._has_gpu(), hf_model=DEFAULT_HF_TEXT_MODEL
         )
+        if spec.target is not None and spec.target.task is TaskType.REGRESSION:
+            from perceptron.services.fit_checks import data_linearity, log_target_reason
+
+            reason = log_target_reason(card, data_linearity(self, dv.id))
+            if reason:
+                spec = spec.model_copy(
+                    update={
+                        "target": spec.target.model_copy(update={"log": True}),
+                        "rationale": [*spec.rationale, reason],
+                    }
+                )
         pipeline = Pipeline(
             project_id=dv.project_id,
             name=f"auto-{dv.content_hash[:8]}",
@@ -422,9 +433,12 @@ class Workflow:
         spec = ArchSpec.model_validate(record.spec)
         project = self.ctx.projects.get(record.project_id)
         # La métrica del proyecto (p. ej. de su plantilla, RF-PRJ-02) es el objetivo del HPO.
-        return recommend_strategy(
+        from perceptron.services.fit_checks import quiet_dropout
+
+        strategy = recommend_strategy(
             spec, budget, metric=objective_metric(spec, project.target_metric)
         )
+        return quiet_dropout(self, strategy, dataset_version_id)
 
     def run_study(
         self,

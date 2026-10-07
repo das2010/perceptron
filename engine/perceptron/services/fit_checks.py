@@ -27,6 +27,7 @@ from perceptron.data.view import Purpose
 if TYPE_CHECKING:
     from perceptron.data.view import DatasetView
     from perceptron.domain.models import Run, SymbolicFit
+    from perceptron.hpo.strategy import HPOStrategy
     from perceptron.llm.schemas import Problem, SuggestedAction
     from perceptron.services.workflow import Workflow
 
@@ -204,7 +205,8 @@ def structural_findings(
                 "que una recta no puede seguir). Las curvas de entrenamiento no lo muestran.",
             )
         )
-    gap = _formula_gap(run, latest_formula(wf, run.project_id, run.dataset_version_id))
+    formula = latest_formula(wf, run.project_id, run.dataset_version_id)
+    gap = _formula_gap(run, formula)
     if gap is not None:
         problems.append(
             Problem(
@@ -227,6 +229,26 @@ def structural_findings(
         if problems
         else []
     )
+    if formula is None:
+        lin = data_linearity(wf, run.dataset_version_id)
+        if deterministic(lin) and lin is not None:
+            share = max(lin.r2_curved, lin.r2_linear)
+            problems.append(
+                Problem(
+                    kind="other",
+                    severity="medium",
+                    evidence=f"Los datos son casi determinísticos: una curva de las entradas "
+                    f"explica el {share:.3%} de la variación.",
+                    explanation="Hay una regla casi exacta: una fórmula puede ser mucho más "
+                    "precisa que la red y, a diferencia de ella, extrapolar fuera del rango.",
+                )
+            )
+            actions.append(
+                SuggestedAction(
+                    kind="try_formula",
+                    rationale="Buscar la fórmula sugerida (Experimentos → Fórmula sugerida).",
+                )
+            )
     return problems, actions
 
 
@@ -258,3 +280,79 @@ def registration_warnings(wf: Workflow, run: Run) -> list[RegistrationWarning]:
             )
         )
     return out
+
+
+# ---------------------------------------------------------------------- objetivo
+
+
+WIDE_RANGE = 20.0  # (p95 + 1) / (p05 + 1) a partir del cual el objetivo abarca órdenes de magnitud
+
+
+def log_target_reason(card: Any, linearity: Linearity | None) -> str | None:
+    """Motivo para entrenar con log(1 + y), o None.
+
+    Caso «Tabla X» (salida de 13 a 194 000): con el error absoluto, la red quedaba bien en los
+    valores grandes y daba negativos en los chicos (−2091 para 27). Con log el error es
+    relativo. No se aplica si una recta explica la relación: la regresión lineal dejaría de
+    serlo en escala logarítmica.
+    """
+    target = getattr(card, "target", None)
+    stats = getattr(target, "numeric", None)
+    if stats is None or (linearity is not None and linearity.linear_explains):
+        return None
+    p05, p95 = stats.quantiles.get("p05"), stats.quantiles.get("p95")
+    if p05 is None or p95 is None or p05 < 0:
+        return None
+    ratio = (p95 + 1) / (p05 + 1)
+    if ratio < WIDE_RANGE:
+        return None
+    return (
+        f"El objetivo abarca varios órdenes de magnitud (entre {p05:,.0f} y {p95:,.0f} en el 90 % "
+        "central): se entrena con log(1 + y) para que el error sea relativo y no haya "
+        "predicciones negativas; al predecir se vuelve a la escala original."
+    ).replace(",", ".")
+
+
+def deterministic(linearity: Linearity | None) -> bool:
+    """Datos casi sin ruido: una curva (o una recta) explica prácticamente todo."""
+    return linearity is not None and max(linearity.r2_curved, linearity.r2_linear) >= LINEAR_EXACT
+
+
+def data_linearity(wf: Workflow, dataset_version_id: str) -> Linearity | None:
+    """Linealidad de un dataset de regresión tabular (entradas numéricas del perfil)."""
+    from perceptron.data.schema import SemanticType
+    from perceptron.domain.enums import Modality, TaskType
+
+    card = wf.profile_card(dataset_version_id)
+    target = card.target
+    if card.modality is not Modality.TABULAR or target is None:
+        return None
+    if target.task_hint is not TaskType.REGRESSION:
+        return None
+    features = [
+        c.name for c in card.columns if c.semantic is SemanticType.NUMERIC and c.name != target.name
+    ]
+    if not features:
+        return None
+    return measure_linearity(wf.view(wf.dataset(dataset_version_id)), target.name, features)
+
+
+def quiet_dropout(
+    wf: Workflow, strategy: HPOStrategy, dataset_version_id: str | None
+) -> HPOStrategy:
+    """Con datos casi sin ruido el dropout queda fijo en 0 y no se busca: caso «Tabla X», donde
+    la búsqueda probó dropout hasta 0,7 y los intentos con mucho dropout fallaron o empeoraron."""
+    from perceptron.hpo.strategy import without_dropout
+
+    tunes = any("dropout" in p.name for p in strategy.search_space)
+    if not dataset_version_id or not tunes:
+        return strategy
+    if not deterministic(data_linearity(wf, dataset_version_id)):
+        return strategy
+    return strategy.model_copy(
+        update={
+            "search_space": without_dropout(strategy.search_space),
+            "rationale": f"{strategy.rationale} Datos casi sin ruido: el dropout queda en 0 y "
+            "no se busca.",
+        }
+    )

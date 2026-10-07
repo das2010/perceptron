@@ -124,6 +124,16 @@ _GLOBAL_RANGES: dict[str, dict[str, Any]] = {
 NOT_TUNED = {"epochs"}
 
 
+def without_dropout(space: list[SearchParam]) -> list[SearchParam]:
+    """El dropout queda fijo en 0 (datos sin ruido: solo agrega ruido y empeora el ajuste)."""
+    return [
+        SearchParam(name=p.name, type="categorical", choices=[0.0], default=0.0)
+        if "dropout" in p.name
+        else p
+        for p in space
+    ]
+
+
 def default_search_space(spec: ArchSpec) -> list[SearchParam]:
     """Espacio de búsqueda a partir de los `{hp}` de la ArchSpec y los rangos del catálogo."""
     from perceptron.catalog.registry import BLOCKS

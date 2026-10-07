@@ -73,7 +73,11 @@ from perceptron.services.design import (
     unmet_musts,
 )
 from perceptron.services.estimate import estimate_epoch_time
-from perceptron.services.fit_checks import measure_linearity, structural_findings
+from perceptron.services.fit_checks import (
+    measure_linearity,
+    quiet_dropout,
+    structural_findings,
+)
 from perceptron.training.config import RESULT_FILE, RunResult
 from perceptron.training.diagnostics import rules_diagnosis
 from perceptron.training.hardware import HardwareReport, detect_hardware
@@ -418,7 +422,23 @@ class LLMRoles:
         mode: Mode = "auto",
         dataset_version_id: str | None = None,
     ) -> HPOStrategy:
-        """HPOStrategy del LLM validada contra la ArchSpec y el presupuesto (RF-HPO-02)."""
+        """HPOStrategy del LLM validada contra la ArchSpec y el presupuesto (RF-HPO-02).
+
+        Con datos casi sin ruido el dropout queda fijo en 0: caso «Tabla X», donde la búsqueda
+        probó dropout hasta 0,7 y los intentos con mucho dropout fallaron o quedaron peor."""
+        strategy = self._hpo_strategy(
+            archspec_id, budget, mode=mode, dataset_version_id=dataset_version_id
+        )
+        return quiet_dropout(self.wf, strategy, dataset_version_id)
+
+    def _hpo_strategy(
+        self,
+        archspec_id: str,
+        budget: Budget,
+        *,
+        mode: Mode = "auto",
+        dataset_version_id: str | None = None,
+    ) -> HPOStrategy:
         record = self.ctx.repo(ArchSpecRecord).get(archspec_id)
         spec = ArchSpec.model_validate(record.spec)
         base = recommend_strategy(spec, budget)

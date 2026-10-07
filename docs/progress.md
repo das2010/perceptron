@@ -54,6 +54,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | Caso «Tabla X»: ajuste exacto por mínimos cuadrados al final de una regresión lineal (y un solo intento), constantes con forma cerrada en la fórmula sugerida (3^(1/5), π, e) y sin términos despreciables, estado «Podado», sin poda con menos de 15 trials y con el mejor valor de cada curva, sugerencias repetidas del HPO sin reentrenar | ✅ |
 | Plan de intentos y épocas del HPO (ADR-0041): el sistema los propone según los hiperparámetros a buscar, el tiempo medido por época y el tiempo que se quiere esperar (`POST /projects/{id}/hpo/plan`), con sus motivos; el estratega LLM parte del plan y puede bajarlo con justificación; Entrenar, el paso HPO del wizard y el diseño guiado lo usan | ✅ |
 | Caso «Tabla X» (curva): forma de los datos medida (R² de una recta vs. una curva) → requisito «capas ocultas» o «lineal obligatoria»; diagnóstico con errores con patrón y la fórmula sugerida como referencia; fórmula con raíces de fracciones (√(2/7)) y casi-enteros; aviso al registrar un modelo mucho peor que la fórmula | ✅ |
+| Caso «Tabla X» (red): objetivo en escala logarítmica cuando es positivo y abarca órdenes de magnitud (error relativo, sin negativos); con datos casi determinísticos se sugiere la fórmula (requisitos y «Próximo paso») y el HPO deja el dropout en 0 | ✅ |
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 
