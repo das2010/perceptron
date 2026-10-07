@@ -22,6 +22,7 @@ import {
   useEvaluation,
   useExportReport,
   useRegister,
+  useRegistrationCheck,
   useReport,
   useOpenInMlflow,
   useRun,
@@ -140,6 +141,7 @@ export function RunPage() {
   const evaluate = useEvaluate(runId);
   const register = useRegister(runId, projectId);
   const done = run.data?.status === "succeeded";
+  const regWarnings = useRegistrationCheck(runId, done);
   const diagnosis = useDiagnosis(runId, done);
   const report = useReport(runId);
   const exported = useExportReport(runId, done);
@@ -245,6 +247,16 @@ export function RunPage() {
                 </div>
               ))}
             </dl>
+            {!register.isSuccess && (regWarnings.data?.length ?? 0) > 0 && (
+              <div role="status" className="mt-4 rounded-pt border border-warn p-3 text-sm">
+                <p className="font-semibold">{t("run.registerWarning")}</p>
+                <ul className="mt-1 list-disc pl-5">
+                  {regWarnings.data?.map((w) => (
+                    <li key={w.code}>{w.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="mt-4 flex flex-wrap gap-2">
               <Button
                 variant="secondary"
@@ -252,7 +264,11 @@ export function RunPage() {
                 disabled={register.isSuccess}
                 onClick={() => register.mutate()}
               >
-                {register.isSuccess ? t("run.registered") : t("run.register")}
+                {register.isSuccess
+                  ? t("run.registered")
+                  : (regWarnings.data?.length ?? 0) > 0
+                    ? t("run.registerAnyway")
+                    : t("run.register")}
               </Button>
               <Button variant="ai" loading={report.isPending} onClick={() => report.mutate()}>
                 {t("run.report")}

@@ -3715,6 +3715,7 @@
               "no_pretrained_offline",
               "small_model",
               "linear_option",
+              "nonlinear_capacity",
               "edge_size",
               "low_latency",
               "imbalance_handling",
@@ -9998,6 +9999,24 @@
         "title": "RefreshBody",
         "type": "object"
       },
+      "RegistrationWarning": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "RegistrationWarning",
+        "type": "object"
+      },
       "RegressionMetrics": {
         "properties": {
           "mae": {
@@ -10253,6 +10272,7 @@
               "no_pretrained_offline",
               "small_model",
               "linear_option",
+              "nonlinear_capacity",
               "edge_size",
               "low_latency",
               "imbalance_handling",
@@ -23162,6 +23182,53 @@
           }
         },
         "summary": "Register Model",
+        "tags": [
+          "models"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/registration-check": {
+      "get": {
+        "description": "Avisos antes de registrar el run como candidato: por ejemplo, si la fórmula sugerida del\nproyecto explica mucho más que el modelo (caso «Tabla X»). No bloquea el registro.",
+        "operationId": "checkRegistration",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RegistrationWarning"
+                  },
+                  "title": "Response Checkregistration",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Check Registration",
         "tags": [
           "models"
         ]

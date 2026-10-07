@@ -2804,6 +2804,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/registration-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check Registration
+         * @description Avisos antes de registrar el run como candidato: por ejemplo, si la fórmula sugerida del
+         *     proyecto explica mucho más que el modelo (caso «Tabla X»). No bloquea el registro.
+         */
+        get: operations["checkRegistration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/report": {
         parameters: {
             query?: never;
@@ -4941,7 +4962,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "pretrained_backbone" | "no_pretrained_offline" | "small_model" | "linear_option" | "edge_size" | "low_latency" | "imbalance_handling" | "explainable" | "epoch_time";
+            code: "pretrained_backbone" | "no_pretrained_offline" | "small_model" | "linear_option" | "nonlinear_capacity" | "edge_size" | "low_latency" | "imbalance_handling" | "explainable" | "epoch_time";
             /**
              * Level
              * @enum {string}
@@ -7336,6 +7357,13 @@ export interface components {
             /** Refresh Token */
             refresh_token: string;
         };
+        /** RegistrationWarning */
+        RegistrationWarning: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
         /** RegressionMetrics */
         RegressionMetrics: {
             /** Mae */
@@ -7430,7 +7458,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "pretrained_backbone" | "no_pretrained_offline" | "small_model" | "linear_option" | "edge_size" | "low_latency" | "imbalance_handling" | "explainable" | "epoch_time";
+            code: "pretrained_backbone" | "no_pretrained_offline" | "small_model" | "linear_option" | "nonlinear_capacity" | "edge_size" | "low_latency" | "imbalance_handling" | "explainable" | "epoch_time";
             /**
              * Level
              * @enum {string}
@@ -14785,6 +14813,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelVersion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkRegistration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistrationWarning"][];
                 };
             };
             /** @description Validation Error */

@@ -25,7 +25,7 @@ from perceptron.catalog.registry import HF_TEXT_MODELS, TIMM_WEIGHTS, blocks_for
 from perceptron.catalog.rules import recommend
 from perceptron.core.errors import NotFoundError, ValidationError
 from perceptron.data.profiling.card import ProfileCard
-from perceptron.domain.enums import LabelKind, LLMPurpose, Modality, Origin, PrivacyLevel
+from perceptron.domain.enums import LabelKind, LLMPurpose, Modality, Origin, PrivacyLevel, TaskType
 from perceptron.domain.models import (
     ArchSpecRecord,
     DatasetVersion,
@@ -73,6 +73,7 @@ from perceptron.services.design import (
     unmet_musts,
 )
 from perceptron.services.estimate import estimate_epoch_time
+from perceptron.services.fit_checks import measure_linearity, structural_findings
 from perceptron.training.config import RESULT_FILE, RunResult
 from perceptron.training.diagnostics import rules_diagnosis
 from perceptron.training.hardware import HardwareReport, detect_hardware
@@ -212,6 +213,16 @@ class LLMRoles:
         use_case = project_use_case(self.ctx, project.id)
         allow_pretrained = not offline_mode()
         text, image = fitted.spec.text, fitted.spec.image
+        linearity = None
+        if (
+            card.modality is Modality.TABULAR
+            and card.target
+            and fitted.numeric_features
+            and rec.spec.task.type is TaskType.REGRESSION
+        ):
+            linearity = measure_linearity(
+                wf.view(dv), card.target.name, list(fitted.numeric_features)
+            )
         reqs = design_requirements(
             card,
             rec.spec.task.type,
@@ -220,6 +231,7 @@ class LLMRoles:
             allow_pretrained=allow_pretrained,
             pretrained_text=text is not None and text.tokenizer == "hf",
             image_size=image.size if image else None,
+            linearity=linearity,
         )
 
         def finish(out: ArchProposals) -> ArchProposals:
@@ -280,6 +292,9 @@ class LLMRoles:
                 "commercial_use": True,
                 "use_case": use_case,
                 "design_requirements": reqs.for_llm(),
+                # Forma de la relación en train: recta vs. curva (R²). Con curvatura evidente
+                # una lineal no alcanza; si la recta explica todo, es la lineal.
+                "data_shape": linearity.model_dump(mode="json") if linearity else None,
                 "device": device,
                 "n_train": card.split_counts.get("train"),
             },
@@ -526,10 +541,27 @@ class LLMRoles:
                 )
             except FALLBACK as e:
                 logger.info("diagnóstico por reglas", extra={"reason": _reason(e)})
+        diagnosis = self._with_structure(diagnosis, run, spec)
         if store:
             run.diagnosis = diagnosis.model_dump(mode="json")
             self.ctx.repo(Run).update(run)
         return diagnosis
+
+    def _with_structure(self, diagnosis: Diagnosis, run: Run, spec: ArchSpec) -> Diagnosis:
+        """Suma el underfitting que las curvas no muestran (errores con patrón, la fórmula
+        sugerida mucho mejor): caso «Tabla X», donde el diagnóstico decía «sin underfitting»."""
+        problems, actions = structural_findings(self.wf, run, spec.task.type.value)
+        if not problems:
+            return diagnosis
+        seen = {a.kind for a in diagnosis.actions}
+        return diagnosis.model_copy(
+            update={
+                "summary": "Atención: el modelo no captura parte de la relación. "
+                + diagnosis.summary,
+                "problems": [*problems, *diagnosis.problems],
+                "actions": [*[a for a in actions if a.kind not in seen], *diagnosis.actions],
+            }
+        )
 
     # ------------------------------------------------------------------ informante
 

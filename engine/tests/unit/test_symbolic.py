@@ -99,3 +99,15 @@ def test_choose_prefers_the_closed_form_when_it_predicts_as_well() -> None:
     noisy = x[:, 0] * 1.31 + np.random.default_rng(0).normal(0, 1, len(x))
     [(_, _, kept)] = sym._choose(["1.31000412*x1"], x, noisy)
     assert "3**" not in kept and "pi" not in kept
+
+
+def test_closed_form_tabla_x_curve() -> None:
+    """Caso «Tabla X» (curva): salida = entrada + √(2/7)·entrada^(3/2)."""
+    found = "0.53452250732*x1**1.5 + 0.99999833107*x1"
+    closed = sym.closed_form(found, scale=60_000.0)
+    x = np.arange(1, 5001, 3, dtype=float).reshape(-1, 1)
+    y = x[:, 0] + np.sqrt(2 / 7) * x[:, 0] ** 1.5
+    assert "sqrt(14)" in closed and "0.9999" not in closed, closed
+    assert np.max(np.abs(sym.evaluate_expression(closed, x) - y)) < 1e-6
+    [(_, rmse, best)] = sym._choose([found], x, y)
+    assert best == closed and rmse < 1e-6
