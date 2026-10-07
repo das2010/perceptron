@@ -151,4 +151,39 @@ describe("RunPage", () => {
       budget: { max_trials: 4, max_epochs_per_trial: 12 },
     });
   });
+
+  it("avisa antes de registrar un modelo mucho peor que la fórmula (caso Tabla X)", async () => {
+    let registered = false;
+    mockEngine({
+      "GET /api/v1/projects": () => [project()],
+      "GET /api/v1/projects/prj_1": () => project(),
+      [`GET /api/v1/runs/${RUN}`]: () => ({ ...run, metrics: { val_r2: 0.982 } }),
+      [`GET /api/v1/runs/${RUN}/history`]: () => [],
+      [`GET /api/v1/runs/${RUN}/diagnosis`]: () => ({ summary: "ok", origin: "rules" }),
+      [`GET /api/v1/runs/${RUN}/evaluation`]: () => ({
+        run_id: RUN,
+        task: "regression",
+        metrics: { r2: 0.98 },
+      }),
+      [`GET /api/v1/runs/${RUN}/registration-check`]: () => [
+        {
+          code: "formula_better",
+          message: "La fórmula sugerida de este proyecto explica mucho más (R² 1.0000).",
+        },
+      ],
+      [`POST /api/v1/runs/${RUN}/register`]: () => {
+        registered = true;
+        return { id: "mdl_1", project_id: "prj_1", run_id: RUN, stage: "candidate", version: 1 };
+      },
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <Providers client={client}>
+        <App router={createTestRouter(`/projects/prj_1/runs/${RUN}`)} />
+      </Providers>,
+    );
+    expect(await screen.findByText(/explica mucho más/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Registrar igual" }));
+    await vi.waitFor(() => expect(registered).toBe(true));
+  });
 });
