@@ -8888,6 +8888,11 @@ export interface components {
              * @default false
              */
             log: boolean;
+            /**
+             * Log Suggested
+             * @description La preparación sugiere `log` para este objetivo; queda apagado hasta que el usuario lo active.
+             * @default false
+             */
             log_suggested: boolean;
             /** Name */
             name: string;

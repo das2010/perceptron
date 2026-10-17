@@ -13791,6 +13791,12 @@
             "title": "Log",
             "type": "boolean"
           },
+          "log_suggested": {
+            "default": false,
+            "description": "La preparación sugiere `log` para este objetivo; queda apagado hasta que el usuario lo active.",
+            "title": "Log Suggested",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
