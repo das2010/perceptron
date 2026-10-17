@@ -6785,6 +6785,15 @@
             ],
             "title": "Job Id"
           },
+          "language": {
+            "default": "es",
+            "enum": [
+              "es",
+              "en"
+            ],
+            "title": "Language",
+            "type": "string"
+          },
           "llm_failed": {
             "default": false,
             "title": "Llm Failed",
@@ -14566,6 +14575,58 @@
       },
       "Turn": {
         "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Acción que ofrece el asistente (se acepta con un clic)",
+            "title": "Action"
+          },
+          "chat": {
+            "default": false,
+            "description": "Pregunta libre y su respuesta, fuera de los pasos del recorrido",
+            "title": "Chat",
+            "type": "boolean"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "enum": [
+                  "data_kind",
+                  "problem",
+                  "prediction",
+                  "labels_available",
+                  "classes",
+                  "error_costs",
+                  "positive_class",
+                  "extrapolate",
+                  "grouped",
+                  "success_target",
+                  "target_name",
+                  "input_names"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dato que pregunta el asistente",
+            "title": "Field"
+          },
+          "options": {
+            "description": "Respuestas rápidas sugeridas",
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
           "role": {
             "enum": [
               "user",
@@ -14573,6 +14634,26 @@
             ],
             "title": "Role",
             "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "enum": [
+                  "case",
+                  "data",
+                  "review",
+                  "training",
+                  "validate",
+                  "use"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Etapa del recorrido en que se dijo",
+            "title": "Step"
           },
           "text": {
             "title": "Text",
