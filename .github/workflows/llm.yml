@@ -17,6 +17,10 @@ on:
         description: "Solo golden tests (validar prompts sin correr el agente)"
         type: boolean
         default: false
+      golden_filter:
+        description: "Filtro -k de los golden (vacío: todos)"
+        type: string
+        default: ""
       benchmark:
         description: "Correr también el benchmark O2"
         type: boolean
@@ -148,7 +152,16 @@ jobs:
         run: uv run perceptron llm test
       - name: Golden tests
         if: steps.key.outputs.skip != 'true'
-        run: uv run pytest -m golden -v engine/tests/golden
+        env:
+          PERCEPTRON_TRANSCRIPTS: ${{ runner.temp }}/transcripts
+          GOLDEN_FILTER: ${{ inputs.golden_filter }}
+        run: uv run pytest -m golden -v engine/tests/golden ${GOLDEN_FILTER:+-k "$GOLDEN_FILTER"}
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.key.outputs.skip != 'true'
+        with:
+          name: conversaciones-${{ matrix.provider }}
+          path: ${{ runner.temp }}/transcripts
+          if-no-files-found: ignore
 
   benchmark:
     name: benchmark O2
