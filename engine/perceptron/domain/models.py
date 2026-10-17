@@ -503,7 +503,15 @@ class AgentRun(Entity):
     finished_at: datetime | None = None
 
 
+class JourneyRecord(Entity):
+    """Versioned guided journey; additive document schema, independent of advanced drafts."""
+
+    project_id: str
+    payload: JsonDict = Field(default_factory=dict)
+
+
 ALL_ENTITIES: tuple[type[Entity], ...] = (
+    JourneyRecord,
     Workspace,
     AgentRun,
     ProjectDraft,

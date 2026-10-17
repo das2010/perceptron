@@ -15,6 +15,7 @@ import { AuditPage } from "@/features/audit/AuditPage";
 import { DataPage } from "@/features/data/DataPage";
 import { ExperimentsPage } from "@/features/experiments/ExperimentsPage";
 import { HomePage } from "@/features/home/HomePage";
+import { JourneyPage } from "@/features/journey/JourneyPage";
 import { ModelsPage } from "@/features/models/ModelsPage";
 import { MonitoringPage } from "@/features/monitoring/MonitoringPage";
 import { OverviewPage } from "@/features/projects/OverviewPage";
@@ -52,6 +53,11 @@ export const projectRoute = createRoute({
 const overviewRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: "/",
+  component: JourneyPage,
+});
+const advancedOverviewRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: "overview",
   component: OverviewPage,
 });
 const dataRoute = createRoute({
@@ -142,6 +148,7 @@ const routeTree = rootRoute.addChildren([
   queueRoute,
   projectRoute.addChildren([
     overviewRoute,
+    advancedOverviewRoute,
     dataRoute,
     trainRoute,
     experimentsRoute,

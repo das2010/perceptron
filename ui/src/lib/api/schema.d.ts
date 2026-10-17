@@ -1775,6 +1775,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/journey": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Journey */
+        get: operations["getJourney"];
+        put?: never;
+        /** Act Journey */
+        post: operations["actJourney"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/journey/predict": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Predict Journey */
+        post: operations["predictJourney"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/journey/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate Journey */
+        post: operations["validateJourney"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/labels/guide": {
         parameters: {
             query?: never;
@@ -4020,10 +4072,22 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_predictJourney */
+        Body_predictJourney: {
+            /** File */
+            file: string;
+        };
         /** Body_uploadSource */
         Body_uploadSource: {
             /** Files */
             files: string[];
+        };
+        /** Body_validateJourney */
+        Body_validateJourney: {
+            /** Actual */
+            actual: string;
+            /** File */
+            file: string;
         };
         /**
          * Box
@@ -5402,6 +5466,25 @@ export interface components {
              */
             int8: boolean;
         };
+        /** Facts */
+        Facts: {
+            /** Classes */
+            classes?: string[] | null;
+            /** Error Costs */
+            error_costs?: ("misses" | "false_alarms" | "equal") | null;
+            /** Grouped */
+            grouped?: boolean | null;
+            /** Labels Available */
+            labels_available?: boolean | null;
+            /** Modality */
+            modality?: ("image" | "other") | null;
+            /** Positive Class */
+            positive_class?: string | null;
+            /** Success Percent */
+            success_percent?: number | null;
+            /** Task */
+            task?: ("classification" | "detection" | "segmentation" | "other") | null;
+        };
         /** FairnessBody */
         FairnessBody: {
             /** Attributes */
@@ -5558,6 +5641,16 @@ export interface components {
              * @enum {string}
              */
             mode: "auto" | "llm" | "rules";
+        };
+        /** GuidedPrediction */
+        GuidedPrediction: {
+            /** Actual */
+            actual?: string | null;
+            /** Correct */
+            correct?: boolean | null;
+            journey: components["schemas"]["Journey"];
+            /** Prediction */
+            prediction: string;
         };
         /**
          * HP
@@ -5900,6 +5993,112 @@ export interface components {
              * @description Worker remoto que lo ejecuta
              */
             worker?: string | null;
+        };
+        /** Journey */
+        Journey: {
+            /** Assumptions */
+            assumptions?: string[];
+            /** Blockers */
+            blockers?: string[];
+            /** Child Job Id */
+            child_job_id?: string | null;
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
+            /** Contract */
+            contract?: {
+                [key: string]: unknown;
+            } | null;
+            /** Dataset Id */
+            dataset_id?: string | null;
+            /** Error */
+            error?: string | null;
+            facts?: components["schemas"]["Facts"];
+            /** Job Id */
+            job_id?: string | null;
+            /**
+             * Llm Failed
+             * @default false
+             */
+            llm_failed: boolean;
+            /** Messages */
+            messages?: components["schemas"]["Turn"][];
+            /** Model Id */
+            model_id?: string | null;
+            /** Notification */
+            notification?: string | null;
+            /** Owner Pid */
+            owner_pid?: number | null;
+            /** Owner Started */
+            owner_started?: number | null;
+            /** Pending */
+            pending?: string[];
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            /**
+             * Stage
+             * @default interview
+             */
+            stage: string;
+            /**
+             * State
+             * @default interview
+             * @enum {string}
+             */
+            state: "interview" | "awaiting_data" | "reviewing_data" | "ready_to_train" | "training" | "ready_to_validate" | "needs_improvement" | "ready_to_use" | "interrupted" | "failed" | "unsupported";
+            /**
+             * Stop Requested
+             * @default false
+             */
+            stop_requested: boolean;
+            /** Study Id */
+            study_id?: string | null;
+            /** Validations */
+            validations?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            /** Warnings */
+            warnings?: string[];
+        };
+        /** JourneyAction */
+        JourneyAction: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "message" | "confirm" | "prepare" | "train" | "stop" | "acknowledge" | "revise";
+            facts?: components["schemas"]["Facts"] | null;
+            /**
+             * Language
+             * @default es
+             * @enum {string}
+             */
+            language: "es" | "en";
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Source Id */
+            source_id?: string | null;
+            /** Version */
+            version: number;
         };
         /**
          * LLMCall
@@ -8904,6 +9103,16 @@ export interface components {
              * @enum {string}
              */
             type: "drift" | "cron" | "volume" | "degradation";
+        };
+        /** Turn */
+        Turn: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Text */
+            text: string;
         };
         /** UploadStart */
         UploadStart: {
@@ -12849,6 +13058,142 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HPOStrategy"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getJourney: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Journey"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    actJourney: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JourneyAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Journey"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictJourney: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_predictJourney"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuidedPrediction"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validateJourney: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_validateJourney"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuidedPrediction"];
                 };
             };
             /** @description Validation Error */

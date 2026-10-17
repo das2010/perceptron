@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import en from "./en.json";
 import es from "./es.json";
+import { journeyEn, journeyEs } from "./journey";
 
 function keys(obj: object, prefix = ""): string[] {
   return Object.entries(obj).flatMap(([k, v]) =>
@@ -12,6 +13,7 @@ function keys(obj: object, prefix = ""): string[] {
 describe("i18n", () => {
   it("es y en tienen exactamente las mismas claves", () => {
     expect(keys(en).sort()).toEqual(keys(es).sort());
+    expect(keys(journeyEn).sort()).toEqual(keys(journeyEs).sort());
   });
 
   it("no hay traducciones vacías", () => {

@@ -28,6 +28,7 @@ import {
   type ProjectTemplate,
 } from "@/lib/api/hooks";
 import { formatDate } from "@/lib/format";
+import { getApiClient } from "@/lib/api/client";
 
 const PRIVACY = ["L0", "L1", "L2", "L3"] as const;
 
@@ -147,6 +148,8 @@ function HardwareCard() {
 
 export function HomePage() {
   const { t, i18n } = useTranslation();
+  const [problem, setProblem] = useState("");
+  const guidedCreate = useCreateProject();
   const [open, setOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const importer = useImportProject();
@@ -159,39 +162,95 @@ export function HomePage() {
   return (
     <>
       <PageHeader
-        title={t("app.tagline")}
+        title={t("journey.title")}
         actions={
-          <div className="flex items-center gap-2">
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-pt border border-line bg-card px-4 py-2 text-sm hover:bg-canvas">
-              <PackageOpen className="h-4 w-4" aria-hidden="true" />
-              {t("home.importProject")}
-              <input
-                type="file"
-                accept=".perceptron,.zip"
-                className="sr-only"
-                aria-label={t("home.importProject")}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (!f) return;
-                  importer.mutate(f, {
-                    onSuccess: (p) =>
-                      void navigate({ to: "/projects/$projectId", params: { projectId: p.id } }),
-                  });
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            <Button onClick={() => setOpen(true)}>
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              {t("home.newProject")}
-            </Button>
-          </div>
+          <details>
+            <summary className="cursor-pointer text-sm text-muted">{t("journey.advanced")}</summary>
+            <div className="flex items-center gap-2">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-pt border border-line bg-card px-4 py-2 text-sm hover:bg-canvas">
+                <PackageOpen className="h-4 w-4" aria-hidden="true" />
+                {t("home.importProject")}
+                <input
+                  type="file"
+                  accept=".perceptron,.zip"
+                  className="sr-only"
+                  aria-label={t("home.importProject")}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    importer.mutate(f, {
+                      onSuccess: (p) =>
+                        void navigate({ to: "/projects/$projectId", params: { projectId: p.id } }),
+                    });
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              <Button onClick={() => setOpen(true)}>
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                {t("home.newProject")}
+              </Button>
+            </div>
+          </details>
         }
       />
-      <div className="grid gap-4 md:grid-cols-2">
-        <EngineStatus />
-        <HardwareCard />
-      </div>
+      <Card className="mb-4">
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            guidedCreate.mutate(
+              {
+                name: problem.trim().slice(0, 80),
+                goal: problem.trim(),
+                privacy_level: "L1",
+                description: "",
+                template: null,
+              },
+              {
+                onSuccess: async (p) => {
+                  try {
+                    await (
+                      await getApiClient()
+                    ).POST("/api/v1/projects/{project_id}/journey", {
+                      params: { path: { project_id: p.id } },
+                      body: {
+                        action: "message",
+                        version: 1,
+                        message: problem.trim(),
+                        language: i18n.language.startsWith("en") ? "en" : "es",
+                      },
+                    });
+                  } finally {
+                    void navigate({ to: "/projects/$projectId", params: { projectId: p.id } });
+                  }
+                },
+              },
+            );
+          }}
+        >
+          <Textarea
+            required
+            aria-label={t("journey.title")}
+            value={problem}
+            onChange={(e) => setProblem(e.target.value)}
+            placeholder={t("journey.example")}
+          />
+          <Button type="submit" disabled={!problem.trim()} loading={guidedCreate.isPending}>
+            {t("journey.begin")}
+          </Button>
+          <ErrorNote error={guidedCreate.error} />
+        </form>
+      </Card>
+      <details>
+        <summary className="mb-3 cursor-pointer text-sm text-muted">
+          {t("journey.advanced")}
+        </summary>
+        <div className="grid gap-4 md:grid-cols-2">
+          <EngineStatus />
+          <HardwareCard />
+        </div>
+      </details>
       <ErrorNote error={importer.error} />
       <div className="mb-3 mt-8 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{t("home.recent")}</h2>

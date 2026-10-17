@@ -295,6 +295,13 @@ def ingest(paths: ProjectPaths, req: IngestRequest) -> DatasetVersion:
                 data_file = INDEX_FILE
 
         split_req = req.split or _default_split(schema, modality)
+        # Guided image folders: class/object-or-session/image. Group metadata never
+        # enters the predictive schema. The same group name across classes stays together.
+        if modality is Modality.IMAGE and split_req.group_column == "__image_group__":
+            image_parts = [Path(p).parts for p in df["path"].to_list()]
+            if any(len(p) < 3 for p in image_parts):
+                raise ValidationError("Organizá todas las imágenes como clase/grupo/imagen.")
+            df = df.with_columns(pl.Series("__image_group__", [p[1] for p in image_parts]))
         if modality is Modality.TIMESERIES and "series" in extra_meta:
             cfg = SeriesConfig.model_validate(extra_meta["series"])
             split_req = SplitRequest(strategy=SplitStrategy.TEMPORAL, time_column=cfg.time_column)

@@ -6,7 +6,7 @@ import { atLeast, projectRole, useSession } from "@/features/auth/session";
 import { useProject } from "@/lib/api/hooks";
 
 const TABS = [
-  { to: "/projects/$projectId", key: "overview", exact: true },
+  { to: "/projects/$projectId/overview", key: "overview", exact: true },
   { to: "/projects/$projectId/wizard", key: "wizard" },
   { to: "/projects/$projectId/data", key: "data" },
   { to: "/projects/$projectId/labeling", key: "labeling" },
@@ -38,8 +38,6 @@ export function ProjectLayout() {
         {project && (
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold">{project.name}</h1>
-            <Badge tone="brand">{project.privacy_level}</Badge>
-            {project.task && <Badge>{t(`task.${project.task}`)}</Badge>}
             {me && role && (
               <Badge tone={atLeast(role, "editor") ? "neutral" : "warn"}>
                 {atLeast(role, "editor") ? t(`roles.${role}`) : t("roles.readOnly")}
@@ -48,22 +46,38 @@ export function ProjectLayout() {
           </div>
         )}
       </div>
-      <nav
-        aria-label={t("project.sections")}
-        className="mb-6 flex flex-wrap gap-1 border-b border-line"
+      <Link
+        to="/projects/$projectId"
+        params={{ projectId }}
+        className="mb-3 inline-block font-semibold"
       >
-        {TABS.map((tab) => (
-          <Link
-            key={tab.key}
-            to={tab.to}
-            params={{ projectId }}
-            activeOptions={{ exact: "exact" in tab }}
-            className="border-b-2 border-transparent px-3 py-2 text-sm text-muted data-[status=active]:border-brand data-[status=active]:font-semibold data-[status=active]:text-ink"
-          >
-            {t(`project.tabs.${tab.key}`)}
-          </Link>
-        ))}
-      </nav>
+        {t("journey.assistant")}
+      </Link>
+      <details className="mb-4">
+        <summary className="cursor-pointer text-sm text-muted">{t("journey.advanced")}</summary>
+        {project && (
+          <div className="my-2 flex gap-2">
+            <Badge tone="brand">{project.privacy_level}</Badge>
+            {project.task && <Badge>{t(`task.${project.task}`)}</Badge>}
+          </div>
+        )}
+        <nav
+          aria-label={t("project.sections")}
+          className="mb-6 flex flex-wrap gap-1 border-b border-line"
+        >
+          {TABS.map((tab) => (
+            <Link
+              key={tab.key}
+              to={tab.to}
+              params={{ projectId }}
+              activeOptions={{ exact: "exact" in tab }}
+              className="border-b-2 border-transparent px-3 py-2 text-sm text-muted data-[status=active]:border-brand data-[status=active]:font-semibold data-[status=active]:text-ink"
+            >
+              {t(`project.tabs.${tab.key}`)}
+            </Link>
+          ))}
+        </nav>
+      </details>
       <Outlet />
     </div>
   );
