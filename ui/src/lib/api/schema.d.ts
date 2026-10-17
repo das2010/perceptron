@@ -6096,11 +6096,6 @@ export interface components {
             } | null;
             /** Dataset Id */
             dataset_id?: string | null;
-            /**
-             * Source Id
-             * @description Última fuente de datos subida
-             */
-            source_id?: string | null;
             /** Design Reason */
             design_reason?: string | null;
             /** Error */
@@ -6142,6 +6137,11 @@ export interface components {
              * @default 2
              */
             schema_version: number;
+            /**
+             * Source Id
+             * @description Última fuente de datos subida
+             */
+            source_id?: string | null;
             /**
              * Stage
              * @default interview

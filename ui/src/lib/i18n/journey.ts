@@ -185,7 +185,8 @@ export const journeyEn: typeof journeyEs = {
   edit: "Correct",
   revise: "Correct the case",
   confirm: "Yes, that's it",
-  confirmHint: "Check what I understood. If it is right, confirm and I will explain what data I need.",
+  confirmHint:
+    "Check what I understood. If it is right, confirm and I will explain what data I need.",
   showConversation: "Show the conversation",
   steps: {
     case: "The case",

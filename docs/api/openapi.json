@@ -6882,6 +6882,18 @@
             "title": "Schema Version",
             "type": "integer"
           },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Última fuente de datos subida",
+            "title": "Source Id"
+          },
           "stage": {
             "default": "interview",
             "title": "Stage",
