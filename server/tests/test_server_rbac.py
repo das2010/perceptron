@@ -281,3 +281,27 @@ def test_admin_system_status_shows_storage_quotas_and_workers(
     assert status["queue_mode"] in ("local", "queue") and isinstance(status["workers"], list)
     _, editor = make_user("sys-ed@preteco.test", "editor")
     assert editor.get(f"{API}/admin/system").status_code == 403
+
+
+def test_journey_permissions(admin, make_user):
+    _, editor = make_user("journey-editor@preteco.test", "editor")
+    _, viewer = make_user("journey-viewer@preteco.test", "viewer")
+    _, outsider = make_user("journey-outsider@preteco.test")
+    pid = ok(editor.post(f"{API}/projects", json={"name": "Imágenes"}), 201)["id"]
+    url = f"{API}/projects/{pid}/journey"
+    assert viewer.get(url).status_code == 200
+    assert outsider.get(url).status_code == 403
+    assert (
+        viewer.post(url, json={"action": "message", "version": 1, "message": "fotos"}).status_code
+        == 403
+    )
+    # Validar registra comparaciones: solo editores (también en lote o con archivo).
+    assert viewer.post(url + "/validate", json={"actual": "a"}).status_code == 403
+    assert (
+        viewer.post(
+            url + "/validate/file", files={"file": ("a.png", b"fake")}, data={"actual": "a"}
+        ).status_code
+        == 403
+    )
+    # Un editor sin modelo preparado recibe un error claro, no un 500.
+    assert editor.post(url + "/validate", json={"actual": "a"}).status_code == 422

@@ -1775,6 +1775,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/journey": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Journey */
+        get: operations["getJourney"];
+        put?: never;
+        /** Act Journey */
+        post: operations["actJourney"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/journey/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate Journey
+         * @description Un caso nuevo (fila o texto) con su resultado real: se predice sin el real y se compara.
+         */
+        post: operations["validateJourney"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/journey/validate/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate Journey File
+         * @description Una imagen o un audio con su resultado real, o un CSV de casos nuevos con la columna del
+         *     resultado (tablas y textos): se predice sin esa columna y se compara caso por caso.
+         */
+        post: operations["validateJourneyFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/labels/guide": {
         parameters: {
             query?: never;
@@ -4025,6 +4084,13 @@ export interface components {
             /** Files */
             files: string[];
         };
+        /** Body_validateJourneyFile */
+        Body_validateJourneyFile: {
+            /** Actual */
+            actual?: string | null;
+            /** File */
+            file: string;
+        };
         /**
          * Box
          * @description Caja normalizada a [0, 1] (x1, y1) – (x2, y2).
@@ -4554,6 +4620,31 @@ export interface components {
             /** Target Classes */
             target_classes?: number | null;
             target_task?: components["schemas"]["TaskType"] | null;
+        };
+        /**
+         * DataGuide
+         * @description Qué datos hacen falta y cómo prepararlos, con un ejemplo concreto.
+         */
+        DataGuide: {
+            /** Accept */
+            accept: string[];
+            /** Example Columns */
+            example_columns?: string[];
+            /** Example Rows */
+            example_rows?: string[][];
+            /** Example Tree */
+            example_tree?: string[];
+            /**
+             * Layout
+             * @enum {string}
+             */
+            layout: "table" | "folders";
+            /** Steps */
+            steps: string[];
+            /** Template Csv */
+            template_csv?: string | null;
+            /** Tips */
+            tips?: string[];
         };
         /** DataSource */
         DataSource: {
@@ -5402,6 +5493,39 @@ export interface components {
              */
             int8: boolean;
         };
+        /**
+         * Facts
+         * @description Lo que el asistente sabe del caso. Todo opcional: se completa conversando.
+         */
+        Facts: {
+            /** Classes */
+            classes?: string[] | null;
+            /** Data Kind */
+            data_kind?: ("table" | "images" | "text" | "audio" | "other") | null;
+            /** Error Costs */
+            error_costs?: ("symmetric" | "false_negative_worse" | "false_positive_worse") | null;
+            /** Extrapolate */
+            extrapolate?: boolean | null;
+            /** Grouped */
+            grouped?: boolean | null;
+            /** Input Names */
+            input_names?: string[] | null;
+            /** Labels Available */
+            labels_available?: boolean | null;
+            /** Positive Class */
+            positive_class?: string | null;
+            /** Prediction */
+            prediction?: string | null;
+            /** Problem */
+            problem?: ("category" | "value" | "rule" | "forecast" | "anomaly" | "other") | null;
+            /**
+             * Success Target
+             * @description Categoría: % mínimo de aciertos. Valor: error típico máximo aceptable (%)
+             */
+            success_target?: number | null;
+            /** Target Name */
+            target_name?: string | null;
+        };
         /** FairnessBody */
         FairnessBody: {
             /** Attributes */
@@ -5558,6 +5682,22 @@ export interface components {
              * @enum {string}
              */
             mode: "auto" | "llm" | "rules";
+        };
+        /** GuidedValidation */
+        GuidedValidation: {
+            /** Actual */
+            actual: unknown;
+            /**
+             * Checked
+             * @description Casos comparados en esta llamada
+             * @default 1
+             */
+            checked: number;
+            /** Correct */
+            correct: boolean;
+            journey: components["schemas"]["Journey"];
+            /** Prediction */
+            prediction: unknown;
         };
         /**
          * HP
@@ -5784,6 +5924,33 @@ export interface components {
             /** Target */
             target?: string | null;
         };
+        /** InputField */
+        InputField: {
+            /** Example */
+            example?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "number" | "category" | "boolean" | "date" | "text";
+            /** Name */
+            name: string;
+            /** Options */
+            options?: string[];
+        };
+        /**
+         * InputForm
+         * @description Lo que el modelo necesita para una predicción, y nada más.
+         */
+        InputForm: {
+            /** Fields */
+            fields?: components["schemas"]["InputField"][];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fields" | "image" | "audio" | "text";
+        };
         /**
          * InputSpec
          * @description Entrada del modelo.
@@ -5900,6 +6067,146 @@ export interface components {
              * @description Worker remoto que lo ejecuta
              */
             worker?: string | null;
+        };
+        /** Journey */
+        Journey: {
+            /** Assumptions */
+            assumptions?: string[];
+            /** Blockers */
+            blockers?: string[];
+            /** Child Job Id */
+            child_job_id?: string | null;
+            /**
+             * Columns
+             * @description Columnas de la tabla subida
+             */
+            columns?: string[];
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
+            /** Contract */
+            contract?: {
+                [key: string]: unknown;
+            } | null;
+            /** Data Summary */
+            data_summary?: {
+                [key: string]: unknown;
+            } | null;
+            /** Dataset Id */
+            dataset_id?: string | null;
+            /** Design Reason */
+            design_reason?: string | null;
+            /** Error */
+            error?: string | null;
+            facts?: components["schemas"]["Facts"];
+            form?: components["schemas"]["InputForm"] | null;
+            guide?: components["schemas"]["DataGuide"] | null;
+            /** Job Id */
+            job_id?: string | null;
+            /**
+             * Llm Failed
+             * @default false
+             */
+            llm_failed: boolean;
+            /** Messages */
+            messages?: components["schemas"]["Turn"][];
+            /** Model Id */
+            model_id?: string | null;
+            /** Notification */
+            notification?: string | null;
+            /** Owner Pid */
+            owner_pid?: number | null;
+            /** Owner Started */
+            owner_started?: number | null;
+            /** Pending */
+            pending?: string[];
+            /** Progress */
+            progress?: {
+                [key: string]: number;
+            };
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            /** Run Id */
+            run_id?: string | null;
+            /**
+             * Schema Version
+             * @default 2
+             */
+            schema_version: number;
+            /**
+             * Source Id
+             * @description Última fuente de datos subida
+             */
+            source_id?: string | null;
+            /**
+             * Stage
+             * @default interview
+             */
+            stage: string;
+            /**
+             * State
+             * @default interview
+             * @enum {string}
+             */
+            state: "interview" | "unsupported" | "awaiting_data" | "reviewing_data" | "ready_to_train" | "training" | "ready_to_validate" | "needs_improvement" | "ready_to_use" | "interrupted" | "failed";
+            /**
+             * Stop Requested
+             * @default false
+             */
+            stop_requested: boolean;
+            /** Study Id */
+            study_id?: string | null;
+            /**
+             * Target
+             * @description Columna con el resultado
+             */
+            target?: string | null;
+            /** Unsupported */
+            unsupported?: string | null;
+            /** Validations */
+            validations?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            /** Warnings */
+            warnings?: string[];
+        };
+        /** JourneyAction */
+        JourneyAction: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "message" | "confirm" | "prepare" | "train" | "stop" | "acknowledge" | "revise";
+            facts?: components["schemas"]["Facts"] | null;
+            /**
+             * Language
+             * @default es
+             * @enum {string}
+             */
+            language: "es" | "en";
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Source Id */
+            source_id?: string | null;
+            /**
+             * Target
+             * @description Columna con el resultado (tablas)
+             */
+            target?: string | null;
+            /** Version */
+            version: number;
         };
         /**
          * LLMCall
@@ -8905,6 +9212,16 @@ export interface components {
              */
             type: "drift" | "cron" | "volume" | "degradation";
         };
+        /** Turn */
+        Turn: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Text */
+            text: string;
+        };
         /** UploadStart */
         UploadStart: {
             /** Path */
@@ -9074,6 +9391,23 @@ export interface components {
             is_server_admin?: boolean | null;
             /** Password */
             password?: string | null;
+        };
+        /** ValidationCase */
+        ValidationCase: {
+            /**
+             * Actual
+             * @description Resultado real, solo para comparar
+             */
+            actual: string | number;
+            /**
+             * Row
+             * @description Campos del caso (tablas)
+             */
+            row?: {
+                [key: string]: unknown;
+            } | null;
+            /** Text */
+            text?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -12849,6 +13183,142 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HPOStrategy"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getJourney: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Journey"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    actJourney: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JourneyAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Journey"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validateJourney: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidationCase"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuidedValidation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validateJourneyFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_validateJourneyFile"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuidedValidation"];
                 };
             };
             /** @description Validation Error */

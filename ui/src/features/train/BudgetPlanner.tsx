@@ -42,18 +42,32 @@ export function BudgetPlanner({
   const [wait, setWait] = useState(timeBudgetS ? minutes(timeBudgetS) : DEFAULT_MINUTES);
   const requested = useRef("");
 
-  const run = (mins: number) =>
+  // Lo último que eligió el usuario: el plan automático no pisa lo editado mientras se calculaba.
+  const latest = useRef({ trials, epochs });
+  useEffect(() => {
+    latest.current = { trials, epochs };
+  }, [trials, epochs]);
+
+  const run = (mins: number, auto = false) => {
+    const before = { ...latest.current };
     plan.mutate(
       { archspec_id: archspecId, dataset_version_id: datasetVersionId, time_budget_s: mins * 60 },
-      { onSuccess: onPlan },
+      {
+        onSuccess: (p) => {
+          const edited =
+            latest.current.trials !== before.trials || latest.current.epochs !== before.epochs;
+          if (!(auto && edited)) onPlan(p);
+        },
+      },
     );
+  };
 
   // Al elegir otra arquitectura (o datos), el plan se recalcula solo.
   useEffect(() => {
     const key = `${archspecId}|${datasetVersionId}`;
     if (!archspecId || !datasetVersionId || requested.current === key) return;
     requested.current = key;
-    run(wait);
+    run(wait, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archspecId, datasetVersionId]);
 

@@ -23,6 +23,10 @@ async function next(page: Page, step: string) {
 test("UC-04: de una carpeta de imágenes a un modelo registrado con el wizard", async ({ page }) => {
   const started = Date.now();
   await page.goto("/");
+  // En Inicio, el estado del motor y «Nuevo proyecto» están en «Opciones avanzadas».
+  const advanced = page.locator("summary", { hasText: "Opciones avanzadas" });
+  await expect(advanced.first()).toBeVisible();
+  for (const summary of await advanced.all()) await summary.click();
   await expect(page.getByText("Engine operativo")).toBeVisible();
 
   await page.getByRole("button", { name: "Nuevo proyecto" }).click();

@@ -20,7 +20,8 @@ También sirve un Excel (`.xlsx`) con la misma idea.
 
 ## 1. Crear el proyecto
 
-1. En **Inicio**, tocá **Nuevo proyecto**.
+1. En **Inicio**, abrí **Opciones avanzadas** y tocá **Nuevo proyecto**. (Para que el asistente te
+   guíe sin decisiones técnicas, ver [El asistente guiado](asistente.md).)
 2. Completá **Nombre** (por ejemplo, «Churn clientes») y **Objetivo**: contalo en palabras, por ejemplo
    «Anticipar qué clientes se van a dar de baja». La IA usa este texto para proponer.
 3. En **Privacidad frente al LLM** dejá **L1** (solo metadatos agregados). Ver

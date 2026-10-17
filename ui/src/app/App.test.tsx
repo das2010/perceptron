@@ -58,9 +58,7 @@ describe("App", () => {
     mockEngine({ "GET /api/v1/projects": () => [] });
     renderApp();
     await userEvent.selectOptions(await screen.findByLabelText("Idioma"), "en");
-    expect(
-      await screen.findByText("Train neural networks locally, guided by AI"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("What do you want to predict?")).toBeInTheDocument();
     await userEvent.selectOptions(screen.getByLabelText("Language"), "es");
   });
 
@@ -88,6 +86,7 @@ describe("App", () => {
       "GET /api/v1/projects/prj_nuevo/datasets": () => [],
     });
     renderApp();
+    await userEvent.click((await screen.findAllByText("Opciones avanzadas"))[0] as HTMLElement);
     await userEvent.click(await screen.findByRole("button", { name: "Nuevo proyecto" }));
     await userEvent.type(screen.getByLabelText("Nombre"), "Motores");
     await userEvent.click(screen.getByRole("button", { name: "Crear" }));
@@ -120,6 +119,7 @@ describe("App", () => {
       "GET /api/v1/projects/prj_nuevo/datasets": () => [],
     });
     renderApp();
+    await userEvent.click((await screen.findAllByText("Opciones avanzadas"))[0] as HTMLElement);
     await userEvent.click(await screen.findByRole("button", { name: "Nuevo proyecto" }));
     const select = await screen.findByLabelText("Plantilla");
     await screen.findByRole("option", { name: "UC-09 · Fallas de motor por sonido" });

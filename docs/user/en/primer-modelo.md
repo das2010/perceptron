@@ -20,7 +20,8 @@ An Excel file (`.xlsx`) with the same idea works too.
 
 ## 1. Create the project
 
-1. On **Home**, click **New project**.
+1. On **Home**, open **Advanced options** and click **New project**. (To let the assistant guide you
+   without technical decisions, see [The guided assistant](asistente.md).)
 2. Fill in **Name** (for example, "Customer churn") and **Goal**: say it in words, for example
    "Anticipate which customers will cancel". The AI uses this text to make proposals.
 3. Leave **Privacy towards the LLM** at **L1** (aggregated metadata only). See

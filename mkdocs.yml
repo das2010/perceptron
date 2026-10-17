@@ -65,6 +65,7 @@ nav:
   - Español:
       - Inicio: es/index.md
       - Instalación: es/instalacion.md
+      - El asistente guiado: es/asistente.md
       - Tu primer modelo: es/primer-modelo.md
       - Datos: es/datos.md
       - Entrenamiento: es/entrenamiento.md
@@ -76,6 +77,7 @@ nav:
   - English:
       - Home: en/index.md
       - Installation: en/instalacion.md
+      - The guided assistant: en/asistente.md
       - Your first model: en/primer-modelo.md
       - Data: en/datos.md
       - Training: en/entrenamiento.md

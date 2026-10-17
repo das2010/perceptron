@@ -1,0 +1,100 @@
+# Asistente guiado — recorrido principal
+
+Experiencia principal de Perceptron para personas sin conocimientos de machine learning
+(ADR-0042). Reutiliza el wizard (RF-WIZ-01/03/04), la ingesta y el perfilado (RF-ING-01/07/08),
+el diseño guiado por requisitos (ADR-0041), el HPO, la evaluación con test sellado, el registro,
+la exportación y el Playground (RF-EXP-02). No reemplaza al modo avanzado: todas las herramientas
+técnicas siguen en «Opciones avanzadas» del proyecto.
+
+## Qué casos cubre
+
+| Datos | Objetivo | Cómo se resuelve |
+|---|---|---|
+| Tabla (CSV / Excel) | elegir una categoría | clasificación tabular |
+| Tabla | estimar un número | regresión tabular |
+| Tabla | descubrir la regla o fórmula | regresión + búsqueda de fórmula simbólica (ADR-0039) si los datos son casi determinísticos |
+| Imágenes (ZIP por carpetas) | elegir una categoría | clasificación de imágenes |
+| Textos (tabla con columna de texto) | elegir una categoría | clasificación de textos |
+| Audios (ZIP por carpetas) | elegir una categoría | clasificación de audio |
+
+Pronósticos de series, detección de anomalías, detección o segmentación en imágenes y los casos
+sin ejemplos con la respuesta correcta se derivan, con el motivo, al wizard avanzado o a
+Etiquetado (`journey_guide.unsupported_reason`).
+
+## Recorrido
+
+1. **El caso.** El usuario describe el problema en Inicio. El asistente pregunta, de a una
+   pregunta por vez y con un ejemplo, por el próximo dato que falta, en tantas iteraciones como
+   haga falta. Debajo de la conversación hay un control de respaldo para ese mismo dato, útil sin
+   LLM o en L0. «Lo que entendí» muestra los datos con un botón para corregir cada uno. Con todo
+   completo, el usuario confirma el resumen.
+2. **Los datos.** El motor genera la guía (`data_guide`): pasos, una tabla de ejemplo con las
+   columnas del caso (o el árbol de carpetas del ZIP), una plantilla CSV y consejos (no incluir
+   datos que se conocen después, cantidad mínima de filas, rango a cubrir, la categoría
+   importante). El selector de archivos acepta solo los formatos del caso.
+3. **Revisión.** Ingesta, perfil, alertas de la ficha y chequeos del plan del wizard. Los
+   bloqueos (sin columna resultado, menos de 20 ejemplos, una sola categoría, carpetas que no
+   coinciden con las categorías, archivos ilegibles, ninguna columna utilizable) impiden seguir;
+   las advertencias se muestran. Si la columna resultado no se detecta, se elige de una lista.
+4. **Entrenamiento.** `Wizard.design` con torneo automático: requisitos, arquitecturas, mini
+   torneo y estrategia. Después estudio, evaluación en test sellado, registro y exportación. La
+   UI muestra las etapas reales y «Prueba N de M»; se puede salir y volver. Al terminar queda un
+   aviso persistente hasta que el usuario lo reconoce.
+5. **Resultados.** Explicación sin jerga y determinística (aciertos y error típico en % sobre
+   casos que el modelo nunca vio, aciertos por categoría, casos importantes no detectados y
+   falsas alarmas), si cumple el objetivo acordado y los próximos pasos. Si encontró una fórmula
+   exacta, se ofrece para copiar en Excel o Python.
+6. **Validación.** El asistente explica cómo elegir casos nuevos (otro día, otros objetos u
+   otras personas) con su resultado real. El modelo predice sin ver el resultado y después se
+   compara. En tablas y textos también se puede subir un CSV con varios casos. Se necesitan al
+   menos 10 casos nuevos y todas las categorías para quedar listo para usar.
+7. **Uso.** Un formulario con solo las columnas que el modelo usa: sin el resultado ni los
+   identificadores descartados, con las opciones de cada categoría y un ejemplo de cada campo.
+   En imágenes y audio, solo el archivo. La predicción va por el Playground con el run
+   registrado.
+
+## Arquitectura
+
+- `services/journey_guide.py` (puro): `Facts`, `missing`, `unsupported_reason`, `to_brief`,
+  `data_guide`, `summarize`, `next_steps` e `input_form`. Las reglas deciden qué falta y qué se
+  soporta; el LLM no controla transiciones.
+- `services/journey.py`: `Coordinator` y `Journey` (`schema_version=2`), guardado en la tabla
+  documental con compare-and-swap por versión. Los recorridos de la versión 1 (solo imágenes) se
+  retoman desde la entrevista, conservando la conversación.
+- **Entrevista:** el mensaje se guarda antes de llamar a `llm.gateway` (propósito COPILOT, prompt
+  `copilot/journey-v2`, schema `InterviewTurn`, PrivacyFilter y auditoría habituales). Un dato
+  propuesto por el LLM se aplica solo si trae una cita literal del usuario y valida; los
+  supuestos van aparte. Los datos que elige el usuario en los controles se aplican directamente.
+- **Confirmación:** los datos se escriben en la ficha del caso del `ProjectDraft` del wizard
+  (`UseCaseBrief`), así el arquitecto, los requisitos de diseño y el plan usan la misma fuente.
+- **Trabajo en segundo plano:** reserva durable antes de lanzar (doble clic → 409), PID y momento
+  de creación del proceso para recuperar interrupciones, y cancelación de workers remotos.
+  Detener deja el recorrido en `interrupted` con los datos conservados.
+- **API:** `GET/POST /projects/{id}/journey` (acciones message, confirm, prepare, train, stop,
+  acknowledge, revise), `POST /journey/validate` (JSON) y `POST /journey/validate/file`
+  (archivo + resultado real, o CSV de hasta 500 casos). Lectores: solo `GET`; validar y las
+  acciones requieren editor.
+- **Runtime:** `required_columns` exige solo las columnas que usa el modelo; las descartadas
+  (IDs) ya no son obligatorias al predecir.
+- **UI:** `features/journey/JourneyPage.tsx` muestra un paso por vez (stepper) y
+  `JourneyPanels.tsx` tiene los paneles. Consulta el estado cada 2 s solo durante revisión y
+  entrenamiento. Textos en `lib/i18n/journey.ts` (es/en).
+
+## Límites
+
+- La validación con casos nuevos es una comprobación práctica, no una certificación
+  estadística. Los hashes detectan duplicados exactos de casos ya vistos, no casos parecidos.
+- El objetivo es un porcentaje: aciertos en categorías, o error típico máximo en números. El
+  costo distinto de los errores se informa y orienta el diseño; no se calibra un umbral.
+- La recuperación usa el proceso de la misma instancia; no es un coordinador distribuido.
+- Probado con FakeLLMProvider y con entrenamiento real en los tests; el proveedor externo se
+  prueba en el workflow LLM.
+
+## Pruebas
+
+`engine/tests/api/test_journey.py`: reglas, guía, citas, entrevista sin LLM y con FakeLLM,
+confirmación en la ficha, casos no soportados, permisos entre proyectos, CAS, recuperación,
+cancelación remota, recorridos legados, bloqueos de carpetas y columna, y el recorrido completo
+de tabla (churn) con entrenamiento, validación individual y por CSV y predicción.
+`server/tests/test_server_rbac.py::test_journey_permissions` cubre los permisos.
+`ui/src/features/journey/JourneyPage.test.tsx` cubre que cada paso muestre solo sus controles.
