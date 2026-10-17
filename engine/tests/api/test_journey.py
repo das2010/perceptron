@@ -160,7 +160,8 @@ def test_llm_interview_iterates_and_confirm_fills_the_wizard_brief(ctx: Any, fak
         Facts(labels_available=True, extrapolate=False, success_target=10, target_name="precio"),
     )
     assert not j.pending and j.messages[-1].role == "assistant"
-    assert "estimar un valor" in j.messages[-1].text
+    assert "querés estimar esto: precio de venta" in j.messages[-1].text
+    assert j.messages[-1].action == "confirm"
     j = c.confirm(p.id, j.version)
     assert j.state == "awaiting_data" and j.guide and j.guide.template_csv
     [draft] = ctx.repo(ProjectDraft).list(filters={"project_id": p.id})
@@ -168,6 +169,76 @@ def test_llm_interview_iterates_and_confirm_fills_the_wizard_brief(ctx: Any, fak
     assert brief["problem"] == "value" and brief["extrapolate"] is False
     assert brief["prediction"] == "precio de venta"
     assert ctx.projects.get(p.id).goal.startswith("Hola, tengo una planilla")
+
+
+def test_without_llm_the_assistant_always_answers_in_words(ctx: Any) -> None:
+    """Sin proveedor de IA la conversación sigue: preguntas redactadas y acuse de cada respuesta."""
+    p = ctx.projects.add(Project(name="Bajas"))
+    c = Coordinator(Workflow(ctx))
+    j = c.interview(p.id, 1, "Quiero saber qué clientes se van a ir")
+    first = j.messages[-1]
+    assert first.role == "assistant" and first.field == "data_kind" and first.step == "case"
+    assert first.text.startswith("¡Hola!") and "planilla" in first.text
+    # Respuesta con el control: el asistente acusa y pregunta lo siguiente.
+    j = c.interview(p.id, j.version, "Una tabla (planilla, CSV, Excel)", Facts(data_kind="table"))
+    last = j.messages[-1]
+    assert [m.role for m in j.messages] == ["user", "assistant", "user", "assistant"]
+    assert last.field == "problem" and last.text.split()[0] in {
+        "Perfecto.",
+        "Entendido.",
+        "Bien.",
+        "Anotado.",
+    }
+    j = c.interview(p.id, j.version, "", Facts(problem="forecast"))
+    assert j.state == "unsupported" and j.messages[-1].action == "advanced"
+
+
+def test_llm_reply_answers_doubts_and_offers_quick_answers(ctx: Any, fake_llm: Any) -> None:
+    p = ctx.projects.add(Project(name="Fisuras"))
+    c = Coordinator(Workflow(ctx))
+    fake_llm.script(
+        "copilot",
+        {
+            "reply": "Buena pregunta: un modelo aprende de tus fotos a reconocer fisuras.",
+            "changes": [{"field": "data_kind", "value": "images", "evidence": "fotos"}],
+            "question": "¿Qué querés que te diga de cada foto?",
+            "question_field": "problem",
+            "options": ["Si tiene fisura o no", "Qué tipo de defecto tiene"],
+        },
+        {  # pregunta por algo ya respondido: se usa la pregunta redactada del dato que falta
+            "reply": "Entendido.",
+            "changes": [{"field": "problem", "value": "category", "evidence": "si tiene fisura"}],
+            "question": "¿Tenés fotos?",
+            "question_field": "data_kind",
+        },
+    )
+    j = c.interview(p.id, 1, "Tengo fotos de piezas, ¿qué es un modelo?")
+    last = j.messages[-1]
+    assert last.text.startswith("Buena pregunta") and last.text.endswith("de cada foto?")
+    assert last.field == "problem" and last.options == [
+        "Si tiene fisura o no",
+        "Qué tipo de defecto tiene",
+    ]
+    j = c.interview(p.id, j.version, "Quiero saber si tiene fisura")
+    last = j.messages[-1]
+    assert last.field == j.pending[0] == "prediction" and last.text.startswith("Entendido.")
+    assert "Contame con tus palabras" in last.text and not last.options
+
+
+def test_conversation_continues_after_the_interview(ctx: Any, fake_llm: Any) -> None:
+    pid, c, j = start(ctx)
+    assert j.messages[-1].step == "data" and "necesito tus datos" in j.messages[-1].text
+    # Sin respuesta del LLM: dice qué se puede hacer ahora, sin cambiar el estado.
+    j = c.ask(pid, j.version, "¿Puedo subir un Excel?")
+    assert j.state == "awaiting_data" and j.messages[-2].text == "¿Puedo subir un Excel?"
+    assert j.messages[-1].text.startswith("No pude consultar a la IA")
+    # El LLM ofrece una acción: solo si está permitida en la etapa (sin datos no se entrena).
+    fake_llm.script("copilot", {"reply": "Primero subí tus datos.", "action": "train"})
+    j = c.ask(pid, j.version, "Entrená ya")
+    assert j.messages[-1].text == "Primero subí tus datos." and j.messages[-1].action is None
+    fake_llm.script("copilot", {"reply": "Volvamos a contar el caso.", "action": "revise"})
+    j = c.ask(pid, j.version, "Me equivoqué en lo que te conté")
+    assert j.messages[-1].action == "revise" and j.state == "awaiting_data"
 
 
 def test_unsupported_case_cannot_be_confirmed(ctx: Any) -> None:
@@ -344,12 +415,17 @@ def test_table_journey_trains_validates_and_predicts(
     j = wait(c, pid)
     assert j.state == "ready_to_train", j.blockers
     assert j.data_summary["target"] == "churn" and j.data_summary["rows"] > 100
+    said = j.messages[-1]
+    assert said.role == "assistant" and said.step == "review" and said.action == "train"
+    assert "Revisé tus datos" in said.text and any(m.text == "Te paso «churn»." for m in j.messages)
     started = c.train(pid, j.version)
     with pytest.raises((ConflictError, ValidationError)):
         c.train(pid, j.version)  # doble clic: no lanza otro entrenamiento
     j = wait(c, pid, 600)
     assert j.state in {"ready_to_validate", "needs_improvement"}, (j.error, j.stage)
     assert j.notification == "training_finished" and started.job_id
+    steps = [m.step for m in j.messages if m.role == "assistant"]
+    assert steps[-2:] == ["training", "validate"]  # arranque y resultado en el mismo hilo
     assert j.result["kind"] == "classification" and j.result["total"] > 0
     assert j.result["explanation"] and j.result["next_steps"]
     assert "positive" in j.result  # omisiones y falsas alarmas de la categoría importante

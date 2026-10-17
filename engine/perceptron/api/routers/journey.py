@@ -51,7 +51,12 @@ def act_journey(project_id: str, body: JourneyAction, ctx: Ctx) -> Journey:
     if body.action == "message":
         if not body.message.strip() and body.facts is None:
             raise ValidationError("Escribí una respuesta o completá el dato que falta.")
-        return c.interview(project_id, body.version, body.message, body.facts, body.language)
+        if c.get(project_id).state in ("interview", "unsupported"):
+            return c.interview(project_id, body.version, body.message, body.facts, body.language)
+        # Después de la entrevista se puede seguir conversando en cualquier etapa.
+        if not body.message.strip():
+            raise ValidationError("Escribí tu mensaje.")
+        return c.ask(project_id, body.version, body.message, body.language)
     if body.action == "confirm":
         return c.confirm(project_id, body.version)
     if body.action == "prepare":
