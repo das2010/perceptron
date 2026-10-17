@@ -145,9 +145,13 @@ def test_playground_and_serving_bundle(
     first = res["predictions"][0]
     assert first["prediction"] in {"0", "1"} and 0.5 <= first["confidence"] <= 1.0
     assert abs(sum(first["probabilities"].values()) - 1.0) < 1e-5
-    partial = [{k: v for k, v in rows[0].items() if k != next(iter(rows[0]))}]
+    partial = [{k: v for k, v in rows[0].items() if k != "edad"}]
     bad = client.post(f"{API}/runs/{run_id}/predict", json={"rows": partial})
     assert bad.status_code == 422 and "faltan columnas" in bad.text
+    # El identificador lo descarta la preparación: no hace falta para predecir.
+    without_id = [{k: v for k, v in rows[0].items() if k != "customer_id"}]
+    ok = client.post(f"{API}/runs/{run_id}/predict", json={"rows": without_id})
+    assert ok.status_code == 200, ok.text
 
     # Paquete de serving (RF-EXP-03).
     zip_resp = client.get(f"{API}/runs/{run_id}/export/serving.zip")

@@ -295,11 +295,13 @@ def test_journey_permissions(admin, make_user):
         viewer.post(url, json={"action": "message", "version": 1, "message": "fotos"}).status_code
         == 403
     )
+    # Validar registra comparaciones: solo editores (también en lote o con archivo).
+    assert viewer.post(url + "/validate", json={"actual": "a"}).status_code == 403
     assert (
         viewer.post(
-            url + "/validate", files={"file": ("a.png", b"fake")}, data={"actual": "a"}
+            url + "/validate/file", files={"file": ("a.png", b"fake")}, data={"actual": "a"}
         ).status_code
         == 403
     )
-    # Viewers may predict, but the coordinator still rejects an unprepared model.
-    assert viewer.post(url + "/predict", files={"file": ("a.png", b"fake")}).status_code == 422
+    # Un editor sin modelo preparado recibe un error claro, no un 500.
+    assert editor.post(url + "/validate", json={"actual": "a"}).status_code == 422

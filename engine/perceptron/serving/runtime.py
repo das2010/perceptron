@@ -110,8 +110,14 @@ class InferenceModel:
 
     @property
     def required_columns(self) -> list[str]:
-        cols: list[str] = self.signature["inputs"].get("columns", [])
-        return cols
+        """Las columnas que el modelo usa. Las que la preparación descarta (identificadores,
+        columnas constantes) no hacen falta: se completan vacías."""
+        inputs = self.signature["inputs"]
+        cols: list[str] = inputs.get("columns", [])
+        used = {*inputs.get("numeric_features", []), *inputs.get("categorical_features", [])}
+        if not used:
+            return cols
+        return [c for c in cols if c in used or any(u.startswith(f"{c}.") for u in used)]
 
     # ---------------------------------------------------------------- salida
 
@@ -189,7 +195,11 @@ class InferenceModel:
         if missing:
             raise InputError(f"faltan columnas: {', '.join(missing)}")
         # Celdas vacías (CSV, formularios) son valores faltantes, no texto: el pipeline las imputa.
-        clean = [{k: (None if v == "" else v) for k, v in r.items()} for r in rows]
+        columns = self.signature["inputs"].get("columns", [])
+        clean = [
+            {**dict.fromkeys(columns), **{k: (None if v == "" else v) for k, v in r.items()}}
+            for r in rows
+        ]
         df = pl.DataFrame(clean, infer_schema_length=None)
         arrays = transform_tabular(self.pipeline, df)
         feed = {"x_num": arrays.x_num, "x_cat": arrays.x_cat}

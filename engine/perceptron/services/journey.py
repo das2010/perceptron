@@ -1,33 +1,65 @@
-"""Guided image journey (RF-WIZ-01/03/04, RF-ING-08, RF-EXP-02).
+"""Asistente guiado de punta a punta (RF-WIZ-01/03/04, RF-ING-01/07/08, RF-EXP-02).
 
-The LLM extracts evidence; deterministic guards own all side effects. Documents use
-atomic compare-and-swap, including SQLite, before launching any background work.
+Una capa sobre el motor existente para personas sin conocimientos de machine learning:
+
+1. **Entrevista:** el LLM pregunta tantas veces como haga falta y propone hechos del caso; cada
+   hecho tiene que estar respaldado por una cita literal de la persona. Sin LLM, los controles de
+   la próxima pregunta siguen funcionando. Al confirmar, los hechos pasan a la ficha del caso del
+   wizard: el arquitecto, los requisitos de diseño y el plan los usan igual que en el modo avanzado.
+2. **Datos:** guía con un ejemplo concreto (`journey_guide.data_guide`); la ingesta, el perfil,
+   las alertas y el plan del wizard revisan lo que se subió y separan bloqueos de avisos.
+3. **Entrenamiento:** el diseño guiado del wizard (requisitos, comparación corta, plan de intentos
+   y épocas), el estudio por la cola del servidor, la evaluación en el test sellado, el registro y
+   la exportación. Con datos casi determinísticos, también la fórmula sugerida.
+4. **Validación y uso:** casos nuevos con su resultado real (de a uno o en lote) y predicciones con
+   solo los campos que el modelo necesita.
+
+El LLM no decide transiciones ni efectos: los dueños son reglas verificables. Los documentos se
+actualizan con compare-and-swap por versión (también en SQLite) antes de lanzar trabajo.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import os
 import threading
 import time
 from typing import Any, Literal
 
 import psutil
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 from sqlalchemy import update
 from sqlalchemy.engine import CursorResult
 
 from perceptron.api.jobs import JobContext
 from perceptron.core.errors import ConflictError, ValidationError
-from perceptron.domain.enums import LLMPurpose, Modality, SplitStrategy
+from perceptron.domain.enums import LLMPurpose, Modality, SplitStrategy, TaskType
 from perceptron.domain.models import JourneyRecord, ModelVersion, utcnow
-from perceptron.hpo.strategy import Budget
 from perceptron.llm.privacy import LLMContext
+from perceptron.services.journey_guide import (
+    VALIDATION_MIN,
+    DataGuide,
+    FactField,
+    Facts,
+    InputForm,
+    data_guide,
+    input_form,
+    missing,
+    summarize,
+    task_of,
+    to_brief,
+    unsupported_reason,
+)
 from perceptron.services.workflow import Workflow
 from perceptron.storage.db import EntityRow
 
+logger = logging.getLogger(__name__)
+
 State = Literal[
     "interview",
+    "unsupported",
     "awaiting_data",
     "reviewing_data",
     "ready_to_train",
@@ -37,42 +69,43 @@ State = Literal[
     "ready_to_use",
     "interrupted",
     "failed",
-    "unsupported",
 ]
 ACTIVE = {"reviewing_data", "training"}
+DATA_STATES = {
+    "awaiting_data",
+    "ready_to_train",
+    "needs_improvement",
+    "ready_to_validate",
+    "ready_to_use",
+    "failed",
+    "interrupted",
+}
+TRAIN_STATES = {"ready_to_train", "failed", "interrupted", "needs_improvement"}
+MODEL_STATES = {"ready_to_validate", "needs_improvement", "ready_to_use"}
+DEFAULT_WAIT_S = 20 * 60
+FORMULA_TIME_S = 90
 PROCESS_STARTED = psutil.Process().create_time()
+_KIND_MODALITY = {
+    "table": Modality.TABULAR,
+    "images": Modality.IMAGE,
+    "audio": Modality.AUDIO,
+    "text": Modality.TEXT,
+}
 
 
-class Facts(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    modality: Literal["image", "other"] | None = None
-    task: Literal["classification", "detection", "segmentation", "other"] | None = None
-    classes: list[str] | None = Field(default=None, min_length=2, max_length=100)
-    positive_class: str | None = Field(default=None, max_length=100)
-    grouped: bool | None = None
-    labels_available: bool | None = None
-    success_percent: float | None = Field(default=None, ge=1, le=100)
-    error_costs: Literal["misses", "false_alarms", "equal"] | None = None
+class FactChange(BaseModel):
+    field: FactField
+    value: Any = None
+    evidence: str = Field(default="", max_length=400, description="Cita literal de la persona")
 
 
-class Extraction(BaseModel):
-    facts: Facts = Field(default_factory=Facts)
-    evidence: dict[str, str] = Field(default_factory=dict)
-    assumptions: list[str] = Field(default_factory=list, max_length=20)
+class InterviewTurn(BaseModel):
+    """Salida del LLM en cada turno de la entrevista."""
+
+    changes: list[FactChange] = Field(default_factory=list, max_length=12)
+    assumptions: list[str] = Field(default_factory=list, max_length=10)
     question: str | None = Field(default=None, max_length=1000)
-    question_field: (
-        Literal[
-            "modality",
-            "task",
-            "classes",
-            "positive_class",
-            "grouped",
-            "labels_available",
-            "success_percent",
-            "error_costs",
-        ]
-        | None
-    ) = None
+    question_field: FactField | None = None
 
 
 class Turn(BaseModel):
@@ -81,27 +114,35 @@ class Turn(BaseModel):
 
 
 class Journey(BaseModel):
-    schema_version: int = 1
+    schema_version: int = 2
     version: int = 1
     state: State = "interview"
     facts: Facts = Field(default_factory=Facts)
     messages: list[Turn] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
     pending: list[str] = Field(default_factory=list)
+    unsupported: str | None = None
     llm_failed: bool = False
     confirmed: bool = False
+    guide: DataGuide | None = None
     dataset_id: str | None = None
+    columns: list[str] = Field(default_factory=list, description="Columnas de la tabla subida")
+    target: str | None = Field(default=None, description="Columna con el resultado")
+    data_summary: dict[str, Any] | None = None
     job_id: str | None = None
     child_job_id: str | None = None
     study_id: str | None = None
     owner_pid: int | None = None
     owner_started: float | None = None
     stage: str = "interview"
+    progress: dict[str, int] = Field(default_factory=dict)
     blockers: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     run_id: str | None = None
     model_id: str | None = None
     contract: dict[str, Any] | None = None
+    form: InputForm | None = None
+    design_reason: str | None = None
     result: dict[str, Any] | None = None
     validations: list[dict[str, Any]] = Field(default_factory=list)
     notification: str | None = None
@@ -109,15 +150,24 @@ class Journey(BaseModel):
     stop_requested: bool = False
 
 
-def missing(f: Facts) -> list[str]:
-    needed = [k for k, v in f.model_dump().items() if v is None]
-    if f.classes and (
-        len(set(f.classes)) != len(f.classes) or any(not c.strip() for c in f.classes)
-    ):
-        needed.append("classes")
-    if f.positive_class and f.classes and f.positive_class not in f.classes:
-        needed.append("positive_class")
-    return list(dict.fromkeys(needed))
+def _cited(evidence: str, said: str) -> bool:
+    quote = " ".join(evidence.casefold().strip(" \"'«»“”.").split())
+    return len(quote) >= 2 and quote in " ".join(said.casefold().split())
+
+
+def apply_changes(facts: Facts, changes: list[FactChange], said: str) -> Facts:
+    """Aplica solo los hechos respaldados por una cita de lo que dijo la persona y que validan."""
+    values = facts.model_dump()
+    for change in changes:
+        if not _cited(change.evidence, said):
+            continue
+        candidate = {**values, change.field: change.value}
+        try:
+            Facts.model_validate(candidate)
+        except ValueError:
+            continue
+        values = candidate
+    return Facts.model_validate(values)
 
 
 class Coordinator:
@@ -125,69 +175,50 @@ class Coordinator:
         self.wf, self.ctx = wf, wf.ctx
         self.repo = self.ctx.repo(JourneyRecord)
 
+    # ------------------------------------------------------------------ persistencia
+
     def get(self, pid: str) -> Journey:
         self.wf.project(pid)
         record = self.repo.find(pid)
         if record is None:
-            return Journey(pending=missing(Facts()))
-        j = Journey.model_validate(record.payload).model_copy(update={"version": record.version})
+            return Journey(pending=list(missing(Facts())))
+        payload = dict(record.payload)
+        if payload.get("schema_version", 1) < 2:
+            # Recorridos de la primera versión (solo imágenes): se retoman desde la entrevista.
+            payload = {"messages": payload.get("messages", [])}
+        j = Journey.model_validate(payload).model_copy(update={"version": record.version})
         if j.state in ACTIVE and j.owner_pid:
-            try:
-                alive = psutil.Process(j.owner_pid).create_time() == j.owner_started
-            except psutil.Error:
-                alive = False
-            if alive and j.owner_pid == os.getpid() and j.job_id:
-                alive = self.ctx.jobs.get(j.job_id) is not None
-            if not alive:
-                # The durable study reference also covers a crash between enqueue and
-                # saving child_job_id. Never retry while a restored remote worker is active.
-                child = self.ctx.jobs.get(j.child_job_id) if j.child_job_id else None
-                if child is None and j.study_id:
-                    child = next(
-                        (
-                            job
-                            for job in self.ctx.jobs.list()
-                            if job.refs.get("study_id") == j.study_id
-                        ),
-                        None,
-                    )
-                if child and child.finished_at is None:
-                    self.ctx.jobs.cancel(child.id)
-                    j.stop_requested, j.stage = True, "stopping"
-                    return j
-                if j.study_id:
-                    from perceptron.services.study_control import mark_interrupted
-
-                    mark_interrupted(self.ctx, j.study_id)
-                j.state, j.stage = "interrupted", "interrupted"
-                j.notification = "interrupted"
-                j.error = "El motor se interrumpió. Podés reintentar conservando tus datos."
-                return self.save(pid, j)
+            return self._recover(pid, j)
         return j
 
-    def revise(self, pid: str, version: int) -> Journey:
-        j = self.get(pid)
-        if j.version != version or j.state in ACTIVE:
-            raise ConflictError("Esperá a que termine el trabajo antes de corregir el escenario.")
-        return self.save(
-            pid,
-            Journey(
-                version=j.version,
-                facts=j.facts,
-                messages=j.messages,
-                assumptions=j.assumptions,
-                pending=missing(j.facts),
-            ),
-        )
+    def _recover(self, pid: str, j: Journey) -> Journey:
+        """Si el proceso dueño del trabajo murió: interrumpido, conservando datos y contexto."""
+        try:
+            alive = psutil.Process(j.owner_pid or 0).create_time() == j.owner_started
+        except psutil.Error:
+            alive = False
+        if alive and j.owner_pid == os.getpid() and j.job_id:
+            alive = self.ctx.jobs.get(j.job_id) is not None
+        if alive:
+            return j
+        child = self.ctx.jobs.get(j.child_job_id) if j.child_job_id else None
+        if child is None and j.study_id:
+            child = next(
+                (job for job in self.ctx.jobs.list() if job.refs.get("study_id") == j.study_id),
+                None,
+            )
+        if child and child.finished_at is None:
+            # Un worker remoto restaurado sigue entrenando: se cancela antes de reintentar.
+            self.ctx.jobs.cancel(child.id)
+            j.stop_requested, j.stage = True, "stopping"
+            return j
+        if j.study_id:
+            from perceptron.services.study_control import mark_interrupted
 
-    def known_images(self, dataset_id: str) -> dict[str, str]:
-        from perceptron.data.view import MANIFEST_FILE
-
-        view = self.wf.view(self.wf.dataset(dataset_id))
-        manifest = json.loads((view.root / MANIFEST_FILE).read_text(encoding="utf-8"))
-        return {
-            e["path"]: e["sha256"] for e in manifest["entries"] if e["path"].startswith("files/")
-        }
+            mark_interrupted(self.ctx, j.study_id)
+        j.state, j.stage, j.notification = "interrupted", "interrupted", "interrupted"
+        j.error = "El motor se interrumpió. Podés reintentar: tus datos se conservan."
+        return self.save(pid, j)
 
     def save(self, pid: str, j: Journey) -> Journey:
         record = self.repo.find(pid)
@@ -228,66 +259,6 @@ class Coordinator:
             raise ValidationError("Esta acción no está disponible en la etapa actual.")
         return j
 
-    def interview(
-        self, pid: str, version: int, message: str, facts: Facts | None, language: str = "es"
-    ) -> Journey:
-        j = self.checked(pid, version, {"interview", "unsupported"})
-        if message:
-            j.messages.append(Turn(role="user", text=message))
-        if facts is not None:
-            values = {**j.facts.model_dump(), **facts.model_dump(exclude_none=True)}
-            j.facts = Facts.model_validate(values)
-        j.confirmed = False
-        j.pending = missing(j.facts)
-        # Commit user input before touching the network. Failure cannot lose the answer.
-        j = self.save(pid, j)
-        if message and facts is None:
-            try:
-                out = self.ctx.llm.structured(
-                    LLMPurpose.COPILOT,
-                    Extraction,
-                    LLMContext(
-                        goal=self.wf.project(pid).goal,
-                        constraints={
-                            "facts": j.facts.model_dump(),
-                            "language": language,
-                            "conversation": [m.model_dump() for m in j.messages[-24:]],
-                            "pending": j.pending,
-                        },
-                    ),
-                    project=self.wf.project(pid),
-                    prompt="journey",
-                ).value
-                values = j.facts.model_dump()
-                for key, value in out.facts.model_dump(exclude_none=True).items():
-                    # A literal quote is necessary to auto-record an explicit answer.
-                    quote = out.evidence.get(key, "")
-                    if quote.strip() and quote.casefold() in message.casefold():
-                        values[key] = value
-                j.facts = Facts.model_validate(values)
-                j.assumptions = out.assumptions
-                j.llm_failed = False
-                if out.question and out.question_field in missing(j.facts):
-                    j.messages.append(Turn(role="assistant", text=out.question))
-            except Exception:
-                j.llm_failed = True
-        j.pending = missing(j.facts)
-        j.state = (
-            "unsupported"
-            if j.facts.modality == "other" or j.facts.task in {"detection", "segmentation", "other"}
-            else "interview"
-        )
-        return self.save(pid, j)
-
-    def confirm(self, pid: str, version: int) -> Journey:
-        j = self.checked(pid, version, {"interview"})
-        if missing(j.facts):
-            raise ValidationError("Completá los datos esenciales antes de confirmar.")
-        if j.facts.modality != "image" or j.facts.task != "classification":
-            raise ValidationError("Este recorrido admite clasificación de imágenes.")
-        j.confirmed, j.state, j.stage = True, "awaiting_data", "awaiting_data"
-        return self.save(pid, j)
-
     def _change(self, pid: str, **values: Any) -> Journey:
         for _ in range(8):
             j = self.get(pid)
@@ -297,12 +268,114 @@ class Coordinator:
                 continue
         raise ConflictError("No se pudo actualizar el recorrido.")
 
+    # ------------------------------------------------------------------ entrevista
+
+    def interview(
+        self,
+        pid: str,
+        version: int,
+        message: str,
+        facts: Facts | None = None,
+        language: str = "es",
+    ) -> Journey:
+        j = self.checked(pid, version, {"interview", "unsupported"})
+        if message:
+            j.messages.append(Turn(role="user", text=message))
+        if facts is not None:
+            # Lo que la persona completa en los controles es un dato confirmado.
+            merged = {**j.facts.model_dump(), **facts.model_dump(exclude_none=True)}
+            j.facts = Facts.model_validate(merged)
+        j.confirmed = False
+        j.pending = list(missing(j.facts))
+        j = self.save(pid, j)  # lo escrito queda guardado aunque falle el LLM
+        if message and facts is None:
+            j = self._ask_llm(pid, j, language)
+        j.pending = list(missing(j.facts))
+        j.unsupported = unsupported_reason(j.facts)
+        j.state = "unsupported" if j.unsupported else "interview"
+        if (
+            not j.unsupported
+            and not j.pending
+            and (not j.messages or j.messages[-1].role == "user")
+        ):
+            j.messages.append(Turn(role="assistant", text=_summary_text(j.facts)))
+        return self.save(pid, j)
+
+    def _ask_llm(self, pid: str, j: Journey, language: str) -> Journey:
+        project = self.wf.project(pid)
+        said = "\n".join(m.text for m in j.messages if m.role == "user")
+        try:
+            out = self.ctx.llm.structured(
+                LLMPurpose.COPILOT,
+                InterviewTurn,
+                LLMContext(
+                    goal=project.goal or None,
+                    constraints={
+                        "facts": j.facts.model_dump(),
+                        "pending": list(missing(j.facts)),
+                        "language": language,
+                        "conversation": [m.model_dump() for m in j.messages[-24:]],
+                    },
+                ),
+                project=project,
+                prompt="journey",
+            ).value
+        except Exception:  # sin proveedor, L0, presupuesto o salida inválida: siguen los controles
+            logger.info("entrevista guiada sin LLM", exc_info=True)
+            j.llm_failed = True
+            return j
+        j.facts = apply_changes(j.facts, out.changes, said)
+        j.assumptions = out.assumptions
+        j.llm_failed = False
+        pending = missing(j.facts)
+        asks_pending = out.question_field in pending or not out.question_field
+        if out.question and pending and asks_pending:
+            j.messages.append(Turn(role="assistant", text=out.question))
+        return j
+
+    def confirm(self, pid: str, version: int) -> Journey:
+        from perceptron.services.wizard import Wizard
+
+        j = self.checked(pid, version, {"interview"})
+        if missing(j.facts):
+            raise ValidationError("Completá los datos esenciales antes de confirmar.")
+        if unsupported_reason(j.facts):
+            raise ValidationError(unsupported_reason(j.facts) or "")
+        # La ficha del caso del wizard: la usan el arquitecto, los requisitos y el plan.
+        wizard = Wizard(self.wf)
+        draft = wizard.get(pid)
+        values: dict[str, Any] = {"brief": to_brief(j.facts)}
+        first = next((m.text for m in j.messages if m.role == "user"), None)
+        if first and not self.wf.project(pid).goal:
+            values["goal"] = first[:4000]
+        wizard.update(pid, version=draft.version, values=values)
+        j.confirmed, j.state, j.stage = True, "awaiting_data", "awaiting_data"
+        j.guide = data_guide(j.facts)
+        return self.save(pid, j)
+
+    def revise(self, pid: str, version: int) -> Journey:
+        j = self.get(pid)
+        if j.version != version or j.state in ACTIVE:
+            raise ConflictError("Esperá a que termine el trabajo antes de corregir el caso.")
+        return self.save(
+            pid,
+            Journey(
+                version=j.version,
+                facts=j.facts,
+                messages=j.messages,
+                assumptions=j.assumptions,
+                pending=list(missing(j.facts)),
+                unsupported=unsupported_reason(j.facts),
+            ),
+        )
+
+    # ------------------------------------------------------------------ trabajo en segundo plano
+
     def _launch(self, pid: str, j: Journey, work: Any) -> Journey:
         j.owner_pid, j.owner_started = os.getpid(), PROCESS_STARTED
-        j.job_id, j.child_job_id = None, None
-        j.study_id = None
+        j.job_id, j.child_job_id, j.study_id = None, None, None
         j.error, j.notification, j.stop_requested = None, None, False
-        j = self.save(pid, j)  # durable reservation BEFORE submit; CAS rejects double clicks
+        j = self.save(pid, j)  # reserva durable ANTES de lanzar: el doble clic recibe 409
         gate = threading.Event()
 
         def run(job: JobContext) -> None:
@@ -315,12 +388,13 @@ class Coordinator:
             try:
                 work(job)
             except Exception as exc:
+                logger.warning("recorrido guiado con error", exc_info=True)
                 self._change(
                     pid,
                     state="failed",
                     stage="failed",
                     notification="failed",
-                    error=str(exc)[:1000],
+                    error=_plain_error(exc),
                 )
                 raise
 
@@ -334,237 +408,11 @@ class Coordinator:
             gate.set()
         return j
 
-    def prepare(self, pid: str, version: int, source_id: str) -> Journey:
-        from perceptron.api.routers.data import _source_path
-        from perceptron.data.splits import SplitRequest
-        from perceptron.domain.models import DataSource
-
-        j = self.checked(
-            pid,
-            version,
-            {"awaiting_data", "ready_to_train", "needs_improvement", "failed", "interrupted"},
-        )
-        if not j.confirmed:
-            raise ValidationError("Confirmá primero el resumen.")
-        source = self.ctx.repo(DataSource).get(source_id)
-        if source.project_id != pid:
-            raise ValidationError("La fuente pertenece a otro proyecto.")
-        path = _source_path(self.ctx, source)
-        j.state, j.stage = "reviewing_data", "reviewing_data"
-        j.dataset_id, j.model_id, j.run_id = None, None, None
-        j.contract, j.result, j.validations = None, None, []
-        j.blockers, j.warnings = [], []
-
-        def work(job: JobContext) -> None:
-            split = (
-                SplitRequest(strategy=SplitStrategy.GROUP, group_column="__image_group__")
-                if j.facts.grouped
-                else SplitRequest()
-            )
-            dv = self.wf.ingest(
-                pid, path, split=split, source_record=source, modality=Modality.IMAGE
-            )
-            # Ingest already checked file integrity for every image. Inspect only that
-            # metadata (never test labels or pixels) before profiling train/val.
-            import polars as pl
-
-            view = self.wf.view(dv)
-            if dv.modality is Modality.IMAGE:
-                index = pl.scan_parquet(view.data_file)
-                if "corrupt" in index.collect_schema().names():
-                    unreadable = (
-                        index.filter(pl.col("corrupt")).select("path").collect()["path"].to_list()
-                    )
-                    if unreadable:
-                        self._change(
-                            pid,
-                            dataset_id=dv.id,
-                            state="awaiting_data",
-                            stage="awaiting_data",
-                            blockers=[
-                                "Reemplazá las imágenes ilegibles y cargá otro ZIP: "
-                                + ", ".join(unreadable[:10])
-                            ],
-                        )
-                        return
-            card = self.wf.profile(dv.id)
-            if self.get(pid).stop_requested:
-                self._change(
-                    pid, state="interrupted", stage="interrupted", notification="interrupted"
-                )
-                return
-            blockers, warnings = [], []
-            if card.modality != Modality.IMAGE or card.vision_task:
-                blockers.append(
-                    "Usá imágenes con una categoría por imagen, sin máscaras ni recuadros."
-                )
-            classes = {str(c.value) for c in (card.target.classes or [])} if card.target else set()
-            view = self.wf.view(dv)
-            if dv.target:
-                for part in ("train", "val"):
-                    actual_classes = set(view.read(part)[dv.target].drop_nulls().to_list())
-                    if actual_classes != set(j.facts.classes or []):
-                        blockers.append(
-                            "Agregá más ejemplos o grupos de cada categoría: "
-                            "algunas no están representadas en aprendizaje y validación."
-                        )
-                        break
-            hashes = self.known_images(dv.id)
-            if len(set(hashes.values())) != len(hashes):
-                blockers.append(
-                    "Hay archivos idénticos. Conservá una copia por imagen en el ZIP "
-                    "para no repetir ejemplos entre aprendizaje y evaluación."
-                )
-            if classes != set(j.facts.classes or []):
-                blockers.append(
-                    "Las carpetas deben coincidir con las categorías confirmadas: "
-                    + ", ".join(j.facts.classes or [])
-                )
-            if any(not card.split_counts.get(s) for s in ("train", "val", "test")):
-                blockers.append("Agregá ejemplos o grupos para separar aprendizaje y evaluación.")
-            if card.images and card.images.corrupt:
-                blockers.append(
-                    f"Reemplazá {card.images.corrupt} imágenes ilegibles y volvé a cargar."
-                )
-            if card.target and any(c.count < 5 for c in card.target.classes or []):
-                blockers.append("Agregá al menos cinco ejemplos utilizables por categoría.")
-            if any(c.null_fraction > 0 for c in card.columns if c.name == dv.target):
-                blockers.append("Poné cada imagen dentro de la carpeta de su categoría.")
-            if card.images and card.images.near_duplicate_pairs:
-                warnings.append(
-                    "Hay imágenes similares. Agrupalas por objeto o sesión; "
-                    "no son evidencia independiente."
-                )
-            if card.num_samples < 100:
-                warnings.append(
-                    "Hay pocos ejemplos: el resultado es exploratorio. "
-                    "Validá con más objetos y condiciones nuevas."
-                )
-            self._change(
-                pid,
-                model_id=None,
-                run_id=None,
-                contract=None,
-                result=None,
-                validations=[],
-                dataset_id=dv.id,
-                blockers=blockers,
-                warnings=warnings,
-                state="awaiting_data" if blockers else "ready_to_train",
-                stage="awaiting_data" if blockers else "ready_to_train",
-            )
-
-        return self._launch(pid, j, work)
-
-    def train(self, pid: str, version: int) -> Journey:
-        from perceptron.api.jobs import TERMINAL
-        from perceptron.export.formats import ExportRequest
-        from perceptron.hpo.study import StudyResult
-        from perceptron.services.studies import new_study
-
-        j = self.checked(pid, version, {"ready_to_train", "failed", "interrupted"})
-        if not j.dataset_id or j.blockers or not j.confirmed:
-            raise ValidationError("Revisá los datos antes de entrenar.")
-        dataset_id = j.dataset_id
-        j.state, j.stage = "training", "preparing"
-
-        def work(job: JobContext) -> None:
-            def stopped() -> bool:
-                if self.get(pid).stop_requested:
-                    self._change(
-                        pid, state="interrupted", stage="interrupted", notification="interrupted"
-                    )
-                    return True
-                return False
-
-            if stopped():
-                return
-            pipeline = self.wf.propose_pipeline(dataset_id, pretrained=False)
-            arch, _ = self.wf.propose_architecture(dataset_id, pipeline.id)
-            budget = Budget(max_trials=2, max_epochs_per_trial=12, max_time_s=600)
-            strategy = self.wf.hpo_strategy(arch.id, budget, dataset_version_id=j.dataset_id)
-            study = new_study(self.ctx, pid, dataset_id, pipeline.id, arch.id, strategy)
-            self._change(pid, study_id=study.id)
-            if stopped():
-                return
-            child = self.ctx.launch_study(study)  # preserves remote quotas and worker selection
-            self._change(pid, child_job_id=child.id, stage="queued")
-            deadline = time.monotonic() + 660
-            timed_out = False
-            while True:
-                current = self.ctx.jobs.get(child.id)
-                if current is None:
-                    raise ValidationError("Se perdió el trabajo de entrenamiento. Reintentá.")
-                stop = self.get(pid).stop_requested
-                if current.status == "running" and self.get(pid).stage == "queued":
-                    self._change(pid, stage="learning")
-                timed_out = timed_out or time.monotonic() > deadline
-                if stop or timed_out:
-                    self.ctx.jobs.cancel(child.id)
-                if current.status in TERMINAL and (
-                    current.status != "cancelled" or current.finished_at is not None
-                ):
-                    break
-                time.sleep(0.5)
-            if stopped():
-                return
-            if timed_out or current.status != "succeeded":
-                raise ValidationError(
-                    "El entrenamiento no terminó. Revisá los datos o "
-                    "los recursos disponibles y reintentá."
-                )
-            result = StudyResult.model_validate(current.result)
-            if result.best_trial is None:
-                raise ValidationError(
-                    "No se obtuvo un modelo válido. Revisá los datos y reintentá."
-                )
-            rid = result.best_trial.run_id
-            self._change(pid, stage="evaluating", run_id=rid)
-            _, report = self.wf.evaluate(rid)
-            if stopped():
-                return
-            model = self.wf.register(rid)
-            self._change(pid, stage="preparing_prediction")
-            exported = self.wf.export(rid, ExportRequest())
-            if not exported.ok:
-                raise ValidationError(
-                    "El modelo entrenó, pero no pudo prepararse para predicciones."
-                )
-            contract = model.signature
-            if (
-                contract.get("inputs", {}).get("kind") != "image"
-                or contract.get("outputs", {}).get("task") != "classification"
-            ):
-                raise ValidationError("El contrato del modelo no es clasificación de imágenes.")
-            c = report.classification
-            if c is None:
-                raise ValidationError("No hay una evaluación de clasificación.")
-            matrix = c.confusion_matrix
-            total = sum(sum(row) for row in matrix)
-            correct = sum(matrix[i][i] for i in range(len(matrix)))
-            positive = c.labels.index(j.facts.positive_class or "")
-            misses = sum(matrix[positive]) - matrix[positive][positive]
-            alarms = sum(row[positive] for row in matrix) - matrix[positive][positive]
-            meets = bool(total and correct / total * 100 >= (j.facts.success_percent or 100))
-            if stopped():
-                return
-            self._change(
-                pid,
-                state="ready_to_validate" if meets else "needs_improvement",
-                stage="complete",
-                model_id=model.id,
-                contract=contract,
-                notification="training_finished",
-                result={
-                    "total": total,
-                    "correct": correct,
-                    "misses": misses,
-                    "false_alarms": alarms,
-                    "meets_target": meets,
-                },
-            )
-
-        return self._launch(pid, j, work)
+    def _stopped(self, pid: str) -> bool:
+        if self.get(pid).stop_requested:
+            self._change(pid, state="interrupted", stage="interrupted", notification="interrupted")
+            return True
+        return False
 
     def stop(self, pid: str, version: int) -> Journey:
         j = self.checked(pid, version, ACTIVE)
@@ -573,16 +421,581 @@ class Coordinator:
             self.ctx.jobs.cancel(j.child_job_id)
         return self.save(pid, j)
 
+    # ------------------------------------------------------------------ datos
+
+    def prepare(self, pid: str, version: int, source_id: str, target: str | None = None) -> Journey:
+        from perceptron.api.routers.data import _source_path
+        from perceptron.domain.models import DataSource
+
+        j = self.checked(pid, version, DATA_STATES)
+        if not j.confirmed:
+            raise ValidationError("Confirmá primero el resumen del caso.")
+        source = self.ctx.repo(DataSource).get(source_id)
+        if source.project_id != pid:
+            raise ValidationError("La fuente pertenece a otro proyecto.")
+        path = _source_path(self.ctx, source)
+        facts = j.facts
+        j.state, j.stage = "reviewing_data", "reviewing_data"
+        j.dataset_id = j.model_id = j.run_id = None
+        j.contract = j.form = j.result = j.data_summary = None
+        j.validations, j.blockers, j.warnings, j.columns, j.progress = [], [], [], [], {}
+        j.target = target
+
+        def work(job: JobContext) -> None:
+            self._review(pid, facts, path, source, target)
+
+        return self._launch(pid, j, work)
+
+    def _ingest(self, pid: str, facts: Facts, path: Any, source: Any, target: str | None) -> Any:
+        from perceptron.data.splits import SplitRequest
+
+        kind = facts.data_kind or "table"
+        task = (
+            TaskType.CLASSIFICATION if task_of(facts) == "classification" else TaskType.REGRESSION
+        )
+        split = None
+        if kind in ("images", "audio") and facts.grouped:
+            split = SplitRequest(strategy=SplitStrategy.GROUP, group_column="__image_group__")
+        if kind in ("images", "audio"):
+            return self.wf.ingest(
+                pid, path, split=split, source_record=source, modality=_KIND_MODALITY[kind]
+            )
+        wanted = target or facts.target_name
+        try:
+            return self.wf.ingest(
+                pid,
+                path,
+                target=wanted,
+                source_record=source,
+                modality=_KIND_MODALITY[kind],
+                task=task,
+            )
+        except (ValidationError, KeyError):
+            if not wanted:
+                raise
+        # La columna nombrada no está (o no sirve): se carga igual y se pide elegirla.
+        return self.wf.ingest(pid, path, source_record=source, modality=_KIND_MODALITY[kind])
+
+    def _review(self, pid: str, facts: Facts, path: Any, source: Any, target: str | None) -> None:
+        from perceptron.services.wizard import Wizard
+
+        dv = self._ingest(pid, facts, path, source, target)
+        card = self.wf.profile(dv.id)
+        if self._stopped(pid):
+            return
+        blockers, warnings = self._checks(facts, dv, card, target)
+        columns: list[str] = []
+        if facts.data_kind in ("table", "text"):
+            columns = [c.name for c in card.columns]
+            if card.target and card.target.name not in columns:
+                columns.append(card.target.name)
+        if not blockers:
+            # El borrador del wizard sigue al recorrido: datos, objetivo y plan del caso.
+            wizard = Wizard(self.wf)
+            for _ in range(3):
+                try:
+                    draft = wizard.get(pid)
+                    draft = wizard.update(
+                        pid,
+                        version=draft.version,
+                        values={
+                            "dataset_version_id": dv.id,
+                            "target": dv.target,
+                            "task": card.target.task_hint.value if card.target else None,
+                        },
+                    )
+                    break
+                except ConflictError:
+                    continue
+            plan = wizard.plan(wizard.get(pid))
+            warnings += [c.message for c in plan.checks if c.severity in ("high", "warning")]
+        self._change(
+            pid,
+            dataset_id=dv.id,
+            target=dv.target,
+            columns=columns,
+            data_summary=_data_summary(dv, card),
+            blockers=blockers,
+            warnings=list(dict.fromkeys(warnings)),
+            state="awaiting_data" if blockers else "ready_to_train",
+            stage="awaiting_data" if blockers else "ready_to_train",
+        )
+
+    def _checks(
+        self, facts: Facts, dv: Any, card: Any, target: str | None
+    ) -> tuple[list[str], list[str]]:
+        """Bloqueos (no se puede entrenar) y avisos (se puede, con cuidado) de los datos."""
+        from perceptron.data.profiling.card import AlertSeverity
+
+        blockers: list[str] = []
+        warnings: list[str] = []
+        kind = facts.data_kind
+        if kind in ("table", "text") and not dv.target:
+            blockers.append(
+                "Elegí cuál columna tiene el resultado que querés predecir."
+                + (f" No encontré «{facts.target_name}»." if facts.target_name else "")
+            )
+            return blockers, warnings
+        if card.num_samples < 20:
+            blockers.append(
+                f"Hay {card.num_samples} ejemplos: hacen falta al menos 20 para aprender algo."
+            )
+        classes = card.target.classes if card.target else None
+        if task_of(facts) == "classification":
+            counts = {str(c.value): c.count for c in classes or []}
+            if len(counts) < 2:
+                blockers.append(
+                    "El resultado tiene una sola categoría: hacen falta ejemplos de al menos dos."
+                )
+            few = [k for k, n in counts.items() if n < 5]
+            if few:
+                blockers.append(
+                    "Agregá al menos 5 ejemplos de cada categoría (faltan de: "
+                    + ", ".join(few[:10])
+                    + ")."
+                )
+            wanted = set(facts.classes or [])
+            if kind in ("images", "audio") and wanted and set(counts) != wanted:
+                blockers.append(
+                    "Las carpetas tienen que coincidir con las categorías del caso ("
+                    + ", ".join(sorted(wanted))
+                    + "); encontré: "
+                    + ", ".join(sorted(counts))
+                    + "."
+                )
+            if facts.positive_class and counts and facts.positive_class not in counts:
+                warnings.append(
+                    f"No encontré la categoría «{facts.positive_class}» en los datos: los "
+                    "resultados no van a poder contar sus omisiones y falsas alarmas."
+                )
+        if any(not card.split_counts.get(s) for s in ("train", "val", "test")):
+            blockers.append(
+                "Hacen falta más ejemplos para separar los de aprendizaje de los de evaluación."
+            )
+        if card.images and card.images.corrupt:
+            blockers.append(f"Reemplazá {card.images.corrupt} imágenes que no se pueden leer.")
+        if card.audio and card.audio.corrupt:
+            blockers.append(f"Reemplazá {card.audio.corrupt} audios que no se pueden leer.")
+        if kind == "table" and not blockers:
+            try:
+                pipeline = self.wf.propose_pipeline(dv.id)
+                self.wf.fitted_pipeline(pipeline.id, dv.id)
+            except ValidationError:
+                blockers.append(
+                    "Ninguna columna sirve como dato de entrada (son identificadores o están "
+                    "vacías). Agregá columnas con datos que influyan en el resultado."
+                )
+        for alert in card.alerts:
+            if alert.severity in (AlertSeverity.HIGH, AlertSeverity.WARNING):
+                warnings.append(alert.message)
+        if card.num_samples < 200:
+            warnings.append(
+                f"Hay pocos ejemplos ({card.num_samples}): el resultado es orientativo. Con más "
+                "casos variados mejora y es más confiable."
+            )
+        return blockers, warnings
+
+    # ------------------------------------------------------------------ entrenamiento
+
+    def train(self, pid: str, version: int) -> Journey:
+        j = self.checked(pid, version, TRAIN_STATES)
+        if not j.dataset_id or j.blockers or not j.confirmed:
+            raise ValidationError("Revisá los datos antes de entrenar.")
+        dataset_id, facts = j.dataset_id, j.facts
+        j.state, j.stage, j.progress = "training", "designing", {}
+        j.result = j.contract = j.form = j.model_id = j.run_id = None
+        j.validations = []
+
+        def work(job: JobContext) -> None:
+            self._train(pid, dataset_id, facts)
+
+        return self._launch(pid, j, work)
+
+    def _train(self, pid: str, dataset_id: str, facts: Facts) -> None:
+        from perceptron.api.jobs import TERMINAL
+        from perceptron.domain.models import Run
+        from perceptron.export.formats import ExportRequest
+        from perceptron.hpo.strategy import HPOStrategy
+        from perceptron.hpo.study import StudyResult
+        from perceptron.services.studies import new_study
+        from perceptron.services.wizard import Wizard
+
+        wizard = Wizard(self.wf)
+
+        # 1. Diseño guiado: requisitos del caso, propuestas evaluadas, comparación corta y plan.
+        def progress(stage: str) -> None:
+            self._change(pid, stage=f"design_{stage}")
+
+        outcome = wizard.design(pid, tournament="auto", progress=progress)
+        if self._stopped(pid):
+            return
+        if outcome.pick is None or outcome.strategy is None:
+            raise ValidationError("No se encontró una arquitectura para estos datos.")
+        strategy = HPOStrategy.model_validate(outcome.strategy)
+        if strategy.budget.max_time_s is None:
+            strategy = strategy.model_copy(
+                update={"budget": strategy.budget.model_copy(update={"max_time_s": DEFAULT_WAIT_S})}
+            )
+        self._accept_design(wizard, pid, outcome, strategy)
+        # 2. Entrenamiento por la cola del servidor (cuotas y workers como en el modo avanzado).
+        study = new_study(self.ctx, pid, dataset_id, outcome.pipeline_id, outcome.pick, strategy)
+        self._change(
+            pid,
+            study_id=study.id,
+            stage="queued",
+            design_reason=outcome.pick_reason,
+            progress={"done": 0, "total": strategy.budget.max_trials},
+        )
+        if self._stopped(pid):
+            return
+        child = self.ctx.launch_study(study)
+        self._change(pid, child_job_id=child.id)
+        deadline = time.monotonic() + (strategy.budget.max_time_s or DEFAULT_WAIT_S) * 1.5 + 600
+        timed_out, last_done = False, -1
+        while True:
+            current = self.ctx.jobs.get(child.id)
+            if current is None:
+                raise ValidationError("Se perdió el trabajo de entrenamiento. Reintentá.")
+            if current.status == "running":
+                runs = self.ctx.repo(Run).list(filters={"study_id": study.id}, limit=1000)
+                done = sum(1 for r in runs if r.status.value not in ("queued", "running"))
+                if done != last_done:
+                    last_done = done
+                    self._change(
+                        pid,
+                        stage="learning",
+                        progress={"done": done, "total": strategy.budget.max_trials},
+                    )
+            timed_out = timed_out or time.monotonic() > deadline
+            if self.get(pid).stop_requested or timed_out:
+                self.ctx.jobs.cancel(child.id)
+            if current.status in TERMINAL and (
+                current.status != "cancelled" or current.finished_at is not None
+            ):
+                break
+            time.sleep(1.0)
+        if self._stopped(pid):
+            return
+        if timed_out or current.status != "succeeded":
+            raise ValidationError(
+                "El entrenamiento no terminó. Revisá los datos o los recursos disponibles y "
+                "reintentá."
+            )
+        best = StudyResult.model_validate(current.result).best_trial
+        if best is None:
+            raise ValidationError("No se obtuvo un modelo válido. Revisá los datos y reintentá.")
+        rid = best.run_id
+        # 3. Evaluación en casos que el modelo nunca vio, registro y preparación para predecir.
+        self._change(pid, stage="evaluating", run_id=rid)
+        _, report = self.wf.evaluate(rid)
+        if self._stopped(pid):
+            return
+        model = self.wf.register(rid)
+        self._change(pid, stage="preparing_prediction")
+        exported = self.wf.export(rid, ExportRequest())
+        if not exported.ok:
+            raise ValidationError("El modelo entrenó, pero no pudo prepararse para predecir.")
+        dv = self.wf.dataset(dataset_id)
+        card = self.wf.profile_card(dataset_id)
+        typical = None
+        if card.target and card.target.numeric:
+            typical = card.target.numeric.quantiles.get("p50") or card.target.numeric.mean
+        result = summarize(report, facts, typical)
+        formula = self._formula(pid, dataset_id, facts, result)
+        if formula:
+            result["formula"] = formula
+        form = input_form(model.signature, card, _example_row(self.wf, dv))
+        if self._stopped(pid):
+            return
+        self._change(
+            pid,
+            state="ready_to_validate" if result["meets_target"] else "needs_improvement",
+            stage="complete",
+            model_id=model.id,
+            contract=model.signature,
+            form=form,
+            notification="training_finished",
+            result=result,
+        )
+
+    def _accept_design(self, wizard: Any, pid: str, outcome: Any, strategy: Any) -> None:
+        """El diseño elegido queda en el borrador del wizard (se ve en las opciones avanzadas)."""
+        for _ in range(3):
+            try:
+                draft = wizard.get(pid)
+                wizard.update(
+                    pid,
+                    version=draft.version,
+                    values={
+                        "archspec_id": outcome.pick,
+                        "strategy": strategy.model_dump(mode="json"),
+                        "max_trials": strategy.budget.max_trials,
+                        "max_epochs_per_trial": strategy.budget.max_epochs_per_trial,
+                    },
+                )
+                return
+            except ConflictError:
+                continue
+
+    def _formula(
+        self, pid: str, dataset_id: str, facts: Facts, result: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Con datos casi determinísticos, la fórmula exacta suele ganarle a la red y extrapola."""
+        if facts.data_kind != "table" or facts.problem not in ("value", "rule"):
+            return None
+        from perceptron.evaluation.symbolic import SymbolicConfig
+        from perceptron.services.symbolic import run_symbolic
+
+        if not self._near_deterministic(dataset_id):
+            return None
+        self._change(pid, stage="searching_formula")
+        try:
+            fit = run_symbolic(
+                self.ctx, pid, dataset_id, SymbolicConfig(time_limit_s=FORMULA_TIME_S)
+            )
+        except Exception:
+            logger.info("sin fórmula sugerida", exc_info=True)
+            return None
+        val = fit.metrics.get("val") or {}
+        r2 = val.get("r2")
+        better = r2 is not None and r2 >= (result.get("r2") or 0) + 0.0005
+        if better and r2 is not None:
+            result["explanation"].append(
+                f"Además encontré una fórmula exacta que explica el {100 * r2:.3f} % y sirve "
+                "también fuera del rango de los datos: " + fit.formula
+            )
+        return {
+            "id": fit.id,
+            "formula": fit.formula,
+            "excel": fit.excel_es,
+            "python": fit.python,
+            "r2": r2,
+            "better": better,
+        }
+
+    def _near_deterministic(self, dataset_id: str) -> bool:
+        """Una recta o una curva de las entradas explica prácticamente todo el resultado."""
+        from perceptron.data.schema import SemanticType
+        from perceptron.services.fit_checks import LINEAR_EXACT, measure_linearity
+
+        card = self.wf.profile_card(dataset_id)
+        if card.target is None:
+            return False
+        features = [
+            c.name
+            for c in card.columns
+            if c.semantic is SemanticType.NUMERIC and c.name != card.target.name
+        ]
+        if not features:
+            return False
+        view = self.wf.view(self.wf.dataset(dataset_id))
+        lin = measure_linearity(view, card.target.name, features)
+        return lin is not None and max(lin.r2_linear, lin.r2_curved) >= LINEAR_EXACT
+
+    # ------------------------------------------------------------------ validación y uso
+
     def contract(self, pid: str) -> Journey:
         j = self.get(pid)
-        if (
-            j.state not in {"ready_to_validate", "ready_to_use", "needs_improvement"}
-            or not j.model_id
-        ):
+        if j.state not in MODEL_STATES or not j.model_id:
             raise ValidationError("Todavía no hay un modelo preparado para probar.")
         model = self.ctx.repo(ModelVersion).get(j.model_id)
         if model.project_id != pid or model.run_id != j.run_id or model.signature != j.contract:
             raise ValidationError("El contrato no corresponde al modelo de este recorrido.")
-        if model.signature.get("inputs", {}).get("kind") != "image":
-            raise ValidationError("El modelo no admite esta entrada.")
         return j
+
+    def predict(
+        self,
+        j: Journey,
+        *,
+        row: dict[str, Any] | None = None,
+        text: str | None = None,
+        file: tuple[bytes, str] | None = None,
+    ) -> Any:
+        """Predicción del modelo del recorrido con lo que pide su contrato (nunca el real)."""
+        import io
+        import tempfile
+        from pathlib import Path
+
+        from perceptron.serving.runtime import InputError
+
+        model = self.wf.inference_model(j.run_id or "")
+        try:
+            if model.kind == "tabular":
+                if row is None:
+                    raise ValidationError("Completá los datos del caso.")
+                return model.predict_rows([row])[0]
+            if model.kind == "tokens":
+                if not (text or "").strip():
+                    raise ValidationError("Escribí el texto del caso.")
+                return model.predict_texts([text or ""])[0]
+            if file is None:
+                raise ValidationError("Subí el archivo del caso.")
+            data, suffix = file
+            if model.kind == "spectrogram":
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp) / f"audio{suffix or '.wav'}"
+                    path.write_bytes(data)
+                    return model.predict_audio([path])[0]
+            from PIL import Image, UnidentifiedImageError
+
+            try:
+                with Image.open(io.BytesIO(data)) as image:
+                    image.load()
+                    return model.predict_images([image])[0]
+            except (UnidentifiedImageError, OSError) as exc:
+                raise ValidationError("No se pudo leer la imagen. Probá un PNG o JPG.") from exc
+        except InputError as exc:
+            raise ValidationError(str(exc)) from exc
+
+    def record_validation(
+        self, pid: str, key: str, actual: Any, prediction: Any, model_id: str | None
+    ) -> Journey:
+        """Una comparación por caso nuevo (repetir un caso la reemplaza) y el veredicto."""
+        for _ in range(8):
+            j = self.contract(pid)
+            if j.model_id != model_id:
+                raise ConflictError("El modelo cambió durante la validación. Probá de nuevo.")
+            entry = _compare(j, key, actual, prediction)
+            j.validations = [v for v in j.validations if v["key"] != key] + [entry]
+            j.state = _validated_state(j)
+            try:
+                return self.save(pid, j)
+            except ConflictError:
+                continue
+        raise ConflictError("No se pudo registrar la validación.")
+
+    def seen_case(self, j: Journey, *, row: dict[str, Any] | None, digest: str | None) -> bool:
+        """El caso ya estaba en los datos de entrenamiento (no sirve para validar)."""
+        if not j.dataset_id:
+            return False
+        dv = self.wf.dataset(j.dataset_id)
+        view = self.wf.view(dv)
+        if digest is not None:
+            from perceptron.data.view import MANIFEST_FILE
+
+            manifest = json.loads((view.root / MANIFEST_FILE).read_text(encoding="utf-8"))
+            return digest in {e["sha256"] for e in manifest["entries"]}
+        if row is None or not j.form:
+            return False
+        names = [f.name for f in j.form.fields]
+        df = view.read()
+        if df.height > 200_000 or not names or any(n not in df.columns for n in names):
+            return False
+        wanted = tuple(_norm(row.get(n)) for n in names)
+        return any(
+            tuple(_norm(v) for v in values) == wanted for values in df.select(names).iter_rows()
+        )
+
+
+# ---------------------------------------------------------------------- utilidades
+
+
+def _norm(value: Any) -> str:
+    if value is None:
+        return ""
+    try:
+        return f"{float(value):.10g}"
+    except (TypeError, ValueError):
+        return str(value).strip().casefold()
+
+
+def _plain_error(exc: Exception) -> str:
+    message = getattr(exc, "message", None) or str(exc)
+    return str(message)[:1000]
+
+
+def _summary_text(f: Facts) -> str:
+    kind = {
+        "table": "una tabla",
+        "images": "imágenes",
+        "text": "textos",
+        "audio": "audios",
+    }.get(f.data_kind or "", "datos")
+    goal = {
+        "category": "elegir una categoría",
+        "value": "estimar un valor",
+        "rule": "descubrir la regla que genera el resultado",
+    }.get(f.problem or "", "predecir")
+    parts = [f"Entendí que con {kind} querés {goal}: {f.prediction}."]
+    if f.classes:
+        parts.append(f"Categorías: {', '.join(f.classes)}.")
+    if f.success_target is not None:
+        if f.problem == "category":
+            parts.append(f"El objetivo es acertar al menos el {f.success_target:g} %.")
+        else:
+            parts.append(f"El objetivo es un error típico de hasta {f.success_target:g} %.")
+    parts.append("Si está bien, confirmá el resumen y te explico qué datos necesito.")
+    return " ".join(parts)
+
+
+def _data_summary(dv: Any, card: Any) -> dict[str, Any]:
+    target = card.target
+    out: dict[str, Any] = {
+        "rows": card.num_samples,
+        "target": dv.target,
+        "inputs": [c.name for c in card.columns if not target or c.name != target.name],
+        "splits": card.split_counts,
+    }
+    if target and target.classes:
+        out["classes"] = [{"value": str(c.value), "count": c.count} for c in target.classes]
+    if target and target.numeric:
+        q = target.numeric.quantiles
+        out["range"] = {"low": q.get("p05"), "typical": q.get("p50"), "high": q.get("p95")}
+    return out
+
+
+def _example_row(wf: Workflow, dv: Any) -> dict[str, Any]:
+    """Un ejemplo de train para mostrar el formato esperado de cada campo (nunca test)."""
+    try:
+        df = wf.view(dv).read("train")
+    except Exception:
+        return {}
+    return df.row(0, named=True) if df.height else {}
+
+
+def _compare(j: Journey, key: str, actual: Any, prediction: Any) -> dict[str, Any]:
+    if (j.contract or {}).get("outputs", {}).get("task") == "regression":
+        try:
+            real, pred = float(actual), float(prediction)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError("El resultado real tiene que ser un número.") from exc
+        tolerance = (j.facts.success_target or 0) / 100 * abs(real)
+        error = abs(pred - real)
+        return {
+            "key": key,
+            "actual": real,
+            "prediction": pred,
+            "error": error,
+            "correct": error <= tolerance,
+        }
+    classes = [str(c) for c in (j.contract or {}).get("outputs", {}).get("classes", [])]
+    if classes and str(actual) not in classes:
+        raise ValidationError("El resultado real tiene que ser una de las categorías del modelo.")
+    return {
+        "key": key,
+        "actual": str(actual),
+        "prediction": str(prediction),
+        "correct": str(actual) == str(prediction),
+    }
+
+
+def _validated_state(j: Journey) -> State:
+    total = len(j.validations)
+    if total < VALIDATION_MIN:
+        return j.state if j.state in MODEL_STATES else "ready_to_validate"
+    classes = set((j.contract or {}).get("outputs", {}).get("classes", []) or [])
+    covered = not classes or {v["actual"] for v in j.validations} >= classes
+    rate = 100 * sum(v["correct"] for v in j.validations) / total
+    meets = rate >= (j.facts.success_target or 100) and bool((j.result or {}).get("meets_target"))
+    if j.facts.problem != "category":
+        meets = bool((j.result or {}).get("meets_target")) and rate >= 50
+    if not covered:
+        return j.state if j.state in MODEL_STATES else "ready_to_validate"
+    return "ready_to_use" if meets else "needs_improvement"
+
+
+def validation_key(*, row: dict[str, Any] | None, text: str | None, data: bytes | None) -> str:
+    if data is not None:
+        return hashlib.sha256(data).hexdigest()
+    payload = json.dumps(row, sort_keys=True, default=str) if row is not None else (text or "")
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()

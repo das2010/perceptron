@@ -1,9 +1,16 @@
-"""Guided journey API. Router-wide authentication/RBAC applies as for the advanced API."""
+"""API del asistente guiado. La autenticación y el RBAC del servidor aplican como al resto.
+
+Las predicciones usan los endpoints del Playground con `journey.run_id` (`predictRows`,
+`predictTexts`, `predictFile`); acá quedan las acciones del recorrido y la validación con casos
+nuevos, que compara contra el resultado real sin que ese dato entre al modelo.
+"""
 
 from __future__ import annotations
 
+import csv
 import io
-from typing import Annotated, Literal, get_args
+from pathlib import Path
+from typing import Annotated, Any, Literal, get_args
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
@@ -11,11 +18,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from perceptron.api.context import EngineContext, get_context
 from perceptron.api.security import MB, read_limited
 from perceptron.core.errors import ValidationError
-from perceptron.services.journey import Coordinator, Facts, Journey, State
+from perceptron.services.journey import Coordinator, Journey, State, validation_key
+from perceptron.services.journey_guide import Facts
 from perceptron.services.workflow import Workflow
 
 router = APIRouter(tags=["journey"])
 Ctx = Annotated[EngineContext, Depends(get_context)]
+BATCH_MAX = 500
 
 
 class JourneyAction(BaseModel):
@@ -25,6 +34,7 @@ class JourneyAction(BaseModel):
     message: str = Field(default="", max_length=4000)
     facts: Facts | None = None
     source_id: str | None = None
+    target: str | None = Field(default=None, description="Columna con el resultado (tablas)")
     language: Literal["es", "en"] = "es"
 
 
@@ -40,14 +50,14 @@ def act_journey(project_id: str, body: JourneyAction, ctx: Ctx) -> Journey:
         return c.revise(project_id, body.version)
     if body.action == "message":
         if not body.message.strip() and body.facts is None:
-            raise ValidationError("Escribí una respuesta o completá un dato esencial.")
+            raise ValidationError("Escribí una respuesta o completá el dato que falta.")
         return c.interview(project_id, body.version, body.message, body.facts, body.language)
     if body.action == "confirm":
         return c.confirm(project_id, body.version)
     if body.action == "prepare":
         if not body.source_id:
-            raise ValidationError("Cargá primero las imágenes.")
-        return c.prepare(project_id, body.version, body.source_id)
+            raise ValidationError("Subí primero los datos.")
+        return c.prepare(project_id, body.version, body.source_id, body.target)
     if body.action == "train":
         return c.train(project_id, body.version)
     if body.action == "stop":
@@ -57,100 +67,108 @@ def act_journey(project_id: str, body: JourneyAction, ctx: Ctx) -> Journey:
     return c.save(project_id, j)
 
 
-class GuidedPrediction(BaseModel):
-    prediction: str
-    actual: str | None = None
-    correct: bool | None = None
+class ValidationCase(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    row: dict[str, Any] | None = Field(default=None, description="Campos del caso (tablas)")
+    text: str | None = Field(default=None, max_length=20_000)
+    actual: str | float = Field(description="Resultado real, solo para comparar")
+
+
+class GuidedValidation(BaseModel):
+    prediction: Any
+    actual: Any
+    correct: bool
+    checked: int = Field(default=1, description="Casos comparados en esta llamada")
     journey: Journey
 
 
-@router.post("/projects/{project_id}/journey/predict", operation_id="predictJourney")
-async def predict_journey(
-    project_id: str,
-    ctx: Ctx,
-    file: Annotated[UploadFile, File()],
-) -> GuidedPrediction:
-    return await _predict_journey(project_id, ctx, file)
-
-
 @router.post("/projects/{project_id}/journey/validate", operation_id="validateJourney")
-async def validate_journey(
-    project_id: str,
-    ctx: Ctx,
-    file: Annotated[UploadFile, File()],
-    actual: Annotated[str, Form()],
-) -> GuidedPrediction:
-    return await _predict_journey(project_id, ctx, file, actual)
+def validate_journey(project_id: str, body: ValidationCase, ctx: Ctx) -> GuidedValidation:
+    """Un caso nuevo (fila o texto) con su resultado real: se predice sin el real y se compara."""
+    c = Coordinator(Workflow(ctx))
+    j = c.contract(project_id)
+    if c.seen_case(j, row=body.row, digest=None):
+        raise ValidationError(
+            "Ese caso ya estaba en los datos que subiste: validá con un caso nuevo."
+        )
+    pred = c.predict(j, row=body.row, text=body.text)
+    key = validation_key(row=body.row, text=body.text, data=None)
+    j = c.record_validation(project_id, key, body.actual, pred.prediction, j.model_id)
+    last = j.validations[-1]
+    return GuidedValidation(
+        prediction=last["prediction"], actual=last["actual"], correct=last["correct"], journey=j
+    )
 
 
-async def _predict_journey(
+@router.post("/projects/{project_id}/journey/validate/file", operation_id="validateJourneyFile")
+async def validate_journey_file(
     project_id: str,
     ctx: Ctx,
     file: Annotated[UploadFile, File()],
     actual: Annotated[str | None, Form()] = None,
-) -> GuidedPrediction:
-    from PIL import Image, UnidentifiedImageError
-
+) -> GuidedValidation:
+    """Una imagen o un audio con su resultado real, o un CSV de casos nuevos con la columna del
+    resultado (tablas y textos): se predice sin esa columna y se compara caso por caso."""
     c = Coordinator(Workflow(ctx))
     j = c.contract(project_id)
-    if not j.run_id:
-        raise ValidationError("No hay un modelo asociado al recorrido.")
-    prediction_model_id = j.model_id
-    classes = (j.contract or {}).get("outputs", {}).get("classes", [])
-    if actual is not None and actual not in classes:
-        raise ValidationError("El resultado real debe ser una categoría del modelo.")
-    data = await read_limited(file, 20 * MB)
-    import hashlib
-
-    digest = hashlib.sha256(data).hexdigest()
-    if actual is not None and j.dataset_id and digest in c.known_images(j.dataset_id).values():
+    data = await read_limited(file, 50 * MB)
+    suffix = Path(file.filename or "").suffix.lower()
+    kind = str((j.contract or {}).get("inputs", {}).get("kind"))
+    if kind in ("tabular", "tokens"):
+        return _validate_batch(c, project_id, j, data, kind)
+    if actual is None:
+        raise ValidationError("Indicá el resultado real de este caso.")
+    digest = validation_key(row=None, text=None, data=data)
+    if c.seen_case(j, row=None, digest=digest):
         raise ValidationError(
-            "Esta imagen ya estaba en los datos originales. "
-            "Validá con una imagen nueva de otro objeto o sesión."
+            "Ese archivo ya estaba en los datos que subiste: validá con uno nuevo."
         )
-    try:
-        with Image.open(io.BytesIO(data)) as image:
-            image.load()
-            # Ground truth NEVER enters inference, preprocessing, or the LLM.
-            model = c.wf.inference_model(j.run_id)
-            if any(model.signature.get(key) != value for key, value in (j.contract or {}).items()):
-                raise ValidationError("La firma del archivo no coincide con el modelo registrado.")
-            prediction = model.predict_images([image])[0]
-    except (UnidentifiedImageError, OSError, ValueError) as exc:
-        raise ValidationError("No se pudo leer la imagen. Probá un PNG o JPG válido.") from exc
-    label = str(prediction.prediction)
-    if label not in classes:
-        raise ValidationError("La predicción no corresponde a las categorías del modelo.")
-    if actual is not None:
-        # One vote per image, even after reconnect/retry. No original image is retained.
-        j = c.contract(project_id)
-        if j.model_id != prediction_model_id:
-            from perceptron.core.errors import ConflictError
+    pred = c.predict(j, file=(data, suffix))
+    j = c.record_validation(project_id, digest, actual, pred.prediction, j.model_id)
+    last = j.validations[-1]
+    return GuidedValidation(
+        prediction=last["prediction"], actual=last["actual"], correct=last["correct"], journey=j
+    )
 
-            raise ConflictError("El modelo cambió durante la predicción. Probá la imagen de nuevo.")
-        j.validations = [v for v in j.validations if v["image_hash"] != digest]
-        j.validations.append(
-            {
-                "image_hash": digest,
-                "actual": actual,
-                "prediction": label,
-                "correct": actual == label,
-            }
+
+def _validate_batch(
+    c: Coordinator, project_id: str, j: Journey, data: bytes, kind: str
+) -> GuidedValidation:
+    target = j.target
+    rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))[:BATCH_MAX]
+    if not rows:
+        raise ValidationError("El archivo no tiene casos.")
+    if not target or target not in rows[0]:
+        raise ValidationError(
+            f"El archivo tiene que incluir la columna «{target}» con el resultado real."
         )
-        total = len(j.validations)
-        correct = sum(v["correct"] for v in j.validations)
-        covered = {v["actual"] for v in j.validations} == set(classes)
-        if total >= 10 and covered:
-            meets = correct / total * 100 >= (j.facts.success_percent or 100)
-            j.state = (
-                "ready_to_use"
-                if meets and (j.result or {}).get("meets_target")
-                else "needs_improvement"
-            )
-        j = c.save(project_id, j)
-    return GuidedPrediction(
-        prediction=label,
-        actual=actual,
-        correct=actual == label if actual is not None else None,
+    text_col = next((k for k in rows[0] if k != target), None)
+    last: dict[str, Any] = {}
+    checked = 0
+    for raw in rows:
+        actual = raw.pop(target, None)
+        if actual in (None, ""):
+            continue
+        if kind == "tokens":
+            text = raw.get(text_col or "", "")
+            pred = c.predict(j, text=text)
+            key = validation_key(row=None, text=text, data=None)
+        else:
+            if c.seen_case(j, row=raw, digest=None):
+                continue
+            pred = c.predict(j, row=raw)
+            key = validation_key(row=raw, text=None, data=None)
+        j = c.record_validation(project_id, key, actual, pred.prediction, j.model_id)
+        last = j.validations[-1]
+        checked += 1
+    if not checked:
+        raise ValidationError(
+            "No quedaron casos nuevos para comparar (o les falta el resultado real)."
+        )
+    return GuidedValidation(
+        prediction=last["prediction"],
+        actual=last["actual"],
+        correct=last["correct"],
+        checked=checked,
         journey=j,
     )
