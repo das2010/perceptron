@@ -26,6 +26,7 @@ import {
   useHpoStrategy,
   useProposeArchitecture,
   useProposePipeline,
+  useUpdatePipeline,
   type ArchProposals,
   type HPOStrategy,
   type Pipeline,
@@ -37,6 +38,45 @@ import { CostEstimate } from "./CostEstimate";
 import { AssessmentChecks, NotRecommendedNote, RequirementsPanel } from "./DesignRequirements";
 
 type Proposal = ArchProposals["proposals"][number];
+
+/** Escala logarítmica del objetivo: la preparación la sugiere, pero queda apagada hasta que el
+ * usuario la active (objetivos que abarcan varios órdenes de magnitud). */
+function LogTarget({
+  pipeline,
+  onChange,
+}: {
+  pipeline: Pipeline;
+  onChange: (p: Pipeline) => void;
+}) {
+  const { t } = useTranslation();
+  const update = useUpdatePipeline(pipeline.id ?? "");
+  const graph = pipeline.graph as unknown as Schemas["PipelineSpec"];
+  const target = graph.target;
+  if (!target || target.task !== "regression" || !(target.log_suggested || target.log)) return null;
+  return (
+    <div className="mt-3 text-sm">
+      <label className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={target.log}
+          disabled={update.isPending}
+          onChange={(e) =>
+            update.mutate(
+              { ...graph, target: { ...target, log: e.target.checked } },
+              { onSuccess: onChange },
+            )
+          }
+        />
+        <span>
+          {t("train.logTarget")}
+          <span className="block text-xs text-muted">{t("train.logTargetHint")}</span>
+        </span>
+      </label>
+      <ErrorNote error={update.error} />
+    </div>
+  );
+}
 
 function Step({
   n,
@@ -201,6 +241,7 @@ export function TrainPage() {
             ))}
           </ul>
         )}
+        {pipeline && <LogTarget pipeline={pipeline} onChange={setPipeline} />}
         <ErrorNote error={proposePipeline.error} />
       </Step>
 

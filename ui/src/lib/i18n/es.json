@@ -281,6 +281,8 @@
     },
     "dataset": "Versión de datos",
     "proposePipeline": "Proponer preparación",
+    "logTarget": "Entrenar el objetivo en escala logarítmica (sugerido)",
+    "logTargetHint": "El resultado abarca varios órdenes de magnitud: en escala logarítmica el error es relativo y no hay predicciones negativas. Se vuelve a la escala original al predecir.",
     "proposeArch": "Proponer arquitecturas",
     "fallback": "Se usaron reglas: {{reason}}",
     "byRules": "Por reglas",

@@ -51,8 +51,9 @@ def test_curved_data_linear_model_is_flagged(
         ),
         201,
     )
-    # Objetivo de 1,5 a 194 000: se entrena con log(1 + y) (error relativo).
-    assert pipe["graph"]["target"]["log"] is True
+    # Objetivo de 1,5 a 194 000: se sugiere log(1 + y) (error relativo), pero queda apagado.
+    assert pipe["graph"]["target"]["log"] is False
+    assert pipe["graph"]["target"]["log_suggested"] is True
     assert any("órdenes de magnitud" in r for r in pipe["graph"]["rationale"])
     props = _ok(
         client.post(

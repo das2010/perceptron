@@ -8888,6 +8888,7 @@ export interface components {
              * @default false
              */
             log: boolean;
+            log_suggested: boolean;
             /** Name */
             name: string;
             /**

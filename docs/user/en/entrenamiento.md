@@ -79,6 +79,22 @@ memory and estimated time per epoch.
 Every proposal is **validated** before it is shown: schema, shape compatibility, memory against what is
 available, and availability and license of pretrained weights.
 
+**Shape of the data.** In regression, Perceptron compares how much a straight line and a curve
+explain:
+
+- If the data are curved, it requires a proposal with hidden layers.
+- If a straight line explains everything, it requires the linear one.
+- If the data are **almost deterministic** (over 99.99 %), it suggests **Find the formula**: an
+  exact formula is usually far more precise than a network and works outside the data range. In
+  that case the hyperparameter search keeps dropout at 0.
+
+**Target on a logarithmic scale.** If the target is positive and spans several orders of
+magnitude (for example, from 13 to 194,000), the preparation **suggests** training it with
+log(1 + y). The error becomes relative: no negative values and even precision for small and large
+values. Predictions are converted back to the original scale. The suggestion is **off**: to use
+it, in **Train** tick “Train the target on a logarithmic scale (suggested)” after proposing the
+preparation. It is not suggested when the relationship is a straight line.
+
 The catalog covers, among others: MLP, ResNet-MLP and FT-Transformer (tabular); a compact CNN or curated
 pretrained models such as EfficientNet (image); detection, U-Net and CRNN for OCR (advanced vision);
 TextCNN, BiLSTM and pretrained encoders (text); N-BEATS, LSTM/GRU, TCN, PatchTST and autoencoders

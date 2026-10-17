@@ -289,7 +289,7 @@ WIDE_RANGE = 20.0  # (p95 + 1) / (p05 + 1) a partir del cual el objetivo abarca 
 
 
 def log_target_reason(card: Any, linearity: Linearity | None) -> str | None:
-    """Motivo para entrenar con log(1 + y), o None.
+    """Motivo para sugerir entrenar con log(1 + y), o None (la sugerencia queda apagada).
 
     Caso «Tabla X» (salida de 13 a 194 000): con el error absoluto, la red quedaba bien en los
     valores grandes y daba negativos en los chicos (−2091 para 27). Con log el error es
@@ -308,8 +308,9 @@ def log_target_reason(card: Any, linearity: Linearity | None) -> str | None:
         return None
     return (
         f"El objetivo abarca varios órdenes de magnitud (entre {p05:,.0f} y {p95:,.0f} en el 90 % "
-        "central): se entrena con log(1 + y) para que el error sea relativo y no haya "
-        "predicciones negativas; al predecir se vuelve a la escala original."
+        "central). Sugerencia: entrenar en escala logarítmica, log(1 + y), para que el error "
+        "sea relativo y no haya predicciones negativas; al predecir se vuelve a la escala "
+        "original. Está apagada: activala en la preparación si la querés usar."
     ).replace(",", ".")
 
 

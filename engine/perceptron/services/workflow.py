@@ -252,7 +252,8 @@ class Workflow:
             if reason:
                 spec = spec.model_copy(
                     update={
-                        "target": spec.target.model_copy(update={"log": True}),
+                        # Solo se sugiere: el usuario decide si entrenar en escala logarítmica.
+                        "target": spec.target.model_copy(update={"log_suggested": True}),
                         "rationale": [*spec.rationale, reason],
                     }
                 )

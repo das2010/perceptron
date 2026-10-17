@@ -37,6 +37,11 @@ class TargetSpec(BaseModel):
         description="Regresión: se entrena con log(1 + y) (objetivo positivo que abarca varios "
         "órdenes de magnitud: el error pasa a ser relativo). Se deshace al predecir.",
     )
+    log_suggested: bool = Field(
+        default=False,
+        description="La preparación sugiere `log` para este objetivo; queda apagado hasta que el "
+        "usuario lo active.",
+    )
     classes: list[str] | None = Field(
         default=None, description="Clases fijas (detección/segmentación)"
     )

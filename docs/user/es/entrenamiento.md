@@ -111,9 +111,11 @@ curva:
   En ese caso la búsqueda de hiperparámetros deja el dropout en 0.
 
 **Objetivo en escala logarítmica.** Si el objetivo es positivo y abarca varios órdenes de magnitud
-(por ejemplo, de 13 a 194.000), la preparación lo entrena con log(1 + y). Así el error es relativo:
-no da valores negativos y la precisión es pareja en valores chicos y grandes. Al predecir se vuelve
-a la escala original. No se aplica si la relación es una recta.
+(por ejemplo, de 13 a 194.000), la preparación **sugiere** entrenarlo con log(1 + y). Así el error
+es relativo: no da valores negativos y la precisión es pareja en valores chicos y grandes. Al
+predecir se vuelve a la escala original. La sugerencia viene **apagada**: para usarla, en
+**Entrenar** marcá «Entrenar el objetivo en escala logarítmica (sugerido)» después de proponer la
+preparación. No se sugiere si la relación es una recta.
 
 **Requisitos de diseño.** Arriba de las propuestas, Perceptron muestra qué exige tu escenario. Los
 deduce de tus datos, de tu equipo y de la ficha del caso. Algunos ejemplos:

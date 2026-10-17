@@ -281,6 +281,8 @@
     },
     "dataset": "Data version",
     "proposePipeline": "Propose preparation",
+    "logTarget": "Train the target on a logarithmic scale (suggested)",
+    "logTargetHint": "The result spans several orders of magnitude: on a logarithmic scale the error is relative and there are no negative predictions. Predictions are converted back to the original scale.",
     "proposeArch": "Propose architectures",
     "fallback": "Rules were used: {{reason}}",
     "byRules": "By rules",
