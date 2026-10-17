@@ -47,7 +47,7 @@ test("asistente guiado: de la descripción del problema a validar el modelo", as
   await page.getByRole("button", { name: "Sí, es esto" }).click();
 
   // 2. Los datos: guía con ejemplo y plantilla; se sube el CSV.
-  await expect(page.getByText("Qué datos necesito")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Qué datos necesito" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Descargar plantilla" })).toBeVisible();
   await page.getByLabel("Subir los datos").setInputFiles(CHURN);
 
@@ -63,7 +63,7 @@ test("asistente guiado: de la descripción del problema a validar el modelo", as
   await train.click();
 
   // 4. Entrenamiento automático con etapas; aviso al terminar.
-  await expect(page.getByText("Trabajando en tu modelo")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Trabajando en tu modelo" })).toBeVisible();
   await expect(page.getByText("Tu modelo terminó de entrenar. Mirá el resultado.")).toBeVisible({
     timeout: 13 * 60_000,
   });
