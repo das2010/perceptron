@@ -78,7 +78,7 @@ export function Layout() {
   const me = useSession();
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-dvh flex-col">
       <header className="flex items-center justify-between border-b border-line bg-card px-4 py-2">
         <Link
           to="/"

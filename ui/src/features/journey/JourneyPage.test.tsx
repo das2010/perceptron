@@ -198,7 +198,7 @@ it("datos: el asistente lo cuenta en el hilo y adjunta la guía y la subida", as
   expect(screen.getByLabelText("Subir los datos")).toHaveAttribute("accept", ".csv,.xlsx");
   // Siempre se le puede preguntar algo al asistente.
   await userEvent.type(
-    screen.getByPlaceholderText("Preguntame lo que quieras sobre cómo preparar los datos…"),
+    screen.getByPlaceholderText("Preguntame sobre los datos…"),
     "¿Sirve un Excel?{Enter}",
   );
   expect(await posted(calls)).toMatchObject({ action: "message", message: "¿Sirve un Excel?" });

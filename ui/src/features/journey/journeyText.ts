@@ -55,7 +55,11 @@ export function quickReplies(t: T, field: string, facts: Facts): QuickReply[] {
   if (field === "success_target") {
     const category = facts.problem === "category";
     return (category ? [70, 80, 90, 95] : [5, 10, 20]).map((n) => ({
-      label: t(category ? "journey.quick.hits" : "journey.quick.error", { n, of: n / 10 }),
+      label: t(category ? "journey.quick.hits" : "journey.quick.error", {
+        n,
+        of: n % 10 === 0 ? n / 10 : n / 5,
+        den: n % 10 === 0 ? 10 : 20,
+      }),
       facts: { success_target: n },
     }));
   }

@@ -154,6 +154,9 @@ class Turn(BaseModel):
     action: str | None = Field(
         default=None, description="Acción que ofrece el asistente (se acepta con un clic)"
     )
+    chat: bool = Field(
+        default=False, description="Pregunta libre y su respuesta, fuera de los pasos del recorrido"
+    )
 
 
 class Journey(BaseModel):
@@ -429,14 +432,15 @@ class Coordinator:
         clic. Nunca cambia el estado por su cuenta."""
         j = self.checked(pid, version, set(CHAT_ACTIONS))
         j.language = "en" if language == "en" else "es"
-        j.messages.append(Turn(role="user", text=message, step=_step(j)))
+        j.messages.append(Turn(role="user", text=message, step=_step(j), chat=True))
         j = self.save(pid, j)
         reply = self._chat_llm(pid, j)
         allowed = CHAT_ACTIONS.get(j.state, set())
         action = reply.action if reply and reply.action in allowed else None
         text = reply.reply.strip() if reply else talk.step_help(j.state, j.language)
         return self._change(
-            pid, say=Turn(role="assistant", text=text, step=_step(j), action=action)
+            pid,
+            say=Turn(role="assistant", text=text, step=_step(j), action=action, chat=True),
         )
 
     def _chat_llm(self, pid: str, j: Journey) -> AssistantReply | None:

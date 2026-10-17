@@ -232,6 +232,7 @@ def test_conversation_continues_after_the_interview(ctx: Any, fake_llm: Any) -> 
     j = c.ask(pid, j.version, "¿Puedo subir un Excel?")
     assert j.state == "awaiting_data" and j.messages[-2].text == "¿Puedo subir un Excel?"
     assert j.messages[-1].text.startswith("No pude consultar a la IA")
+    assert j.messages[-1].chat and j.messages[-2].chat and not j.messages[-3].chat
     # El LLM ofrece una acción: solo si está permitida en la etapa (sin datos no se entrena).
     fake_llm.script("copilot", {"reply": "Primero subí tus datos.", "action": "train"})
     j = c.ask(pid, j.version, "Entrená ya")

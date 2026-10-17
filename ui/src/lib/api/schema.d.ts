@@ -9239,6 +9239,7 @@ export interface components {
             field?: string | null;
             options?: string[];
             action?: string | null;
+            chat?: boolean;
         };
         /** UploadStart */
         UploadStart: {

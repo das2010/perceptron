@@ -75,6 +75,7 @@ export const journeyEs = {
     tree: "Así tiene que quedar el ZIP",
     template: "Descargar plantilla",
     upload: "Subir los datos",
+    drop: "Arrastrá el archivo acá o tocá para elegirlo ({{formats}})",
     uploading: "Subiendo y revisando…",
     tips: "Consejos",
     chooseTarget: "¿Cuál columna tiene el resultado?",
@@ -170,12 +171,12 @@ export const journeyEs = {
   correct: "Corregir algo",
   noAi: "Sin IA disponible: te guío con preguntas y respuestas rápidas.",
   composer: {
-    case: "Escribí tu respuesta o contame más…",
-    data: "Preguntame lo que quieras sobre cómo preparar los datos…",
-    review: "Preguntame lo que quieras sobre tus datos…",
-    training: "Preguntame lo que quieras mientras entreno…",
-    validate: "Preguntame lo que quieras sobre el resultado…",
-    use: "Preguntame lo que quieras sobre el modelo…",
+    case: "Escribí tu respuesta…",
+    data: "Preguntame sobre los datos…",
+    review: "Preguntame sobre tus datos…",
+    training: "Preguntame lo que quieras…",
+    validate: "Preguntame sobre el resultado…",
+    use: "Preguntame sobre el modelo…",
   },
   quick: {
     data_kind: {
@@ -200,7 +201,7 @@ export const journeyEs = {
     labels_available: { yes: "Sí, ya está la respuesta", no: "No, eso no lo tengo" },
     extrapolate: { yes: "Sí, con valores fuera de rango", no: "No, casos parecidos" },
     grouped: { yes: "Sí, varias del mismo", no: "No, una por cada uno" },
-    hits: "{{of}} de cada 10 ({{n}} %)",
+    hits: "{{of}} de cada {{den}} ({{n}} %)",
     error: "Hasta un {{n}} % de error",
   },
   homeSubtitle:
@@ -295,6 +296,7 @@ export const journeyEn: typeof journeyEs = {
     tree: "This is how the ZIP should look",
     template: "Download template",
     upload: "Upload the data",
+    drop: "Drag the file here or click to choose it ({{formats}})",
     uploading: "Uploading and checking…",
     tips: "Tips",
     chooseTarget: "Which column has the result?",
@@ -390,12 +392,12 @@ export const journeyEn: typeof journeyEs = {
   correct: "Correct something",
   noAi: "No AI available: I'll guide you with questions and quick answers.",
   composer: {
-    case: "Type your answer or tell me more…",
-    data: "Ask me anything about preparing the data…",
-    review: "Ask me anything about your data…",
-    training: "Ask me anything while I train…",
-    validate: "Ask me anything about the result…",
-    use: "Ask me anything about the model…",
+    case: "Type your answer…",
+    data: "Ask me about the data…",
+    review: "Ask me about your data…",
+    training: "Ask me anything…",
+    validate: "Ask me about the result…",
+    use: "Ask me about the model…",
   },
   quick: {
     data_kind: {
@@ -420,7 +422,7 @@ export const journeyEn: typeof journeyEs = {
     labels_available: { yes: "Yes, the answer is there", no: "No, I don't have that" },
     extrapolate: { yes: "Yes, with out-of-range values", no: "No, similar cases" },
     grouped: { yes: "Yes, several of the same", no: "No, one each" },
-    hits: "{{of}} out of 10 ({{n}} %)",
+    hits: "{{of}} out of {{den}} ({{n}} %)",
     error: "Up to {{n}} % off",
   },
   homeSubtitle:

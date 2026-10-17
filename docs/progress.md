@@ -400,3 +400,8 @@ wizard avanzado con el motivo. Reutiliza la ficha del wizard, `Wizard.design`, e
 evaluación, el registro, la exportación y el Playground. Las herramientas técnicas siguen en
 «Opciones avanzadas». Detalle y límites: [guided-journey.md](guided-journey.md). Reemplaza la
 entrega previa solo de imágenes.
+
+Conversación natural (2026-10-17): un solo hilo de punta a punta, con acuse, respuestas a dudas,
+respuestas rápidas, narración de cada etapa y preguntas libres en cualquier etapa (`Coordinator.ask`).
+Sin IA, preguntas redactadas por tipo de datos y lectura de respuestas escritas. Golden de
+conversación con proveedores reales y transcripciones como artefacto.

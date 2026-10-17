@@ -20,6 +20,14 @@ def _lang(language: str) -> Language:
     return "en" if language.startswith("en") else "es"
 
 
+def _join(items: list[str], language: str, last: str | None = None) -> str:
+    """«a», «b» y «c» (o “a”, “b” and “c”)."""
+    en = _lang(language) == "en"
+    quoted = [f"“{i}”" if en else f"«{i}»" for i in items]
+    word = last or ("and" if en else "y")
+    return quoted[0] if len(quoted) == 1 else f"{', '.join(quoted[:-1])} {word} {quoted[-1]}"
+
+
 def _about(f: Facts, language: str) -> str:
     """«qué se predice» con las palabras de la persona, para armar las preguntas."""
     if f.prediction:
@@ -104,12 +112,20 @@ def question(field: str, f: Facts, language: str = "es") -> str:
             "classes": f"What are the possible answers? For example: {answers}.",
             "error_costs": "No system is right every time. What worries you more: missing a "
             "case that did matter, or getting warnings about cases that turn out fine?",
-            "positive_class": "Which answer matters most to catch"
-            + (f": {', '.join(f.classes)}?" if f.classes else "?"),
+            "positive_class": (
+                f"Which one matters most to catch: {_join(f.classes, language, 'or')}?"
+                if f.classes
+                else "Which answer matters most to catch?"
+            ),
             "extrapolate": "Will you use it with cases similar to the ones you have, or with "
             "values bigger or smaller than those in your data?",
-            "grouped": "Do you have several photos or recordings of the same object, person or "
-            "session? I need it to test the model fairly, on objects it never saw.",
+            "grouped": (
+                "Do you have several recordings of the same machine, person or session? "
+                if f.data_kind == "audio"
+                else "Do you have several photos of the same object, for example the same part "
+                "from different angles? "
+            )
+            + "I need it to test the model fairly, on objects it never saw.",
             "success_target": (
                 "How often would it need to be right to be useful? For example, 8 out of 10 (80 %)."
                 if f.problem == "category"
@@ -142,12 +158,20 @@ def question(field: str, f: Facts, language: str = "es") -> str:
         "classes": f"¿Cuáles son las respuestas posibles? Por ejemplo: {answers}.",
         "error_costs": "Ningún sistema acierta siempre. ¿Qué te preocupa más: que se le escape "
         "un caso que sí importaba, o que te avise de más con casos que estaban bien?",
-        "positive_class": "¿Cuál de las respuestas es la que más te importa detectar"
-        + (f": {', '.join(f.classes)}?" if f.classes else "?"),
+        "positive_class": (
+            f"¿Cuál es la que más te importa detectar: {_join(f.classes, language, 'o')}?"
+            if f.classes
+            else "¿Cuál de las respuestas es la que más te importa detectar?"
+        ),
         "extrapolate": "¿Lo vas a usar con casos parecidos a los que ya tenés, o con valores más "
         "grandes o más chicos que los de tus datos?",
-        "grouped": "¿Tenés varias fotos o grabaciones del mismo objeto, persona o sesión? Lo "
-        "necesito para probar el modelo de forma justa, con objetos que nunca vio.",
+        "grouped": (
+            "¿Tenés varias grabaciones de la misma máquina, persona o sesión? "
+            if f.data_kind == "audio"
+            else "¿Tenés varias fotos del mismo objeto, por ejemplo la misma pieza desde distintos "
+            "ángulos? "
+        )
+        + "Lo necesito para probar el modelo de forma justa, con objetos que nunca vio.",
         "success_target": (
             "¿Qué tan seguido tendría que acertar para que te sirva? Por ejemplo, 8 de cada 10 "
             "(80 %)."
@@ -192,7 +216,7 @@ def summary(f: Facts, language: str = "es") -> str:
         }.get(f.problem or "", "you want to predict this")
         parts = [f"Let me check I got it right: you have {kind} and {goal}: {about}."]
         if f.classes:
-            parts.append(f"The possible answers are {', '.join(f.classes)}.")
+            parts.append(f"The possible answers are {_join(f.classes, language)}.")
         if f.error_costs == "false_negative_worse":
             parts.append("Missing an important case is worse than a false alarm.")
         elif f.error_costs == "false_positive_worse":
@@ -212,7 +236,7 @@ def summary(f: Facts, language: str = "es") -> str:
     }.get(f.problem or "", "querés predecir esto")
     parts = [f"A ver si entendí bien: tenés {kind} y {goal}: {about}."]
     if f.classes:
-        parts.append(f"Las respuestas posibles son {', '.join(f.classes)}.")
+        parts.append(f"Las respuestas posibles son {_join(f.classes, language)}.")
     if f.error_costs == "false_negative_worse":
         parts.append("Que se escape un caso importante es peor que una falsa alarma.")
     elif f.error_costs == "false_positive_worse":
@@ -357,7 +381,7 @@ def step_help(state: str, language: str = "es") -> str:
     """Respuesta cuando la persona escribe y no hay LLM: qué se puede hacer ahora."""
     en = _lang(language) == "en"
     es_help = {
-        "awaiting_data": "Ahora necesito tus datos: seguí el ejemplo de abajo y subilos acá.",
+        "awaiting_data": "Ahora necesito tus datos: seguí el ejemplo que te mostré y subilos ahí.",
         "reviewing_data": "Estoy revisando tus datos; en un momento te cuento qué encontré.",
         "ready_to_train": "Tus datos están listos. Cuando quieras, tocá «Preparar y entrenar».",
         "training": "Estoy entrenando el modelo; te aviso cuando termine.",
@@ -366,12 +390,12 @@ def step_help(state: str, language: str = "es") -> str:
             f"Con {VALIDATION_MIN} casos queda listo para usar."
         ),
         "needs_improvement": "Podés subir datos nuevos o volver a entrenar desde acá.",
-        "ready_to_use": "Completá los datos de un caso abajo y te digo el resultado.",
+        "ready_to_use": "Completá los datos de un caso en el formulario y te digo el resultado.",
         "failed": "Algo falló; podés reintentar o subir otros datos.",
         "interrupted": "El trabajo quedó detenido; podés retomarlo cuando quieras.",
     }
     en_help = {
-        "awaiting_data": "Now I need your data: follow the example below and upload it here.",
+        "awaiting_data": "Now I need your data: follow the example I showed you and upload it.",
         "reviewing_data": "I'm checking your data; I'll tell you what I found in a moment.",
         "ready_to_train": "Your data is ready. Whenever you want, click “Prepare and train”.",
         "training": "I'm training the model; I'll let you know when it's done.",
@@ -380,7 +404,7 @@ def step_help(state: str, language: str = "es") -> str:
             f"{VALIDATION_MIN} cases it's ready to use."
         ),
         "needs_improvement": "You can upload new data or retrain from here.",
-        "ready_to_use": "Fill in a case below and I'll tell you the result.",
+        "ready_to_use": "Fill in a case in the form and I'll tell you the result.",
         "failed": "Something went wrong; you can retry or upload other data.",
         "interrupted": "The work was stopped; you can resume it whenever you want.",
     }

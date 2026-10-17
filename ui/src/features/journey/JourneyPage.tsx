@@ -7,7 +7,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Bell } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button, Card, ErrorNote, Field, Select, Spinner } from "@/components/ui";
@@ -26,7 +26,7 @@ import {
   UsePanel,
   ValidatePanel,
 } from "./JourneyPanels";
-import { Bubble, Chips, Composer, Typing } from "./JourneyThread";
+import { Bubble, Chips, Composer, DropZone, Typing } from "./JourneyThread";
 import { factValue, fieldLabel, type QuickReply, quickReplies } from "./journeyText";
 
 type Action = Omit<Schemas["JourneyAction"], "version" | "language" | "message"> & {
@@ -301,30 +301,27 @@ export function JourneyPage() {
     </details>
   );
 
-  // Lo que hace falta para la acción actual, adjunto al final de la conversación.
+  // Lo que hace falta para la acción actual va pegado al mensaje que lo presentó: las
+  // preguntas libres posteriores (y sus respuestas) quedan debajo, como en cualquier chat.
+  const anchor = messages.findLastIndex((m) => m.step === step && !m.chat);
   const attachment = (() => {
     if (step === "data" && j.guide)
       return (
         <Card>
           <GuideView guide={j.guide} />
           <div className="mt-4">
-            <Field label={t("journey.data.upload")}>
-              <input
-                type="file"
-                multiple={j.guide.layout === "table"}
-                accept={(j.guide.accept ?? []).join(",")}
-                disabled={busy}
-                aria-label={t("journey.data.upload")}
-                onChange={(e) => {
-                  const files = Array.from(e.target.files ?? []);
-                  if (files.length)
-                    upload.mutate(files, {
-                      onSuccess: (data) => send({ action: "prepare", source_id: data.source.id }),
-                    });
-                  e.target.value = "";
-                }}
-              />
-            </Field>
+            <DropZone
+              label={t("journey.data.upload")}
+              hint={t("journey.data.drop", { formats: (j.guide.accept ?? []).join(", ") })}
+              accept={(j.guide.accept ?? []).join(",")}
+              multiple={j.guide.layout === "table"}
+              disabled={busy}
+              onFiles={(files) =>
+                upload.mutate(files, {
+                  onSuccess: (data) => send({ action: "prepare", source_id: data.source.id }),
+                })
+              }
+            />
             {upload.isPending && <p role="status">{t("journey.data.uploading")}</p>}
           </div>
           {j.source_id && (j.columns ?? []).length > 0 && j.guide.layout === "table" && (
@@ -433,9 +430,10 @@ export function JourneyPage() {
           <Bubble turn={{ role: "assistant", text: t("journey.welcome") }} />
         )}
         {messages.map((m, i) => (
-          <Bubble key={i} turn={m}>
-            {m === lastSaid && !sending && actionButtons}
-          </Bubble>
+          <Fragment key={i}>
+            <Bubble turn={m}>{m === lastSaid && !sending && actionButtons}</Bubble>
+            {i === anchor && attachment}
+          </Fragment>
         ))}
         {sending && !(last?.role === "user" && last.text === sending) && (
           <Bubble turn={{ role: "user", text: sending }} />
@@ -443,7 +441,7 @@ export function JourneyPage() {
         {sending && <Typing />}
         {!sending && <Chips replies={replies} disabled={busy} onPick={pick} />}
         {factsPanel}
-        {!sending && attachment}
+        {anchor < 0 && !sending && attachment}
         <div ref={end} className="scroll-mb-40" />
       </section>
       <div className="sticky bottom-0 space-y-1 bg-canvas pb-4 pt-2">

@@ -2,7 +2,7 @@
  * El hilo de la conversación con el asistente: burbujas, respuestas rápidas, el «escribiendo…»
  * y la caja de texto, siempre disponible en todas las etapas.
  */
-import { SendHorizontal, Sparkles } from "lucide-react";
+import { SendHorizontal, Sparkles, Upload } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -142,5 +142,59 @@ export function Composer({
         <SendHorizontal className="h-4 w-4" aria-hidden="true" />
       </Button>
     </form>
+  );
+}
+
+/** Arrastrar y soltar el archivo, o elegirlo: más claro que el selector del navegador. */
+export function DropZone({
+  label,
+  hint,
+  accept,
+  multiple,
+  disabled,
+  onFiles,
+}: {
+  label: string;
+  hint: string;
+  accept: string;
+  multiple: boolean;
+  disabled: boolean;
+  onFiles: (files: File[]) => void;
+}) {
+  const [over, setOver] = useState(false);
+  return (
+    <label
+      onDragOver={(e) => {
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length && !disabled) onFiles(multiple ? files : files.slice(0, 1));
+      }}
+      className={`flex cursor-pointer flex-col items-center gap-1 rounded-2xl border-2 border-dashed p-6 text-center transition ${
+        over ? "border-brand bg-canvas" : "border-line hover:border-brand"
+      } ${disabled ? "pointer-events-none opacity-60" : ""}`}
+    >
+      <Upload className="h-6 w-6 text-brand" aria-hidden="true" />
+      <span className="font-semibold">{label}</span>
+      <span className="text-xs text-muted">{hint}</span>
+      <input
+        type="file"
+        className="sr-only"
+        accept={accept}
+        multiple={multiple}
+        disabled={disabled}
+        aria-label={label}
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          if (files.length) onFiles(files);
+          e.target.value = "";
+        }}
+      />
+    </label>
   );
 }
