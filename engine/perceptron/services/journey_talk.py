@@ -8,6 +8,7 @@ LLM, cuando está, reemplaza estas frases por otras más ajustadas; nunca decide
 
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
 from perceptron.services.journey_guide import VALIDATION_MIN, Facts
@@ -28,22 +29,79 @@ def _about(f: Facts, language: str) -> str:
 
 # ---------------------------------------------------------------------- preguntas
 
+# Ejemplos según el tipo de datos: (dos respuestas, qué se predice, respuestas posibles).
+_EXAMPLES_ES = {
+    "table": (
+        "«se va» o «se queda»",
+        "«si el cliente se va a dar de baja el mes que viene»",
+        "«se va» y «se queda»",
+    ),
+    "images": (
+        "«con fisura» o «sana»",
+        "«si la pieza de la foto tiene una fisura»",
+        "«con fisura» y «sin fisura»",
+    ),
+    "text": (
+        "«reclamo» o «consulta»",
+        "«de qué tema es cada mensaje»",
+        "«facturación», «envíos» y «garantía»",
+    ),
+    "audio": (
+        "«falla» o «normal»",
+        "«si el motor de la grabación tiene una falla»",
+        "«normal» y «falla»",
+    ),
+}
+_EXAMPLES_EN = {
+    "table": (
+        "“leaves” or “stays”",
+        "“whether the customer will cancel next month”",
+        "“leaves” and “stays”",
+    ),
+    "images": (
+        "“cracked” or “fine”",
+        "“whether the part in the photo has a crack”",
+        "“cracked” and “not cracked”",
+    ),
+    "text": (
+        "“complaint” or “question”",
+        "“what topic each message is about”",
+        "“billing”, “shipping” and “warranty”",
+    ),
+    "audio": (
+        "“fault” or “normal”",
+        "“whether the engine in the recording has a fault”",
+        "“normal” and “fault”",
+    ),
+}
+
 
 def question(field: str, f: Facts, language: str = "es") -> str:
     """La próxima pregunta, redactada para el caso, con un ejemplo concreto."""
     about = _about(f, language)
     if _lang(language) == "en":
+        two, what, answers = _EXAMPLES_EN.get(f.data_kind or "", _EXAMPLES_EN["table"])
         en = {
             "data_kind": "To start: how do you keep that information? For example in a "
             "spreadsheet (Excel or CSV), as photos, as texts or as recordings.",
             "problem": "What would you like the system to tell you for each case? It can pick "
-            "one of several answers (like “leaves” or “stays”), estimate a number (like a "
+            f"one of several answers (like {two}), estimate a number (like a "
             "price) or discover the formula behind a result.",
             "prediction": "Tell me in your own words what you want to know about each case. "
-            "For example: “whether the customer will cancel next month”.",
-            "labels_available": f"Do your records already show {about} for past cases? For "
-            "example, a column that says what actually happened.",
-            "classes": "What are the possible answers? For example: “cracked” and “not cracked”.",
+            f"For example: {what}.",
+            "labels_available": {
+                "images": "Do you already have the photos sorted by the right answer? For "
+                "example, one folder per answer.",
+                "audio": "Do you already have the recordings sorted by the right answer? For "
+                "example, one folder per answer.",
+                "text": "Do your texts already have the right answer? For example, each "
+                "message with its topic.",
+            }.get(
+                f.data_kind or "",
+                f"Does your spreadsheet already show {about} for past cases? For example, a "
+                "column that says what actually happened.",
+            ),
+            "classes": f"What are the possible answers? For example: {answers}.",
             "error_costs": "No system is right every time. What worries you more: missing a "
             "case that did matter, or getting warnings about cases that turn out fine?",
             "positive_class": "Which answer matters most to catch"
@@ -60,17 +118,28 @@ def question(field: str, f: Facts, language: str = "es") -> str:
             ),
         }
         return en.get(field, "Tell me a bit more about your case.")
+    two, what, answers = _EXAMPLES_ES.get(f.data_kind or "", _EXAMPLES_ES["table"])
     es = {
         "data_kind": "Para empezar: ¿cómo tenés guardada esa información? Por ejemplo, en una "
         "planilla (Excel o CSV), en fotos, en textos o en grabaciones.",
         "problem": "¿Qué te gustaría que te diga el sistema para cada caso? Puede elegir entre "
-        "varias respuestas (como «se va» o «se queda»), estimar un número (como un precio) o "
+        f"varias respuestas (como {two}), estimar un número (como un precio) o "
         "descubrir la fórmula que hay detrás de un resultado.",
-        "prediction": "Contame con tus palabras qué querés saber de cada caso. Por ejemplo: «si "
-        "el cliente se va a dar de baja el mes que viene».",
-        "labels_available": f"En tus registros, ¿ya figura {about} de casos pasados? Por "
-        "ejemplo, una columna que diga qué pasó realmente.",
-        "classes": "¿Cuáles son las respuestas posibles? Por ejemplo: «con fisura» y «sin fisura».",
+        "prediction": "Contame con tus palabras qué querés saber de cada caso. Por ejemplo: "
+        f"{what}.",
+        "labels_available": {
+            "images": "¿Ya tenés las fotos separadas según la respuesta correcta? Por ejemplo, "
+            "una carpeta para cada respuesta.",
+            "audio": "¿Ya tenés las grabaciones separadas según la respuesta correcta? Por "
+            "ejemplo, una carpeta para cada respuesta.",
+            "text": "¿Tus textos ya tienen la respuesta correcta? Por ejemplo, cada mensaje con "
+            "su tema.",
+        }.get(
+            f.data_kind or "",
+            f"En tu planilla, ¿ya figura {about} en casos pasados? Por ejemplo, una columna que "
+            "diga qué pasó en cada caso.",
+        ),
+        "classes": f"¿Cuáles son las respuestas posibles? Por ejemplo: {answers}.",
         "error_costs": "Ningún sistema acierta siempre. ¿Qué te preocupa más: que se le escape "
         "un caso que sí importaba, o que te avise de más con casos que estaban bien?",
         "positive_class": "¿Cuál de las respuestas es la que más te importa detectar"
@@ -321,3 +390,45 @@ def step_help(state: str, language: str = "es") -> str:
         else "No pude consultar a la IA para responderte eso. "
     )
     return prefix + (en_help if en else es_help).get(state, "")
+
+
+# ---------------------------------------------------------------------- sin LLM: la respuesta
+
+_YES = {"si", "sí", "s", "yes", "y", "claro", "dale", "correcto", "exacto", "obvio", "seguro"}
+_NO = {"no", "n", "nop", "nope", "para nada"}
+
+
+def understand(field: str | None, text: str) -> dict[str, Any] | None:
+    """Sin LLM: lo que respondió la persona a la pregunta que se le acaba de hacer, cuando se
+    puede leer sin ambigüedad (texto libre, lista, porcentaje, sí o no). None si no se entiende:
+    entonces se vuelve a preguntar con las respuestas rápidas."""
+    answer = " ".join(text.split()).strip(" .!¡¿?")
+    if not field or not answer:
+        return None
+    if field in ("prediction", "target_name"):
+        return {field: answer[:300]}
+    if field in ("classes", "input_names"):
+        parts = [
+            p.strip(" .«»\"'") for p in re.split(r",|;|\s+y\s+|\s+o\s+|\s+and\s+|\s+or\s+", answer)
+        ]
+        items = list(dict.fromkeys(p for p in parts if p))
+        return {field: items} if len(items) >= (2 if field == "classes" else 1) else None
+    if field == "positive_class":
+        return {field: answer.strip("«»\"'")[:100]}
+    if field == "success_target":
+        ratio = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:de cada|out of|of every|/)\s*(\d+)", answer)
+        if ratio:
+            value = 100 * float(ratio.group(1).replace(",", ".")) / float(ratio.group(2))
+        else:
+            number = re.search(r"\d+(?:[.,]\d+)?", answer)
+            if not number:
+                return None
+            value = float(number.group(0).replace(",", "."))
+        return {field: round(value, 1)} if 0 < value <= 100 else None
+    if field in ("labels_available", "extrapolate", "grouped"):
+        first = re.split(r"[\s,.;:!]+", answer.casefold(), maxsplit=1)[0]
+        if first in _YES:
+            return {field: True}
+        if first in _NO or answer.casefold() in _NO:
+            return {field: False}
+    return None

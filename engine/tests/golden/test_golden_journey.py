@@ -52,13 +52,16 @@ def converse(c: Coordinator, name: str, first: str, answer: Answer) -> tuple[Any
     for _ in range(MAX_TURNS):
         said = [m for m in j.messages if m.role == "assistant"]
         if said:
-            log.append(f"ASISTENTE: {said[-1].text}")
+            extra = f"  [pregunta: {said[-1].field}; opciones: {said[-1].options}]"
+            log.append(f"ASISTENTE: {said[-1].text}" + (extra if said[-1].field else ""))
         log.append(
             f"   datos: {json.dumps(j.facts.model_dump(exclude_none=True), ensure_ascii=False)}"
         )
         if not j.pending or j.state != "interview":
             break
-        reply = answer(j.pending[0], said[-1].text if said else "")
+        # Como una persona: responde lo que le preguntaron, no lo que falta en la lista.
+        asked = said[-1].field if said and said[-1].field else j.pending[0]
+        reply = answer(asked, said[-1].text if said else "")
         log.append(f"PERSONA: {reply}")
         j = c.interview(project.id, j.version, reply)
     folder = os.environ.get("PERCEPTRON_TRANSCRIPTS")
@@ -142,3 +145,44 @@ def test_cracks_in_photos_with_a_question_back(coordinator: Coordinator) -> None
     assert not j.pending, text
     assert j.facts.data_kind == "images" and j.facts.grouped is True, text
     assert j.facts.error_costs == "false_negative_worse", text
+
+
+def test_questions_after_the_interview(coordinator: Coordinator) -> None:
+    """Con el caso confirmado, la persona pregunta y pide cosas: respuestas con el estado real,
+    sin jerga, y solo acciones permitidas (sin datos no se entrena)."""
+    from perceptron.services.journey_guide import Facts
+
+    project = coordinator.ctx.projects.add(Project(name="chat"))
+    coordinator.ctx.files.init_project(project)
+    facts = Facts(
+        data_kind="table",
+        problem="category",
+        prediction="si el cliente se va a dar de baja",
+        labels_available=True,
+        error_costs="false_negative_worse",
+        positive_class="se va",
+        success_target=80,
+    )
+    j = coordinator.interview(project.id, 1, "Quiero saber qué clientes se van", facts)
+    j = coordinator.confirm(project.id, j.version)
+    log = [f"ASISTENTE: {j.messages[-1].text}"]
+    for message in (
+        "¿Puedo subir el Excel tal como sale del sistema, con varias hojas?",
+        "¿Para qué necesitás tantos ejemplos?",
+        "Dale, entrená ya",
+    ):
+        j = coordinator.ask(project.id, j.version, message)
+        log += [
+            f"PERSONA: {message}",
+            f"ASISTENTE: {j.messages[-1].text} [acción: {j.messages[-1].action}]",
+        ]
+    folder = os.environ.get("PERCEPTRON_TRANSCRIPTS")
+    if folder:
+        Path(folder).mkdir(parents=True, exist_ok=True)
+        provider = os.environ.get("PERCEPTRON_LLM__PROFILE", "llm")
+        Path(folder, f"{provider}-chat.txt").write_text("\n".join(log) + "\n", encoding="utf-8")
+    text = "\n".join(log)
+    replies = [m for m in j.messages if m.role == "assistant"][-3:]
+    assert all(m.text and not m.text.startswith("No pude consultar") for m in replies), text
+    assert all(not JARGON.search(m.text) for m in replies), text
+    assert j.state == "awaiting_data" and replies[-1].action is None, text

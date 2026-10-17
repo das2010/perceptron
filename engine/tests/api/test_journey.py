@@ -466,3 +466,23 @@ def test_table_journey_trains_validates_and_predicts(
     body = r.json()
     assert body["checked"] == 12 and len(body["journey"]["validations"]) == 13
     assert body["journey"]["state"] in {"ready_to_use", "needs_improvement", "ready_to_validate"}
+
+
+def test_without_llm_written_answers_to_the_last_question_are_understood(ctx: Any) -> None:
+    from perceptron.services.journey_talk import understand
+
+    assert understand("classes", "con fisura y sin fisura") == {
+        "classes": ["con fisura", "sin fisura"]
+    }
+    assert understand("success_target", "8 de cada 10") == {"success_target": 80.0}
+    assert understand("success_target", "un 15 %") == {"success_target": 15.0}
+    assert understand("grouped", "Sí, saco 3 fotos de cada pieza") == {"grouped": True}
+    assert understand("labels_available", "no") == {"labels_available": False}
+    assert understand("error_costs", "no sé") is None  # elegir entre opciones: botones
+    p = ctx.projects.add(Project(name="Fisuras"))
+    c = Coordinator(Workflow(ctx))
+    j = c.interview(p.id, 1, "", Facts(data_kind="images", problem="category"))
+    assert j.messages[-1].field == "prediction"
+    j = c.interview(p.id, j.version, "si la pieza tiene una fisura")
+    assert j.facts.prediction == "si la pieza tiene una fisura"
+    assert j.messages[-1].field == "labels_available" and "carpeta" in j.messages[-1].text

@@ -20,6 +20,7 @@ actualizan con compare-and-swap por versión (también en SQLite) antes de lanza
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import logging
@@ -338,6 +339,15 @@ class Coordinator:
         j = self.save(pid, j)  # lo escrito queda guardado aunque falle el LLM
         # Siempre hay respuesta: del LLM si está, si no, redactada para el caso (journey_talk).
         out = self._ask_llm(pid, j, language) if message else None
+        if out is None and message and facts is None:
+            # Sin LLM: la respuesta a la pregunta que se acaba de hacer, si se entiende sola.
+            asked = next(
+                (m.field for m in reversed(j.messages[:-1]) if m.role == "assistant"), None
+            )
+            read = talk.understand(asked, message)
+            if read:
+                with contextlib.suppress(ValueError):
+                    j.facts = Facts.model_validate({**j.facts.model_dump(), **read})
         j.pending = list(missing(j.facts))
         j.unsupported = unsupported_reason(j.facts)
         j.state = "unsupported" if j.unsupported else "interview"

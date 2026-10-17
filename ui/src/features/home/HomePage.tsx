@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Cpu, PackageOpen, Plus } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { ArrowRight, Cpu, PackageOpen, Plus } from "lucide-react";
+import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -18,6 +18,7 @@ import {
   Spinner,
   Textarea,
 } from "@/components/ui";
+import { FIRST_MESSAGE } from "@/features/journey/JourneyPage";
 import { EngineStatus } from "@/features/system/EngineStatus";
 import {
   useCreateProject,
@@ -28,7 +29,6 @@ import {
   type ProjectTemplate,
 } from "@/lib/api/hooks";
 import { formatDate } from "@/lib/format";
-import { getApiClient } from "@/lib/api/client";
 
 const PRIVACY = ["L0", "L1", "L2", "L3"] as const;
 
@@ -149,6 +149,7 @@ function HardwareCard() {
 export function HomePage() {
   const { t, i18n } = useTranslation();
   const [problem, setProblem] = useState("");
+  const box = useRef<HTMLTextAreaElement>(null);
   const guidedCreate = useCreateProject();
   const [open, setOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -158,6 +159,25 @@ export function HomePage() {
   const all = Array.isArray(data) ? data : [];
   const archivedCount = all.filter((p) => p.status === "archived").length;
   const projects = showArchived ? all : all.filter((p) => p.status !== "archived");
+
+  const start = () => {
+    const text = problem.trim();
+    if (!text || guidedCreate.isPending) return;
+    guidedCreate.mutate(
+      { name: text.slice(0, 80), goal: text, privacy_level: "L1", description: "", template: null },
+      {
+        onSuccess: (p) => {
+          // La conversación arranca en el proyecto, con el «escribiendo…» del asistente.
+          try {
+            sessionStorage.setItem(FIRST_MESSAGE(p.id), text);
+          } catch {
+            // Sin almacenamiento de sesión: la persona lo vuelve a escribir allá.
+          }
+          void navigate({ to: "/projects/$projectId", params: { projectId: p.id } });
+        },
+      },
+    );
+  };
 
   return (
     <>
@@ -194,54 +214,58 @@ export function HomePage() {
           </details>
         }
       />
-      <Card className="mb-4">
+      <div className="mb-10 max-w-3xl">
+        <p className="mb-4 text-lg text-muted">{t("journey.homeSubtitle")}</p>
         <form
-          className="space-y-3"
+          className="rounded-2xl border-2 border-line bg-card p-3 shadow-sm transition focus-within:border-brand"
           onSubmit={(e) => {
             e.preventDefault();
-            guidedCreate.mutate(
-              {
-                name: problem.trim().slice(0, 80),
-                goal: problem.trim(),
-                privacy_level: "L1",
-                description: "",
-                template: null,
-              },
-              {
-                onSuccess: async (p) => {
-                  try {
-                    await (
-                      await getApiClient()
-                    ).POST("/api/v1/projects/{project_id}/journey", {
-                      params: { path: { project_id: p.id } },
-                      body: {
-                        action: "message",
-                        version: 1,
-                        message: problem.trim(),
-                        language: i18n.language.startsWith("en") ? "en" : "es",
-                      },
-                    });
-                  } finally {
-                    void navigate({ to: "/projects/$projectId", params: { projectId: p.id } });
-                  }
-                },
-              },
-            );
+            start();
           }}
         >
-          <Textarea
+          <textarea
             required
+            rows={4}
+            autoFocus
+            ref={box}
             aria-label={t("journey.title")}
             value={problem}
             onChange={(e) => setProblem(e.target.value)}
-            placeholder={t("journey.example")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                start();
+              }
+            }}
+            placeholder={t("journey.homePlaceholder")}
+            className="w-full resize-none bg-transparent px-2 py-1 text-lg text-ink outline-none placeholder:text-muted focus-visible:outline-none"
           />
-          <Button type="submit" disabled={!problem.trim()} loading={guidedCreate.isPending}>
-            {t("journey.begin")}
-          </Button>
-          <ErrorNote error={guidedCreate.error} />
+          <div className="flex items-center justify-between gap-3 px-2">
+            <span className="text-xs text-muted">{t("journey.enterHint")}</span>
+            <Button type="submit" disabled={!problem.trim()} loading={guidedCreate.isPending}>
+              {t("journey.begin")}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </div>
         </form>
-      </Card>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted">{t("journey.tryOne")}</span>
+          {(["sales", "cracks", "messages"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => {
+                setProblem(t(`journey.examples.${k}`));
+                box.current?.focus();
+              }}
+              className="rounded-full border border-line px-3 py-1 text-sm hover:border-brand hover:text-brand"
+            >
+              {t(`journey.examples.${k}`)}
+            </button>
+          ))}
+        </div>
+        <ErrorNote error={guidedCreate.error} />
+      </div>
       <details>
         <summary className="mb-3 cursor-pointer text-sm text-muted">
           {t("journey.advanced")}

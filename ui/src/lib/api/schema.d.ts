@@ -6070,6 +6070,8 @@ export interface components {
         };
         /** Journey */
         Journey: {
+            /** @enum {string} */
+            language?: "es" | "en";
             /** Assumptions */
             assumptions?: string[];
             /** Blockers */
@@ -9233,6 +9235,10 @@ export interface components {
             role: "user" | "assistant";
             /** Text */
             text: string;
+            step?: "case" | "data" | "review" | "training" | "validate" | "use" | null;
+            field?: string | null;
+            options?: string[];
+            action?: string | null;
         };
         /** UploadStart */
         UploadStart: {
