@@ -53,6 +53,39 @@ Etiquetado (`journey_guide.unsupported_reason`).
    En imágenes y audio, solo el archivo. La predicción va por el Playground con el run
    registrado.
 
+## Conversación
+
+Toda la experiencia es una sola conversación. El asistente cuenta cada etapa en el mismo hilo,
+y el control de la acción actual (guía y subida de datos, revisión, etapas de entrenamiento,
+validación, formulario de uso) va pegado al mensaje que lo presentó. Siempre se le puede
+escribir: lo que se pregunta después queda debajo, como en cualquier chat.
+
+- **Cada respuesta tiene contestación.** Con IA, el asistente acusa lo que entendió con las
+  palabras de la persona, responde dudas y hace una sola pregunta adaptada al caso, con 2 a 4
+  respuestas rápidas propuestas (prompt `copilot/journey-v3`). Si la IA no responde, pregunta
+  por un dato que ya se contestó o hace una pregunta sin campo, se usa la pregunta redactada
+  para el tipo de datos (`journey_talk.question`). Así no hay silencios ni preguntas
+  repetidas.
+- **Sin IA** (sin proveedor, L0 o error): las preguntas están redactadas y traen respuestas
+  rápidas. Lo escrito a mano se entiende cuando responde la pregunta anterior: texto libre,
+  listas («con fisura y sin fisura»), porcentajes y «8 de cada 10», sí/no
+  (`journey_talk.understand`).
+- **Después de la entrevista**, `Coordinator.ask` responde con el estado real del recorrido:
+  datos pedidos, revisión, avance, resultado y validaciones (prompt `copilot/journey_chat`). Si
+  corresponde, ofrece una acción permitida en esa etapa («Preparar y entrenar», «Detener»,
+  «Corregir el caso») para aceptar con un botón; nunca cambia el estado por su cuenta.
+- **Inicio** es una caja de conversación con ejemplos para tocar. El primer mensaje se envía al
+  abrir el proyecto, con «escribiendo…». Enter envía y Shift+Enter agrega una línea.
+- **Aviso al terminar:** queda en la conversación, con un punto en la pestaña del navegador y,
+  si la persona lo permite, una notificación del sistema.
+
+**Cómo se mide.** `engine/tests/golden/test_golden_journey.py` conversa con proveedores reales:
+personas simuladas que responden en lenguaje natural, cuentan todo de entrada, preguntan «¿qué
+querés decir?» o piden acciones. Verifica que el caso quede completo y sin jerga, y guarda las
+transcripciones como artefacto (`llm.yml`, filtro `golden_filter=journey`). Con el prompt
+anterior, en tres casos el asistente quedó callado varios turnos y repitió seis veces la misma
+pregunta; con el actual, cada turno acusa, responde y pregunta una sola cosa.
+
 ## Arquitectura
 
 - `services/journey_guide.py` (puro): `Facts`, `missing`, `unsupported_reason`, `to_brief`,

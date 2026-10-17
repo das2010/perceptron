@@ -6106,6 +6106,12 @@ export interface components {
             /** Job Id */
             job_id?: string | null;
             /**
+             * Language
+             * @default es
+             * @enum {string}
+             */
+            language: "es" | "en";
+            /**
              * Llm Failed
              * @default false
              */
@@ -9227,10 +9233,36 @@ export interface components {
         /** Turn */
         Turn: {
             /**
+             * Action
+             * @description Acción que ofrece el asistente (se acepta con un clic)
+             */
+            action?: string | null;
+            /**
+             * Chat
+             * @description Pregunta libre y su respuesta, fuera de los pasos del recorrido
+             * @default false
+             */
+            chat: boolean;
+            /**
+             * Field
+             * @description Dato que pregunta el asistente
+             */
+            field?: ("data_kind" | "problem" | "prediction" | "labels_available" | "classes" | "error_costs" | "positive_class" | "extrapolate" | "grouped" | "success_target" | "target_name" | "input_names") | null;
+            /**
+             * Options
+             * @description Respuestas rápidas sugeridas
+             */
+            options?: string[];
+            /**
              * Role
              * @enum {string}
              */
             role: "user" | "assistant";
+            /**
+             * Step
+             * @description Etapa del recorrido en que se dijo
+             */
+            step?: ("case" | "data" | "review" | "training" | "validate" | "use") | null;
             /** Text */
             text: string;
         };

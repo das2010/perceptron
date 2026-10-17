@@ -30,7 +30,7 @@ import {
 import { postForm } from "@/lib/api/upload";
 import { formatNumber } from "@/lib/format";
 
-import { factValue, fieldLabel } from "./journeyText";
+import { factValue, fieldLabel, humanize } from "./journeyText";
 
 export type Journey = Schemas["Journey"];
 type Facts = Schemas["Facts"];
@@ -331,7 +331,8 @@ export function TrainingStages({ journey }: { journey: Journey }) {
 
 // ---------------------------------------------------------------------- resultados
 
-export function Results({ journey }: { journey: Journey }) {
+/** `compact`: la explicación ya la contó el asistente en el hilo; quedan los detalles. */
+export function Results({ journey, compact = false }: { journey: Journey; compact?: boolean }) {
   const { t } = useTranslation();
   const r = (journey.result ?? {}) as {
     meets_target?: boolean;
@@ -347,14 +348,18 @@ export function Results({ journey }: { journey: Journey }) {
   };
   return (
     <div className="space-y-3 text-sm">
-      <p className={`font-semibold ${r.meets_target ? "text-ok" : "text-warn"}`}>
-        {t(r.meets_target ? "journey.results.met" : "journey.results.notMet")}
-      </p>
-      <ul className="list-disc space-y-1 pl-5">
-        {(r.explanation ?? []).map((e) => (
-          <li key={e}>{e}</li>
-        ))}
-      </ul>
+      {!compact && (
+        <>
+          <p className={`font-semibold ${r.meets_target ? "text-ok" : "text-warn"}`}>
+            {t(r.meets_target ? "journey.results.met" : "journey.results.notMet")}
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            {(r.explanation ?? []).map((e) => (
+              <li key={e}>{e}</li>
+            ))}
+          </ul>
+        </>
+      )}
       {(r.per_class ?? []).length > 0 && (
         <ul className="space-y-1 text-xs text-muted">
           {(r.per_class ?? []).map((p) => (
@@ -390,7 +395,7 @@ export function Results({ journey }: { journey: Journey }) {
           </div>
         </div>
       )}
-      {(r.next_steps ?? []).length > 0 && (
+      {!compact && (r.next_steps ?? []).length > 0 && (
         <ul className="list-disc space-y-1 pl-5">
           {(r.next_steps ?? []).map((s) => (
             <li key={s}>{s}</li>
@@ -449,7 +454,7 @@ function CaseInputs({
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {(form.fields ?? []).map((f) => (
-        <Field key={f.name} label={f.name}>
+        <Field key={f.name} label={humanize(f.name)}>
           {f.kind === "category" && (f.options ?? []).length > 0 ? (
             <Select
               value={values[f.name] ?? ""}

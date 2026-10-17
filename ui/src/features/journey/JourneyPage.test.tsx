@@ -9,6 +9,8 @@ import { createTestRouter } from "@/app/router";
 import { resetApiClient } from "@/lib/api/client";
 import { mockEngine, project } from "@/test/engine";
 
+import { FIRST_MESSAGE } from "./JourneyPage";
+
 const base = {
   version: 3,
   schema_version: 2,
@@ -25,10 +27,9 @@ const base = {
   warnings: [],
 };
 
-function mount(
-  journey: Record<string, unknown>,
-  extra: Record<string, (r: Request) => unknown> = {},
-) {
+type Handler = (r: Request) => unknown;
+
+function mount(journey: Record<string, unknown>, extra: Record<string, Handler> = {}) {
   const routes = mockEngine({
     "GET /api/v1/projects": () => [project()],
     "GET /api/v1/projects/prj_1": () => project(),
@@ -44,51 +45,133 @@ function mount(
   return routes;
 }
 
-beforeEach(() => resetApiClient());
+async function posted(calls: Request[], suffix = "/journey") {
+  await waitFor(() =>
+    expect(calls.some((c) => c.method === "POST" && c.url.endsWith(suffix))).toBe(true),
+  );
+  const post = calls.filter((c) => c.method === "POST" && c.url.endsWith(suffix)).at(-1);
+  return (await post?.clone().json()) as Record<string, unknown>;
+}
+
+beforeEach(() => {
+  resetApiClient();
+  sessionStorage.clear();
+});
 afterEach(() => vi.unstubAllGlobals());
 
-it("entrevista: muestra la conversación y solo el próximo dato que falta", async () => {
-  const { calls } = mount({
-    ...base,
-    facts: { data_kind: "table" },
-    pending: ["problem", "prediction"],
-    messages: [
-      { role: "user", text: "Quiero estimar el precio de las casas" },
-      { role: "assistant", text: "¿Querés estimar un número o elegir una categoría?" },
-    ],
+const interview = {
+  ...base,
+  facts: { data_kind: "table" },
+  pending: ["problem", "prediction"],
+  messages: [
+    { role: "user", text: "Quiero estimar el precio de las casas", step: "case" },
+    {
+      role: "assistant",
+      text: "Perfecto. ¿Qué te gustaría que te diga el sistema para cada casa?",
+      step: "case",
+      field: "problem",
+    },
+  ],
+};
+
+it("entrevista: el asistente pregunta y ofrece respuestas rápidas; elegir una responde", async () => {
+  let release = () => {};
+  const { calls } = mount(interview, {
+    "POST /api/v1/projects/prj_1/journey": async () => {
+      await new Promise<void>((r) => (release = r));
+      return interview;
+    },
   });
   expect(await screen.findByText("Quiero estimar el precio de las casas")).toBeInTheDocument();
-  expect(screen.getByLabelText("¿Qué querés obtener?")).toBeInTheDocument();
-  expect(
-    screen.queryByLabelText("¿Qué querés predecir, con tus palabras?"),
-  ).not.toBeInTheDocument();
+  expect(screen.getByText(/¿Qué te gustaría que te diga el sistema/)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Preparar y entrenar" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Sí, es esto" })).not.toBeInTheDocument();
-  // Las herramientas técnicas quedan plegadas en «Opciones avanzadas».
   expect(screen.getByText("Opciones avanzadas").closest("details")).not.toHaveAttribute("open");
 
-  await userEvent.selectOptions(screen.getByLabelText("¿Qué querés obtener?"), "value");
-  await userEvent.click(screen.getByRole("button", { name: "Responder" }));
-  await waitFor(() => expect(calls.some((c) => c.method === "POST")).toBe(true));
-  const post = calls.find((c) => c.method === "POST");
-  const body = (await post?.clone().json()) as Record<string, unknown>;
-  expect(body).toMatchObject({ action: "message", version: 3, facts: { problem: "value" } });
+  await userEvent.click(screen.getByRole("button", { name: "Estimar un número" }));
+  // Mientras responde: el mensaje propio y el «escribiendo…».
+  expect(
+    await screen.findByRole("status", { name: "El asistente está escribiendo" }),
+  ).toBeInTheDocument();
+  expect(screen.getByText("Estimar un número", { selector: "p" })).toBeInTheDocument();
+  const body = await posted(calls);
+  expect(body).toMatchObject({
+    action: "message",
+    version: 3,
+    message: "Estimar un número",
+    facts: { problem: "value" },
+  });
+  release();
 });
 
-it("con todo respondido pide confirmar lo que entendió", async () => {
-  mount({
+it("las respuestas propuestas por la IA se envían como texto, sin forzar el dato", async () => {
+  const { calls } = mount({
+    ...interview,
+    messages: [
+      ...interview.messages.slice(0, 1),
+      {
+        role: "assistant",
+        text: "¿Ya figura el precio de venta de casas vendidas?",
+        step: "case",
+        field: "labels_available",
+        options: ["Sí, tengo el precio de cada venta", "No, solo las características"],
+      },
+    ],
+  });
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Sí, tengo el precio de cada venta" }),
+  );
+  const body = await posted(calls);
+  expect(body.message).toBe("Sí, tengo el precio de cada venta");
+  expect(body.facts).toBeUndefined();
+});
+
+it("la caja de texto envía con Enter y agrega líneas con Shift+Enter", async () => {
+  const { calls } = mount(interview);
+  const box = await screen.findByLabelText(/Contame más/);
+  await userEvent.type(box, "Son casas de la ciudad{Shift>}{Enter}{/Shift}y alrededores");
+  expect(calls.some((c) => c.method === "POST")).toBe(false);
+  await userEvent.type(box, "{Enter}");
+  const body = await posted(calls);
+  expect(body).toMatchObject({
+    action: "message",
+    message: "Son casas de la ciudad\ny alrededores",
+  });
+});
+
+it("con todo respondido, confirma lo entendido o deja corregirlo", async () => {
+  const { calls } = mount({
     ...base,
     pending: [],
     facts: { data_kind: "table", problem: "value", success_target: 10 },
-    messages: [{ role: "user", text: "Estimar precios" }],
+    messages: [
+      { role: "user", text: "Estimar precios", step: "case" },
+      {
+        role: "assistant",
+        text: "A ver si entendí bien: tenés una planilla y querés estimar esto: precio. ¿Es así?",
+        step: "case",
+        action: "confirm",
+      },
+    ],
   });
-  expect(await screen.findByRole("button", { name: "Sí, es esto" })).toBeInTheDocument();
+  await userEvent.click(await screen.findByRole("button", { name: "Corregir algo" }));
+  expect(screen.getByText("Lo que entendí").closest("details")).toHaveAttribute("open");
   expect(screen.getByText("Una tabla (planilla, CSV, Excel)")).toBeInTheDocument();
-  expect(screen.getByText("¿Qué error típico aceptás, como máximo (en %)?")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Sí, es esto" }));
+  expect(await posted(calls)).toMatchObject({ action: "confirm" });
 });
 
-it("datos: explica qué subir con un ejemplo y acepta solo los formatos del caso", async () => {
-  mount({
+it("el primer mensaje escrito en Inicio se envía al abrir la conversación", async () => {
+  sessionStorage.setItem(FIRST_MESSAGE("prj_1"), "Quiero saber qué clientes se van");
+  const { calls } = mount(base);
+  expect(await posted(calls)).toMatchObject({
+    action: "message",
+    message: "Quiero saber qué clientes se van",
+  });
+  expect(sessionStorage.getItem(FIRST_MESSAGE("prj_1"))).toBeNull();
+});
+
+it("datos: el asistente lo cuenta en el hilo y adjunta la guía y la subida", async () => {
+  const { calls } = mount({
     ...base,
     state: "awaiting_data",
     stage: "awaiting_data",
@@ -104,16 +187,24 @@ it("datos: explica qué subir con un ejemplo y acepta solo los formatos del caso
       template_csv: "superficie,precio\n",
       tips: ["No incluyas datos que se conocen después."],
     },
-    messages: [{ role: "user", text: "Estimar precios" }],
+    messages: [
+      { role: "user", text: "Estimar precios", step: "case" },
+      { role: "assistant", text: "¡Bien! Ahora necesito tus datos.", step: "data" },
+    ],
   });
-  expect(await screen.findByText("Una fila por casa.")).toBeInTheDocument();
-  expect(screen.getByText("95000")).toBeInTheDocument();
+  expect(await screen.findByText("¡Bien! Ahora necesito tus datos.")).toBeInTheDocument();
+  expect(screen.getByText("Una fila por casa.")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Descargar plantilla" })).toBeInTheDocument();
   expect(screen.getByLabelText("Subir los datos")).toHaveAttribute("accept", ".csv,.xlsx");
-  expect(screen.queryByLabelText(/Contame más/)).not.toBeInTheDocument();
+  // Siempre se le puede preguntar algo al asistente.
+  await userEvent.type(
+    screen.getByPlaceholderText("Preguntame sobre los datos…"),
+    "¿Sirve un Excel?{Enter}",
+  );
+  expect(await posted(calls)).toMatchObject({ action: "message", message: "¿Sirve un Excel?" });
 });
 
-it("entrenamiento: muestra etapas y progreso, sin otros controles", async () => {
+it("entrenamiento: etapas reales y progreso, con opción de detener", async () => {
   mount({
     ...base,
     state: "training",
@@ -121,6 +212,7 @@ it("entrenamiento: muestra etapas y progreso, sin otros controles", async () => 
     confirmed: true,
     pending: [],
     progress: { done: 2, total: 8 },
+    messages: [{ role: "assistant", text: "¡Arranco!", step: "training" }],
   });
   expect(await screen.findByText("Aprendiendo de tus datos")).toBeInTheDocument();
   expect(screen.getByText(/Prueba 3 de 8/)).toBeInTheDocument();
@@ -146,9 +238,16 @@ const model = {
   },
   result: { meets_target: true, explanation: ["El error típico es de 4 %."], next_steps: [] },
   validations: [],
+  messages: [
+    {
+      role: "assistant",
+      text: "El error típico es de 4 %. Cumple el objetivo que definiste.",
+      step: "validate",
+    },
+  ],
 };
 
-it("validación: compara un caso nuevo con su resultado real", async () => {
+it("validación: el resultado va en el hilo y se compara un caso nuevo", async () => {
   const { calls } = mount(
     { ...model, state: "ready_to_validate", notification: "training_finished" },
     {
@@ -161,17 +260,15 @@ it("validación: compara un caso nuevo con su resultado real", async () => {
       }),
     },
   );
-  expect(
-    await screen.findByText("Tu modelo terminó de entrenar. Mirá el resultado."),
-  ).toBeInTheDocument();
-  expect(screen.getByText("El error típico es de 4 %.")).toBeInTheDocument();
-  await userEvent.type(screen.getByLabelText("superficie"), "130");
-  await userEvent.selectOptions(screen.getByLabelText("barrio"), "Norte");
+  expect(await screen.findByText(/El error típico es de 4 %. Cumple/)).toBeInTheDocument();
+  // El aviso de fin se da por visto al tener la conversación a la vista.
+  expect(await posted(calls)).toMatchObject({ action: "acknowledge" });
+  await userEvent.type(screen.getByLabelText("Superficie"), "130");
+  await userEvent.selectOptions(screen.getByLabelText("Barrio"), "Norte");
   await userEvent.type(screen.getByLabelText("Resultado real"), "98000");
   await userEvent.click(screen.getByRole("button", { name: "Comparar" }));
   expect(await screen.findByText("Coincide")).toBeInTheDocument();
-  const post = calls.find((c) => c.url.endsWith("/journey/validate"));
-  expect(await post?.clone().json()).toEqual({
+  expect(await posted(calls, "/journey/validate")).toEqual({
     row: { superficie: 130, barrio: "Norte" },
     actual: "98000",
   });
@@ -187,11 +284,12 @@ it("uso: pide solo los campos que el modelo necesita y predice con el run", asyn
     },
   );
   expect(await screen.findByRole("heading", { name: "Usar el modelo" })).toBeInTheDocument();
-  expect(screen.queryByLabelText("precio")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Precio")).not.toBeInTheDocument();
   const use = screen.getByRole("button", { name: "Predecir" }).closest("form") as HTMLElement;
   await userEvent.type(use.querySelector("input") as HTMLInputElement, "90");
   await userEvent.click(screen.getByRole("button", { name: "Predecir" }));
   expect(await screen.findByText(/Predicción:/)).toBeInTheDocument();
-  const post = calls.find((c) => c.url.endsWith("/runs/run_1/predict"));
-  expect(await post?.clone().json()).toEqual({ rows: [{ superficie: 90, barrio: null }] });
+  expect(await posted(calls, "/runs/run_1/predict")).toEqual({
+    rows: [{ superficie: 90, barrio: null }],
+  });
 });
