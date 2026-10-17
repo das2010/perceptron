@@ -52,6 +52,10 @@ test("UC-07 desde el navegador con roles Editor y Viewer", async ({ page }) => {
 
   // La Editora completa UC-07: datos → perfil → entrenar → evaluar → registrar.
   await login(page, editor, PASSWORD);
+  // En Inicio, el estado del motor y «Nuevo proyecto» están en «Opciones avanzadas».
+  const advanced = page.locator("summary", { hasText: "Opciones avanzadas" });
+  await expect(advanced.first()).toBeVisible();
+  for (const summary of await advanced.all()) await summary.click();
   await expect(page.getByText("Engine operativo")).toBeVisible();
   await page.getByRole("button", { name: "Nuevo proyecto" }).click();
   await page.getByLabel("Nombre").fill(projectName);
@@ -94,6 +98,8 @@ test("UC-07 desde el navegador con roles Editor y Viewer", async ({ page }) => {
   await login(page, viewer, PASSWORD);
   await page.getByRole("link", { name: projectName }).first().click();
   await expect(page.getByText("Solo lectura")).toBeVisible();
+  // El proyecto abre en el asistente; las pestañas técnicas están en «Opciones avanzadas».
+  await page.locator("summary", { hasText: "Opciones avanzadas" }).click();
   await page.getByRole("link", { name: "Modelos", exact: true }).click();
   await expect(page.getByRole("cell", { name: /^mdl_/ }).first()).toBeVisible();
   // Las escrituras las rechaza el servidor (RBAC), no solo la UI.
