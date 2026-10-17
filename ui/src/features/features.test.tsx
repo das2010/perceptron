@@ -160,6 +160,82 @@ describe("pantallas", () => {
     ).toBeInTheDocument();
   });
 
+  it("Entrenar: la escala logarítmica se sugiere apagada y se activa a pedido", async () => {
+    const target = {
+      name: "salida",
+      task: "regression",
+      standardize: true,
+      log: false,
+      log_suggested: true,
+      classes: null,
+    };
+    const graph = { rationale: ["El objetivo abarca varios órdenes de magnitud."], target };
+    const puts: Record<string, unknown>[] = [];
+    mockEngine({
+      ...base,
+      "POST /api/v1/projects/prj_1/pipelines/propose": () => ({
+        id: "pip_1",
+        project_id: "prj_1",
+        name: "p",
+        graph,
+        version: 1,
+      }),
+      "PUT /api/v1/pipelines/pip_1": async (req) => {
+        const body = (await req.json()) as { graph: Record<string, unknown> };
+        puts.push(body);
+        return { id: "pip_1", project_id: "prj_1", name: "p", graph: body.graph, version: 2 };
+      },
+    });
+    renderAt("/projects/prj_1/train");
+    await userEvent.click(await screen.findByRole("button", { name: "Proponer preparación" }));
+    const box = await screen.findByRole("checkbox", {
+      name: /Entrenar el objetivo en escala logarítmica \(sugerido\)/,
+    });
+    expect(box).not.toBeChecked();
+    await userEvent.click(box);
+    expect(await screen.findByRole("checkbox", { name: /escala logarítmica/ })).toBeChecked();
+    expect(puts[0]).toMatchObject({ version: 1, graph: { target: { log: true } } });
+  });
+
+  it("Entrenar: con datos casi determinísticos sugiere buscar la fórmula (caso Tabla X)", async () => {
+    mockEngine({
+      ...base,
+      "POST /api/v1/projects/prj_1/pipelines/propose": () => ({
+        id: "pip_1",
+        project_id: "prj_1",
+        name: "p",
+        graph: { rationale: [] },
+        version: 1,
+      }),
+      "POST /api/v1/projects/prj_1/arch/propose": () => ({
+        origin: "rules",
+        proposals: [],
+        requirements: {
+          scenario: { r2_linear: 0.98, r2_curved: 0.99998, deterministic: true },
+          items: [
+            {
+              code: "nonlinear_capacity",
+              level: "must",
+              scope: "any",
+              message: "Los datos son curvos.",
+            },
+          ],
+        },
+      }),
+    });
+    const user = userEvent.setup();
+    renderAt("/projects/prj_1/train");
+    await user.click(await screen.findByRole("button", { name: "Proponer preparación" }));
+    await user.click(await screen.findByRole("button", { name: "Proponer arquitecturas" }));
+    const note = await screen.findByRole("note");
+    expect(note).toHaveTextContent("casi determinísticos");
+    expect(note).toHaveTextContent("99,998 %");
+    expect(within(note).getByRole("link", { name: "Buscar la fórmula" })).toHaveAttribute(
+      "href",
+      "/projects/prj_1/experiments",
+    );
+  });
+
   it("Entrenar: muestra los requisitos, recomienda y avisa al elegir otra (caso Tubos)", async () => {
     const proposal = (id: string, title: string, recommended: boolean, met: boolean) => ({
       archspec: {

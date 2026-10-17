@@ -281,6 +281,8 @@
     },
     "dataset": "Data version",
     "proposePipeline": "Propose preparation",
+    "logTarget": "Train the target on a logarithmic scale (suggested)",
+    "logTargetHint": "The result spans several orders of magnitude: on a logarithmic scale the error is relative and there are no negative predictions. Predictions are converted back to the original scale.",
     "proposeArch": "Propose architectures",
     "fallback": "Rules were used: {{reason}}",
     "byRules": "By rules",
@@ -1467,7 +1469,9 @@
     "met": "met",
     "unmet": "not met",
     "notRecommended": "You chose an option other than the recommended one (“{{best}}”). You can still go ahead.",
-    "unmetList": "Not met: {{list}}."
+    "unmetList": "Not met: {{list}}.",
+    "formulaHint": "The data is almost deterministic: a curve of the inputs explains {{pct}} % of the variation. An exact formula can be far more accurate than any network and, unlike it, works outside the data range.",
+    "formulaLink": "Search for the formula"
   },
   "guided": {
     "title": "Guided design",
@@ -1517,7 +1521,8 @@
     "hint": {
       "pipeline": "Done in data preparation (Train → Preparation).",
       "design": "Design again with the wizard’s guided design (Architecture step).",
-      "data": "More data is needed: add it in the Data tab."
+      "data": "More data is needed: add it in the Data tab.",
+      "formula": "Search for the formula in Experiments → Suggested formula."
     }
   },
   "studies": {
