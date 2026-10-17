@@ -18,7 +18,10 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
-tauri-plugin-updater = "2"
+# Sin la feature por defecto `zip`: solo sirve para bundles comprimidos del formato v1
+# y arrastra zip 4.x (RUSTSEC-2026-0367/0368/0369). Con `createUpdaterArtifacts: true`
+# los instaladores (NSIS/MSI, AppImage) se firman y descargan sin comprimir.
+tauri-plugin-updater = { version = "2", default-features = false, features = ["rustls-tls", "system-proxy"] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
