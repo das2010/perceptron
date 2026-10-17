@@ -8,7 +8,6 @@ LLM, cuando está, reemplaza estas frases por otras más ajustadas; nunca decide
 
 from __future__ import annotations
 
-import re
 from typing import Any, Literal
 
 from perceptron.services.journey_guide import VALIDATION_MIN, Facts
@@ -418,6 +417,7 @@ def step_help(state: str, language: str = "es") -> str:
 
 # ---------------------------------------------------------------------- sin LLM: la respuesta
 
+MAX_ANSWER = 500  # una respuesta a la pregunta del asistente; lo demás no se interpreta
 _YES = {"si", "sí", "s", "yes", "y", "claro", "dale", "correcto", "exacto", "obvio", "seguro"}
 _NO = {"no", "n", "nop", "nope", "para nada"}
 
@@ -426,33 +426,52 @@ def understand(field: str | None, text: str) -> dict[str, Any] | None:
     """Sin LLM: lo que respondió la persona a la pregunta que se le acaba de hacer, cuando se
     puede leer sin ambigüedad (texto libre, lista, porcentaje, sí o no). None si no se entiende:
     entonces se vuelve a preguntar con las respuestas rápidas."""
-    answer = " ".join(text.split()).strip(" .!¡¿?")
+    # Sin expresiones regulares sobre lo que escribe la persona (nada de ReDoS): texto acotado,
+    # espacios normalizados y palabras.
+    answer = " ".join(text[:MAX_ANSWER].split()).strip(" .!¡¿?")
     if not field or not answer:
         return None
     if field in ("prediction", "target_name"):
         return {field: answer[:300]}
     if field in ("classes", "input_names"):
-        parts = [
-            p.strip(" .«»\"'") for p in re.split(r",|;|\s+y\s+|\s+o\s+|\s+and\s+|\s+or\s+", answer)
-        ]
-        items = list(dict.fromkeys(p for p in parts if p))
+        joined = f" {answer} ".replace(";", ",")
+        for word in (" y ", " o ", " and ", " or "):
+            joined = joined.replace(word, ",")
+        items = list(dict.fromkeys(p.strip(" .«»\"'") for p in joined.split(",") if p.strip()))
         return {field: items} if len(items) >= (2 if field == "classes" else 1) else None
     if field == "positive_class":
         return {field: answer.strip("«»\"'")[:100]}
     if field == "success_target":
-        ratio = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:de cada|out of|of every|/)\s*(\d+)", answer)
-        if ratio:
-            value = 100 * float(ratio.group(1).replace(",", ".")) / float(ratio.group(2))
-        else:
-            number = re.search(r"\d+(?:[.,]\d+)?", answer)
-            if not number:
-                return None
-            value = float(number.group(0).replace(",", "."))
-        return {field: round(value, 1)} if 0 < value <= 100 else None
+        value = _target(answer.casefold())
+        return {field: round(value, 1)} if value is not None and 0 < value <= 100 else None
     if field in ("labels_available", "extrapolate", "grouped"):
-        first = re.split(r"[\s,.;:!]+", answer.casefold(), maxsplit=1)[0]
+        words = answer.casefold().replace(",", " ").replace(".", " ").split()
+        first = words[0].strip(";:!") if words else ""
         if first in _YES:
             return {field: True}
         if first in _NO or answer.casefold() in _NO:
             return {field: False}
+    return None
+
+
+def _number(word: str) -> float | None:
+    try:
+        return float(word.strip("%()").replace(",", "."))
+    except ValueError:
+        return None
+
+
+def _target(answer: str) -> float | None:
+    """«8 de cada 10», «8/10» o «80 %» → 80."""
+    for sep in (" de cada ", " out of ", " of every ", "/"):
+        if sep in answer:
+            left, right = answer.split(sep, 1)
+            num = _number(left.split()[-1]) if left.split() else None
+            den = _number(right.split()[0]) if right.split() else None
+            if num is not None and den:
+                return 100 * num / den
+    for word in answer.replace("%", " ").split():
+        value = _number(word)
+        if value is not None:
+            return value
     return None
