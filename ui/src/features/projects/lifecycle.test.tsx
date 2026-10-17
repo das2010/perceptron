@@ -55,7 +55,7 @@ describe("ciclo de vida del proyecto (RF-PRJ-01)", () => {
         return project({ status: "archived", version: 4 });
       },
     });
-    renderAt("/projects/prj_1");
+    renderAt("/projects/prj_1/overview");
     await userEvent.click(await screen.findByRole("button", { name: /Archivar/ }));
     await waitFor(() => expect(body).toEqual({ version: 3, status: "archived" }));
   });
@@ -68,7 +68,7 @@ describe("ciclo de vida del proyecto (RF-PRJ-01)", () => {
       "URL",
       Object.assign(URL, { createObjectURL: created, revokeObjectURL: vi.fn() }),
     );
-    renderAt("/projects/prj_1");
+    renderAt("/projects/prj_1/overview");
     await userEvent.click(await screen.findByLabelText("con los datos"));
     await userEvent.click(screen.getByRole("button", { name: /Exportar .perceptron/ }));
     await waitFor(() => expect(created).toHaveBeenCalled(), { timeout: 5000 });
@@ -80,7 +80,7 @@ describe("ciclo de vida del proyecto (RF-PRJ-01)", () => {
   it("eliminar exige escribir el nombre", async () => {
     const deleted = vi.fn(() => new Response(null, { status: 204 }));
     engine({ "DELETE /api/v1/projects/prj_1": deleted });
-    renderAt("/projects/prj_1");
+    renderAt("/projects/prj_1/overview");
     await userEvent.click(await screen.findByRole("button", { name: /^Eliminar$/ }));
     const confirm = await screen.findByRole("button", { name: "Eliminar definitivamente" });
     expect(confirm).toBeDisabled();

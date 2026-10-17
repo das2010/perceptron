@@ -1,4 +1,4 @@
-import { Link, Outlet, useParams } from "@tanstack/react-router";
+import { Link, Outlet, useParams, useRouterState } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import { Badge, ErrorNote, Spinner } from "@/components/ui";
@@ -29,6 +29,9 @@ export function ProjectLayout() {
   const { data: project, isPending, error } = useProject(projectId);
   const me = useSession();
   const role = project ? projectRole(me, project) : null;
+  // En una herramienta técnica, las opciones avanzadas se muestran abiertas.
+  const pathname = useRouterState({ select: (st) => st.location.pathname });
+  const advanced = pathname.replace(/\/+$/, "") !== `/projects/${projectId}`;
 
   return (
     <div>
@@ -49,11 +52,12 @@ export function ProjectLayout() {
       <Link
         to="/projects/$projectId"
         params={{ projectId }}
-        className="mb-3 inline-block font-semibold"
+        activeOptions={{ exact: true }}
+        className="mb-3 inline-block rounded-pt border border-line px-3 py-1 font-semibold data-[status=active]:border-brand data-[status=active]:text-brand"
       >
         {t("journey.assistant")}
       </Link>
-      <details className="mb-4">
+      <details className="mb-4" open={advanced}>
         <summary className="cursor-pointer text-sm text-muted">{t("journey.advanced")}</summary>
         {project && (
           <div className="my-2 flex gap-2">

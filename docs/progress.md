@@ -388,11 +388,14 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-LIC-02 |  | 0 | Todas las funciones premium consultan features.is_enabled("<feature_key>"); claves de… | ✅ features.is_enabled con claves en features.yaml |
 | RF-LIC-03 |  | 7 | La arquitectura debe permitir más adelante: licencia por asiento, por servidor, por… | ✅ archivo firmado offline con topes; sin enforcement en v1 |
 
-## Recorrido guiado por conversación — clasificación de imágenes (2026-10-17)
+## Asistente guiado como experiencia principal (2026-10-17)
 
-RF-WIZ-01/03/04, RF-ING-01/07/08 y RF-EXP-02: nuevo coordinador persistente y pantalla principal
-con entrevista, confirmación, ZIP, revisión, entrenamiento real acotado, notificación y validación.
-Modo avanzado conservado. Contrato de entrada tomado del modelo; etiqueta real solo en comparación.
-Documentación de arquitectura, extensión, recorrido y límites: [guided-image-journey.md](guided-image-journey.md).
-Pruebas nuevas de backend, UI y RBAC; recorrido pequeño con entrenamiento, ONNX e inferencia reales.
-No representa soporte guiado de otras modalidades ni certificación estadística del modelo.
+RF-WIZ-01/03/04, RF-ING-01/07/08, RF-ARC-03, RF-EVL-06 y RF-EXP-02 (ADR-0042). La ruta del
+proyecto es un asistente que entrevista con preguntas iterativas, explica qué datos preparar
+(ejemplo, plantilla y consejos), revisa, diseña, entrena y evalúa solo, avisa al terminar, guía
+la validación con casos nuevos y predice pidiendo solo los campos que el modelo usa. Cubre
+tablas (categoría, número, fórmula), imágenes, textos y audios (categoría). Lo demás se deriva al
+wizard avanzado con el motivo. Reutiliza la ficha del wizard, `Wizard.design`, el estudio, la
+evaluación, el registro, la exportación y el Playground. Las herramientas técnicas siguen en
+«Opciones avanzadas». Detalle y límites: [guided-journey.md](guided-journey.md). Reemplaza la
+entrega previa solo de imágenes.

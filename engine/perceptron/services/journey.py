@@ -125,6 +125,7 @@ class Journey(BaseModel):
     llm_failed: bool = False
     confirmed: bool = False
     guide: DataGuide | None = None
+    source_id: str | None = Field(default=None, description="Última fuente de datos subida")
     dataset_id: str | None = None
     columns: list[str] = Field(default_factory=list, description="Columnas de la tabla subida")
     target: str | None = Field(default=None, description="Columna con el resultado")
@@ -440,6 +441,7 @@ class Coordinator:
         j.contract = j.form = j.result = j.data_summary = None
         j.validations, j.blockers, j.warnings, j.columns, j.progress = [], [], [], [], {}
         j.target = target
+        j.source_id = source_id
 
         def work(job: JobContext) -> None:
             self._review(pid, facts, path, source, target)

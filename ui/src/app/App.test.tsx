@@ -58,7 +58,7 @@ describe("App", () => {
     mockEngine({ "GET /api/v1/projects": () => [] });
     renderApp();
     await userEvent.selectOptions(await screen.findByLabelText("Idioma"), "en");
-    expect(await screen.findByText("What problem do you want to solve?")).toBeInTheDocument();
+    expect(await screen.findByText("What do you want to predict?")).toBeInTheDocument();
     await userEvent.selectOptions(screen.getByLabelText("Language"), "es");
   });
 

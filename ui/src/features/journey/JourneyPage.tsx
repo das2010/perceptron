@@ -1,214 +1,104 @@
+/**
+ * Experiencia principal: un asistente guía al usuario sin conocimientos de ML desde la
+ * descripción del problema hasta usar el modelo. Cada estado muestra solo lo necesario;
+ * las herramientas técnicas quedan en «Opciones avanzadas».
+ */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { Button, Card, ErrorNote, Field, Input, Select, Spinner, Textarea } from "@/components/ui";
+import {
+  Button,
+  Card,
+  CardTitle,
+  ErrorNote,
+  Field,
+  Select,
+  Spinner,
+  Textarea,
+} from "@/components/ui";
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import { getApiClient } from "@/lib/api/client";
-import { unwrap, useProject, useUpload, type Schemas } from "@/lib/api/hooks";
-import { postForm } from "@/lib/api/upload";
+import { type Schemas, unwrap, useUpload } from "@/lib/api/hooks";
 
-type Journey = Schemas["Journey"];
-type Facts = Schemas["Facts"];
-type Action = Schemas["JourneyAction"];
-function normalize(j: Journey) {
-  return {
-    ...j,
-    facts: j.facts ?? {},
-    pending: j.pending ?? [],
-    messages: j.messages ?? [],
-    assumptions: j.assumptions ?? [],
-    blockers: j.blockers ?? [],
-    warnings: j.warnings ?? [],
-  };
-}
-const choices: Record<string, string[]> = {
-  modality: ["image", "other"],
-  task: ["classification", "detection", "segmentation", "other"],
-  grouped: ["yes", "no"],
-  labels_available: ["yes", "no"],
-  error_costs: ["misses", "false_alarms", "equal"],
+import {
+  DataSummary,
+  FactControl,
+  GuideView,
+  type Journey,
+  Notes,
+  Results,
+  TrainingStages,
+  UsePanel,
+  ValidatePanel,
+} from "./JourneyPanels";
+import { factValue, fieldLabel } from "./journeyText";
+
+type Action = Omit<Schemas["JourneyAction"], "version" | "language" | "message"> & {
+  message?: string;
 };
+type Step = "case" | "data" | "review" | "training" | "results" | "validate" | "use";
 
-function FactInput({
-  name,
-  facts,
-  save,
-  busy,
-}: {
-  name: string;
-  facts: Facts;
-  save: (facts: Facts) => void;
-  busy: boolean;
-}) {
+const STEPS: Step[] = ["case", "data", "review", "training", "validate", "use"];
+const ACTIVE = new Set(["reviewing_data", "training"]);
+const MODEL = new Set(["ready_to_validate", "needs_improvement", "ready_to_use"]);
+const RETRY = new Set(["ready_to_train", "failed", "interrupted", "needs_improvement"]);
+
+function stepOf(j: Journey): Step {
+  if (j.state === "interview" || j.state === "unsupported") return "case";
+  if (j.state === "awaiting_data") return "data";
+  if (j.state === "reviewing_data" || j.state === "ready_to_train") return "review";
+  if (j.state === "training") return "training";
+  if (j.state === "ready_to_use") return "use";
+  if (MODEL.has(j.state)) return "validate";
+  return j.dataset_id ? "review" : "data";
+}
+
+function Stepper({ current }: { current: Step }) {
   const { t } = useTranslation();
-  const [value, setValue] = useState("");
-  const options = name === "positive_class" ? (facts.classes ?? []) : choices[name];
-  const submit = () => {
-    const parsed =
-      name === "classes"
-        ? value
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean)
-        : name === "success_percent"
-          ? Number(value)
-          : ["grouped", "labels_available"].includes(name)
-            ? value === "yes"
-            : value;
-    save({ [name]: parsed });
-    setValue("");
-  };
+  const index = STEPS.indexOf(current);
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        submit();
-      }}
-      className="space-y-3"
-    >
-      <Field label={t(`journey.questions.${name}`)}>
-        {options ? (
-          <Select required value={value} onChange={(e) => setValue(e.target.value)}>
-            <option value="">{t("journey.choose")}</option>
-            {options.map((o) => (
-              <option key={o} value={o}>
-                {name === "positive_class" ? o : t(`journey.options.${o}`)}
-              </option>
-            ))}
-          </Select>
-        ) : (
-          <Input
-            required
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            type={name === "success_percent" ? "number" : "text"}
-            min={1}
-            max={100}
-            placeholder={name === "classes" ? t("journey.classesExample") : undefined}
-          />
-        )}
-      </Field>
-      <Button type="submit" disabled={!value || busy}>
-        {t("journey.answer")}
-      </Button>
-    </form>
+    <ol className="flex flex-wrap gap-2 text-xs" aria-label={t("journey.title")}>
+      {STEPS.map((s, i) => (
+        <li
+          key={s}
+          aria-current={i === index ? "step" : undefined}
+          className={`rounded-full border px-3 py-1 ${
+            i === index
+              ? "border-brand bg-brand text-white"
+              : i < index
+                ? "border-brand text-brand"
+                : "border-line text-muted"
+          }`}
+        >
+          {i + 1}. {t(`journey.steps.${s}`)}
+        </li>
+      ))}
+    </ol>
   );
 }
 
-function Prediction({
-  journey,
-  projectId,
-  onUpdate,
-}: {
-  journey: Journey;
-  projectId: string;
-  onUpdate: (j: Journey) => void;
-}) {
+function Conversation({ journey }: { journey: Journey }) {
   const { t } = useTranslation();
-  const [mode, setMode] = useState<"predict" | "validate">("predict");
-  const [file, setFile] = useState<File | null>(null);
-  const [actual, setActual] = useState("");
-  const classes = (journey.contract?.outputs as { classes?: string[] } | undefined)?.classes ?? [];
-  const mutation = useMutation({
-    mutationFn: async () => {
-      const form = new FormData();
-      if (file) form.append("file", file);
-      if (mode === "validate") form.append("actual", actual);
-      return postForm<Schemas["GuidedPrediction"]>(
-        `/api/v1/projects/${projectId}/journey/${mode}`,
-        form,
-      );
-    },
-    onSuccess: (result) => onUpdate(result.journey),
-  });
-  if (journey.contract?.inputs && (journey.contract.inputs as { kind?: string }).kind !== "image")
-    return null;
-  const validations = journey.validations ?? [];
-  const positive = journey.facts?.positive_class;
   return (
-    <Card>
-      <div className="mb-4 flex flex-wrap gap-2">
-        {(["predict", "validate"] as const).map((m) => (
-          <Button
-            key={m}
-            variant={mode === m ? "primary" : "secondary"}
-            onClick={() => {
-              setMode(m);
-              mutation.reset();
-            }}
-          >
-            {t(`journey.${m}`)}
-          </Button>
-        ))}
-      </div>
-      <p className="mb-4 text-sm text-muted">
-        {t(mode === "validate" ? "journey.validationHelp" : "journey.predictionHelp")}
-      </p>
-      <form
-        className="space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          mutation.mutate();
-        }}
-      >
-        <Field label={t("journey.image")}>
-          <input
-            type="file"
-            accept="image/*"
-            required
-            onChange={(e) => {
-              setFile(e.target.files?.[0] ?? null);
-              mutation.reset();
-            }}
-          />
-        </Field>
-        {mode === "validate" && (
-          <Field label={t("journey.actual")}>
-            <Select required value={actual} onChange={(e) => setActual(e.target.value)}>
-              <option value="">{t("journey.choose")}</option>
-              {classes.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </Select>
-          </Field>
-        )}
-        <Button
-          type="submit"
-          loading={mutation.isPending}
-          disabled={!file || (mode === "validate" && !actual)}
+    <div className="max-h-[50vh] space-y-3 overflow-auto" aria-live="polite">
+      {(journey.messages ?? []).map((m, i) => (
+        <div
+          key={i}
+          className={`rounded-pt p-3 ${m.role === "user" ? "ml-8 bg-canvas" : "mr-8 border border-line"}`}
         >
-          {t(`journey.${mode}`)}
-        </Button>
-      </form>
-      <ErrorNote error={mutation.error} />
-      {mutation.data && (
-        <p role="status" className="mt-4">
-          {t("journey.predicted", { label: mutation.data.prediction })}
-          {mutation.data.correct != null &&
-            ` — ${t(mutation.data.correct ? "journey.correct" : "journey.incorrect")}`}
-        </p>
-      )}
-      <p className="mt-3 text-sm text-muted">{t("journey.noGuarantee")}</p>
-      {validations.length > 0 && (
-        <p className="mt-3">
-          {t("journey.counts", {
-            total: validations.length,
-            correct: validations.filter((v) => v.correct).length,
-            misses: validations.filter((v) => v.actual === positive && !v.correct).length,
-            alarms: validations.filter((v) => v.prediction === positive && !v.correct).length,
-          })}
-        </p>
-      )}
-    </Card>
+          <p className="text-xs text-muted">{t(`journey.${m.role}`)}</p>
+          <p className="whitespace-pre-wrap">{m.text}</p>
+        </div>
+      ))}
+    </div>
   );
 }
 
 export function JourneyPage() {
   const projectId = useProjectId();
   const { t, i18n } = useTranslation();
-  const project = useProject(projectId);
   const qc = useQueryClient();
   const key = ["journey", projectId];
   const query = useQuery({
@@ -221,16 +111,15 @@ export function JourneyPage() {
           params: { path: { project_id: projectId } },
         }),
       ),
-    refetchInterval: 2000,
+    refetchInterval: (q) => (q.state.data && ACTIVE.has(q.state.data.state) ? 2000 : false),
   });
   const update = (j: Journey) => qc.setQueryData(key, j);
   const [message, setMessage] = useState("");
-  const [editField, setEditField] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [target, setTarget] = useState("");
   const upload = useUpload(projectId);
   const action = useMutation({
-    mutationFn: async (
-      body: Omit<Action, "version" | "language" | "message"> & { message?: string },
-    ) =>
+    mutationFn: async (body: Action) =>
       unwrap(
         await (
           await getApiClient()
@@ -247,11 +136,11 @@ export function JourneyPage() {
     onSuccess: (j) => {
       update(j);
       setMessage("");
-      setEditField(null);
+      setEditing(null);
     },
-    onSettled: () => void qc.invalidateQueries({ queryKey: key }),
+    onError: () => void qc.invalidateQueries({ queryKey: key }),
   });
-  const j = query.data && normalize(query.data);
+  const j = query.data;
   if (!j)
     return (
       <>
@@ -259,249 +148,296 @@ export function JourneyPage() {
         <ErrorNote error={query.error} />
       </>
     );
+  const facts = j.facts ?? {};
+  const pending = j.pending ?? [];
   const busy = action.isPending || upload.isPending;
-  const interviewing = j.state === "interview";
-  const nextField = editField ?? j.pending[0];
-  const canUpload = [
-    "awaiting_data",
-    "ready_to_train",
-    "needs_improvement",
-    "failed",
-    "interrupted",
-  ].includes(j.state);
-  const canPredict =
-    ["ready_to_validate", "ready_to_use", "needs_improvement"].includes(j.state) && j.contract;
+  const step = stepOf(j);
+  const next = editing ?? pending[0];
+  const send = (body: Action) => action.mutate(body);
+  const sendFacts = (f: Schemas["Facts"], text: string) =>
+    send({ action: "message", message: text, facts: f });
+  const advancedLink = (
+    <Link to="/projects/$projectId/wizard" params={{ projectId }} className="text-brand underline">
+      {t("journey.toAdvanced")}
+    </Link>
+  );
+  const uploadData = (files: File[]) =>
+    upload.mutate(files, {
+      onSuccess: (data) => send({ action: "prepare", source_id: data.source.id }),
+    });
+
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-3xl space-y-4">
+      <Stepper current={step} />
       {j.notification && (
         <Card>
           <div role="status" className="flex items-center justify-between gap-3">
             <p>{t(`journey.notifications.${j.notification}`)}</p>
-            <Button variant="secondary" onClick={() => action.mutate({ action: "acknowledge" })}>
+            <Button variant="secondary" size="sm" onClick={() => send({ action: "acknowledge" })}>
               {t("journey.dismiss")}
             </Button>
           </div>
         </Card>
       )}
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+      {j.error && (
+        <p role="alert" className="rounded-pt border border-bad p-3 text-sm">
+          {j.error}
+        </p>
+      )}
+
+      {step === "case" && (
         <Card>
-          <h2 className="mb-4 text-xl font-semibold">{t("journey.title")}</h2>
-          <p className="mb-4 text-muted">{project.data?.goal}</p>
-          <div className="max-h-[55vh] space-y-3 overflow-auto" aria-live="polite">
-            {j.messages.map((m, i) => (
-              <div
-                key={i}
-                className={`rounded-pt p-3 ${m.role === "user" ? "bg-canvas" : "border border-line"}`}
-              >
-                <p className="text-xs text-muted">{t(`journey.${m.role}`)}</p>
-                <p className="whitespace-pre-wrap">{m.text}</p>
+          <CardTitle>{t("journey.title")}</CardTitle>
+          {!(j.messages ?? []).length && (
+            <p className="mb-3 text-sm text-muted">{t("journey.example")}</p>
+          )}
+          <Conversation journey={j} />
+          {j.state === "unsupported" ? (
+            <div className="mt-4 space-y-3">
+              <p className="font-semibold">{t("journey.unsupportedTitle")}</p>
+              <p className="text-sm">{j.unsupported}</p>
+              <div className="flex flex-wrap items-center gap-3">
+                {advancedLink}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => send({ action: "revise" })}
+                >
+                  {t("journey.revise")}
+                </Button>
               </div>
-            ))}
+            </div>
+          ) : (
+            <>
+              <form
+                className="mt-4 space-y-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (message.trim()) send({ action: "message", message });
+                }}
+              >
+                <Textarea
+                  aria-label={t("journey.message")}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={t("journey.message")}
+                />
+                <Button type="submit" loading={action.isPending} disabled={!message.trim()}>
+                  {t((j.messages ?? []).length ? "journey.send" : "journey.begin")}
+                </Button>
+              </form>
+              {j.llm_failed && <p className="mt-3 text-sm text-warn">{t("journey.fallback")}</p>}
+              {next && (j.messages ?? []).length > 0 && (
+                <div className="mt-4 rounded-pt border border-line p-3">
+                  <FactControl
+                    key={next}
+                    name={next}
+                    facts={facts}
+                    busy={busy}
+                    onSave={sendFacts}
+                  />
+                </div>
+              )}
+              {Object.values(facts).some((v) => v != null) && (
+                <details className="mt-4" open={!pending.length}>
+                  <summary className="cursor-pointer font-semibold">{t("journey.facts")}</summary>
+                  <dl className="mt-2 space-y-1 text-sm">
+                    {Object.entries(facts)
+                      .filter(([, v]) => v != null)
+                      .map(([k, v]) => (
+                        <div key={k} className="flex flex-wrap items-baseline gap-2">
+                          <dt className="text-muted">{fieldLabel(t, k, facts)}</dt>
+                          <dd className="font-medium">{factValue(t, v)}</dd>
+                          <Button variant="ghost" size="sm" onClick={() => setEditing(k)}>
+                            {t("journey.edit")}
+                          </Button>
+                        </div>
+                      ))}
+                  </dl>
+                </details>
+              )}
+              {(j.assumptions ?? []).length > 0 && (
+                <details className="mt-3 text-sm">
+                  <summary className="cursor-pointer">{t("journey.assumptions")}</summary>
+                  <ul className="mt-1 list-disc pl-5">
+                    {(j.assumptions ?? []).map((a) => (
+                      <li key={a}>{a}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              {!pending.length && (j.messages ?? []).length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm">{t("journey.confirmHint")}</p>
+                  <Button loading={busy} onClick={() => send({ action: "confirm" })}>
+                    {t("journey.confirm")}
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </Card>
+      )}
+
+      {step === "data" && j.guide && (
+        <Card>
+          <CardTitle>{t("journey.data.title")}</CardTitle>
+          <GuideView guide={j.guide} />
+          <Notes title={t("journey.blockers")} items={j.blockers ?? []} tone="bad" />
+          <div className="mt-4">
+            <Field label={t("journey.data.upload")}>
+              <input
+                type="file"
+                multiple={j.guide.layout === "table"}
+                accept={(j.guide.accept ?? []).join(",")}
+                disabled={busy}
+                aria-label={t("journey.data.upload")}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length) uploadData(files);
+                  e.target.value = "";
+                }}
+              />
+            </Field>
+            {busy && <p role="status">{t("journey.data.uploading")}</p>}
           </div>
-          {interviewing && (
+          {j.source_id && (j.columns ?? []).length > 0 && j.guide.layout === "table" && (
             <form
-              className="mt-4 space-y-3"
+              className="mt-4 flex flex-wrap items-end gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                action.mutate({ action: "message", message: message || project.data?.goal || "" });
+                send({ action: "prepare", source_id: j.source_id ?? "", target });
               }}
             >
-              <Textarea
-                aria-label={t("journey.message")}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={t("journey.message")}
-              />
-              <Button type="submit" loading={action.isPending}>
-                {t(j.messages.length ? "journey.send" : "journey.begin")}
+              <Field label={t("journey.data.chooseTarget")}>
+                <Select required value={target} onChange={(e) => setTarget(e.target.value)}>
+                  <option value="">{t("journey.choose")}</option>
+                  {(j.columns ?? []).map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Button type="submit" size="sm" disabled={!target || busy}>
+                {t("journey.data.reload")}
               </Button>
             </form>
           )}
-          {j.assumptions.length > 0 && (
-            <details className="mt-4">
-              <summary>{t("journey.assumptions")}</summary>
-              <ul>
-                {j.assumptions.map((a, i) => (
-                  <li key={i}>{a}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-          {interviewing && (
-            <details className="mt-4">
-              <summary>{t("journey.facts")}</summary>
-              <dl className="mt-2 space-y-2">
-                {Object.entries(j.facts)
-                  .filter(([, v]) => v != null)
-                  .map(([k, v]) => (
-                    <div key={k}>
-                      <dt className="text-sm text-muted">{t(`journey.questions.${k}`)}</dt>
-                      <dd>
-                        {Array.isArray(v)
-                          ? v.join(", ")
-                          : typeof v === "boolean"
-                            ? t(v ? "journey.options.yes" : "journey.options.no")
-                            : t(`journey.options.${String(v)}`, { defaultValue: String(v) })}
-                        <Button variant="ghost" onClick={() => setEditField(k)}>
-                          {t("journey.edit")}
-                        </Button>
-                      </dd>
-                    </div>
-                  ))}
-              </dl>
-            </details>
-          )}
-          <ErrorNote error={action.error ?? upload.error ?? query.error} />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-4"
+            disabled={busy}
+            onClick={() => send({ action: "revise" })}
+          >
+            {t("journey.revise")}
+          </Button>
         </Card>
+      )}
+
+      {step === "review" && (
         <Card>
-          <h3 className="mb-2 font-semibold" role="status">
-            {t(`journey.states.${j.state}`)}
-          </h3>
-          <p className="mb-4 text-sm text-muted">{t(`journey.stages.${j.stage}`)}</p>
-          {j.llm_failed && interviewing && <p className="mb-3 text-sm">{t("journey.fallback")}</p>}
-          {interviewing && nextField && (
-            <FactInput
-              key={nextField}
-              name={nextField}
-              facts={j.facts}
-              busy={busy}
-              save={(facts) =>
-                action.mutate({
-                  action: "message",
-                  facts,
-                  message: `${t(`journey.questions.${nextField}`)} ${Object.values(facts)
-                    .map((v) =>
-                      Array.isArray(v)
-                        ? v.join(", ")
-                        : typeof v === "boolean"
-                          ? t(v ? "journey.options.yes" : "journey.options.no")
-                          : t(`journey.options.${String(v)}`, { defaultValue: String(v) }),
-                    )
-                    .join(", ")}`,
-                })
-              }
-            />
-          )}
-          {interviewing && !j.pending.length && (
+          <CardTitle>{t("journey.review.title")}</CardTitle>
+          {j.state === "reviewing_data" ? (
+            <p role="status" className="flex items-center gap-2">
+              <Spinner /> {t("journey.stages.reviewing_data")}
+            </p>
+          ) : (
             <div className="space-y-3">
-              <p>
-                {t("journey.summary", {
-                  classes: j.facts.classes?.join(", "),
-                  positive: j.facts.positive_class,
-                  percent: j.facts.success_percent,
-                  grouped: t(j.facts.grouped ? "journey.options.yes" : "journey.options.no"),
-                  costs: t(`journey.options.${j.facts.error_costs}`),
-                })}
-              </p>
-              <Button loading={busy} onClick={() => action.mutate({ action: "confirm" })}>
-                {t("journey.confirm")}
-              </Button>
-            </div>
-          )}
-          {j.state === "unsupported" && (
-            <>
-              <p className="mb-3">{t("journey.unsupported")}</p>
-              <Link to="/projects/$projectId/wizard" params={{ projectId }}>
-                {t("journey.advanced")}
-              </Link>
-            </>
-          )}
-          {j.blockers.length > 0 && (
-            <div className="my-3">
-              <h4 className="font-semibold">{t("journey.blockers")}</h4>
-              <ul>
-                {j.blockers.map((b) => (
-                  <li key={b}>{b}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {j.warnings.length > 0 && (
-            <div className="my-3">
-              <h4 className="font-semibold">{t("journey.warnings")}</h4>
-              <ul>
-                {j.warnings.map((w) => (
-                  <li key={w}>{w}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {canUpload && (
-            <div className="space-y-3">
-              <p>{t("journey.dataHelp", { classes: j.facts.classes?.join(", ") })}</p>
-              <pre className="overflow-auto rounded bg-canvas p-2 text-xs">
-                {j.facts.classes
-                  ?.map((c) => `${c}/${j.facts.grouped ? "objeto_01/" : ""}imagen_01.jpg`)
-                  .join("\n")}
-              </pre>
-              {j.facts.grouped && <p>{t("journey.groupHelp")}</p>}
-              {!j.facts.labels_available && <p>{t("journey.labelHelp")}</p>}
-              <Field label={t("journey.upload")}>
-                <input
-                  type="file"
-                  accept=".zip"
+              {j.data_summary && <DataSummary summary={j.data_summary} />}
+              <Notes title={t("journey.blockers")} items={j.blockers ?? []} tone="bad" />
+              <Notes title={t("journey.warnings")} items={j.warnings ?? []} tone="warn" />
+              {!(j.blockers ?? []).length && RETRY.has(j.state) && (
+                <>
+                  <p className="text-sm text-muted">{t("journey.review.trainHint")}</p>
+                  <Button loading={busy} onClick={() => send({ action: "train" })}>
+                    {j.state === "ready_to_train"
+                      ? t("journey.review.train")
+                      : t("journey.training.retry")}
+                  </Button>
+                </>
+              )}
+              <div>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   disabled={busy}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    upload.mutate([file], {
-                      onSuccess: (data) =>
-                        action.mutate({ action: "prepare", source_id: data.source.id }),
-                    });
-                    e.target.value = "";
-                  }}
-                />
-              </Field>
-              {upload.isPending && <p role="status">{t("journey.uploading")}</p>}
+                  onClick={() => send({ action: "revise" })}
+                >
+                  {t("journey.review.otherData")}
+                </Button>
+              </div>
             </div>
           )}
-          {["ready_to_train", "failed", "interrupted"].includes(j.state) &&
-            j.dataset_id &&
-            !j.blockers.length && (
-              <Button
-                className="mt-4"
-                loading={busy}
-                onClick={() => action.mutate({ action: "train" })}
-              >
-                {t("journey.train")}
+        </Card>
+      )}
+
+      {step === "training" && (
+        <Card>
+          <CardTitle>{t("journey.training.title")}</CardTitle>
+          <TrainingStages journey={j} />
+          <p className="mt-3 text-sm text-muted">{t("journey.training.leave")}</p>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="mt-3"
+            disabled={j.stop_requested || busy}
+            onClick={() => send({ action: "stop" })}
+          >
+            {t(j.stop_requested ? "journey.training.stopping" : "journey.training.stop")}
+          </Button>
+        </Card>
+      )}
+
+      {(step === "validate" || step === "use") && j.result && (
+        <Card>
+          <CardTitle>{t("journey.results.title")}</CardTitle>
+          <Results journey={j} />
+          <div className="mt-3 flex flex-wrap gap-2">
+            {j.state === "needs_improvement" && (
+              <Button size="sm" loading={busy} onClick={() => send({ action: "train" })}>
+                {t("journey.results.retrain")}
               </Button>
             )}
-          {["training", "reviewing_data"].includes(j.state) && (
-            <Button disabled={j.stop_requested} onClick={() => action.mutate({ action: "stop" })}>
-              {t(j.stop_requested ? "journey.stopping" : "journey.stop")}
-            </Button>
-          )}
-          {j.error && (
-            <p role="alert" className="mt-3">
-              {j.error}
-            </p>
-          )}
-          {!["training", "reviewing_data", "interview"].includes(j.state) && (
             <Button
-              variant="secondary"
-              className="mt-4"
+              variant="ghost"
+              size="sm"
               disabled={busy}
-              onClick={() => action.mutate({ action: "revise" })}
+              onClick={() => send({ action: "revise" })}
             >
               {t("journey.revise")}
             </Button>
-          )}
-          {j.result && (
-            <div className="mt-4 space-y-3">
-              <p>
-                {t("journey.counts", {
-                  total: j.result.total,
-                  correct: j.result.correct,
-                  misses: j.result.misses,
-                  alarms: j.result.false_alarms,
-                })}
-              </p>
-              <p>{t(j.result.meets_target ? "journey.targetMet" : "journey.improve")}</p>
-            </div>
-          )}
+          </div>
         </Card>
-      </div>
-      {canPredict && <Prediction journey={j} projectId={projectId} onUpdate={update} />}
+      )}
+      {(step === "validate" || step === "use") && j.form && j.run_id && (
+        <>
+          {step === "validate" && (
+            <ValidatePanel journey={j} projectId={projectId} onUpdate={update} />
+          )}
+          {step === "use" && <UsePanel journey={j} />}
+          {step === "use" && (
+            <details>
+              <summary className="cursor-pointer text-sm text-muted">
+                {t("journey.validate.title")}
+              </summary>
+              <div className="mt-2">
+                <ValidatePanel journey={j} projectId={projectId} onUpdate={update} />
+              </div>
+            </details>
+          )}
+        </>
+      )}
+
+      {step !== "case" && (j.messages ?? []).length > 0 && (
+        <details className="text-sm">
+          <summary className="cursor-pointer text-muted">{t("journey.showConversation")}</summary>
+          <div className="mt-2">
+            <Conversation journey={j} />
+          </div>
+        </details>
+      )}
+      <ErrorNote error={action.error ?? upload.error ?? query.error} />
     </div>
   );
 }
