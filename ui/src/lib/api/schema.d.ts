@@ -1793,6 +1793,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/journey/predict/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict Journey Series
+         * @description La historia reciente (CSV o Excel con las mismas columnas que los datos): el pronóstico
+         *     de los próximos valores o los momentos raros, por serie.
+         */
+        post: operations["predictJourneySeries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/journey/validate": {
         parameters: {
             query?: never;
@@ -4103,6 +4124,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_predictJourneySeries */
+        Body_predictJourneySeries: {
+            /** File */
+            file: string;
+        };
         /** Body_uploadSource */
         Body_uploadSource: {
             /** Files */
@@ -5532,6 +5558,11 @@ export interface components {
             extrapolate?: boolean | null;
             /** Grouped */
             grouped?: boolean | null;
+            /**
+             * Horizon
+             * @description Pronóstico: cuántos valores hacia adelante
+             */
+            horizon?: number | null;
             /** Input Names */
             input_names?: string[] | null;
             /** Labels Available */
@@ -5542,7 +5573,6 @@ export interface components {
             prediction?: string | null;
             /** Problem */
             problem?: ("category" | "value" | "rule" | "forecast" | "anomaly" | "locate" | "segment" | "read_text" | "other") | null;
-            horizon?: number | null;
             /**
              * Success Target
              * @description Categoría: % mínimo de aciertos. Valor: error típico máximo aceptable (%)
@@ -5971,13 +6001,25 @@ export interface components {
             /** Fields */
             fields?: components["schemas"]["InputField"][];
             /**
+             * History
+             * @description Series: cuántos valores recientes hacen falta por serie
+             */
+            history?: number | null;
+            /**
+             * Horizon
+             * @description Pronóstico: valores hacia adelante
+             */
+            horizon?: number | null;
+            /**
              * Kind
              * @enum {string}
              */
             kind: "fields" | "image" | "audio" | "text" | "series";
+            /**
+             * Task
+             * @description Qué devuelve el modelo (TaskType)
+             */
             task?: string | null;
-            history?: number | null;
-            horizon?: number | null;
         };
         /**
          * InputSpec
@@ -8245,6 +8287,15 @@ export interface components {
             /** Time Column */
             time_column: string;
         };
+        /** SeriesForecast */
+        SeriesForecast: {
+            /** Predictions */
+            predictions: {
+                [key: string]: unknown;
+            }[];
+            /** Task */
+            task: string;
+        };
         /**
          * SeriesProfile
          * @description RF-PRF-04 (solo agregados).
@@ -9275,7 +9326,7 @@ export interface components {
              * Field
              * @description Dato que pregunta el asistente
              */
-            field?: ("data_kind" | "problem" | "prediction" | "labels_available" | "classes" | "error_costs" | "positive_class" | "extrapolate" | "grouped" | "success_target" | "target_name" | "input_names") | null;
+            field?: ("data_kind" | "problem" | "prediction" | "labels_available" | "classes" | "error_costs" | "positive_class" | "extrapolate" | "grouped" | "success_target" | "target_name" | "input_names" | "horizon") | null;
             /**
              * Options
              * @description Respuestas rápidas sugeridas
@@ -13321,6 +13372,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Journey"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictJourneySeries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_predictJourneySeries"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesForecast"];
                 };
             };
             /** @description Validation Error */
