@@ -369,6 +369,7 @@ class Coordinator:
             merged = {**j.facts.model_dump(), **facts.model_dump(exclude_none=True)}
             j.facts = Facts.model_validate(merged)
         j.confirmed = False
+        before = j.goal_id
         named = files_.mentioned(message, j.goals) if message and not j.goal_id else None
         if named is not None:
             # Nombró la columna (o el objetivo) de una sola propuesta: es su elección.
@@ -391,6 +392,12 @@ class Coordinator:
             fits = files_.consistent(j.facts, j.goals)
             if len(fits) == 1:
                 self._apply_goal(pid, j, fits[0])
+        chosen = next((g for g in j.goals if g.id == j.goal_id), None)
+        if chosen and j.goal_id != before and not (out and out.reply.strip()):
+            # Sin acuse del LLM, el acuse es el objetivo que quedó elegido con sus palabras.
+            out = (out or InterviewTurn()).model_copy(
+                update={"reply": talk.goal_chosen(chosen, j.language)}
+            )
         j.pending = list(missing(j.facts))
         j.unsupported = unsupported_reason(j.facts)
         j.state = "unsupported" if j.unsupported else "interview"

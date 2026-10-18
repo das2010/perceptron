@@ -233,6 +233,7 @@ def test_written_answer_picks_the_goal_without_llm(ctx: Any, fixtures_dir: Path)
     j = c.interview(p.id, j.version, "Quiero el pronóstico de las unidades")
     assert j.goal_id and j.facts.problem == "forecast" and j.facts.target_name == "unidades"
     assert j.messages[-1].field == "horizon"
+    assert j.messages[-1].text.startswith("Perfecto: pronosticar «unidades»")
     # Sin elegir, el asistente vuelve a ofrecer los objetivos.
     other = ctx.projects.add(Project(name="Demanda 2"))
     src2 = ctx.repo(DataSource).add(
