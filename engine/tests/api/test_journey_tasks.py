@@ -216,7 +216,7 @@ def _trained(ctx: Any, facts: Facts, path: Path) -> tuple[Coordinator, Any]:
 
 
 def test_forecast_journey_trains_validates_and_forecasts(
-    ctx: Any, fixtures_dir: Path, tiny: None
+    client: Any, ctx: Any, fixtures_dir: Path, tiny: None
 ) -> None:
     c, j = _trained(ctx, FORECAST, fixtures_dir / "uc07_demand" / "demanda.csv")
     assert j.state in {"ready_to_validate", "needs_improvement"}, (j.error, j.stage)
@@ -225,7 +225,62 @@ def test_forecast_journey_trains_validates_and_forecasts(
     rows = pl.read_csv(fixtures_dir / "uc07_demand" / "demanda.csv").to_dicts()
     forecast = c.predict(c.contract(_pid(ctx, FORECAST)), rows=rows)
     assert forecast and len(forecast[0].prediction) == j.form.horizon
+    # Por la API: historia en CSV → próximos valores; datos nuevos → comparación automática.
+    csv = (fixtures_dir / "uc07_demand" / "demanda.csv").read_bytes()
+    url = f"/api/v1/projects/{_pid(ctx, FORECAST)}/journey"
+    r = client.post(f"{url}/predict/series", files={"file": ("historia.csv", csv, "text/csv")})
+    assert r.status_code == 200, r.text
+    first = r.json()["predictions"][0]
+    assert len(first["prediction"]) == j.form.horizon and first["details"]["times"]
+    r = client.post(f"{url}/validate/file", files={"file": ("nuevos.csv", csv, "text/csv")})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["checked"] >= 1 and "error_percent" in body["journey"]["validations"][-1]
 
 
 def _pid(ctx: Any, facts: Facts) -> str:
     return next(p.id for p in ctx.projects.list() if p.name == f"caso {facts.problem}")
+
+
+def test_unmarked_anomaly_journey_trains_and_flags_moments(
+    ctx: Any, fixtures_dir: Path, tmp_path: Path, tiny: None
+) -> None:
+    data = pl.read_csv(fixtures_dir / "uc08_telemetry" / "telemetria.csv").drop("anomalia")
+    path = tmp_path / "telemetria.csv"
+    data.write_csv(path)
+    facts = ANOMALY.model_copy(update={"labels_available": False})
+    c, j = _trained(ctx, facts, path)
+    # Sin marcas no se puede medir cuántos detecta: se valida igual, con casos conocidos.
+    assert j.state == "ready_to_validate", (j.error, j.stage)
+    assert j.result["measurable"] is False and j.form.kind == "series"
+    found = c.predict(c.contract(_pid(ctx, facts)), rows=data.tail(400).to_dicts())
+    assert found and isinstance(found[0].prediction, int)
+    j = c.record_validation(_pid(ctx, facts), "periodo-1", "sí", found[0].prediction, j.model_id)
+    assert j.validations[-1]["correct"] is True and j.validations[-1]["actual"] == "bien"
+
+
+@pytest.mark.parametrize(
+    ("facts", "fixture", "task"),
+    [
+        (LOCATE, "uc04_defects", "object_detection"),
+        (SEGMENT, "uc05_masks", "segmentation"),
+        (READ, "uc06_ocr", "ocr"),
+    ],
+    ids=["ubicar", "zonas", "texto"],
+)
+def test_photo_journeys_train_and_predict(
+    ctx: Any, fixtures_dir: Path, tiny: None, facts: Facts, fixture: str, task: str
+) -> None:
+    c, j = _trained(ctx, facts, fixtures_dir / fixture)
+    assert j.state in {"ready_to_validate", "needs_improvement"}, (j.error, j.stage)
+    assert j.result["kind"] == task and j.form.kind == "image" and j.form.task == task
+    photo = next(
+        p for p in (fixtures_dir / fixture).rglob("*") if p.suffix.lower() in (".png", ".jpg")
+    )
+    pred = c.predict(c.contract(_pid(ctx, facts)), file=(photo.read_bytes(), photo.suffix))
+    if task == "object_detection":
+        assert isinstance(pred.prediction, int) and "objects" in pred.details
+    elif task == "segmentation":
+        assert 0 <= pred.prediction <= 100 and pred.details["mask_png"]
+    else:
+        assert isinstance(pred.prediction, str)
