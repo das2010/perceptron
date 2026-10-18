@@ -6,6 +6,7 @@ seasonal-naive para comparar (y escala de MASE).
 from __future__ import annotations
 
 import math
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
 
@@ -99,7 +100,11 @@ class AnomalyWindows:
     series: list[str]
 
 
-def _prepared(cfg: SeriesConfig, state: dict[str, Any], df: pl.DataFrame, calendar: bool):  # type: ignore[no-untyped-def]
+def prepare_series(
+    cfg: SeriesConfig, state: dict[str, Any], df: pl.DataFrame, calendar: bool
+) -> Iterator[tuple[str, pl.DataFrame, np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+    """Por serie (en orden temporal): clave, filas, valores crudos, features escaladas
+    [n, C] y media/desvío por canal. Lo usan el ventaneo de entrenamiento y la inferencia."""
     df = _calendar(with_series_key(df, cfg), cfg) if calendar else with_series_key(df, cfg)
     vcols = value_channels(cfg)
     ccols = calendar_columns(cfg) if calendar else []
@@ -125,7 +130,7 @@ def forecast_windows(
     L, H = cfg.lookback, cfg.horizon  # noqa: N806 - notación usual (lookback, horizonte)
     m = cfg.season or 1
     xs, ys, means, stds, naives, scales, keys, levels = [], [], [], [], [], [], [], []
-    for key, part, values, feats, mean, std in _prepared(cfg, state, df, calendar):
+    for key, part, values, feats, mean, std in prepare_series(cfg, state, df, calendar):
         splits = part[SPLIT_COLUMN].to_numpy()
         y_raw = values[:, 0]
         for start in range(L, part.height - H + 1):
@@ -160,7 +165,7 @@ def anomaly_windows(
     """Una ventana por punto de `split` (la ventana termina en ese punto)."""
     L = cfg.lookback  # noqa: N806 - notación usual
     xs, labels, normal, keys = [], [], [], []
-    for key, part, _values, feats, _mean, _std in _prepared(cfg, state, df, calendar):
+    for key, part, _values, feats, _mean, _std in prepare_series(cfg, state, df, calendar):
         splits = part[SPLIT_COLUMN].to_numpy()
         lab = part[cfg.target].cast(pl.Int64).fill_null(0).to_numpy()
         for end in range(L - 1, part.height):
