@@ -185,3 +185,47 @@ def test_wrong_format_is_explained(ctx: Any, fixtures_dir: Path) -> None:
     # Una tabla sin fechas cuando se quiere pronosticar.
     j = _reviewed(ctx, FORECAST, fixtures_dir / "uc01_churn" / "churn.csv")
     assert j.state == "awaiting_data" and "mediciones en el tiempo" in j.blockers[0]
+
+
+# ---------------------------------------------------------------------- de punta a punta
+
+
+@pytest.fixture
+def tiny(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Presupuesto mínimo para el test: el recorrido es el mismo."""
+    from perceptron.hpo.plan import plan_budget
+    from perceptron.services import autodesign
+
+    monkeypatch.setenv("PERCEPTRON_OFFLINE", "1")
+    monkeypatch.setattr(autodesign, "TOURNAMENT_BUDGET_S", 0)
+
+    def small(spec: Any, **kw: Any) -> Any:
+        return plan_budget(spec, **kw).model_copy(
+            update={"max_trials": 1, "max_epochs_per_trial": 2}
+        )
+
+    monkeypatch.setattr(autodesign, "plan_budget", small)
+
+
+def _trained(ctx: Any, facts: Facts, path: Path) -> tuple[Coordinator, Any]:
+    j = _reviewed(ctx, facts, path)
+    assert j.state == "ready_to_train", j.blockers
+    c = Coordinator(Workflow(ctx))
+    c.train(_pid(ctx, facts), j.version)
+    return c, _wait(c, _pid(ctx, facts), 900)
+
+
+def test_forecast_journey_trains_validates_and_forecasts(
+    ctx: Any, fixtures_dir: Path, tiny: None
+) -> None:
+    c, j = _trained(ctx, FORECAST, fixtures_dir / "uc07_demand" / "demanda.csv")
+    assert j.state in {"ready_to_validate", "needs_improvement"}, (j.error, j.stage)
+    assert j.result["kind"] == "forecasting" and j.form.kind == "series"
+    assert j.form.horizon and j.form.history
+    rows = pl.read_csv(fixtures_dir / "uc07_demand" / "demanda.csv").to_dicts()
+    forecast = c.predict(c.contract(_pid(ctx, FORECAST)), rows=rows)
+    assert forecast and len(forecast[0].prediction) == j.form.horizon
+
+
+def _pid(ctx: Any, facts: Facts) -> str:
+    return next(p.id for p in ctx.projects.list() if p.name == f"caso {facts.problem}")
