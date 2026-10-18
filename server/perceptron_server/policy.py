@@ -65,6 +65,7 @@ VIEW_WRITES = frozenset(
         "predictRows",
         "predictFile",
         "predictTexts",
+        "predictSeries",
         "explainRow",
         "explainImage",
         "explainText",

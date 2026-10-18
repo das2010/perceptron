@@ -45,6 +45,18 @@ class SeriesConfig(BaseModel):
     season: int | None = None
 
 
+def history_columns(cfg: SeriesConfig) -> list[str]:
+    """Columnas de la historia reciente que necesita el modelo para predecir.
+
+    Tiempo, identificador de serie, target (solo forecasting: en anomalías es la etiqueta,
+    que al predecir no se conoce) y covariables.
+    """
+    cols = [cfg.time_column, *([cfg.series_id] if cfg.series_id else [])]
+    if cfg.task is TaskType.FORECASTING:
+        cols.append(cfg.target)
+    return list(dict.fromkeys([*cols, *(c for c in cfg.covariates if c != cfg.target)]))
+
+
 def _series_key(df: pl.DataFrame, cfg: SeriesConfig) -> pl.Expr:
     return pl.col(cfg.series_id).cast(pl.String) if cfg.series_id else pl.lit("_")
 

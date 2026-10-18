@@ -352,6 +352,38 @@ def fit_image_stats(fitted: FittedPipeline, images: list[np.ndarray]) -> FittedP
     )
 
 
+def vision_task_input(fitted: FittedPipeline) -> tuple[tuple[int, int], str] | None:
+    """Detección, segmentación y OCR: tamaño (alto, ancho) y modo de color de la entrada.
+
+    None para las demás tareas (usan `image_transforms`).
+    """
+    task = fitted.spec.target.task if fitted.spec.target else None
+    if task is TaskType.OCR:
+        img = fitted.spec.image or ImageSpec(size=32)
+        return (img.size, img.width or img.size * 4), "L"
+    if task in (TaskType.OBJECT_DETECTION, TaskType.SEGMENTATION):
+        img = fitted.spec.image or ImageSpec()
+        return (img.size, img.size), "RGB"
+    return None
+
+
+def vision_task_array(
+    fitted: FittedPipeline, img: Any, size: tuple[int, int], mode: str
+) -> np.ndarray:
+    """Imagen `PIL` redimensionada a `size` (alto, ancho) y normalizada, CHW float32.
+
+    Es la entrada de detección, segmentación y OCR tanto al entrenar como al servir.
+    """
+    im = img.convert(mode).resize((size[1], size[0]))
+    x = np.asarray(im, dtype=np.float32) / 255.0
+    x = x[None] if x.ndim == 2 else x.transpose(2, 0, 1)
+    c = x.shape[0]
+    mean = np.asarray((fitted.image_mean or [0.5] * c)[:c], dtype=np.float32).reshape(c, 1, 1)
+    std = np.asarray((fitted.image_std or [0.25] * c)[:c], dtype=np.float32).reshape(c, 1, 1)
+    out: np.ndarray = ((x - mean) / std).astype(np.float32)
+    return out
+
+
 def image_transforms(fitted: FittedPipeline, *, train: bool) -> Any:
     """Compose de torchvision v2 (augmentations solo en train)."""
     import torch

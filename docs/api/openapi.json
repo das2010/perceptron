@@ -24184,7 +24184,7 @@
     },
     "/api/v1/runs/{run_id}/predict/file": {
       "post": {
-        "description": "Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV.",
+        "description": "Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV\n(filas de tabla o, en series, la historia reciente).",
         "operationId": "predictFile",
         "parameters": [
           {
@@ -24230,6 +24230,59 @@
           }
         },
         "summary": "Predict File",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/predict/series": {
+      "post": {
+        "description": "Playground (RF-EXP-02): historia reciente de una o más series (forecasting, anomalías).\n\nLas filas llevan las columnas del entrenamiento: tiempo, serie (si hay), target y\ncovariables. Devuelve una predicción por serie.",
+        "operationId": "predictSeries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaygroundRows"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaygroundResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict Series",
         "tags": [
           "export"
         ]
