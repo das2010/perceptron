@@ -7,6 +7,13 @@ you step by step to a validated model. No machine-learning knowledge needed.
 
 1. **Describe the problem.** On **Home**, write what you want to achieve, for example “I have a
    sales spreadsheet and want to estimate how much we will sell”. Click **Start**.
+   - **Already have the data?** Attach it with the clip: one or more spreadsheets (CSV, Excel,
+     Parquet), or a zip with photos, recordings or texts sorted into folders.
+   - **What it suggests:** the assistant reads them and tells you what it can learn, for
+     example “Predict ‘churned’” or “Forecast ‘units’ for each product”.
+   - **Several spreadsheets:** if they share the same columns, it stacks them. If they are
+     related by a column, like customers and their purchases, it joins them.
+   - **How to choose:** pick the goal that fits, or tell it in your own words.
 2. **Answer the questions.** The assistant asks one thing at a time, with examples: what data you
    have, what you want to get, which error is worse, what result is good enough. Answer by typing
    or with the control below. In **What I understood** you can correct anything. When everything

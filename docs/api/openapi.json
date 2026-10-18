@@ -2309,6 +2309,37 @@
         "title": "CodeResponse",
         "type": "object"
       },
+      "ColumnInfo": {
+        "properties": {
+          "distinct": {
+            "title": "Distinct",
+            "type": "integer"
+          },
+          "filled": {
+            "description": "Fracción de filas con dato",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Filled",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "distinct",
+          "filled"
+        ],
+        "title": "ColumnInfo",
+        "type": "object"
+      },
       "ColumnProfile": {
         "properties": {
           "categorical": {
@@ -5519,6 +5550,84 @@
         "title": "FeedbackResult",
         "type": "object"
       },
+      "FileInfo": {
+        "description": "Lo que se leyó de un archivo o carpeta, sin valores individuales.",
+        "properties": {
+          "classes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Carpeta → cantidad",
+            "title": "Classes",
+            "type": "object"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ColumnInfo"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fotos, grabaciones o textos",
+            "title": "Files"
+          },
+          "kind": {
+            "enum": [
+              "table",
+              "images",
+              "audio",
+              "text",
+              "segment",
+              "read_text",
+              "locate",
+              "unknown"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows"
+          }
+        },
+        "required": [
+          "name",
+          "kind"
+        ],
+        "title": "FileInfo",
+        "type": "object"
+      },
       "GPUInfo": {
         "properties": {
           "backend": {
@@ -5613,6 +5722,77 @@
           "features"
         ],
         "title": "GlobalExplanation",
+        "type": "object"
+      },
+      "GoalProposal": {
+        "description": "Un objetivo posible para la red, con los hechos del caso que implica.",
+        "properties": {
+          "combine": {
+            "anyOf": [
+              {
+                "enum": [
+                  "stack",
+                  "join"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Combine"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/Facts"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "keys": {
+            "description": "Columna de unión de cada parte",
+            "items": {
+              "type": "string"
+            },
+            "title": "Keys",
+            "type": "array"
+          },
+          "parts": {
+            "description": "Planillas usadas (rutas relativas); la primera manda",
+            "items": {
+              "type": "string"
+            },
+            "title": "Parts",
+            "type": "array"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Columna con el resultado (tablas)",
+            "title": "Target"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "detail",
+          "facts"
+        ],
+        "title": "GoalProposal",
         "type": "object"
       },
       "GroupMetrics": {
@@ -6774,6 +6954,12 @@
             ],
             "title": "Contract"
           },
+          "data_ready": {
+            "default": false,
+            "description": "Los datos llegaron antes de confirmar: se revisan al confirmar",
+            "title": "Data Ready",
+            "type": "boolean"
+          },
           "data_summary": {
             "anyOf": [
               {
@@ -6822,6 +7008,14 @@
           "facts": {
             "$ref": "#/components/schemas/Facts"
           },
+          "files": {
+            "description": "Lo que se leyó de los archivos, sin valores",
+            "items": {
+              "$ref": "#/components/schemas/FileInfo"
+            },
+            "title": "Files",
+            "type": "array"
+          },
           "form": {
             "anyOf": [
               {
@@ -6831,6 +7025,26 @@
                 "type": "null"
               }
             ]
+          },
+          "goal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Objetivo elegido",
+            "title": "Goal Id"
+          },
+          "goals": {
+            "description": "Objetivos posibles según los archivos",
+            "items": {
+              "$ref": "#/components/schemas/GoalProposal"
+            },
+            "title": "Goals",
+            "type": "array"
           },
           "guide": {
             "anyOf": [
@@ -7064,6 +7278,8 @@
           "action": {
             "enum": [
               "message",
+              "files",
+              "choose",
               "confirm",
               "prepare",
               "train",
@@ -7083,6 +7299,19 @@
                 "type": "null"
               }
             ]
+          },
+          "goal_id": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Objetivo elegido",
+            "title": "Goal Id"
           },
           "language": {
             "default": "es",
@@ -14709,6 +14938,14 @@
             ],
             "description": "Dato que pregunta el asistente",
             "title": "Field"
+          },
+          "goals": {
+            "description": "Objetivos propuestos (ids de `Journey.goals`)",
+            "items": {
+              "type": "string"
+            },
+            "title": "Goals",
+            "type": "array"
           },
           "options": {
             "description": "Respuestas rápidas sugeridas",

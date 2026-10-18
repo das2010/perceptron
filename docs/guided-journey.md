@@ -29,6 +29,24 @@ Nada queda en un callejón sin salida:
 
 ## Recorrido
 
+0. **Archivos primero (opcional).** El usuario puede adjuntar uno o más archivos en Inicio o con
+   el clip de la conversación, antes de contar el caso o en el medio. `journey_files.read` los
+   lee sin valores individuales (columnas con tipo, cantidades, carpetas) y arma objetivos
+   posibles con reglas:
+   - **Planillas:** predecir cada columna de pocas categorías, estimar cada número, pronosticar
+     si hay fechas regulares (por serie) y detectar momentos raros (marcados o no).
+   - **Fotos:** ubicar (con anotaciones COCO/VOC/YOLO), marcar zonas (`images/` + `masks/`),
+     leer texto (`images/` + CSV) o clasificar por carpeta.
+   - **Grabaciones y textos:** clasificar por carpeta.
+   - **Combinaciones:** varias planillas con las mismas columnas se juntan. Si una columna es
+     única en una planilla y aparece en la más larga, se unen por esa columna. La tabla
+     combinada se materializa al elegir.
+
+   Cada propuesta trae los hechos del caso que implica. El LLM (prompt `journey_goals`) elige
+   cuáles mostrar primero y lo cuenta con los nombres de las columnas. No inventa: su orden se
+   valida contra los ids. El usuario elige con un clic o con sus palabras, nombrando la columna
+   o diciendo algo que encaja con una sola propuesta (`mentioned`, `consistent`). Lo demás se
+   pregunta como siempre, y al confirmar los datos se revisan sin volver a subirlos.
 1. **El caso.** El usuario describe el problema en Inicio. El asistente pregunta, de a una
    pregunta por vez y con un ejemplo, por el próximo dato que falta, en tantas iteraciones como
    haga falta. Debajo de la conversación hay un control de respaldo para ese mismo dato, útil sin

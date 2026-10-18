@@ -9,7 +9,7 @@ import { createTestRouter } from "@/app/router";
 import { resetApiClient } from "@/lib/api/client";
 import { mockEngine, project } from "@/test/engine";
 
-import { FIRST_MESSAGE } from "./JourneyPage";
+import { FIRST_MESSAGE } from "./journeyStart";
 
 const base = {
   version: 3,

@@ -8,9 +8,12 @@ LLM, cuando está, reemplaza estas frases por otras más ajustadas; nunca decide
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from perceptron.services.journey_guide import VALIDATION_MIN, Facts, higher_is_better, target_unit
+
+if TYPE_CHECKING:
+    from perceptron.services.journey_files import FileInfo, GoalProposal
 
 Language = Literal["es", "en"]
 
@@ -398,8 +401,117 @@ def after_confirm(language: str = "es") -> str:
     )
 
 
+def after_confirm_with_data(language: str = "es") -> str:
+    if _lang(language) == "en":
+        return "Great, the case is clear and I already have your data: I'm checking it now."
+    return "¡Bien! Ya tengo claro el caso y tengo tus datos: los reviso ahora."
+
+
 def uploaded(name: str, language: str = "es") -> str:
     return f"Here is «{name}»." if _lang(language) == "en" else f"Te paso «{name}»."
+
+
+# ---------------------------------------------------------------------- archivos y objetivos
+
+
+def shared(names: list[str], language: str = "es") -> str:
+    """Lo que la persona subió antes de contar el caso."""
+    listed = _join(names, language)
+    return f"Here is {listed}." if _lang(language) == "en" else f"Te paso {listed}."
+
+
+def _count(n: int, language: str) -> str:
+    return f"{n:,}" if _lang(language) == "en" else f"{n:,}".replace(",", ".")
+
+
+def _described(f: FileInfo, language: str) -> str:
+    """«clientes.csv» (1.240 filas y 8 columnas), sin valores de las filas."""
+    en = _lang(language) == "en"
+    if f.error:
+        return f.error
+    if f.kind == "table":
+        rows, cols = _count(f.rows or 0, language), len(f.columns)
+        return (
+            f"“{f.name}” ({rows} rows, {cols} columns)"
+            if en
+            else (f"«{f.name}» ({rows} filas y {cols} columnas)")
+        )
+    what = (
+        {
+            "images": "photos",
+            "segment": "photos with masks",
+            "locate": "photos with boxes",
+            "read_text": "images with their text",
+            "audio": "recordings",
+            "text": "texts",
+        }
+        if en
+        else {
+            "images": "fotos",
+            "segment": "fotos con máscaras",
+            "locate": "fotos con recuadros",
+            "read_text": "imágenes con su texto",
+            "audio": "grabaciones",
+            "text": "textos",
+        }
+    ).get(f.kind, "files" if en else "archivos")
+    n = _count(f.files or 0, language)
+    folders = [c for c in f.classes if c]
+    if len(folders) >= 2:
+        sorted_ = _join(folders[:6], language)
+        return (
+            f"“{f.name}” ({n} {what} in {len(folders)} folders: {sorted_})"
+            if en
+            else f"«{f.name}» ({n} {what} en {len(folders)} carpetas: {sorted_})"
+        )
+    return f"“{f.name}” ({n} {what})" if en else f"«{f.name}» ({n} {what})"
+
+
+def files_read(
+    files: list[FileInfo], combined: str | None, has_goals: bool, language: str = "es"
+) -> str:
+    """Qué se leyó y la invitación a elegir un objetivo."""
+    en = _lang(language) == "en"
+    ok = [f for f in files if not f.error]
+    described = [_described(f, language) for f in ok]
+    if not ok:
+        parts = []
+    elif len(ok) == 1:
+        parts = [f"I read {described[0]}." if en else f"Leí {described[0]}."]
+    else:
+        listed = ", ".join(described[:-1]) + (" and " if en else " y ") + described[-1]
+        parts = [
+            f"I read {len(ok)} files: {listed}." if en else f"Leí {len(ok)} archivos: {listed}."
+        ]
+    parts += [f.error for f in files if f.error]
+    if combined:
+        parts.append(
+            f"I can use them combined: {combined}."
+            if en
+            else f"Los puedo usar combinados: {combined}."
+        )
+    if has_goals:
+        parts.append(
+            "With this, these are the goals I suggest: pick one, or tell me in your own words "
+            "what you want to achieve."
+            if en
+            else "Con esto, te propongo estos objetivos: elegí uno, o contame con tus palabras qué "
+            "querés lograr."
+        )
+    return " ".join(p for p in parts if p)
+
+
+def pick_goal(language: str = "es") -> str:
+    if _lang(language) == "en":
+        return "Which of these goals fits? You can also tell me in your own words."
+    return "¿Cuál de estos objetivos te sirve? También me lo podés contar con tus palabras."
+
+
+def goal_chosen(goal: GoalProposal, language: str = "es") -> str:
+    title = goal.title[:1].lower() + goal.title[1:]
+    if _lang(language) == "en":
+        return f"Great: {title}, {goal.detail}."
+    return f"Perfecto: {title}, {goal.detail}."
 
 
 def reviewed(summary_: dict[str, Any], warnings: list[str], language: str = "es") -> str:

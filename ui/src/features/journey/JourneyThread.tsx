@@ -2,7 +2,7 @@
  * El hilo de la conversación con el asistente: burbujas, respuestas rápidas, el «escribiendo…»
  * y la caja de texto, siempre disponible en todas las etapas.
  */
-import { SendHorizontal, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, Paperclip, SendHorizontal, Sparkles, Upload } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -39,11 +39,12 @@ export function Bubble({
   );
 }
 
-export function Typing() {
+export function Typing({ label }: { label?: string }) {
   const { t } = useTranslation();
   return (
-    <div className="flex justify-start" role="status" aria-label={t("journey.typing")}>
-      <div className="flex gap-1 rounded-2xl rounded-bl-sm border border-line bg-card px-4 py-3">
+    <div className="flex justify-start" role="status" aria-label={label ?? t("journey.typing")}>
+      <div className="flex items-center gap-1 rounded-2xl rounded-bl-sm border border-line bg-card px-4 py-3">
+        {label && <span className="mr-2 text-sm text-muted">{label}</span>}
         {[0, 1, 2].map((i) => (
           <span
             key={i}
@@ -84,16 +85,93 @@ export function Chips({
   );
 }
 
-/** La caja de texto: Enter envía, Shift+Enter agrega una línea. */
+type Goal = Schemas["GoalProposal"];
+
+/** Los objetivos que el asistente propone después de leer los archivos: se elige con un clic. */
+export function GoalCards({
+  goals,
+  disabled,
+  onPick,
+}: {
+  goals: Goal[];
+  disabled: boolean;
+  onPick: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  if (!goals.length) return null;
+  return (
+    <ul aria-label={t("journey.files.goals")} className="grid gap-2 sm:grid-cols-2">
+      {goals.map((g) => (
+        <li key={g.id}>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onPick(g.id)}
+            className="group flex h-full w-full items-start gap-2 rounded-2xl border border-line bg-card p-3 text-left transition hover:border-brand disabled:opacity-50"
+          >
+            <span className="flex-1">
+              <span className="block font-semibold text-ink group-hover:text-brand">{g.title}</span>
+              <span className="mt-0.5 block text-sm text-muted">{g.detail}</span>
+            </span>
+            <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Los archivos que acepta el asistente para proponer objetivos (o un zip con carpetas). */
+export const DATA_FILES =
+  ".csv,.tsv,.txt,.xlsx,.xls,.parquet,.json,.jsonl,.zip,.png,.jpg,.jpeg,.wav,.mp3,.flac";
+
+/** El clip para adjuntar archivos de datos. */
+export function AttachButton({
+  disabled,
+  onFiles,
+}: {
+  disabled: boolean;
+  onFiles: (files: File[]) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <label
+      title={t("journey.files.attach")}
+      className={`mb-1 inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-canvas hover:text-brand ${
+        disabled ? "pointer-events-none opacity-50" : ""
+      }`}
+    >
+      <Paperclip className="h-4 w-4" aria-hidden="true" />
+      <input
+        type="file"
+        multiple
+        className="sr-only"
+        accept={DATA_FILES}
+        disabled={disabled}
+        aria-label={t("journey.files.attach")}
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          if (files.length) onFiles(files);
+          e.target.value = "";
+        }}
+      />
+    </label>
+  );
+}
+
+/** La caja de texto: Enter envía, Shift+Enter agrega una línea. Con `onFiles`, también se
+ * adjuntan archivos (con el clip o arrastrándolos). */
 export function Composer({
   placeholder,
   disabled,
   onSend,
+  onFiles,
   autoFocus,
 }: {
   placeholder: string;
   disabled: boolean;
   onSend: (text: string) => void;
+  onFiles?: (files: File[]) => void;
   autoFocus?: boolean;
 }) {
   const { t } = useTranslation();
@@ -121,8 +199,22 @@ export function Composer({
         e.preventDefault();
         send();
       }}
+      onDragOver={onFiles ? (e) => e.preventDefault() : undefined}
+      onDrop={
+        onFiles
+          ? (e) => {
+              e.preventDefault();
+              const files = Array.from(e.dataTransfer.files);
+              if (files.length && !disabled) onFiles(files);
+            }
+          : undefined
+      }
     >
-      <Sparkles className="mb-2 ml-1 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+      {onFiles ? (
+        <AttachButton disabled={disabled} onFiles={onFiles} />
+      ) : (
+        <Sparkles className="mb-2 ml-1 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+      )}
       <textarea
         ref={ref}
         rows={1}

@@ -30,10 +30,13 @@ BATCH_MAX = 500
 class JourneyAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: int = Field(ge=1)
-    action: Literal["message", "confirm", "prepare", "train", "stop", "acknowledge", "revise"]
+    action: Literal[
+        "message", "files", "choose", "confirm", "prepare", "train", "stop", "acknowledge", "revise"
+    ]
     message: str = Field(default="", max_length=4000)
     facts: Facts | None = None
     source_id: str | None = None
+    goal_id: str | None = Field(default=None, max_length=20, description="Objetivo elegido")
     target: str | None = Field(default=None, description="Columna con el resultado (tablas)")
     language: Literal["es", "en"] = "es"
 
@@ -57,6 +60,15 @@ def act_journey(project_id: str, body: JourneyAction, ctx: Ctx) -> Journey:
         if not body.message.strip():
             raise ValidationError("Escribí tu mensaje.")
         return c.ask(project_id, body.version, body.message, body.language)
+    if body.action == "files":
+        # Archivos antes de contar el caso: se leen y se proponen objetivos posibles.
+        if not body.source_id:
+            raise ValidationError("Subí primero los archivos.")
+        return c.read_files(project_id, body.version, body.source_id, body.message, body.language)
+    if body.action == "choose":
+        if not body.goal_id:
+            raise ValidationError("Elegí uno de los objetivos propuestos.")
+        return c.choose(project_id, body.version, body.goal_id, body.language)
     if body.action == "confirm":
         return c.confirm(project_id, body.version)
     if body.action == "prepare":

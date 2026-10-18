@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Cpu, PackageOpen, Plus } from "lucide-react";
+import { ArrowRight, Cpu, FileSpreadsheet, PackageOpen, Plus, X } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -18,7 +18,8 @@ import {
   Spinner,
   Textarea,
 } from "@/components/ui";
-import { FIRST_MESSAGE } from "@/features/journey/JourneyPage";
+import { FIRST_FILES, FIRST_MESSAGE } from "@/features/journey/journeyStart";
+import { AttachButton } from "@/features/journey/JourneyThread";
 import { EngineStatus } from "@/features/system/EngineStatus";
 import {
   useCreateProject,
@@ -149,7 +150,10 @@ function HardwareCard() {
 export function HomePage() {
   const { t, i18n } = useTranslation();
   const [problem, setProblem] = useState("");
+  const [attached, setAttached] = useState<File[]>([]);
   const box = useRef<HTMLTextAreaElement>(null);
+  const addFiles = (list: File[]) =>
+    setAttached((prev) => [...prev, ...list.filter((f) => !prev.some((p) => p.name === f.name))]);
   const guidedCreate = useCreateProject();
   const [open, setOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -162,14 +166,17 @@ export function HomePage() {
 
   const start = () => {
     const text = problem.trim();
-    if (!text || guidedCreate.isPending) return;
+    if ((!text && !attached.length) || guidedCreate.isPending) return;
+    const name = text || attached.map((f) => f.name).join(", ");
     guidedCreate.mutate(
-      { name: text.slice(0, 80), goal: text, privacy_level: "L1", description: "", template: null },
+      { name: name.slice(0, 80), goal: text, privacy_level: "L1", description: "", template: null },
       {
         onSuccess: (p) => {
-          // La conversación arranca en el proyecto, con el «escribiendo…» del asistente.
+          // La conversación arranca en el proyecto, con el «escribiendo…» del asistente: con
+          // archivos, los lee y propone objetivos.
+          if (attached.length) FIRST_FILES.set(p.id, attached);
           try {
-            sessionStorage.setItem(FIRST_MESSAGE(p.id), text);
+            if (text) sessionStorage.setItem(FIRST_MESSAGE(p.id), text);
           } catch {
             // Sin almacenamiento de sesión: la persona lo vuelve a escribir allá.
           }
@@ -222,9 +229,14 @@ export function HomePage() {
             e.preventDefault();
             start();
           }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            addFiles(Array.from(e.dataTransfer.files));
+          }}
         >
           <textarea
-            required
+            required={!attached.length}
             rows={4}
             autoFocus
             ref={box}
@@ -240,14 +252,43 @@ export function HomePage() {
             placeholder={t("journey.homePlaceholder")}
             className="w-full resize-none bg-transparent px-2 py-1 text-lg text-ink outline-none placeholder:text-muted focus-visible:outline-none"
           />
+          {attached.length > 0 && (
+            <ul className="mb-2 flex flex-wrap gap-2 px-2">
+              {attached.map((f) => (
+                <li
+                  key={f.name}
+                  className="inline-flex items-center gap-1 rounded-full border border-line bg-canvas py-0.5 pl-2 pr-1 text-sm"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-brand" aria-hidden="true" />
+                  {f.name}
+                  <button
+                    type="button"
+                    aria-label={t("journey.files.remove", { name: f.name })}
+                    onClick={() => setAttached((prev) => prev.filter((p) => p !== f))}
+                    className="rounded-full p-0.5 text-muted hover:text-bad"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="flex items-center justify-between gap-3 px-2">
-            <span className="text-xs text-muted">{t("journey.enterHint")}</span>
-            <Button type="submit" disabled={!problem.trim()} loading={guidedCreate.isPending}>
+            <span className="flex items-center gap-2 text-xs text-muted">
+              <AttachButton disabled={guidedCreate.isPending} onFiles={addFiles} />
+              {t("journey.enterHint")}
+            </span>
+            <Button
+              type="submit"
+              disabled={!problem.trim() && !attached.length}
+              loading={guidedCreate.isPending}
+            >
               {t("journey.begin")}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </form>
+        <p className="mt-2 px-1 text-sm text-muted">{t("journey.files.homeHint")}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-sm text-muted">{t("journey.tryOne")}</span>
           {(["sales", "cracks", "messages"] as const).map((k) => (

@@ -229,3 +229,51 @@ def test_photos_to_locate_defects(coordinator: Coordinator) -> None:
     text = "\n".join(log)
     assert not j.unsupported and not j.pending, text
     assert j.facts.data_kind == "images" and j.facts.problem in ("locate", "segment"), text
+
+
+def test_files_first_the_assistant_proposes_the_goal(
+    coordinator: Coordinator, fixtures_dir: Path
+) -> None:
+    """La persona sube la planilla antes de contar el caso: el asistente cuenta qué vio,
+    propone primero lo que encaja con lo que dijo y la conversación sigue desde ahí."""
+    from perceptron.domain.models import DataSource
+
+    c = coordinator
+    project = c.ctx.projects.add(Project(name="archivos"))
+    path = fixtures_dir / "uc01_churn" / "churn.csv"
+    src = c.ctx.repo(DataSource).add(
+        DataSource(type="file", project_id=project.id, name=path.name, config={"path": str(path)})
+    )
+    j = c.read_files(project.id, 1, src.id, "Quiero saber qué clientes se van a ir")
+    said = j.messages[-1]
+    log = ["PERSONA: Quiero saber qué clientes se van a ir [sube churn.csv]"]
+    titles = {g.id: g.title for g in j.goals}
+    log.append(f"ASISTENTE: {said.text}  [objetivos: {[titles[i] for i in said.goals]}]")
+    first = next(g for g in j.goals if g.id == said.goals[0])
+    answers = {
+        "error_costs": "Que se me escape uno que se va es peor",
+        "positive_class": "Los que se van",
+        "success_target": "8 de cada 10",
+    }
+    if first.target == "churn":
+        log.append(f"PERSONA: [elige «{first.title}»]")
+        j = c.choose(project.id, j.version, first.id)
+        for _ in range(MAX_TURNS):
+            if not j.pending:
+                break
+            asked = j.messages[-1].field or j.pending[0]
+            log.append(f"ASISTENTE: {j.messages[-1].text}")
+            reply = answers.get(asked, "No sé, lo que te parezca")
+            log.append(f"PERSONA: {reply}")
+            j = c.interview(project.id, j.version, reply)
+        log.append(f"ASISTENTE: {j.messages[-1].text}")
+    folder = os.environ.get("PERCEPTRON_TRANSCRIPTS")
+    if folder:
+        Path(folder).mkdir(parents=True, exist_ok=True)
+        provider = os.environ.get("PERCEPTRON_LLM__PROFILE", "llm")
+        Path(folder, f"{provider}-archivos.txt").write_text("\n".join(log) + "\n", "utf-8")
+    text = "\n".join(log)
+    assert len(said.goals) >= 2 and first.target == "churn", text
+    assert "churn" in said.text or "cliente" in said.text.casefold(), text
+    assert not JARGON.search(said.text), text
+    assert not j.pending and j.facts.target_name == "churn" and j.data_ready, text
