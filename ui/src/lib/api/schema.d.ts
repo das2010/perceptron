@@ -2817,9 +2817,33 @@ export interface paths {
         put?: never;
         /**
          * Predict File
-         * @description Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV.
+         * @description Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV
+         *     (filas de tabla o, en series, la historia reciente).
          */
         post: operations["predictFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/predict/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict Series
+         * @description Playground (RF-EXP-02): historia reciente de una o más series (forecasting, anomalías).
+         *
+         *     Las filas llevan las columnas del entrenamiento: tiempo, serie (si hay), target y
+         *     covariables. Devuelve una predicción por serie.
+         */
+        post: operations["predictSeries"];
         delete?: never;
         options?: never;
         head?: never;
@@ -15251,6 +15275,41 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_predictFile"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaygroundResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictSeries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaygroundRows"];
             };
         };
         responses: {
