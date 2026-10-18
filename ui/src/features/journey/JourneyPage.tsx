@@ -406,7 +406,7 @@ export function JourneyPage() {
             <ValidatePanel journey={j} projectId={projectId} onUpdate={update} />
           ) : (
             <>
-              <UsePanel journey={j} />
+              <UsePanel journey={j} projectId={projectId} />
               <details>
                 <summary className="cursor-pointer text-sm text-muted">
                   {t("journey.validate.title")}

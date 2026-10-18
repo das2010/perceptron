@@ -5541,7 +5541,8 @@ export interface components {
             /** Prediction */
             prediction?: string | null;
             /** Problem */
-            problem?: ("category" | "value" | "rule" | "forecast" | "anomaly" | "other") | null;
+            problem?: ("category" | "value" | "rule" | "forecast" | "anomaly" | "locate" | "segment" | "read_text" | "other") | null;
+            horizon?: number | null;
             /**
              * Success Target
              * @description Categoría: % mínimo de aciertos. Valor: error típico máximo aceptable (%)
@@ -5973,7 +5974,10 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "fields" | "image" | "audio" | "text";
+            kind: "fields" | "image" | "audio" | "text" | "series";
+            task?: string | null;
+            history?: number | null;
+            horizon?: number | null;
         };
         /**
          * InputSpec

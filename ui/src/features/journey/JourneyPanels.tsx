@@ -5,7 +5,7 @@
  */
 import { useMutation } from "@tanstack/react-query";
 import { Check, Circle, Download, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -30,6 +30,9 @@ import {
 import { postForm } from "@/lib/api/upload";
 import { formatNumber } from "@/lib/format";
 
+import { DropZone } from "./JourneyThread";
+import { PredictionView, SeriesView } from "./JourneyTasks";
+import { JUDGED, type ModelPrediction, useObjectUrl } from "./journeyModel";
 import { factValue, fieldLabel, humanize } from "./journeyText";
 
 export type Journey = Schemas["Journey"];
@@ -501,6 +504,62 @@ function rowOf(form: InputForm, values: Record<string, string>): Record<string, 
   );
 }
 
+/** El resultado real de un caso, según lo que predice el modelo. */
+function ActualInput({
+  task,
+  classes,
+  actual,
+  setActual,
+}: {
+  task: string;
+  classes: string[];
+  actual: string;
+  setActual: (v: string) => void;
+}) {
+  const { t } = useTranslation();
+  if (task === "ocr")
+    return (
+      <Field label={t("journey.tasks.actualText")}>
+        <Input required value={actual} onChange={(e) => setActual(e.target.value)} />
+      </Field>
+    );
+  return (
+    <Field label={t("journey.validate.actual")}>
+      {classes.length ? (
+        <Select required value={actual} onChange={(e) => setActual(e.target.value)}>
+          <option value="">{t("journey.choose")}</option>
+          {classes.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </Select>
+      ) : (
+        <Input
+          required
+          type="number"
+          step="any"
+          value={actual}
+          onChange={(e) => setActual(e.target.value)}
+        />
+      )}
+    </Field>
+  );
+}
+
+function Verdict({ busy, onVerdict }: { busy: boolean; onVerdict: (ok: boolean) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-sm">{t("journey.tasks.judgeQuestion")}</span>
+      <Button size="sm" loading={busy} onClick={() => onVerdict(true)}>
+        {t("journey.tasks.judgeYes")}
+      </Button>
+      <Button size="sm" variant="secondary" disabled={busy} onClick={() => onVerdict(false)}>
+        {t("journey.tasks.judgeNo")}
+      </Button>
+    </div>
+  );
+}
+
 export function ValidatePanel({
   journey,
   projectId,
@@ -510,24 +569,29 @@ export function ValidatePanel({
   projectId: string;
   onUpdate: (j: Journey) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const form = journey.form as InputForm;
+  const task = form.task ?? String((journey.contract?.outputs as { task?: string })?.task ?? "");
+  const runId = journey.run_id ?? "";
   const [values, setValues] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
   const [actual, setActual] = useState("");
-  const classes = ((journey.contract?.outputs as { classes?: string[] } | undefined)?.classes ??
-    []) as string[];
+  const image = useObjectUrl(form.kind === "image" ? file : null);
+  const classes =
+    task === "classification"
+      ? (((journey.contract?.outputs as { classes?: string[] } | undefined)?.classes ??
+          []) as string[])
+      : [];
+  const url = `/api/v1/projects/${projectId}/journey/validate/file`;
+  const sendFile = async (f: File, real?: string) => {
+    const body = new FormData();
+    body.append("file", f);
+    if (real !== undefined) body.append("actual", real);
+    return postForm<Schemas["GuidedValidation"]>(url, body);
+  };
   const single = useMutation({
-    mutationFn: async () => {
-      if (form.kind === "image" || form.kind === "audio") {
-        const body = new FormData();
-        if (file) body.append("file", file);
-        body.append("actual", actual);
-        return postForm<Schemas["GuidedValidation"]>(
-          `/api/v1/projects/${projectId}/journey/validate/file`,
-          body,
-        );
-      }
+    mutationFn: async (real: string) => {
+      if (form.kind === "image" || form.kind === "audio") return sendFile(file as File, real);
       return unwrap(
         await (
           await getApiClient()
@@ -535,35 +599,127 @@ export function ValidatePanel({
           params: { path: { project_id: projectId } },
           body:
             form.kind === "text"
-              ? { text: values.__text ?? "", actual }
-              : { row: rowOf(form, values), actual },
+              ? { text: values.__text ?? "", actual: real }
+              : { row: rowOf(form, values), actual: real },
         }),
       );
     },
-    onSuccess: (r) => onUpdate(r.journey),
+    onSuccess: (r) => {
+      onUpdate(r.journey);
+      setFile(null);
+      setActual("");
+    },
   });
-  const batch = useMutation({
+  // Antes de juzgar, la persona ve lo que marcó el modelo (objetos, zona o momentos raros).
+  const preview = usePredictFile(runId);
+  const seriesPreview = useMutation({
     mutationFn: async (f: File) => {
       const body = new FormData();
       body.append("file", f);
-      return postForm<Schemas["GuidedValidation"]>(
-        `/api/v1/projects/${projectId}/journey/validate/file`,
+      return postForm<{ predictions: ModelPrediction[] }>(
+        `/api/v1/projects/${projectId}/journey/predict/series`,
         body,
       );
     },
+  });
+  const batch = useMutation({
+    mutationFn: (f: File) => sendFile(f),
     onSuccess: (r) => onUpdate(r.journey),
   });
+  const judged = JUDGED.has(task);
   const validations = journey.validations ?? [];
-  const last = single.data;
-  return (
-    <Card>
-      <CardTitle>{t("journey.validate.title")}</CardTitle>
-      <p className="mb-3 text-sm text-muted">{t("journey.validate.help")}</p>
+  const last = single.data ?? batch.data;
+  const lastValue = last
+    ? Array.isArray(last.prediction)
+      ? (last.prediction as number[]).map((v) => formatNumber(v, i18n.language, 4)).join(", ")
+      : String(last.prediction)
+    : "";
+
+  let body: ReactNode;
+  if (form.kind === "series" && task === "forecasting")
+    body = (
+      <DropZone
+        label={t("journey.tasks.validateSeries", { n: form.horizon ?? 1 })}
+        hint={t("journey.tasks.historyHint", {
+          columns: (form.fields ?? []).map((f) => f.name).join(", "),
+        })}
+        accept=".csv,.xlsx,.xls"
+        multiple={false}
+        disabled={batch.isPending}
+        onFiles={(files) => files[0] && batch.mutate(files[0])}
+      />
+    );
+  else if (form.kind === "series")
+    body = (
+      <div className="space-y-3">
+        <DropZone
+          label={t("journey.tasks.validateAnomaly")}
+          hint={t("journey.tasks.historyHint", {
+            columns: (form.fields ?? []).map((f) => f.name).join(", "),
+          })}
+          accept=".csv,.xlsx,.xls"
+          multiple={false}
+          disabled={seriesPreview.isPending}
+          onFiles={(files) => {
+            if (!files[0]) return;
+            setFile(files[0]);
+            seriesPreview.mutate(files[0]);
+          }}
+        />
+        {seriesPreview.data && file && (
+          <>
+            <SeriesView task={task} predictions={seriesPreview.data.predictions} />
+            <Verdict
+              busy={batch.isPending || single.isPending}
+              onVerdict={(ok) =>
+                void sendFile(file, ok ? "sí" : "no").then((r) => {
+                  onUpdate(r.journey);
+                  seriesPreview.reset();
+                  setFile(null);
+                })
+              }
+            />
+          </>
+        )}
+      </div>
+    );
+  else if (judged)
+    body = (
+      <div className="space-y-3">
+        <CaseInputs
+          form={form}
+          values={values}
+          setValues={setValues}
+          file={file}
+          setFile={(f) => {
+            setFile(f);
+            if (f) preview.mutate(f);
+          }}
+        />
+        {preview.data?.predictions?.[0] && file && (
+          <>
+            <PredictionView
+              task={task}
+              p={preview.data.predictions[0] as ModelPrediction}
+              image={image}
+            />
+            <Verdict
+              busy={single.isPending}
+              onVerdict={(ok) =>
+                single.mutate(ok ? "sí" : "no", { onSuccess: () => preview.reset() })
+              }
+            />
+          </>
+        )}
+      </div>
+    );
+  else
+    body = (
       <form
         className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
-          single.mutate();
+          single.mutate(actual);
         }}
       >
         <CaseInputs
@@ -573,31 +729,23 @@ export function ValidatePanel({
           file={file}
           setFile={setFile}
         />
-        <Field label={t("journey.validate.actual")}>
-          {classes.length ? (
-            <Select required value={actual} onChange={(e) => setActual(e.target.value)}>
-              <option value="">{t("journey.choose")}</option>
-              {classes.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </Select>
-          ) : (
-            <Input
-              required
-              type="number"
-              step="any"
-              value={actual}
-              onChange={(e) => setActual(e.target.value)}
-            />
-          )}
-        </Field>
+        <ActualInput task={task} classes={classes} actual={actual} setActual={setActual} />
         <Button type="submit" loading={single.isPending} disabled={!actual}>
           {t("journey.validate.check")}
         </Button>
       </form>
-      {last && (
+    );
+
+  return (
+    <Card>
+      <CardTitle>{t("journey.validate.title")}</CardTitle>
+      <p className="mb-3 text-sm text-muted">
+        {t(judged ? "journey.tasks.judgeHelp" : "journey.validate.help")}
+      </p>
+      {body}
+      {last && !judged && (
         <p role="status" className="mt-3 text-sm">
-          {t("journey.validate.predicted", { value: String(last.prediction) })} —{" "}
+          {t("journey.validate.predicted", { value: lastValue })} —{" "}
           <strong className={last.correct ? "text-ok" : "text-bad"}>
             {t(last.correct ? "journey.validate.correct" : "journey.validate.incorrect")}
           </strong>
@@ -617,7 +765,7 @@ export function ValidatePanel({
           />
         </Field>
       )}
-      {batch.data && (
+      {batch.data && (batch.data.checked ?? 1) > 1 && (
         <p className="mt-2 text-sm">
           {t("journey.validate.batchDone", { count: batch.data.checked })}
         </p>
@@ -634,67 +782,81 @@ export function ValidatePanel({
         <p className="mt-2 text-sm text-ok">{t("journey.validate.ready")}</p>
       )}
       <p className="mt-3 text-xs text-muted">{t("journey.noGuarantee")}</p>
-      <ErrorNote error={single.error ?? batch.error} />
+      <ErrorNote error={single.error ?? batch.error ?? preview.error ?? seriesPreview.error} />
     </Card>
   );
 }
 
-export function UsePanel({ journey }: { journey: Journey }) {
-  const { t, i18n } = useTranslation();
+export function UsePanel({ journey, projectId }: { journey: Journey; projectId: string }) {
+  const { t } = useTranslation();
   const form = journey.form as InputForm;
+  const task = form.task ?? String((journey.contract?.outputs as { task?: string })?.task ?? "");
   const runId = journey.run_id ?? "";
   const [values, setValues] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
+  const image = useObjectUrl(form.kind === "image" ? file : null);
   const rows = usePredictRows(runId);
   const texts = usePredictTexts(runId);
   const files = usePredictFile(runId);
+  const series = useMutation({
+    mutationFn: async (f: File) => {
+      const body = new FormData();
+      body.append("file", f);
+      return postForm<{ predictions: ModelPrediction[] }>(
+        `/api/v1/projects/${projectId}/journey/predict/series`,
+        body,
+      );
+    },
+  });
   const result = rows.data ?? texts.data ?? files.data;
-  const p = result?.predictions?.[0] as { prediction?: unknown; confidence?: number } | undefined;
+  const p = result?.predictions?.[0] as ModelPrediction | undefined;
   const pending = rows.isPending || texts.isPending || files.isPending;
   return (
     <Card>
       <CardTitle>{t("journey.use.title")}</CardTitle>
-      <p className="mb-3 text-sm text-muted">{t("journey.use.help")}</p>
-      <form
-        className="space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (form.kind === "fields") rows.mutate([rowOf(form, values)]);
-          else if (form.kind === "text") texts.mutate([values.__text ?? ""]);
-          else if (file) files.mutate(file);
-        }}
-      >
-        <CaseInputs
-          form={form}
-          values={values}
-          setValues={setValues}
-          file={file}
-          setFile={setFile}
-        />
-        <Button type="submit" loading={pending}>
-          {t("journey.use.predict")}
-        </Button>
-      </form>
-      {p && (
-        <p role="status" className="mt-3">
-          {t("journey.use.prediction", {
-            value:
-              typeof p.prediction === "number"
-                ? formatNumber(p.prediction, i18n.language, 4)
-                : String(p.prediction),
+      <p className="mb-3 text-sm text-muted">
+        {form.kind === "series"
+          ? t("journey.tasks.historyHelp", { n: form.history ?? 1 })
+          : t("journey.use.help")}
+      </p>
+      {form.kind === "series" ? (
+        <DropZone
+          label={t("journey.tasks.history")}
+          hint={t("journey.tasks.historyHint", {
+            columns: (form.fields ?? []).map((f) => f.name).join(", "),
           })}
-          {typeof p.confidence === "number" && (
-            <span className="ml-2 text-muted">
-              (
-              {t("journey.use.confidence", {
-                value: formatNumber(p.confidence * 100, i18n.language, 0),
-              })}
-              )
-            </span>
-          )}
-        </p>
+          accept=".csv,.xlsx,.xls"
+          multiple={false}
+          disabled={series.isPending}
+          onFiles={(fs) => fs[0] && series.mutate(fs[0])}
+        />
+      ) : (
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (form.kind === "fields") rows.mutate([rowOf(form, values)]);
+            else if (form.kind === "text") texts.mutate([values.__text ?? ""]);
+            else if (file) files.mutate(file);
+          }}
+        >
+          <CaseInputs
+            form={form}
+            values={values}
+            setValues={setValues}
+            file={file}
+            setFile={setFile}
+          />
+          <Button type="submit" loading={pending}>
+            {t("journey.use.predict")}
+          </Button>
+        </form>
       )}
-      <ErrorNote error={rows.error ?? texts.error ?? files.error} />
+      <div className="mt-3">
+        {p && <PredictionView task={task} p={p} image={image} />}
+        {series.data && <SeriesView task={task} predictions={series.data.predictions} />}
+      </div>
+      <ErrorNote error={rows.error ?? texts.error ?? files.error ?? series.error} />
     </Card>
   );
 }
