@@ -186,3 +186,46 @@ def test_questions_after_the_interview(coordinator: Coordinator) -> None:
     assert all(m.text and not m.text.startswith("No pude consultar") for m in replies), text
     assert all(not JARGON.search(m.text) for m in replies), text
     assert j.state == "awaiting_data" and replies[-1].action is None, text
+
+
+def test_wear_over_time_is_framed_not_rejected(coordinator: Coordinator) -> None:
+    """Caso real: «desgaste en el tiempo». El asistente aclara si es estimar o pronosticar y
+    nunca termina en «no se puede»."""
+    answers = {
+        "data_kind": "Una planilla con las mediciones de cada herramienta",
+        "problem": "Quiero saber cuánto se van a gastar en las próximas semanas, tengo la "
+        "historia de mediciones semanales",
+        "prediction": "el desgaste semanal de cada herramienta",
+        "labels_available": "Sí, tengo las mediciones de desgaste",
+        "horizon": "las próximas 4 semanas",
+        "extrapolate": "No, valores parecidos",
+        "success_target": "Que no le erre por más de un 10 %",
+    }
+    j, log = converse(
+        coordinator,
+        "desgaste",
+        "Quiero predecir cómo va a cambiar el desgaste en el tiempo",
+        lambda field, _q: answers.get(field or "", "No sé, lo que recomiendes"),
+    )
+    text = "\n".join(log)
+    assert j.state == "interview" and not j.unsupported, text
+    assert j.facts.problem in ("forecast", "value"), text
+    assert not j.pending, text
+
+
+def test_photos_to_locate_defects(coordinator: Coordinator) -> None:
+    answers = {
+        "problem": "Que me marque dónde está cada fisura en la foto",
+        "prediction": "dónde están las fisuras",
+        "labels_available": "Sí, ya las marqué con recuadros en CVAT",
+        "success_target": "Que encuentre 8 de cada 10",
+    }
+    j, log = converse(
+        coordinator,
+        "ubicar",
+        "Tengo fotos de piezas y quiero encontrar las fisuras",
+        lambda field, _q: answers.get(field or "", "No sé"),
+    )
+    text = "\n".join(log)
+    assert not j.unsupported and not j.pending, text
+    assert j.facts.data_kind == "images" and j.facts.problem in ("locate", "segment"), text

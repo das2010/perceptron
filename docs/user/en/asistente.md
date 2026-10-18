@@ -28,12 +28,15 @@ you step by step to a validated model. No machine-learning knowledge needed.
 
 ## Which cases it solves
 
-- Tables: choose a category, estimate a number or discover a formula.
-- Images, texts and audio: choose a category.
+- **Spreadsheets:** pick one of several answers, estimate a number, discover a formula, forecast
+  the next values of something you measure over time (sales, consumption, wear) or spot unusual
+  moments in measurements (even without marked cases).
+- **Photos:** say what kind each one is, locate where the objects are, mark the exact area (for
+  example the damaged part) or read a text (a label, a serial number).
+- **Texts and recordings:** pick one of several answers.
 
-For anything else (series forecasting, rare cases, locating objects in a photo, data without the
-correct answer) the assistant explains why and takes you to the **advanced wizard** or to
-**Labeling**.
+If your case does not fit as is, the assistant suggests an equivalent way to frame it. For
+example, grouping into ranges a number you want to estimate from photos.
 
 ## Advanced options
 

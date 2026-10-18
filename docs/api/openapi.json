@@ -1274,6 +1274,20 @@
         "title": "Body_predictFile",
         "type": "object"
       },
+      "Body_predictJourneySeries": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_predictJourneySeries",
+        "type": "object"
+      },
       "Body_uploadSource": {
         "properties": {
           "files": {
@@ -4983,7 +4997,7 @@
                   "type": "string"
                 },
                 "maxItems": 100,
-                "minItems": 2,
+                "minItems": 1,
                 "type": "array"
               },
               {
@@ -5048,6 +5062,20 @@
             ],
             "title": "Grouped"
           },
+          "horizon": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pronóstico: cuántos valores hacia adelante",
+            "title": "Horizon"
+          },
           "input_names": {
             "anyOf": [
               {
@@ -5107,6 +5135,9 @@
                   "rule",
                   "forecast",
                   "anomaly",
+                  "locate",
+                  "segment",
+                  "read_text",
                   "other"
                 ],
                 "type": "string"
@@ -6337,15 +6368,52 @@
             "title": "Fields",
             "type": "array"
           },
+          "history": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Series: cuántos valores recientes hacen falta por serie",
+            "title": "History"
+          },
+          "horizon": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pronóstico: valores hacia adelante",
+            "title": "Horizon"
+          },
           "kind": {
             "enum": [
               "fields",
               "image",
               "audio",
-              "text"
+              "text",
+              "series"
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "task": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qué devuelve el modelo (TaskType)",
+            "title": "Task"
           }
         },
         "required": [
@@ -12077,6 +12145,28 @@
         "title": "SeriesConfig",
         "type": "object"
       },
+      "SeriesForecast": {
+        "properties": {
+          "predictions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Predictions",
+            "type": "array"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "predictions",
+          "task"
+        ],
+        "title": "SeriesForecast",
+        "type": "object"
+      },
       "SeriesProfile": {
         "description": "RF-PRF-04 (solo agregados).",
         "properties": {
@@ -14608,7 +14698,8 @@
                   "grouped",
                   "success_target",
                   "target_name",
-                  "input_names"
+                  "input_names",
+                  "horizon"
                 ],
                 "type": "string"
               },
@@ -21334,6 +21425,59 @@
           }
         },
         "summary": "Act Journey",
+        "tags": [
+          "journey"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/journey/predict/series": {
+      "post": {
+        "description": "La historia reciente (CSV o Excel con las mismas columnas que los datos): el pronóstico\nde los próximos valores o los momentos raros, por serie.",
+        "operationId": "predictJourneySeries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predictJourneySeries"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesForecast"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict Journey Series",
         "tags": [
           "journey"
         ]
