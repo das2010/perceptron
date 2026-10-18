@@ -32,7 +32,7 @@ import { formatNumber } from "@/lib/format";
 
 import { DropZone } from "./JourneyThread";
 import { PredictionView, SeriesView } from "./JourneyTasks";
-import { JUDGED, type ModelPrediction, useObjectUrl } from "./journeyModel";
+import { JUDGED, type ModelPrediction } from "./journeyModel";
 import { factValue, fieldLabel, humanize } from "./journeyText";
 
 export type Journey = Schemas["Journey"];
@@ -576,7 +576,7 @@ export function ValidatePanel({
   const [values, setValues] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
   const [actual, setActual] = useState("");
-  const image = useObjectUrl(form.kind === "image" ? file : null);
+  const image = form.kind === "image" ? file : null;
   const classes =
     task === "classification"
       ? (((journey.contract?.outputs as { classes?: string[] } | undefined)?.classes ??
@@ -794,7 +794,7 @@ export function UsePanel({ journey, projectId }: { journey: Journey; projectId: 
   const runId = journey.run_id ?? "";
   const [values, setValues] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
-  const image = useObjectUrl(form.kind === "image" ? file : null);
+  const image = form.kind === "image" ? file : null;
   const rows = usePredictRows(runId);
   const texts = usePredictTexts(runId);
   const files = usePredictFile(runId);

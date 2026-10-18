@@ -17,9 +17,16 @@ function MaskLayer({ png }: { png: string }) {
   useEffect(() => {
     const canvas = ref.current;
     const ctx = canvas?.getContext?.("2d");
-    if (!canvas || !ctx) return;
-    const img = new Image();
-    img.onload = () => {
+    if (!canvas || !ctx || typeof createImageBitmap !== "function") return;
+    let bytes: Uint8Array<ArrayBuffer>;
+    try {
+      bytes = Uint8Array.from(atob(png), (c) => c.charCodeAt(0));
+    } catch {
+      return;
+    }
+    let cancelled = false;
+    void createImageBitmap(new Blob([bytes], { type: "image/png" })).then((img) => {
+      if (cancelled) return;
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
@@ -37,17 +44,42 @@ function MaskLayer({ png }: { png: string }) {
         data.data[i + 3] = 110;
       }
       ctx.putImageData(data, 0, 0);
+    });
+    return () => {
+      cancelled = true;
     };
-    img.src = `data:image/png;base64,${png}`;
   }, [png]);
   return <canvas ref={ref} aria-hidden="true" className="absolute inset-0 h-full w-full" />;
 }
 
+/** La foto elegida, dibujada en un canvas. */
+function Photo({ file }: { file: File }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    const ctx = canvas?.getContext?.("2d");
+    if (!canvas || !ctx || typeof createImageBitmap !== "function") return;
+    let cancelled = false;
+    void createImageBitmap(file).then((img) => {
+      if (cancelled) return;
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [file]);
+  return (
+    <canvas ref={ref} role="img" aria-label={file.name} className="block max-h-80 max-w-full" />
+  );
+}
+
 /** La foto con lo que encontró el modelo encima. */
-function ImageResult({ src, p }: { src: string; p: ModelPrediction }) {
+function ImageResult({ file, p }: { file: File; p: ModelPrediction }) {
   return (
     <div className="relative inline-block max-w-full overflow-hidden rounded-pt border border-line">
-      <img src={src} alt="" className="block max-h-80 max-w-full" />
+      <Photo file={file} />
       {p.details?.mask_png && <MaskLayer png={p.details.mask_png} />}
       {(p.details?.objects ?? []).map((o, i) => {
         const [x0, y0, x1, y1] = o.box;
@@ -84,7 +116,7 @@ export function PredictionView({
 }: {
   task: string;
   p: ModelPrediction;
-  image?: string | null;
+  image?: File | null;
 }) {
   const { t, i18n } = useTranslation();
   const n = (v: number, d = 1) => formatNumber(v, i18n.language, d);
@@ -93,7 +125,7 @@ export function PredictionView({
     return (
       <div className="space-y-2" role="status">
         <p>{t("journey.tasks.found", { count: objects.length })}</p>
-        {image && <ImageResult src={image} p={p} />}
+        {image && <ImageResult file={image} p={p} />}
         {objects.length > 0 && (
           <ul className="text-sm text-muted">
             {objects.map((o, i) => (
@@ -110,7 +142,7 @@ export function PredictionView({
     return (
       <div className="space-y-2" role="status">
         <p>{t("journey.tasks.area", { value: n(Number(p.prediction ?? 0)) })}</p>
-        {image && <ImageResult src={image} p={p} />}
+        {image && <ImageResult file={image} p={p} />}
       </div>
     );
   if (task === "ocr")
