@@ -7,6 +7,13 @@ lleva paso a paso hasta un modelo validado. No hace falta saber de machine learn
 
 1. **Contá el problema.** En **Inicio**, escribí qué querés lograr, por ejemplo «Tengo una
    planilla de ventas y quiero estimar cuánto vamos a vender». Tocá **Empezar**.
+   - **¿Ya tenés los datos?** Adjuntalos con el clip: una o varias planillas (CSV, Excel,
+     Parquet), o un zip con fotos, grabaciones o textos separados en carpetas.
+   - **Lo que te propone:** el asistente los lee y te dice qué puede aprender con ellos, por
+     ejemplo «Predecir “se dio de baja”» o «Pronosticar “unidades” para cada producto».
+   - **Varias planillas:** si tienen las mismas columnas, las junta. Si se relacionan por una
+     columna, como clientes y sus compras, las une.
+   - **Cómo elegir:** tocá el objetivo que te sirve, o contalo con tus palabras.
 2. **Respondé las preguntas.** El asistente pregunta de a una cosa por vez, con ejemplos: qué
    datos tenés, qué querés obtener, qué error es peor, qué resultado te sirve. Podés contestar
    escribiendo o con el control que aparece debajo. En **Lo que entendí** podés corregir

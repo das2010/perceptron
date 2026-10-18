@@ -405,3 +405,18 @@ Conversación natural (2026-10-17): un solo hilo de punta a punta, con acuse, re
 respuestas rápidas, narración de cada etapa y preguntas libres en cualquier etapa (`Coordinator.ask`).
 Sin IA, preguntas redactadas por tipo de datos y lectura de respuestas escritas. Golden de
 conversación con proveedores reales y transcripciones como artefacto.
+
+Objetivo propuesto a partir de los archivos (2026-10-18), RF-WIZ-01, RF-ING-01/07: la persona
+puede adjuntar uno o más archivos en Inicio o en la conversación antes de contar el caso.
+`journey_files` los lee sin valores individuales y arma, con reglas, objetivos posibles, cada uno
+con los hechos del caso que implica:
+- planillas: predecir, estimar, pronosticar o detectar momentos raros, según cada columna;
+- fotos: ubicar, marcar zonas, leer texto o clasificar por carpeta;
+- grabaciones y textos por carpeta: clasificar.
+
+Varias planillas con las mismas columnas se juntan; si una columna es única en una y aparece en
+otra, se unen por esa columna. El LLM (prompt `journey_goals`) solo ordena y explica las
+propuestas, y su orden se valida contra los ids. La persona elige con un clic o con sus palabras
+(columna nombrada o hechos que encajan con una sola propuesta). Al confirmar, los datos se
+revisan sin volver a subirlos. Tests: `test_journey_files.py`, `JourneyFiles.test.tsx` y un
+golden con archivos.

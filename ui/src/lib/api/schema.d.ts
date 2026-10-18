@@ -4494,6 +4494,20 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** ColumnInfo */
+        ColumnInfo: {
+            /** Distinct */
+            distinct: number;
+            /**
+             * Filled
+             * @description Fracción de filas con dato
+             */
+            filled: number;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+        };
         /** ColumnProfile */
         ColumnProfile: {
             categorical?: components["schemas"]["CategoricalStats"] | null;
@@ -5673,6 +5687,37 @@ export interface components {
             /** Received */
             received: number;
         };
+        /**
+         * FileInfo
+         * @description Lo que se leyó de un archivo o carpeta, sin valores individuales.
+         */
+        FileInfo: {
+            /**
+             * Classes
+             * @description Carpeta → cantidad
+             */
+            classes?: {
+                [key: string]: number;
+            };
+            /** Columns */
+            columns?: components["schemas"]["ColumnInfo"][];
+            /** Error */
+            error?: string | null;
+            /**
+             * Files
+             * @description Fotos, grabaciones o textos
+             */
+            files?: number | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "table" | "images" | "audio" | "text" | "segment" | "read_text" | "locate" | "unknown";
+            /** Name */
+            name: string;
+            /** Rows */
+            rows?: number | null;
+        };
         /** GPUInfo */
         GPUInfo: {
             backend: components["schemas"]["Device"];
@@ -5704,6 +5749,36 @@ export interface components {
             samples: number;
             /** Target */
             target: string;
+        };
+        /**
+         * GoalProposal
+         * @description Un objetivo posible para la red, con los hechos del caso que implica.
+         */
+        GoalProposal: {
+            /** Combine */
+            combine?: ("stack" | "join") | null;
+            /** Detail */
+            detail: string;
+            facts: components["schemas"]["Facts"];
+            /** Id */
+            id: string;
+            /**
+             * Keys
+             * @description Columna de unión de cada parte
+             */
+            keys?: string[];
+            /**
+             * Parts
+             * @description Planillas usadas (rutas relativas); la primera manda
+             */
+            parts?: string[];
+            /**
+             * Target
+             * @description Columna con el resultado (tablas)
+             */
+            target?: string | null;
+            /** Title */
+            title: string;
         };
         /** GroupMetrics */
         GroupMetrics: {
@@ -6160,6 +6235,12 @@ export interface components {
             contract?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Data Ready
+             * @description Los datos llegaron antes de confirmar: se revisan al confirmar
+             * @default false
+             */
+            data_ready: boolean;
             /** Data Summary */
             data_summary?: {
                 [key: string]: unknown;
@@ -6171,7 +6252,22 @@ export interface components {
             /** Error */
             error?: string | null;
             facts?: components["schemas"]["Facts"];
+            /**
+             * Files
+             * @description Lo que se leyó de los archivos, sin valores
+             */
+            files?: components["schemas"]["FileInfo"][];
             form?: components["schemas"]["InputForm"] | null;
+            /**
+             * Goal Id
+             * @description Objetivo elegido
+             */
+            goal_id?: string | null;
+            /**
+             * Goals
+             * @description Objetivos posibles según los archivos
+             */
+            goals?: components["schemas"]["GoalProposal"][];
             guide?: components["schemas"]["DataGuide"] | null;
             /** Job Id */
             job_id?: string | null;
@@ -6261,8 +6357,13 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "message" | "confirm" | "prepare" | "train" | "stop" | "acknowledge" | "revise";
+            action: "message" | "files" | "choose" | "confirm" | "prepare" | "train" | "stop" | "acknowledge" | "revise";
             facts?: components["schemas"]["Facts"] | null;
+            /**
+             * Goal Id
+             * @description Objetivo elegido
+             */
+            goal_id?: string | null;
             /**
              * Language
              * @default es
@@ -9327,6 +9428,11 @@ export interface components {
              * @description Dato que pregunta el asistente
              */
             field?: ("data_kind" | "problem" | "prediction" | "labels_available" | "classes" | "error_costs" | "positive_class" | "extrapolate" | "grouped" | "success_target" | "target_name" | "input_names" | "horizon") | null;
+            /**
+             * Goals
+             * @description Objetivos propuestos (ids de `Journey.goals`)
+             */
+            goals?: string[];
             /**
              * Options
              * @description Respuestas rápidas sugeridas

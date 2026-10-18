@@ -14,6 +14,7 @@ import { Button, Card, ErrorNote, Field, Select, Spinner } from "@/components/ui
 import { useProjectId } from "@/features/projects/ProjectLayout";
 import { getApiClient } from "@/lib/api/client";
 import { type Schemas, unwrap, useUpload } from "@/lib/api/hooks";
+import { postForm } from "@/lib/api/upload";
 
 import {
   DataSummary,
@@ -26,7 +27,8 @@ import {
   UsePanel,
   ValidatePanel,
 } from "./JourneyPanels";
-import { Bubble, Chips, Composer, DropZone, Typing } from "./JourneyThread";
+import { FIRST_FILES, FIRST_MESSAGE } from "./journeyStart";
+import { Bubble, Chips, Composer, DropZone, GoalCards, Typing } from "./JourneyThread";
 import { factValue, fieldLabel, type QuickReply, quickReplies } from "./journeyText";
 
 type Action = Omit<Schemas["JourneyAction"], "version" | "language" | "message"> & {
@@ -38,8 +40,6 @@ const STEPS: Step[] = ["case", "data", "review", "training", "validate", "use"];
 const ACTIVE = new Set(["reviewing_data", "training"]);
 const MODEL = new Set(["ready_to_validate", "needs_improvement", "ready_to_use"]);
 const TRAIN = new Set(["ready_to_train", "failed", "interrupted", "needs_improvement"]);
-/** El primer mensaje escrito en Inicio: se envía al abrir el proyecto, con «escribiendo…». */
-export const FIRST_MESSAGE = (projectId: string) => `perceptron.journey.first.${projectId}`;
 
 function stepOf(j: Journey): Step {
   if (j.state === "interview" || j.state === "unsupported") return "case";
@@ -153,10 +153,26 @@ export function JourneyPage() {
   });
   const send = (body: Action) => action.mutate(body);
   const say = (text: string) => send({ action: "message", message: text });
+  // Archivos antes de contar el caso: se suben, el asistente los lee y propone objetivos.
+  const files = useMutation({
+    mutationFn: async ({ list }: { list: File[]; message?: string }) => {
+      const form = new FormData();
+      for (const f of list) form.append("files", f, f.webkitRelativePath || f.name);
+      return postForm<Schemas["DataSource"]>(`/api/v1/projects/${projectId}/uploads`, form);
+    },
+    onMutate: ({ message }) => {
+      if (message) setSending(message);
+    },
+    onSuccess: (source, { message }) =>
+      send({ action: "files", source_id: source.id ?? "", message: message ?? "" }),
+    onError: () => setSending(null),
+  });
+  const attach = (list: File[], message?: string) =>
+    files.mutate(message ? { list, message } : { list });
   const j = query.data;
   useFinishedNotice(j);
 
-  // Lo que la persona escribió en Inicio se envía acá, para verlo con el «escribiendo…».
+  // Lo que la persona escribió (o adjuntó) en Inicio se envía acá, con el «escribiendo…».
   const firstSent = useRef(false);
   useEffect(() => {
     if (!j || firstSent.current || (j.messages ?? []).length) return;
@@ -167,7 +183,12 @@ export function JourneyPage() {
     } catch {
       first = null;
     }
-    if (first) {
+    const attached = FIRST_FILES.get(projectId);
+    FIRST_FILES.delete(projectId);
+    if (attached?.length) {
+      firstSent.current = true;
+      attach(attached, first ?? undefined);
+    } else if (first) {
       firstSent.current = true;
       say(first);
     }
@@ -204,12 +225,21 @@ export function JourneyPage() {
   const facts = j.facts ?? {};
   const pending = j.pending ?? [];
   const messages = j.messages ?? [];
-  const busy = action.isPending || upload.isPending;
+  const reading = files.isPending || (action.isPending && action.variables?.action === "files");
+  const busy = action.isPending || upload.isPending || files.isPending;
   const step = stepOf(j);
   const last = messages.at(-1);
   const lastSaid = last?.role === "assistant" ? last : undefined;
   const interviewing = j.state === "interview";
+  const telling = interviewing || j.state === "unsupported";
   const canTrain = TRAIN.has(j.state) && Boolean(j.dataset_id) && !(j.blockers ?? []).length;
+  // Los objetivos que propuso al leer los archivos, si todavía no eligió ninguno.
+  const goals =
+    telling && !j.goal_id
+      ? (lastSaid?.goals ?? [])
+          .map((id) => (j.goals ?? []).find((g) => g.id === id))
+          .filter((g) => g !== undefined)
+      : [];
 
   // Respuestas rápidas: las que propuso el LLM (texto libre) o las del dato que se pregunta.
   const field = editing ?? (interviewing ? lastSaid?.field : null);
@@ -220,6 +250,10 @@ export function JourneyPage() {
       : quickReplies(t, field, facts);
   const pick = (r: QuickReply) =>
     send({ action: "message", message: r.label, ...(r.facts ? { facts: r.facts } : {}) });
+  const choose = (id: string) => {
+    setSending((j.goals ?? []).find((g) => g.id === id)?.title ?? null);
+    send({ action: "choose", goal_id: id });
+  };
 
   const offered = lastSaid?.action;
   const actionButtons = (
@@ -438,7 +472,16 @@ export function JourneyPage() {
         {sending && !(last?.role === "user" && last.text === sending) && (
           <Bubble turn={{ role: "user", text: sending }} />
         )}
-        {sending && <Typing />}
+        {files.isPending && (
+          <Bubble
+            turn={{
+              role: "user",
+              text: (files.variables?.list ?? []).map((f) => f.name).join(", "),
+            }}
+          />
+        )}
+        {reading ? <Typing label={t("journey.files.reading")} /> : sending && <Typing />}
+        {!sending && !reading && <GoalCards goals={goals} disabled={busy} onPick={choose} />}
         {!sending && <Chips replies={replies} disabled={busy} onPick={pick} />}
         {factsPanel}
         {anchor < 0 && !sending && attachment}
@@ -449,10 +492,11 @@ export function JourneyPage() {
           placeholder={t(`journey.composer.${step}`)}
           disabled={busy}
           onSend={say}
+          {...(telling ? { onFiles: (list: File[]) => attach(list) } : {})}
           autoFocus={step === "case"}
         />
         {j.llm_failed && <p className="px-2 text-xs text-muted">{t("journey.noAi")}</p>}
-        <ErrorNote error={action.error ?? upload.error ?? query.error} />
+        <ErrorNote error={action.error ?? upload.error ?? files.error ?? query.error} />
       </div>
     </div>
   );

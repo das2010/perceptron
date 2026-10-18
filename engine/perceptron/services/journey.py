@@ -27,6 +27,7 @@ import logging
 import os
 import threading
 import time
+from pathlib import Path
 from typing import Any, Literal, cast
 
 import psutil
@@ -39,7 +40,9 @@ from perceptron.core.errors import ConflictError, ValidationError
 from perceptron.domain.enums import LLMPurpose, Modality, SplitStrategy, TaskType
 from perceptron.domain.models import JourneyRecord, ModelVersion, utcnow
 from perceptron.llm.privacy import LLMContext
+from perceptron.services import journey_files as files_
 from perceptron.services import journey_talk as talk
+from perceptron.services.journey_files import FileInfo, GoalProposal
 from perceptron.services.journey_guide import (
     SERIES,
     VALIDATION_MIN,
@@ -121,6 +124,18 @@ class InterviewTurn(BaseModel):
         max_length=4,
         description="Respuestas cortas posibles, como las diría la persona",
     )
+    goal: str | None = Field(
+        default=None,
+        max_length=20,
+        description="Id del objetivo propuesto (de `goals`) que la persona parece elegir",
+    )
+
+
+class GoalAdvice(BaseModel):
+    """Salida del LLM al leer los archivos: qué objetivos mostrar primero y cómo contarlo."""
+
+    reply: str = Field(default="", max_length=1200)
+    picks: list[str] = Field(default_factory=list, max_length=4, description="Ids de `goals`")
 
 
 ChatAction = Literal["confirm", "train", "revise", "stop"]
@@ -160,6 +175,9 @@ class Turn(BaseModel):
     chat: bool = Field(
         default=False, description="Pregunta libre y su respuesta, fuera de los pasos del recorrido"
     )
+    goals: list[str] = Field(
+        default_factory=list, description="Objetivos propuestos (ids de `Journey.goals`)"
+    )
 
 
 class Journey(BaseModel):
@@ -176,6 +194,16 @@ class Journey(BaseModel):
     confirmed: bool = False
     guide: DataGuide | None = None
     source_id: str | None = Field(default=None, description="Última fuente de datos subida")
+    files: list[FileInfo] = Field(
+        default_factory=list, description="Lo que se leyó de los archivos, sin valores"
+    )
+    goals: list[GoalProposal] = Field(
+        default_factory=list, description="Objetivos posibles según los archivos"
+    )
+    goal_id: str | None = Field(default=None, description="Objetivo elegido")
+    data_ready: bool = Field(
+        default=False, description="Los datos llegaron antes de confirmar: se revisan al confirmar"
+    )
     dataset_id: str | None = None
     columns: list[str] = Field(default_factory=list, description="Columnas de la tabla subida")
     target: str | None = Field(default=None, description="Columna con el resultado")
@@ -341,6 +369,10 @@ class Coordinator:
             merged = {**j.facts.model_dump(), **facts.model_dump(exclude_none=True)}
             j.facts = Facts.model_validate(merged)
         j.confirmed = False
+        named = files_.mentioned(message, j.goals) if message and not j.goal_id else None
+        if named is not None:
+            # Nombró la columna (o el objetivo) de una sola propuesta: es su elección.
+            self._apply_goal(pid, j, named)
         j.pending = list(missing(j.facts))
         j = self.save(pid, j)  # lo escrito queda guardado aunque falle el LLM
         # Siempre hay respuesta: del LLM si está, si no, redactada para el caso (journey_talk).
@@ -354,6 +386,11 @@ class Coordinator:
             if read:
                 with contextlib.suppress(ValueError):
                     j.facts = Facts.model_validate({**j.facts.model_dump(), **read})
+        if j.goals and not j.goal_id and j.facts.problem:
+            # Lo que contó coincide con una sola de las propuestas: se trabaja con esos datos.
+            fits = files_.consistent(j.facts, j.goals)
+            if len(fits) == 1:
+                self._apply_goal(pid, j, fits[0])
         j.pending = list(missing(j.facts))
         j.unsupported = unsupported_reason(j.facts)
         j.state = "unsupported" if j.unsupported else "interview"
@@ -373,6 +410,9 @@ class Coordinator:
                     constraints={
                         "facts": j.facts.model_dump(),
                         "pending": list(missing(j.facts)),
+                        "files": _files_context(j),
+                        "goals": None if j.goal_id else _goals_context(j.goals),
+                        "chosen_goal": _chosen(j),
                         "language": language,
                         "conversation": [
                             {"role": m.role, "text": m.text} for m in j.messages[-24:]
@@ -389,6 +429,8 @@ class Coordinator:
         j.facts = apply_changes(j.facts, out.changes, said)
         j.assumptions = out.assumptions
         j.llm_failed = False
+        if out.goal not in {g.id for g in j.goals}:
+            out.goal = None
         return out
 
     def _next_turn(self, j: Journey, out: InterviewTurn | None) -> Turn:
@@ -408,6 +450,18 @@ class Coordinator:
                 text=" ".join(x for x in (reply, talk.summary(j.facts, lang)) if x),
                 step="case",
                 action="confirm",
+            )
+        fits = files_.consistent(j.facts, j.goals) if not j.goal_id else []
+        if fits:
+            # Hay archivos leídos y todavía no eligió qué aprender: se ofrecen los que encajan.
+            ids = [g.id for g in fits]
+            first = out.goal if out and out.goal in ids else None
+            ordered = ([first] if first else []) + [i for i in ids if i != first]
+            return Turn(
+                role="assistant",
+                text=" ".join(x for x in (reply, talk.pick_goal(lang)) if x),
+                step="case",
+                goals=ordered[:4],
             )
         # La pregunta del LLM vale si es sobre algo que todavía falta; si no, la redactada.
         llm_field = out.question_field if out else None
@@ -515,12 +569,24 @@ class Coordinator:
         wizard = Wizard(self.wf)
         draft = wizard.get(pid)
         values: dict[str, Any] = {"brief": to_brief(j.facts)}
-        first = next((m.text for m in j.messages if m.role == "user"), None)
-        if first and not self.wf.project(pid).goal:
-            values["goal"] = first[:4000]
+        first = next(
+            (m.text for m in j.messages if m.role == "user" and m.action not in USER_EVENTS),
+            None,
+        )
+        chosen = next((g.title for g in j.goals if g.id == j.goal_id), None)
+        if (first or chosen) and not self.wf.project(pid).goal:
+            values["goal"] = (first or chosen or "")[:4000]
         wizard.update(pid, version=draft.version, values=values)
         j.confirmed, j.state, j.stage = True, "awaiting_data", "awaiting_data"
         j.guide = data_guide(j.facts)
+        source_id = j.source_id
+        if j.data_ready and source_id:
+            # Los datos ya están: se revisan directamente para el objetivo elegido.
+            j.messages.append(
+                Turn(role="assistant", text=talk.after_confirm_with_data(j.language), step="data")
+            )
+            j = self.save(pid, j)
+            return self.prepare(pid, j.version, source_id, j.target)
         j.messages.append(Turn(role="assistant", text=talk.after_confirm(j.language), step="data"))
         return self.save(pid, j)
 
@@ -538,8 +604,131 @@ class Coordinator:
                 language=j.language,
                 pending=list(missing(j.facts)),
                 unsupported=unsupported_reason(j.facts),
+                # Lo leído de los archivos sigue valiendo para replantear el caso.
+                files=j.files,
+                goals=j.goals,
+                goal_id=j.goal_id,
+                data_ready=j.data_ready,
+                source_id=j.source_id if j.data_ready else None,
+                target=j.target if j.data_ready else None,
             ),
         )
+
+    # ------------------------------------------------------------------ archivos y objetivos
+
+    def read_files(
+        self, pid: str, version: int, source_id: str, message: str = "", language: str = "es"
+    ) -> Journey:
+        """Lee lo que subió la persona y le propone qué puede aprender la red con eso.
+
+        Las propuestas salen de reglas sobre lo leído (`journey_files`); el LLM, si está, solo
+        elige cuáles mostrar primero y lo cuenta con las palabras del caso. La persona elige con
+        un clic o con sus palabras: nada se aplica sin que lo elija."""
+        from perceptron.api.routers.data import _source_path
+        from perceptron.domain.models import DataSource
+
+        j = self.checked(pid, version, {"interview", "unsupported"})
+        j.language = "en" if language == "en" else "es"
+        source = self.ctx.repo(DataSource).get(source_id)
+        if source.project_id != pid:
+            raise ValidationError("La fuente pertenece a otro proyecto.")
+        if message.strip():
+            j.messages.append(Turn(role="user", text=message.strip(), step="case"))
+        j.messages.append(
+            Turn(
+                role="user",
+                text=talk.shared(_upload_names(source), j.language),
+                step="case",
+                action="files",
+            )
+        )
+        j = self.save(pid, j)
+        reading = files_.read(_source_path(self.ctx, source), j.language)
+        j.files, j.goals, j.goal_id, j.data_ready = reading.files, reading.goals, None, False
+        j.source_id, j.target = source_id, None
+        fits = files_.consistent(j.facts, j.goals) or j.goals
+        advice = self._goals_llm(pid, j) if fits else None
+        ids = [g.id for g in fits]
+        picks = [p for p in dict.fromkeys(advice.picks if advice else []) if p in ids]
+        ordered = picks + [i for i in ids if i not in picks]
+        text = (advice.reply.strip() if advice else "") or talk.files_read(
+            reading.files, reading.combined, bool(fits), j.language
+        )
+        if reading.note:
+            text = f"{text} {reading.note}".strip()
+        j.messages.append(Turn(role="assistant", text=text, step="case", goals=ordered[:4]))
+        j.pending = list(missing(j.facts))
+        return self.save(pid, j)
+
+    def _goals_llm(self, pid: str, j: Journey) -> GoalAdvice | None:
+        project = self.wf.project(pid)
+        try:
+            return self.ctx.llm.structured(
+                LLMPurpose.COPILOT,
+                GoalAdvice,
+                LLMContext(
+                    goal=project.goal or None,
+                    constraints={
+                        "files": _files_context(j),
+                        "goals": _goals_context(j.goals),
+                        "facts": j.facts.model_dump(exclude_none=True),
+                        "language": j.language,
+                        "conversation": [
+                            {"role": m.role, "text": m.text} for m in j.messages[-12:]
+                        ],
+                    },
+                ),
+                project=project,
+                prompt="journey_goals",
+            ).value
+        except Exception:  # sin proveedor, L0 o salida inválida: el orden y el texto de reglas
+            logger.info("propuesta de objetivos sin LLM", exc_info=True)
+            return None
+
+    def choose(self, pid: str, version: int, goal_id: str, language: str = "es") -> Journey:
+        """La persona eligió uno de los objetivos propuestos: sus hechos pasan al caso."""
+        j = self.checked(pid, version, {"interview", "unsupported"})
+        j.language = "en" if language == "en" else "es"
+        goal = next((g for g in j.goals if g.id == goal_id), None)
+        if goal is None:
+            raise ValidationError("Ese objetivo ya no está disponible: volvé a subir los datos.")
+        j.messages.append(Turn(role="user", text=goal.title, step="case", action="goal"))
+        self._apply_goal(pid, j, goal)
+        j.pending = list(missing(j.facts))
+        j.unsupported = unsupported_reason(j.facts)
+        j.state = "unsupported" if j.unsupported else "interview"
+        # El acuse es el objetivo elegido; después, lo próximo que falta saber.
+        turn = self._next_turn(j, InterviewTurn(reply=talk.goal_chosen(goal, j.language)))
+        j.messages.append(turn)
+        return self.save(pid, j)
+
+    def _apply_goal(self, pid: str, j: Journey, goal: GoalProposal) -> None:
+        """Los hechos del objetivo (salen de los datos) y la fuente con la que se entrena."""
+        from perceptron.api.routers.data import _source_path
+        from perceptron.domain.enums import DataSourceType
+        from perceptron.domain.models import DataSource
+
+        replaced = ("data_kind", "problem", "target_name", "input_names", "classes")
+        keep = {k: v for k, v in j.facts.model_dump().items() if k not in replaced}
+        j.facts = Facts.model_validate({**keep, **goal.facts.model_dump(exclude_none=True)})
+        j.goal_id, j.target, j.data_ready = goal.id, goal.target, True
+        if not goal.parts or not j.source_id:
+            return  # fotos, grabaciones o textos: la carpeta subida es la fuente
+        repo = self.ctx.repo(DataSource)
+        base = _source_path(self.ctx, repo.get(j.source_id))
+        if base.is_file() and goal.parts == [base.name]:
+            return  # la planilla subida es la del objetivo
+        root = base if base.is_dir() else base.parent
+        dest = self.ctx.settings.paths.project(pid).root / "journey" / f"objetivo-{goal.id}.parquet"
+        path = files_.materialize(root, goal, dest)
+        j.source_id = repo.add(
+            DataSource(
+                project_id=pid,
+                name=Path(goal.parts[0]).name if len(goal.parts) == 1 else dest.name,
+                type=DataSourceType.FILE,
+                config={"path": str(path), "uploaded": True, "files": len(goal.parts)},
+            )
+        ).id
 
     # ------------------------------------------------------------------ trabajo en segundo plano
 
@@ -665,6 +854,18 @@ class Coordinator:
         if facts.problem in SERIES:
             return self._ingest_series(pid, facts, path, source, target)
         wanted = target or facts.target_name
+        joined = self._joined_key(pid, source)
+        grouped: dict[str, Any] = {}
+        if joined:
+            # Planillas unidas: cada cliente (o producto) tiene varias filas. Se separan por esa
+            # columna para que el modelo no se pruebe con alguien que ya vio, y no es un dato.
+            from perceptron.data.schema import SemanticType
+            from perceptron.data.splits import SplitRequest
+
+            grouped = {
+                "split": SplitRequest(strategy=SplitStrategy.GROUP, group_column=joined),
+                "overrides": {joined: SemanticType.ID},
+            }
         try:
             return self.wf.ingest(
                 pid,
@@ -673,12 +874,24 @@ class Coordinator:
                 source_record=source,
                 modality=_KIND_MODALITY[kind],
                 task=task,
+                **grouped,
             )
         except (ValidationError, KeyError):
             if not wanted:
                 raise
         # La columna nombrada no está (o no sirve): se carga igual y se pide elegirla.
-        return self.wf.ingest(pid, path, source_record=source, modality=_KIND_MODALITY[kind])
+        return self.wf.ingest(
+            pid, path, source_record=source, modality=_KIND_MODALITY[kind], **grouped
+        )
+
+    def _joined_key(self, pid: str, source: Any) -> str | None:
+        """La columna por la que se unieron las planillas del objetivo elegido, si esta fuente
+        es esa tabla unida."""
+        j = self.get(pid)
+        goal = next((g for g in j.goals if g.id == j.goal_id), None)
+        if goal is None or goal.combine != "join" or not goal.keys or j.source_id != source.id:
+            return None
+        return goal.keys[0]
 
     def _ingest_series(
         self, pid: str, facts: Facts, path: Any, source: Any, target: str | None
@@ -1230,6 +1443,46 @@ def _norm(value: Any) -> str:
         return str(value).strip().casefold()
 
 
+USER_EVENTS = {"files", "goal"}  # turnos de la persona que no son algo que escribió
+
+
+def _upload_names(source: Any) -> list[str]:
+    """Los nombres de lo subido, para contarlo en el hilo."""
+    path = Path(str(source.config.get("path", "")))
+    entries = [p for p in path.iterdir() if not p.name.startswith(".")] if path.is_dir() else []
+    if 1 < len(entries) <= 6 and all(p.is_file() for p in entries):
+        return sorted(p.name for p in entries)  # varias planillas sueltas
+    return [source.name]
+
+
+def _files_context(j: Journey) -> list[dict[str, Any]] | None:
+    """Lo leído, para el LLM: nombres, tipos y cantidades; nunca valores de las filas."""
+    if not j.files:
+        return None
+    return [f.model_dump(exclude_none=True) for f in j.files]
+
+
+def _goals_context(goals: list[GoalProposal]) -> list[dict[str, Any]] | None:
+    if not goals:
+        return None
+    return [
+        {
+            "id": g.id,
+            "title": g.title,
+            "detail": g.detail,
+            "problem": g.facts.problem,
+            "data_kind": g.facts.data_kind,
+            "target": g.target,
+        }
+        for g in goals
+    ]
+
+
+def _chosen(j: Journey) -> dict[str, Any] | None:
+    goal = next((g for g in j.goals if g.id == j.goal_id), None)
+    return {"title": goal.title, "detail": goal.detail} if goal else None
+
+
 def _plain_error(exc: Exception) -> str:
     message = getattr(exc, "message", None) or str(exc)
     return str(message)[:1000]
@@ -1257,7 +1510,12 @@ def _data_summary(dv: Any, card: Any) -> dict[str, Any]:
     out: dict[str, Any] = {
         "rows": card.num_samples,
         "target": dv.target,
-        "inputs": [c.name for c in card.columns if not target or c.name != target.name],
+        # Los identificadores no son datos para aprender: no se muestran como entradas.
+        "inputs": [
+            c.name
+            for c in card.columns
+            if (not target or c.name != target.name) and c.semantic != "id"
+        ],
         "splits": card.split_counts,
     }
     if target and target.classes:

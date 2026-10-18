@@ -170,7 +170,7 @@ export const journeyEs = {
   progress: "Avance del recorrido",
   conversation: "Conversación con el asistente",
   welcome:
-    "¡Hola! Contame qué querés lograr con tus palabras y te ayudo a armarlo paso a paso, sin tecnicismos.",
+    "¡Hola! Contame qué querés lograr con tus palabras y te ayudo a armarlo paso a paso, sin tecnicismos. Si ya tenés los datos, adjuntalos con el clip y te propongo qué puede aprender.",
   typing: "El asistente está escribiendo",
   correct: "Corregir algo",
   noAi: "Sin IA disponible: te guío con preguntas y respuestas rápidas.",
@@ -181,6 +181,14 @@ export const journeyEs = {
     training: "Preguntame lo que quieras…",
     validate: "Preguntame sobre el resultado…",
     use: "Preguntame sobre el modelo…",
+  },
+  files: {
+    attach: "Adjuntar archivos de datos",
+    remove: "Quitar {{name}}",
+    reading: "Leyendo tus archivos",
+    goals: "Objetivos que te propongo",
+    homeHint:
+      "¿Ya tenés los datos? Adjuntá una o varias planillas, o un zip con fotos, y te propongo qué puede aprender.",
   },
   quick: {
     data_kind: {
@@ -428,7 +436,7 @@ export const journeyEn: typeof journeyEs = {
   progress: "Journey progress",
   conversation: "Conversation with the assistant",
   welcome:
-    "Hi! Tell me in your own words what you want to achieve and I'll help you build it step by step, no jargon.",
+    "Hi! Tell me in your own words what you want to achieve and I'll help you build it step by step, no jargon. If you already have the data, attach it with the clip and I'll suggest what it can learn.",
   typing: "The assistant is typing",
   correct: "Correct something",
   noAi: "No AI available: I'll guide you with questions and quick answers.",
@@ -439,6 +447,14 @@ export const journeyEn: typeof journeyEs = {
     training: "Ask me anything…",
     validate: "Ask me about the result…",
     use: "Ask me about the model…",
+  },
+  files: {
+    attach: "Attach data files",
+    remove: "Remove {{name}}",
+    reading: "Reading your files",
+    goals: "Goals I suggest",
+    homeHint:
+      "Already have the data? Attach one or more spreadsheets, or a zip with photos, and I'll suggest what it can learn.",
   },
   quick: {
     data_kind: {
