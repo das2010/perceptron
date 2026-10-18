@@ -41,7 +41,9 @@ from perceptron.domain.models import JourneyRecord, ModelVersion, utcnow
 from perceptron.llm.privacy import LLMContext
 from perceptron.services import journey_talk as talk
 from perceptron.services.journey_guide import (
+    SERIES,
     VALIDATION_MIN,
+    VISION,
     DataGuide,
     FactField,
     Facts,
@@ -73,6 +75,7 @@ State = Literal[
     "failed",
 ]
 ACTIVE = {"reviewing_data", "training"}
+UNMARKED = "anomalia"  # columna neutra para casos raros sin marcar
 DATA_STATES = {
     "awaiting_data",
     "ready_to_train",
@@ -482,7 +485,7 @@ class Coordinator:
                         "validations": {
                             "total": len(j.validations),
                             "correct": sum(1 for v in j.validations if v.get("correct")),
-                            "needed": VALIDATION_MIN,
+                            "needed": validation_needed(j),
                         },
                         "input_fields": [f.name for f in j.form.fields] if j.form else [],
                         "error": j.error,
@@ -643,9 +646,15 @@ class Coordinator:
         from perceptron.data.splits import SplitRequest
 
         kind = facts.data_kind or "table"
-        task = (
-            TaskType.CLASSIFICATION if task_of(facts) == "classification" else TaskType.REGRESSION
-        )
+        task = TaskType(task_of(facts))
+        if facts.problem in VISION:
+            # Ubicar objetos necesita la tarea explícita; zonas y texto se reconocen solos.
+            return self.wf.ingest(
+                pid,
+                path,
+                source_record=source,
+                task=TaskType.OBJECT_DETECTION if facts.problem == "locate" else None,
+            )
         split = None
         if kind in ("images", "audio") and facts.grouped:
             split = SplitRequest(strategy=SplitStrategy.GROUP, group_column="__image_group__")
@@ -653,6 +662,8 @@ class Coordinator:
             return self.wf.ingest(
                 pid, path, split=split, source_record=source, modality=_KIND_MODALITY[kind]
             )
+        if facts.problem in SERIES:
+            return self._ingest_series(pid, facts, path, source, target)
         wanted = target or facts.target_name
         try:
             return self.wf.ingest(
@@ -668,6 +679,49 @@ class Coordinator:
                 raise
         # La columna nombrada no está (o no sirve): se carga igual y se pide elegirla.
         return self.wf.ingest(pid, path, source_record=source, modality=_KIND_MODALITY[kind])
+
+    def _ingest_series(
+        self, pid: str, facts: Facts, path: Any, source: Any, target: str | None
+    ) -> Any:
+        """Mediciones en el tiempo: pronóstico, o casos raros (marcados o no).
+
+        Sin casos raros marcados se agrega una columna `anomalia` en 0: el motor aprende lo
+        normal y calibra el umbral con el cuantil alto de los datos normales."""
+        from pathlib import Path
+
+        import polars as pl
+
+        from perceptron.data.sources.files import scan_table
+
+        overrides: dict[str, Any] | None = (
+            {"horizon": facts.horizon} if facts.problem == "forecast" and facts.horizon else None
+        )
+        if facts.problem == "anomaly":
+            # La serie se arma como de casos raros aunque la marca no tenga positivos.
+            overrides = {"task": TaskType.ANOMALY_DETECTION.value, "horizon": 1, "lookback": 20}
+        wanted = target or facts.target_name
+        if facts.problem == "anomaly" and facts.labels_available is False:
+            df = scan_table(Path(path)).collect()
+            df = df.with_columns(pl.lit(0).alias(UNMARKED))
+            copy = self.ctx.settings.paths.project(pid).root / "journey" / f"{Path(path).stem}.csv"
+            copy.parent.mkdir(parents=True, exist_ok=True)
+            df.write_csv(copy)
+            path, wanted = copy, UNMARKED
+        if facts.problem == "anomaly" and not wanted:
+            columns = scan_table(Path(path)).collect_schema().names()
+            wanted = next((c for c in columns if "anomal" in c.lower()), None)
+        try:
+            return self.wf.ingest(
+                pid,
+                path,
+                target=wanted,
+                source_record=source,
+                modality=Modality.TIMESERIES,
+                series_overrides=overrides,
+            )
+        except (ValidationError, KeyError):
+            # No se reconoce como serie: se carga como tabla y la revisión explica qué falta.
+            return self.wf.ingest(pid, path, source_record=source)
 
     def _review(self, pid: str, facts: Facts, path: Any, source: Any, target: str | None) -> None:
         from perceptron.services.wizard import Wizard
@@ -751,6 +805,33 @@ class Coordinator:
             blockers.append(
                 "Elegí cuál columna tiene el resultado que querés predecir."
                 + (f" No encontré «{facts.target_name}»." if facts.target_name else "")
+            )
+            return blockers, warnings
+        expected = TaskType(task_of(facts))
+        if facts.problem in SERIES and (card.series is None or card.series.task is not expected):
+            blockers.append(
+                "No pude leerlo como mediciones en el tiempo. Necesito una columna de fecha a "
+                "intervalos regulares, al menos 30 fechas por serie y "
+                + (
+                    "el valor a pronosticar como número."
+                    if facts.problem == "forecast"
+                    else "las mediciones como números (y, si marcaste casos raros, una columna "
+                    "«anomalia» con sí/no)."
+                )
+            )
+            return blockers, warnings
+        if facts.problem in VISION and (
+            card.vision_task is None or card.vision_task.task is not expected
+        ):
+            blockers.append(
+                {
+                    "locate": "No encontré las marcas de los objetos: el ZIP tiene que traer "
+                    "las fotos y el archivo de anotaciones (COCO .json, VOC .xml o YOLO .txt).",
+                    "segment": "No encontré las máscaras: el ZIP tiene que traer «images/» y "
+                    "«masks/» con los mismos nombres de archivo.",
+                    "read_text": "No encontré los textos: el ZIP tiene que traer «images/» y una "
+                    "planilla «labels.csv» con el nombre de cada imagen y su texto.",
+                }[facts.problem or "locate"]
             )
             return blockers, warnings
         if card.num_samples < 20:
@@ -924,12 +1005,14 @@ class Coordinator:
         formula = self._formula(pid, dataset_id, facts, result)
         if formula:
             result["formula"] = formula
-        form = input_form(model.signature, card, _example_row(self.wf, dv))
+        form = input_form(model.signature, card, _example_row(self.wf, dv), series=card.series)
         if self._stopped(pid):
             return
         self._change(
             pid,
-            state="ready_to_validate" if result["meets_target"] else "needs_improvement",
+            state="ready_to_validate"
+            if result["meets_target"] or result.get("measurable") is False
+            else "needs_improvement",
             stage="complete",
             model_id=model.id,
             contract=model.signature,
@@ -1036,8 +1119,10 @@ class Coordinator:
         row: dict[str, Any] | None = None,
         text: str | None = None,
         file: tuple[bytes, str] | None = None,
+        rows: list[dict[str, Any]] | None = None,
     ) -> Any:
-        """Predicción del modelo del recorrido con lo que pide su contrato (nunca el real)."""
+        """Predicción del modelo del recorrido con lo que pide su contrato (nunca el real). En
+        series devuelve una predicción por serie."""
         import io
         import tempfile
         from pathlib import Path
@@ -1046,6 +1131,10 @@ class Coordinator:
 
         model = self.wf.inference_model(j.run_id or "")
         try:
+            if model.kind == "sequence":
+                if not rows:
+                    raise ValidationError("Subí la historia reciente (una tabla con las fechas).")
+                return model.predict_series(rows)
             if model.kind == "tabular":
                 if row is None:
                     raise ValidationError("Completá los datos del caso.")
@@ -1072,6 +1161,13 @@ class Coordinator:
                 raise ValidationError("No se pudo leer la imagen. Probá un PNG o JPG.") from exc
         except InputError as exc:
             raise ValidationError(str(exc)) from exc
+
+    def series_config(self, j: Journey) -> Any:
+        """Columnas de tiempo, serie y valor, y el horizonte con que se entrenó."""
+        cfg = self.wf.view(self.wf.dataset(j.dataset_id or "")).series if j.dataset_id else None
+        if cfg is None:
+            raise ValidationError("Este modelo no trabaja con mediciones en el tiempo.")
+        return cfg
 
     def record_validation(
         self, pid: str, key: str, actual: Any, prediction: Any, model_id: str | None
@@ -1169,6 +1265,15 @@ def _data_summary(dv: Any, card: Any) -> dict[str, Any]:
     if target and target.numeric:
         q = target.numeric.quantiles
         out["range"] = {"low": q.get("p05"), "typical": q.get("p50"), "high": q.get("p95")}
+    if card.series is not None:
+        out["series"] = {
+            "count": card.series.num_series,
+            "points": card.series.points_min,
+            "horizon": card.series.horizon,
+            "history": card.series.lookback,
+        }
+    if card.vision_task is not None and card.vision_task.classes:
+        out["objects"] = list(card.vision_task.classes)
     return out
 
 
@@ -1181,8 +1286,53 @@ def _example_row(wf: Workflow, dv: Any) -> dict[str, Any]:
     return df.row(0, named=True) if df.height else {}
 
 
+JUDGED = {"object_detection", "segmentation", "anomaly_detection"}
+YES = {"si", "sí", "yes", "bien", "true", "1", "correcto"}
+
+
+def _task(j: Journey) -> str:
+    return str((j.contract or {}).get("outputs", {}).get("task") or "")
+
+
 def _compare(j: Journey, key: str, actual: Any, prediction: Any) -> dict[str, Any]:
-    if (j.contract or {}).get("outputs", {}).get("task") == "regression":
+    task = _task(j)
+    if task == "forecasting":
+        # Pronóstico: los valores reales que vinieron después, contra lo pronosticado.
+        try:
+            later = [float(v) for v in actual]
+            ahead = [float(v) for v in prediction][: len(later)]
+        except (TypeError, ValueError) as exc:
+            raise ValidationError("Los valores reales tienen que ser números.") from exc
+        scale = sum(abs(v) for v in later[: len(ahead)]) or 1.0
+        error = 100 * sum(abs(p - r) for p, r in zip(ahead, later, strict=False)) / scale
+        return {
+            "key": key,
+            "actual": later,
+            "prediction": ahead,
+            "error_percent": round(error, 2),
+            "correct": error <= (j.facts.success_target or 0),
+        }
+    if task == "ocr":
+
+        def norm(v: Any) -> str:
+            return " ".join(str(v).split()).casefold()
+
+        return {
+            "key": key,
+            "actual": str(actual),
+            "prediction": str(prediction),
+            "correct": norm(actual) == norm(prediction),
+        }
+    if task in JUDGED:
+        # Lo juzga la persona: vio lo que marcó el modelo y dice si está bien.
+        verdict = str(actual).strip().casefold() in YES
+        return {
+            "key": key,
+            "actual": "bien" if verdict else "mal",
+            "prediction": prediction,
+            "correct": verdict,
+        }
+    if task == "regression":
         try:
             real, pred = float(actual), float(prediction)
         except (TypeError, ValueError) as exc:
@@ -1207,16 +1357,26 @@ def _compare(j: Journey, key: str, actual: Any, prediction: Any) -> dict[str, An
     }
 
 
+def validation_needed(j: Journey) -> int:
+    """Casos nuevos para dar el modelo por validado (en series, cada serie de un archivo)."""
+    return 3 if _task(j) in ("forecasting", "anomaly_detection") else VALIDATION_MIN
+
+
 def _validated_state(j: Journey) -> State:
     total = len(j.validations)
-    if total < VALIDATION_MIN:
+    if total < validation_needed(j):
         return j.state if j.state in MODEL_STATES else "ready_to_validate"
-    classes = set((j.contract or {}).get("outputs", {}).get("classes", []) or [])
+    classes = (
+        set((j.contract or {}).get("outputs", {}).get("classes", []) or [])
+        if _task(j) == "classification"
+        else set()
+    )
     covered = not classes or {v["actual"] for v in j.validations} >= classes
     rate = 100 * sum(v["correct"] for v in j.validations) / total
     meets = rate >= (j.facts.success_target or 100) and bool((j.result or {}).get("meets_target"))
     if j.facts.problem != "category":
-        meets = bool((j.result or {}).get("meets_target")) and rate >= 50
+        trained_ok = bool((j.result or {}).get("meets_target"))
+        meets = trained_ok and rate >= (50 if _task(j) in ("regression", "forecasting") else 70)
     if not covered:
         return j.state if j.state in MODEL_STATES else "ready_to_validate"
     return "ready_to_use" if meets else "needs_improvement"

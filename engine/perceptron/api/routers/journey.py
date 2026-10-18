@@ -121,6 +121,8 @@ async def validate_journey_file(
     kind = str((j.contract or {}).get("inputs", {}).get("kind"))
     if kind in ("tabular", "tokens"):
         return _validate_batch(c, project_id, j, data, kind)
+    if kind == "sequence":
+        return _validate_series(c, project_id, j, data, suffix, actual)
     if actual is None:
         raise ValidationError("Indicá el resultado real de este caso.")
     digest = validation_key(row=None, text=None, data=data)
@@ -177,3 +179,95 @@ def _validate_batch(
         checked=checked,
         journey=j,
     )
+
+
+def _table_rows(data: bytes, suffix: str) -> list[dict[str, Any]]:
+    """Una planilla subida (CSV o Excel) como filas con tipos (fechas y números)."""
+    import tempfile
+
+    from perceptron.data.sources.files import scan_table
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / f"datos{suffix or '.csv'}"
+        path.write_bytes(data)
+        try:
+            df = scan_table(path).collect()
+        except Exception as exc:
+            raise ValidationError(
+                "No se pudo leer la planilla. Probá con un CSV o un Excel."
+            ) from exc
+    if df.height == 0:
+        raise ValidationError("La planilla no tiene filas.")
+    return df.head(50_000).to_dicts()
+
+
+def _validate_series(
+    c: Coordinator, project_id: str, j: Journey, data: bytes, suffix: str, actual: str | None
+) -> GuidedValidation:
+    """Pronóstico: los últimos valores de cada serie quedan como «lo que pasó después» y se
+    pronostican con lo anterior. Casos raros: la persona dice si lo marcado está bien."""
+    rows = _table_rows(data, suffix)
+    cfg = c.series_config(j)
+    digest = validation_key(row=None, text=None, data=data)
+    if _task_of(j) != "forecasting":
+        if actual is None:
+            raise ValidationError("Contame si los momentos que marcó como raros están bien.")
+        preds = c.predict(j, rows=rows)
+        found = sum(int(p.prediction or 0) for p in preds)
+        j = c.record_validation(project_id, digest, actual, found, j.model_id)
+        last = j.validations[-1]
+        return GuidedValidation(
+            prediction=found, actual=last["actual"], correct=last["correct"], journey=j
+        )
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        groups.setdefault(str(row.get(cfg.series_id)) if cfg.series_id else "", []).append(row)
+    checked, last = 0, {}
+    for name, items in groups.items():
+        items.sort(key=lambda r: r.get(cfg.time_column) or 0)
+        if len(items) <= cfg.horizon:
+            continue
+        history, future = items[: -cfg.horizon], items[-cfg.horizon :]
+        preds = c.predict(j, rows=history)
+        pred = next(
+            (p for p in preds if str((p.details or {}).get("series") or "") == name), preds[0]
+        )
+        real = [r.get(cfg.target) for r in future]
+        j = c.record_validation(project_id, f"{digest}:{name}", real, pred.prediction, j.model_id)
+        last = j.validations[-1]
+        checked += 1
+    if not checked:
+        raise ValidationError(
+            f"Hacen falta más de {cfg.horizon} fechas por serie: las últimas se usan para "
+            "comparar con lo que pronostica."
+        )
+    return GuidedValidation(
+        prediction=last["prediction"],
+        actual=last["actual"],
+        correct=last["correct"],
+        checked=checked,
+        journey=j,
+    )
+
+
+def _task_of(j: Journey) -> str:
+    return str((j.contract or {}).get("outputs", {}).get("task") or "")
+
+
+class SeriesForecast(BaseModel):
+    predictions: list[dict[str, Any]]
+    task: str
+
+
+@router.post("/projects/{project_id}/journey/predict/series", operation_id="predictJourneySeries")
+async def predict_journey_series(
+    project_id: str, ctx: Ctx, file: Annotated[UploadFile, File()]
+) -> SeriesForecast:
+    """La historia reciente (CSV o Excel con las mismas columnas que los datos): el pronóstico
+    de los próximos valores o los momentos raros, por serie."""
+    c = Coordinator(Workflow(ctx))
+    j = c.contract(project_id)
+    data = await read_limited(file, 50 * MB)
+    rows = _table_rows(data, Path(file.filename or "").suffix.lower())
+    preds = c.predict(j, rows=rows)
+    return SeriesForecast(predictions=[p.to_dict() for p in preds], task=_task_of(j))

@@ -68,10 +68,25 @@ def test_what_to_ask_depends_on_the_case() -> None:
     assert not missing(CHURN)
 
 
-def test_unsupported_cases_point_to_advanced_mode() -> None:
-    assert unsupported_reason(Facts(data_kind="table", problem="forecast"))
-    assert unsupported_reason(Facts(data_kind="images", problem="value"))
+def test_every_engine_task_is_guided_and_the_rest_gets_a_reframing() -> None:
+    for kind, problem in [
+        ("table", "forecast"),
+        ("table", "anomaly"),
+        ("images", "locate"),
+        ("images", "segment"),
+        ("images", "read_text"),
+    ]:
+        assert unsupported_reason(Facts(data_kind=kind, problem=problem)) is None
+    # Casos raros sin marcar: se aprende lo normal (no hace falta etiquetar).
+    assert (
+        unsupported_reason(Facts(data_kind="table", problem="anomaly", labels_available=False))
+        is None
+    )
+    # Lo que no tiene recorrido propone un planteo equivalente que sí lo tiene.
+    assert "rangos" in (unsupported_reason(Facts(data_kind="images", problem="value")) or "")
+    assert "planilla" in (unsupported_reason(Facts(data_kind="text", problem="forecast")) or "")
     assert unsupported_reason(Facts(data_kind="other", problem="category"))
+    assert "decisión" in (unsupported_reason(Facts(data_kind="table", problem="other")) or "")
     assert "Etiquetado" in (
         unsupported_reason(CHURN.model_copy(update={"labels_available": False})) or ""
     )
@@ -189,7 +204,7 @@ def test_without_llm_the_assistant_always_answers_in_words(ctx: Any) -> None:
         "Bien.",
         "Anotado.",
     }
-    j = c.interview(p.id, j.version, "", Facts(problem="forecast"))
+    j = c.interview(p.id, j.version, "", Facts(problem="other"))
     assert j.state == "unsupported" and j.messages[-1].action == "advanced"
 
 
@@ -243,9 +258,9 @@ def test_conversation_continues_after_the_interview(ctx: Any, fake_llm: Any) -> 
 
 
 def test_unsupported_case_cannot_be_confirmed(ctx: Any) -> None:
-    p = ctx.projects.add(Project(name="Pronóstico"))
+    p = ctx.projects.add(Project(name="Recomendaciones"))
     c = Coordinator(Workflow(ctx))
-    j = c.interview(p.id, 1, "", Facts(data_kind="table", problem="forecast"))
+    j = c.interview(p.id, 1, "", Facts(data_kind="table", problem="other"))
     assert j.state == "unsupported" and j.unsupported
     with pytest.raises(ValidationError):
         c.confirm(p.id, j.version)

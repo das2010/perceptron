@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from perceptron.services.journey_guide import VALIDATION_MIN, Facts
+from perceptron.services.journey_guide import VALIDATION_MIN, Facts, higher_is_better, target_unit
 
 Language = Literal["es", "en"]
 
@@ -85,6 +85,9 @@ _EXAMPLES_EN = {
 
 def question(field: str, f: Facts, language: str = "es") -> str:
     """La próxima pregunta, redactada para el caso, con un ejemplo concreto."""
+    special = _special_question(field, f, _lang(language))
+    if special:
+        return special
     about = _about(f, language)
     if _lang(language) == "en":
         two, what, answers = _EXAMPLES_EN.get(f.data_kind or "", _EXAMPLES_EN["table"])
@@ -182,6 +185,114 @@ def question(field: str, f: Facts, language: str = "es") -> str:
     return es.get(field, "Contame un poco más de tu caso.")
 
 
+# Qué se predice, con un ejemplo, en los problemas que no son elegir ni estimar.
+_PREDICTION_ES = {
+    "forecast": "«las ventas semanales de cada producto»",
+    "anomaly": "«fallas en las máquinas a partir de la temperatura y la vibración»",
+    "locate": "«dónde hay fisuras en cada pieza»",
+    "segment": "«la zona oxidada de cada chapa»",
+    "read_text": "«el número de lote de cada etiqueta»",
+}
+_PREDICTION_EN = {
+    "forecast": "“weekly sales of each product”",
+    "anomaly": "“machine faults from temperature and vibration”",
+    "locate": "“where the cracks are on each part”",
+    "segment": "“the rusty area of each sheet”",
+    "read_text": "“the batch number on each label”",
+}
+_TARGET_ES = {
+    "forecast": "¿Cuánto se puede equivocar el pronóstico y que igual te sirva? Por ejemplo, un "
+    "10 % del valor real.",
+    "anomaly": "De cada 10 momentos raros, ¿cuántos tendría que detectar para que te sirva?",
+    "locate": "De cada 10 objetos, ¿cuántos tendría que encontrar bien ubicados para que te sirva?",
+    "segment": "¿Qué tanto tiene que coincidir la zona que marca con la real? Por ejemplo, 8 de "
+    "cada 10 partes (80 %).",
+    "read_text": "De cada 100 caracteres, ¿cuántos tiene que leer bien? Por ejemplo, 95.",
+}
+_TARGET_EN = {
+    "forecast": "How far off can the forecast be and still be useful? For example, within 10 % "
+    "of the real value.",
+    "anomaly": "Out of 10 unusual moments, how many should it catch to be useful?",
+    "locate": "Out of 10 objects, how many should it find in the right place to be useful?",
+    "segment": "How closely should the area it marks match the real one? For example, 8 out "
+    "of 10 parts (80 %).",
+    "read_text": "Out of 100 characters, how many should it read right? For example, 95.",
+}
+
+
+def _special_question(field: str, f: Facts, lang: Language) -> str | None:
+    """Preguntas que dependen del tipo de datos o de problema."""
+    en = lang == "en"
+    if field == "problem" and f.data_kind == "table":
+        return (
+            "What would you like to get? It can pick one of several answers (like “leaves” or "
+            "“stays”), estimate a number (like a price), forecast the next values of something "
+            "you measure over time (like sales in the coming weeks) or spot unusual moments in "
+            "measurements."
+            if en
+            else "¿Qué te gustaría obtener? Puede elegir entre varias respuestas (como «se va» o "
+            "«se queda»), estimar un número (como un precio), pronosticar los próximos valores "
+            "de algo que medís en el tiempo (como las ventas de las próximas semanas) o "
+            "detectar momentos raros en mediciones."
+        )
+    if field == "problem" and f.data_kind == "images":
+        return (
+            "What should it do with each photo? It can say what kind it is (like “cracked” or "
+            "“fine”), locate where the objects are, mark the exact area (for example the "
+            "damaged part) or read a text (like a label)."
+            if en
+            else "¿Qué querés que haga con cada foto? Puede decir de qué tipo es (como «con "
+            "fisura» o «sana»), ubicar dónde están los objetos, marcar la zona exacta (por "
+            "ejemplo, el área dañada) o leer un texto (como una etiqueta)."
+        )
+    if field == "prediction" and f.problem in _PREDICTION_ES:
+        example = (_PREDICTION_EN if en else _PREDICTION_ES)[f.problem or ""]
+        return (
+            f"Tell me in your own words what you want to know. For example: {example}."
+            if en
+            else f"Contame con tus palabras qué querés saber. Por ejemplo: {example}."
+        )
+    if field == "labels_available" and f.problem == "anomaly":
+        return (
+            "Do you have some unusual moments from the past marked? It is not required: if "
+            "not, I learn what normal looks like and warn you about what departs from it."
+            if en
+            else "¿Tenés marcados algunos momentos raros que ya pasaron? No es obligatorio: si "
+            "no, aprendo cómo es lo normal y te aviso de lo que se aparta."
+        )
+    if field == "labels_available" and f.problem in ("locate", "segment", "read_text"):
+        what = {
+            "locate": ("a box around each object", "un recuadro alrededor de cada objeto"),
+            "segment": ("the area painted on each photo", "la zona pintada en cada foto"),
+            "read_text": ("the text written next to each image", "el texto de cada imagen"),
+        }[f.problem or "locate"]
+        return (
+            f"Do you already have photos with the answer marked? For example, {what[0]}."
+            if en
+            else f"¿Ya tenés fotos con la respuesta marcada? Por ejemplo, {what[1]}."
+        )
+    if field == "horizon":
+        return (
+            "How many values ahead do you want to forecast? For example, 4 if your data is "
+            "weekly and you want the next month."
+            if en
+            else "¿Cuántos valores hacia adelante querés pronosticar? Por ejemplo, 4 si tus datos "
+            "son semanales y querés el próximo mes."
+        )
+    if field == "success_target" and f.problem in _TARGET_ES:
+        return (_TARGET_EN if en else _TARGET_ES)[f.problem or ""]
+    return None
+
+
+def _unit_en(f: Facts) -> str:
+    return {
+        "anomaly": "unusual cases caught",
+        "locate": "objects located",
+        "segment": "area overlap",
+        "read_text": "characters read right",
+    }.get(f.problem or "", "hits")
+
+
 def greeting(language: str = "es") -> str:
     if _lang(language) == "en":
         return "Hi! I'll help you build it step by step."
@@ -212,6 +323,11 @@ def summary(f: Facts, language: str = "es") -> str:
             "category": "you want to know this about each case",
             "value": "you want to estimate this",
             "rule": "you want to discover the rule behind this",
+            "forecast": "you want to forecast this",
+            "anomaly": "you want to spot unusual moments in this",
+            "locate": "you want to locate this on each photo",
+            "segment": "you want to mark the area of this on each photo",
+            "read_text": "you want to read this from each image",
         }.get(f.problem or "", "you want to predict this")
         parts = [f"Let me check I got it right: you have {kind} and {goal}: {about}."]
         if f.classes:
@@ -220,18 +336,30 @@ def summary(f: Facts, language: str = "es") -> str:
             parts.append("Missing an important case is worse than a false alarm.")
         elif f.error_costs == "false_positive_worse":
             parts.append("A false alarm is worse than missing a case.")
+        if f.horizon:
+            parts.append(f"You want the next {f.horizon} values.")
+        if f.problem == "anomaly" and f.labels_available is False:
+            parts.append("There are no marked cases: I will learn what normal looks like.")
         if f.success_target is not None:
-            parts.append(
-                f"It is useful if it is right at least {f.success_target:g} % of the time."
-                if f.problem == "category"
-                else f"It is useful if it is off by at most {f.success_target:g} %."
-            )
+            if f.problem == "category":
+                parts.append(
+                    f"It is useful if it is right at least {f.success_target:g} % of the time."
+                )
+            elif higher_is_better(f):
+                parts.append(f"It is useful from {f.success_target:g} % ({_unit_en(f)}).")
+            else:
+                parts.append(f"It is useful if it is off by at most {f.success_target:g} %.")
         parts.append("Is that right? If something is off, just tell me.")
         return " ".join(parts)
     goal = {
         "category": "querés saber esto de cada caso",
         "value": "querés estimar esto",
         "rule": "querés descubrir la regla detrás de esto",
+        "forecast": "querés pronosticar esto",
+        "anomaly": "querés detectar momentos raros en esto",
+        "locate": "querés ubicar esto en cada foto",
+        "segment": "querés marcar la zona de esto en cada foto",
+        "read_text": "querés leer esto de cada imagen",
     }.get(f.problem or "", "querés predecir esto")
     parts = [f"A ver si entendí bien: tenés {kind} y {goal}: {about}."]
     if f.classes:
@@ -240,12 +368,17 @@ def summary(f: Facts, language: str = "es") -> str:
         parts.append("Que se escape un caso importante es peor que una falsa alarma.")
     elif f.error_costs == "false_positive_worse":
         parts.append("Una falsa alarma es peor que dejar pasar un caso.")
+    if f.horizon:
+        parts.append(f"Querés los próximos {f.horizon} valores.")
+    if f.problem == "anomaly" and f.labels_available is False:
+        parts.append("No hay casos marcados: aprendo cómo es lo normal.")
     if f.success_target is not None:
-        parts.append(
-            f"Te sirve si acierta al menos el {f.success_target:g} % de las veces."
-            if f.problem == "category"
-            else f"Te sirve si se equivoca como mucho un {f.success_target:g} %."
-        )
+        if f.problem == "category":
+            parts.append(f"Te sirve si acierta al menos el {f.success_target:g} % de las veces.")
+        elif higher_is_better(f):
+            parts.append(f"Te sirve desde un {f.success_target:g} {target_unit(f)}.")
+        else:
+            parts.append(f"Te sirve si se equivoca como mucho un {f.success_target:g} %.")
     parts.append("¿Es así? Si algo no está bien, decímelo.")
     return " ".join(parts)
 
@@ -441,6 +574,9 @@ def understand(field: str | None, text: str) -> dict[str, Any] | None:
         return {field: items} if len(items) >= (2 if field == "classes" else 1) else None
     if field == "positive_class":
         return {field: answer.strip("«»\"'")[:100]}
+    if field == "horizon":
+        steps = _target(answer.casefold())
+        return {field: int(steps)} if steps is not None and 1 <= steps <= 500 else None
     if field == "success_target":
         value = _target(answer.casefold())
         return {field: round(value, 1)} if value is not None and 0 < value <= 100 else None
