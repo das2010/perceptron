@@ -16,10 +16,16 @@ técnicas siguen en «Opciones avanzadas» del proyecto.
 | Imágenes (ZIP por carpetas) | elegir una categoría | clasificación de imágenes |
 | Textos (tabla con columna de texto) | elegir una categoría | clasificación de textos |
 | Audios (ZIP por carpetas) | elegir una categoría | clasificación de audio |
+| Tabla con fechas | pronosticar los próximos valores | series de tiempo (N-BEATS/PatchTST), horizonte elegido por la persona; resultado en % de error y contra repetir el último valor |
+| Tabla con fechas | detectar momentos raros | autoencoder de series; con casos marcados se mide cuántos detecta, sin marcas aprende lo normal (umbral por cuantil alto) |
+| Fotos + anotaciones (COCO, VOC, YOLO) | ubicar objetos | detección (CenterNet); resultado en % de objetos bien ubicados (mAP@50) |
+| Fotos + máscaras | marcar la zona exacta | segmentación (U-Net); coincidencia de la zona (IoU) |
+| Imágenes + `labels.csv` | leer texto | OCR (CRNN + CTC); % de caracteres bien leídos y textos exactos |
 
-Pronósticos de series, detección de anomalías, detección o segmentación en imágenes y los casos
-sin ejemplos con la respuesta correcta se derivan, con el motivo, al wizard avanzado o a
-Etiquetado (`journey_guide.unsupported_reason`).
+Nada queda en un callejón sin salida:
+- **Ante la duda, pregunta.** Si la persona habla de algo «en el tiempo», el asistente pregunta si quiere estimarlo según otros datos o pronosticar los próximos valores. Con fotos, distingue entre decir el tipo, ubicar o marcar la zona.
+- **Si la combinación no tiene recorrido, propone un replanteo que sí lo tiene.** Por ejemplo, agrupar en rangos un número que se quiere estimar con fotos, o exportar a una planilla.
+- **Si faltan las respuestas correctas, guía a Etiquetado.** Excepción: los casos raros, que se pueden entrenar sin marcas.
 
 ## Recorrido
 

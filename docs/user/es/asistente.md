@@ -28,12 +28,15 @@ lleva paso a paso hasta un modelo validado. No hace falta saber de machine learn
 
 ## Qué casos resuelve
 
-- Tablas: elegir una categoría, estimar un número o descubrir una fórmula.
-- Imágenes, textos y audios: elegir una categoría.
+- **Planillas:** elegir entre respuestas posibles, estimar un número, descubrir una fórmula,
+  pronosticar los próximos valores de algo que medís en el tiempo (ventas, consumo, desgaste) o
+  detectar momentos raros en mediciones (aunque no tengas casos marcados).
+- **Fotos:** decir de qué tipo es cada una, ubicar dónde están los objetos, marcar la zona exacta
+  (por ejemplo, el área dañada) o leer un texto (una etiqueta, un número de serie).
+- **Textos y grabaciones:** elegir entre respuestas posibles.
 
-Para lo demás (pronósticos de series, casos raros, ubicar objetos en una foto, datos sin la
-respuesta correcta) el asistente te explica por qué y te lleva al **wizard avanzado** o a
-**Etiquetado**.
+Si tu caso no entra tal cual, el asistente te propone una forma equivalente de plantearlo. Por
+ejemplo, agrupar en rangos un número que querés estimar a partir de fotos.
 
 ## Opciones avanzadas
 
