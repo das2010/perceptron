@@ -32,6 +32,7 @@ QUIET_OPS = frozenset(
         "predictRows",
         "predictFile",
         "predictTexts",
+        "predictSeries",
         "predictDeployment",
         "explainRow",
         "explainImage",

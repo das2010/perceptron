@@ -16,13 +16,37 @@ técnicas siguen en «Opciones avanzadas» del proyecto.
 | Imágenes (ZIP por carpetas) | elegir una categoría | clasificación de imágenes |
 | Textos (tabla con columna de texto) | elegir una categoría | clasificación de textos |
 | Audios (ZIP por carpetas) | elegir una categoría | clasificación de audio |
+| Tabla con fechas | pronosticar los próximos valores | series de tiempo (N-BEATS/PatchTST), horizonte elegido por la persona; resultado en % de error y contra repetir el último valor |
+| Tabla con fechas | detectar momentos raros | autoencoder de series; con casos marcados se mide cuántos detecta, sin marcas aprende lo normal (umbral por cuantil alto) |
+| Fotos + anotaciones (COCO, VOC, YOLO) | ubicar objetos | detección (CenterNet); resultado en % de objetos bien ubicados (mAP@50) |
+| Fotos + máscaras | marcar la zona exacta | segmentación (U-Net); coincidencia de la zona (IoU) |
+| Imágenes + `labels.csv` | leer texto | OCR (CRNN + CTC); % de caracteres bien leídos y textos exactos |
 
-Pronósticos de series, detección de anomalías, detección o segmentación en imágenes y los casos
-sin ejemplos con la respuesta correcta se derivan, con el motivo, al wizard avanzado o a
-Etiquetado (`journey_guide.unsupported_reason`).
+Nada queda en un callejón sin salida:
+- **Ante la duda, pregunta.** Si la persona habla de algo «en el tiempo», el asistente pregunta si quiere estimarlo según otros datos o pronosticar los próximos valores. Con fotos, distingue entre decir el tipo, ubicar o marcar la zona.
+- **Si la combinación no tiene recorrido, propone un replanteo que sí lo tiene.** Por ejemplo, agrupar en rangos un número que se quiere estimar con fotos, o exportar a una planilla.
+- **Si faltan las respuestas correctas, guía a Etiquetado.** Excepción: los casos raros, que se pueden entrenar sin marcas.
 
 ## Recorrido
 
+0. **Archivos primero (opcional).** El usuario puede adjuntar uno o más archivos en Inicio o con
+   el clip de la conversación, antes de contar el caso o en el medio. `journey_files.read` los
+   lee sin valores individuales (columnas con tipo, cantidades, carpetas) y arma objetivos
+   posibles con reglas:
+   - **Planillas:** predecir cada columna de pocas categorías, estimar cada número, pronosticar
+     si hay fechas regulares (por serie) y detectar momentos raros (marcados o no).
+   - **Fotos:** ubicar (con anotaciones COCO/VOC/YOLO), marcar zonas (`images/` + `masks/`),
+     leer texto (`images/` + CSV) o clasificar por carpeta.
+   - **Grabaciones y textos:** clasificar por carpeta.
+   - **Combinaciones:** varias planillas con las mismas columnas se juntan. Si una columna es
+     única en una planilla y aparece en la más larga, se unen por esa columna. La tabla
+     combinada se materializa al elegir.
+
+   Cada propuesta trae los hechos del caso que implica. El LLM (prompt `journey_goals`) elige
+   cuáles mostrar primero y lo cuenta con los nombres de las columnas. No inventa: su orden se
+   valida contra los ids. El usuario elige con un clic o con sus palabras, nombrando la columna
+   o diciendo algo que encaja con una sola propuesta (`mentioned`, `consistent`). Lo demás se
+   pregunta como siempre, y al confirmar los datos se revisan sin volver a subirlos.
 1. **El caso.** El usuario describe el problema en Inicio. El asistente pregunta, de a una
    pregunta por vez y con un ejemplo, por el próximo dato que falta, en tantas iteraciones como
    haga falta. Debajo de la conversación hay un control de respaldo para ese mismo dato, útil sin
@@ -52,6 +76,39 @@ Etiquetado (`journey_guide.unsupported_reason`).
    identificadores descartados, con las opciones de cada categoría y un ejemplo de cada campo.
    En imágenes y audio, solo el archivo. La predicción va por el Playground con el run
    registrado.
+
+## Conversación
+
+Toda la experiencia es una sola conversación. El asistente cuenta cada etapa en el mismo hilo,
+y el control de la acción actual (guía y subida de datos, revisión, etapas de entrenamiento,
+validación, formulario de uso) va pegado al mensaje que lo presentó. Siempre se le puede
+escribir: lo que se pregunta después queda debajo, como en cualquier chat.
+
+- **Cada respuesta tiene contestación.** Con IA, el asistente acusa lo que entendió con las
+  palabras de la persona, responde dudas y hace una sola pregunta adaptada al caso, con 2 a 4
+  respuestas rápidas propuestas (prompt `copilot/journey-v3`). Si la IA no responde, pregunta
+  por un dato que ya se contestó o hace una pregunta sin campo, se usa la pregunta redactada
+  para el tipo de datos (`journey_talk.question`). Así no hay silencios ni preguntas
+  repetidas.
+- **Sin IA** (sin proveedor, L0 o error): las preguntas están redactadas y traen respuestas
+  rápidas. Lo escrito a mano se entiende cuando responde la pregunta anterior: texto libre,
+  listas («con fisura y sin fisura»), porcentajes y «8 de cada 10», sí/no
+  (`journey_talk.understand`).
+- **Después de la entrevista**, `Coordinator.ask` responde con el estado real del recorrido:
+  datos pedidos, revisión, avance, resultado y validaciones (prompt `copilot/journey_chat`). Si
+  corresponde, ofrece una acción permitida en esa etapa («Preparar y entrenar», «Detener»,
+  «Corregir el caso») para aceptar con un botón; nunca cambia el estado por su cuenta.
+- **Inicio** es una caja de conversación con ejemplos para tocar. El primer mensaje se envía al
+  abrir el proyecto, con «escribiendo…». Enter envía y Shift+Enter agrega una línea.
+- **Aviso al terminar:** queda en la conversación, con un punto en la pestaña del navegador y,
+  si la persona lo permite, una notificación del sistema.
+
+**Cómo se mide.** `engine/tests/golden/test_golden_journey.py` conversa con proveedores reales:
+personas simuladas que responden en lenguaje natural, cuentan todo de entrada, preguntan «¿qué
+querés decir?» o piden acciones. Verifica que el caso quede completo y sin jerga, y guarda las
+transcripciones como artefacto (`llm.yml`, filtro `golden_filter=journey`). Con el prompt
+anterior, en tres casos el asistente quedó callado varios turnos y repitió seis veces la misma
+pregunta; con el actual, cada turno acusa, responde y pregunta una sola cosa.
 
 ## Arquitectura
 

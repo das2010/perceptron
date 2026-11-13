@@ -17,6 +17,10 @@ on:
         description: "Solo golden tests (validar prompts sin correr el agente)"
         type: boolean
         default: false
+      golden_filter:
+        description: "Filtro -k de los golden (vacío: todos)"
+        type: string
+        default: ""
       benchmark:
         description: "Correr también el benchmark O2"
         type: boolean
@@ -57,7 +61,7 @@ jobs:
       PERCEPTRON_AGENT_MAX_TIME: ${{ matrix.provider == 'ollama' && '7200' || '2400' }}
       PERCEPTRON_REPORT_DIR: ${{ github.workspace }}/llm-reports
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: ¿Hay clave?
         id: key
         run: |
@@ -69,7 +73,7 @@ jobs:
             echo "::notice::Sin clave de ${{ matrix.provider }}: se saltea ${{ matrix.uc }}"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         if: steps.key.outputs.skip != 'true'
         with:
           enable-cache: true
@@ -93,7 +97,7 @@ jobs:
       - name: Agente ${{ matrix.uc }}
         if: steps.key.outputs.skip != 'true'
         run: uv run pytest -m llm_live -s -v engine/tests/live -k ${{ matrix.uc }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always() && steps.key.outputs.skip != 'true'
         with:
           name: agente-${{ matrix.provider }}-${{ matrix.uc }}
@@ -113,7 +117,7 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       PERCEPTRON_LLM__PROFILE: ${{ matrix.provider == 'claude' && 'anthropic' || matrix.provider }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: ¿Hay clave?
         id: key
         run: |
@@ -125,7 +129,7 @@ jobs:
             echo "::notice::Sin clave de ${{ matrix.provider }}: se saltean sus golden"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v7
         if: steps.key.outputs.skip != 'true'
         with:
           enable-cache: true
@@ -148,7 +152,16 @@ jobs:
         run: uv run perceptron llm test
       - name: Golden tests
         if: steps.key.outputs.skip != 'true'
-        run: uv run pytest -m golden -v engine/tests/golden
+        env:
+          PERCEPTRON_TRANSCRIPTS: ${{ runner.temp }}/transcripts
+          GOLDEN_FILTER: ${{ inputs.golden_filter }}
+        run: uv run pytest -m golden -v engine/tests/golden ${GOLDEN_FILTER:+-k "$GOLDEN_FILTER"}
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.key.outputs.skip != 'true'
+        with:
+          name: conversaciones-${{ matrix.provider }}
+          path: ${{ runner.temp }}/transcripts
+          if-no-files-found: ignore
 
   benchmark:
     name: benchmark O2
@@ -160,8 +173,8 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       PERCEPTRON_LLM__PROFILE: ${{ inputs.benchmark_provider == 'claude' && 'anthropic' || 'openai' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       - name: Install
@@ -170,7 +183,7 @@ jobs:
         run: uv run perceptron llm test
       - name: Benchmark
         run: uv run perceptron bench run --out bench-report --max-cost 2
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: benchmark-o2

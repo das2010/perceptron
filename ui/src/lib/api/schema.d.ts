@@ -1793,6 +1793,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/journey/predict/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict Journey Series
+         * @description La historia reciente (CSV o Excel con las mismas columnas que los datos): el pronóstico
+         *     de los próximos valores o los momentos raros, por serie.
+         */
+        post: operations["predictJourneySeries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/journey/validate": {
         parameters: {
             query?: never;
@@ -2817,9 +2838,33 @@ export interface paths {
         put?: never;
         /**
          * Predict File
-         * @description Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV.
+         * @description Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV
+         *     (filas de tabla o, en series, la historia reciente).
          */
         post: operations["predictFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/predict/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Predict Series
+         * @description Playground (RF-EXP-02): historia reciente de una o más series (forecasting, anomalías).
+         *
+         *     Las filas llevan las columnas del entrenamiento: tiempo, serie (si hay), target y
+         *     covariables. Devuelve una predicción por serie.
+         */
+        post: operations["predictSeries"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4079,6 +4124,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_predictJourneySeries */
+        Body_predictJourneySeries: {
+            /** File */
+            file: string;
+        };
         /** Body_uploadSource */
         Body_uploadSource: {
             /** Files */
@@ -4443,6 +4493,20 @@ export interface components {
         CodeResponse: {
             /** Code */
             code: string;
+        };
+        /** ColumnInfo */
+        ColumnInfo: {
+            /** Distinct */
+            distinct: number;
+            /**
+             * Filled
+             * @description Fracción de filas con dato
+             */
+            filled: number;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
         };
         /** ColumnProfile */
         ColumnProfile: {
@@ -5508,6 +5572,11 @@ export interface components {
             extrapolate?: boolean | null;
             /** Grouped */
             grouped?: boolean | null;
+            /**
+             * Horizon
+             * @description Pronóstico: cuántos valores hacia adelante
+             */
+            horizon?: number | null;
             /** Input Names */
             input_names?: string[] | null;
             /** Labels Available */
@@ -5517,7 +5586,7 @@ export interface components {
             /** Prediction */
             prediction?: string | null;
             /** Problem */
-            problem?: ("category" | "value" | "rule" | "forecast" | "anomaly" | "other") | null;
+            problem?: ("category" | "value" | "rule" | "forecast" | "anomaly" | "locate" | "segment" | "read_text" | "other") | null;
             /**
              * Success Target
              * @description Categoría: % mínimo de aciertos. Valor: error típico máximo aceptable (%)
@@ -5618,6 +5687,37 @@ export interface components {
             /** Received */
             received: number;
         };
+        /**
+         * FileInfo
+         * @description Lo que se leyó de un archivo o carpeta, sin valores individuales.
+         */
+        FileInfo: {
+            /**
+             * Classes
+             * @description Carpeta → cantidad
+             */
+            classes?: {
+                [key: string]: number;
+            };
+            /** Columns */
+            columns?: components["schemas"]["ColumnInfo"][];
+            /** Error */
+            error?: string | null;
+            /**
+             * Files
+             * @description Fotos, grabaciones o textos
+             */
+            files?: number | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "table" | "images" | "audio" | "text" | "segment" | "read_text" | "locate" | "unknown";
+            /** Name */
+            name: string;
+            /** Rows */
+            rows?: number | null;
+        };
         /** GPUInfo */
         GPUInfo: {
             backend: components["schemas"]["Device"];
@@ -5649,6 +5749,36 @@ export interface components {
             samples: number;
             /** Target */
             target: string;
+        };
+        /**
+         * GoalProposal
+         * @description Un objetivo posible para la red, con los hechos del caso que implica.
+         */
+        GoalProposal: {
+            /** Combine */
+            combine?: ("stack" | "join") | null;
+            /** Detail */
+            detail: string;
+            facts: components["schemas"]["Facts"];
+            /** Id */
+            id: string;
+            /**
+             * Keys
+             * @description Columna de unión de cada parte
+             */
+            keys?: string[];
+            /**
+             * Parts
+             * @description Planillas usadas (rutas relativas); la primera manda
+             */
+            parts?: string[];
+            /**
+             * Target
+             * @description Columna con el resultado (tablas)
+             */
+            target?: string | null;
+            /** Title */
+            title: string;
         };
         /** GroupMetrics */
         GroupMetrics: {
@@ -5902,7 +6032,7 @@ export interface components {
              * Hint
              * @description Dónde se hace si no es de la arquitectura
              */
-            hint?: ("design" | "pipeline" | "data") | null;
+            hint?: ("design" | "pipeline" | "data" | "formula") | null;
             /**
              * Index
              * @description Posición de la acción en el diagnóstico
@@ -5946,10 +6076,25 @@ export interface components {
             /** Fields */
             fields?: components["schemas"]["InputField"][];
             /**
+             * History
+             * @description Series: cuántos valores recientes hacen falta por serie
+             */
+            history?: number | null;
+            /**
+             * Horizon
+             * @description Pronóstico: valores hacia adelante
+             */
+            horizon?: number | null;
+            /**
              * Kind
              * @enum {string}
              */
-            kind: "fields" | "image" | "audio" | "text";
+            kind: "fields" | "image" | "audio" | "text" | "series";
+            /**
+             * Task
+             * @description Qué devuelve el modelo (TaskType)
+             */
+            task?: string | null;
         };
         /**
          * InputSpec
@@ -6090,6 +6235,12 @@ export interface components {
             contract?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Data Ready
+             * @description Los datos llegaron antes de confirmar: se revisan al confirmar
+             * @default false
+             */
+            data_ready: boolean;
             /** Data Summary */
             data_summary?: {
                 [key: string]: unknown;
@@ -6101,10 +6252,31 @@ export interface components {
             /** Error */
             error?: string | null;
             facts?: components["schemas"]["Facts"];
+            /**
+             * Files
+             * @description Lo que se leyó de los archivos, sin valores
+             */
+            files?: components["schemas"]["FileInfo"][];
             form?: components["schemas"]["InputForm"] | null;
+            /**
+             * Goal Id
+             * @description Objetivo elegido
+             */
+            goal_id?: string | null;
+            /**
+             * Goals
+             * @description Objetivos posibles según los archivos
+             */
+            goals?: components["schemas"]["GoalProposal"][];
             guide?: components["schemas"]["DataGuide"] | null;
             /** Job Id */
             job_id?: string | null;
+            /**
+             * Language
+             * @default es
+             * @enum {string}
+             */
+            language: "es" | "en";
             /**
              * Llm Failed
              * @default false
@@ -6185,8 +6357,13 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "message" | "confirm" | "prepare" | "train" | "stop" | "acknowledge" | "revise";
+            action: "message" | "files" | "choose" | "confirm" | "prepare" | "train" | "stop" | "acknowledge" | "revise";
             facts?: components["schemas"]["Facts"] | null;
+            /**
+             * Goal Id
+             * @description Objetivo elegido
+             */
+            goal_id?: string | null;
             /**
              * Language
              * @default es
@@ -8211,6 +8388,15 @@ export interface components {
             /** Time Column */
             time_column: string;
         };
+        /** SeriesForecast */
+        SeriesForecast: {
+            /** Predictions */
+            predictions: {
+                [key: string]: unknown;
+            }[];
+            /** Task */
+            task: string;
+        };
         /**
          * SeriesProfile
          * @description RF-PRF-04 (solo agregados).
@@ -8660,7 +8846,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "change_hparam" | "add_regularization" | "add_augmentation" | "change_architecture" | "more_epochs" | "fewer_epochs" | "rebalance" | "more_data" | "none";
+            kind: "change_hparam" | "add_regularization" | "add_augmentation" | "change_architecture" | "more_epochs" | "fewer_epochs" | "rebalance" | "more_data" | "try_formula" | "none";
             /** Rationale */
             rationale: string;
             /**
@@ -8882,6 +9068,18 @@ export interface components {
              * @description Clases fijas (detección/segmentación)
              */
             classes?: string[] | null;
+            /**
+             * Log
+             * @description Regresión: se entrena con log(1 + y) (objetivo positivo que abarca varios órdenes de magnitud: el error pasa a ser relativo). Se deshace al predecir.
+             * @default false
+             */
+            log: boolean;
+            /**
+             * Log Suggested
+             * @description La preparación sugiere `log` para este objetivo; queda apagado hasta que el usuario lo active.
+             * @default false
+             */
+            log_suggested: boolean;
             /** Name */
             name: string;
             /**
@@ -9215,10 +9413,41 @@ export interface components {
         /** Turn */
         Turn: {
             /**
+             * Action
+             * @description Acción que ofrece el asistente (se acepta con un clic)
+             */
+            action?: string | null;
+            /**
+             * Chat
+             * @description Pregunta libre y su respuesta, fuera de los pasos del recorrido
+             * @default false
+             */
+            chat: boolean;
+            /**
+             * Field
+             * @description Dato que pregunta el asistente
+             */
+            field?: ("data_kind" | "problem" | "prediction" | "labels_available" | "classes" | "error_costs" | "positive_class" | "extrapolate" | "grouped" | "success_target" | "target_name" | "input_names" | "horizon") | null;
+            /**
+             * Goals
+             * @description Objetivos propuestos (ids de `Journey.goals`)
+             */
+            goals?: string[];
+            /**
+             * Options
+             * @description Respuestas rápidas sugeridas
+             */
+            options?: string[];
+            /**
              * Role
              * @enum {string}
              */
             role: "user" | "assistant";
+            /**
+             * Step
+             * @description Etapa del recorrido en que se dijo
+             */
+            step?: ("case" | "data" | "review" | "training" | "validate" | "use") | null;
             /** Text */
             text: string;
         };
@@ -13262,6 +13491,41 @@ export interface operations {
             };
         };
     };
+    predictJourneySeries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_predictJourneySeries"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesForecast"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     validateJourney: {
         parameters: {
             query?: never;
@@ -15207,6 +15471,41 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_predictFile"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlaygroundResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    predictSeries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaygroundRows"];
             };
         };
         responses: {

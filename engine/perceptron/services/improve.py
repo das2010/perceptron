@@ -22,11 +22,12 @@ from pydantic import BaseModel, Field
 from perceptron.archspec.schema import ArchSpec, Scalar
 from perceptron.llm.schemas import Diagnosis, SuggestedAction
 
-Hint = Literal["design", "pipeline", "data"]
+Hint = Literal["design", "pipeline", "data", "formula"]
 MAX_EPOCHS = 500
 MAX_DROPOUT = 0.5
 MIN_WEIGHT_DECAY = 1e-4
 _NOT_ARCH: dict[str, Hint] = {
+    "try_formula": "formula",
     "change_architecture": "design",
     "add_augmentation": "pipeline",
     "more_data": "data",

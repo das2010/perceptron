@@ -54,6 +54,7 @@ bloquea `.venv\Scripts\python.exe`, por lo que el engine se valida en CI hasta q
 | Caso «Tabla X»: ajuste exacto por mínimos cuadrados al final de una regresión lineal (y un solo intento), constantes con forma cerrada en la fórmula sugerida (3^(1/5), π, e) y sin términos despreciables, estado «Podado», sin poda con menos de 15 trials y con el mejor valor de cada curva, sugerencias repetidas del HPO sin reentrenar | ✅ |
 | Plan de intentos y épocas del HPO (ADR-0041): el sistema los propone según los hiperparámetros a buscar, el tiempo medido por época y el tiempo que se quiere esperar (`POST /projects/{id}/hpo/plan`), con sus motivos; el estratega LLM parte del plan y puede bajarlo con justificación; Entrenar, el paso HPO del wizard y el diseño guiado lo usan | ✅ |
 | Caso «Tabla X» (curva): forma de los datos medida (R² de una recta vs. una curva) → requisito «capas ocultas» o «lineal obligatoria»; diagnóstico con errores con patrón y la fórmula sugerida como referencia; fórmula con raíces de fracciones (√(2/7)) y casi-enteros; aviso al registrar un modelo mucho peor que la fórmula | ✅ |
+| Caso «Tabla X» (red): escala logarítmica del objetivo sugerida (apagada por defecto, se activa en Entrenar) cuando es positivo y abarca órdenes de magnitud; con datos casi determinísticos se sugiere la fórmula (requisitos y «Próximo paso») y el HPO deja el dropout en 0 | ✅ |
 
 **Aceptación:** job `e2e` de CI — `perceptron quickstart` con 10 trials sobre UC-01 (ROC-AUC > 0,75) y UC-04 (accuracy > 0,8) → modelo evaluado en test sellado y registrado.
 
@@ -165,7 +166,7 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | Export verificado ONNX/fp16/INT8, torch.export y TorchScript con firma (RF-EXP-01/05, ADR-0027) | ✅ |
 | Servidor de inferencia FastAPI + ONNX Runtime con Dockerfiles CPU/CUDA (RF-EXP-03) | ✅ |
 | Proyecto de código exportable autónomo con uv (RF-EXP-04) | ✅ |
-| Playground en la página del run (RF-EXP-02) | ✅ tabular, imagen, texto y audio |
+| Playground en la página del run (RF-EXP-02) | ✅ tabular, imagen, texto, audio, series (forecasting y anomalías), detección, segmentación y OCR |
 | Aceptación O5: proyecto y servidor en contenedores limpios (job `export-o5`) | ✅ uv sync → train → infer → pytest en `python:3.12-slim`; servidor Docker con API key |
 
 
@@ -364,8 +365,8 @@ Golden con OpenAI: estratega, diagnosticador, informante y etiquetador ✅; arqu
 | RF-EVL-04 |  | 1/4 | Fairness: el usuario marca atributos sensibles; métricas por subgrupo (Fairlearn:… | ✅ métricas por grupo, paridad demográfica e igualdad de oportunidades (definiciones de Fairlearn), alertas por umbral |
 | RF-EVL-05 |  | 1/4 | Robustez: sensibilidad a ruido/perturbaciones por modalidad (ruido gaussiano, blur,… | ✅ tabular (ruido, categorías cambiadas, faltantes), imagen (ruido, desenfoque, JPEG), texto (typos, palabras eliminadas) y audio (ruido de fondo por SNR, volumen bajo), a tres severidades |
 | RF-EVL-06 | sí | 2/4 | Informe final generado por el LLM (o plantilla sin LLM): resumen ejecutivo, qué se… | ✅ informe LLM o plantilla exportable a HTML (Titillium Web embebida), PDF (reportlab) y Markdown con model card |
-| RF-EXP-01 | sí | 4 | Exportar a ONNX (con verificación numérica vs. PyTorch), torch.export… | ✅ ONNX (opset 18, batch dinámico) verificado en ONNX Runtime (1e-4; fp16 1e-2; INT8 informado), torch.export y TorchScript legacy (ADR-0027) |
-| RF-EXP-02 | sí | 4 | Playground en la app: cargar un archivo/fila/imagen/audio/texto, ver predicción,… | ✅ playground tabular, imagen, texto y audio con predicción, confianza, probabilidades y explicación local (Shapley, Integrated Gradients y oclusión por token) |
+| RF-EXP-01 | sí | 4 | Exportar a ONNX (con verificación numérica vs. PyTorch), torch.export… | ✅ ONNX (opset 18, batch dinámico) verificado en ONNX Runtime (1e-4; fp16 1e-2; INT8 informado), torch.export y TorchScript legacy (ADR-0027); probado en todas las tareas (incluidas series, detección, segmentación y OCR) |
+| RF-EXP-02 | sí | 4 | Playground en la app: cargar un archivo/fila/imagen/audio/texto, ver predicción,… | ✅ playground tabular, imagen, texto y audio con predicción, confianza, probabilidades y explicación local (Shapley, Integrated Gradients y oclusión por token); series (`predictSeries`: pronóstico con fechas, anomalías con el umbral calibrado), detección (cajas relativas), segmentación (máscara PNG y fracción por clase) y OCR (texto) servidos desde ONNX |
 | RF-EXP-03 |  | 4 | API REST de inferencia: generar y levantar un servidor FastAPI (ONNX Runtime o… | ✅ servidor FastAPI + ONNX Runtime con pipeline embebido, /predict, /predict/batch, /metrics, API key, Dockerfile CPU/CUDA (tabular e imagen) |
 | RF-EXP-04 |  | 4 | Proyecto de código exportable: repositorio Python standalone generado desde plantillas… | ✅ repo autónomo (uv): modelo generado, pipeline vendorizado, train/infer/serve, config, datos train/val, pesos y prueba de humo; O5 en CI (tabular e imagen) |
 | RF-EXP-05 |  | 4 | Firma del modelo: schema de entrada/salida, versión, hash; incluido en todos los formatos. | ✅ firma (entradas, salidas, hash de ArchSpec, run, versión) en el reporte, `signature.json` y en el servidor |
@@ -399,3 +400,23 @@ wizard avanzado con el motivo. Reutiliza la ficha del wizard, `Wizard.design`, e
 evaluación, el registro, la exportación y el Playground. Las herramientas técnicas siguen en
 «Opciones avanzadas». Detalle y límites: [guided-journey.md](guided-journey.md). Reemplaza la
 entrega previa solo de imágenes.
+
+Conversación natural (2026-10-17): un solo hilo de punta a punta, con acuse, respuestas a dudas,
+respuestas rápidas, narración de cada etapa y preguntas libres en cualquier etapa (`Coordinator.ask`).
+Sin IA, preguntas redactadas por tipo de datos y lectura de respuestas escritas. Golden de
+conversación con proveedores reales y transcripciones como artefacto.
+
+Objetivo propuesto a partir de los archivos (2026-10-18), RF-WIZ-01, RF-ING-01/07: la persona
+puede adjuntar uno o más archivos en Inicio o en la conversación antes de contar el caso.
+`journey_files` los lee sin valores individuales y arma, con reglas, objetivos posibles, cada uno
+con los hechos del caso que implica:
+- planillas: predecir, estimar, pronosticar o detectar momentos raros, según cada columna;
+- fotos: ubicar, marcar zonas, leer texto o clasificar por carpeta;
+- grabaciones y textos por carpeta: clasificar.
+
+Varias planillas con las mismas columnas se juntan; si una columna es única en una y aparece en
+otra, se unen por esa columna. El LLM (prompt `journey_goals`) solo ordena y explica las
+propuestas, y su orden se valida contra los ids. La persona elige con un clic o con sus palabras
+(columna nombrada o hechos que encajan con una sola propuesta). Al confirmar, los datos se
+revisan sin volver a subirlos. Tests: `test_journey_files.py`, `JourneyFiles.test.tsx` y un
+golden con archivos.

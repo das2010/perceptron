@@ -28,6 +28,7 @@ from perceptron.domain.enums import Device, Origin
 from perceptron.hpo.plan import BudgetPlan, plan_budget
 from perceptron.hpo.strategy import Budget
 from perceptron.services.design import DesignRequirements, RequirementCheck
+from perceptron.services.fit_checks import data_linearity, deterministic
 
 if TYPE_CHECKING:
     from perceptron.services.llm_roles import ArchOption
@@ -153,7 +154,10 @@ def budget_plan_for(
     n_train = int(card.split_counts.get("train") or card.num_samples)
     dev = device or detect_hardware(wf.ctx.settings.workspace_dir).recommended_device.value
     epoch_s = estimate_epoch_time(spec, n_train, device=dev)
-    return plan_budget(spec, epoch_time_s=epoch_s, time_budget_s=time_budget_s)
+    noise_free = deterministic(data_linearity(wf, dataset_version_id))
+    return plan_budget(
+        spec, epoch_time_s=epoch_s, time_budget_s=time_budget_s, noise_free=noise_free
+    )
 
 
 def _fmt(value: float) -> str:
@@ -269,6 +273,7 @@ def auto_design(
             specs[pick.archspec_id],
             epoch_time_s=pick.estimates.get("epoch_time_s"),
             time_budget_s=float(time_s) if time_s else None,
+            noise_free=deterministic(data_linearity(wf, str(dv_id))),
         )
         out.budget_plan = plan
         out.max_trials, out.max_epochs_per_trial = plan.max_trials, plan.max_epochs_per_trial

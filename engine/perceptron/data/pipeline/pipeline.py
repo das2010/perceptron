@@ -32,6 +32,16 @@ class TargetSpec(BaseModel):
     name: str
     task: TaskType
     standardize: bool = Field(default=False, description="Solo regresión")
+    log: bool = Field(
+        default=False,
+        description="Regresión: se entrena con log(1 + y) (objetivo positivo que abarca varios "
+        "órdenes de magnitud: el error pasa a ser relativo). Se deshace al predecir.",
+    )
+    log_suggested: bool = Field(
+        default=False,
+        description="La preparación sugiere `log` para este objetivo; queda apagado hasta que el "
+        "usuario lo active.",
+    )
     classes: list[str] | None = Field(
         default=None, description="Clases fijas (detección/segmentación)"
     )
@@ -110,6 +120,7 @@ class FittedPipeline(BaseModel):
     classes: list[str] | None = None
     target_mean: float | None = None
     target_std: float | None = None
+    target_log: bool = Field(default=False, description="El objetivo se entrenó con log(1 + y)")
     image_mean: list[float] | None = None
     image_std: list[float] | None = None
     vocab: list[str] | None = None
@@ -136,8 +147,15 @@ class TabularArrays:
 def _fit_target(spec: TargetSpec, s: pl.Series) -> dict[str, Any]:
     if spec.task is TaskType.REGRESSION:
         x = s.cast(pl.Float64).drop_nulls()
+        # log(1 + y) solo si ningún valor de train es negativo (si no, se entrena sin log).
+        use_log = spec.log and x.len() > 0 and float(x.min() or 0.0) >= 0  # type: ignore[arg-type]
+        if use_log:
+            x = x.log1p()
         mean, std = float(x.mean() or 0.0), float(x.std() or 1.0)  # type: ignore[arg-type]
-        return {"target_mean": mean, "target_std": std or 1.0} if spec.standardize else {}
+        out: dict[str, Any] = {"target_log": True} if use_log else {}
+        if spec.standardize:
+            out |= {"target_mean": mean, "target_std": std or 1.0}
+        return out
     if spec.classes is not None:
         return {"classes": list(spec.classes)}
     if spec.task is TaskType.OCR:
@@ -153,6 +171,8 @@ def encode_target(fitted: FittedPipeline, s: pl.Series) -> np.ndarray:
         raise ValueError("el pipeline no tiene target")
     if target.task is TaskType.REGRESSION:
         y = s.cast(pl.Float64).to_numpy().astype(np.float32)
+        if fitted.target_log:
+            y = np.log1p(np.clip(y, 0.0, None))
         if fitted.target_mean is not None and fitted.target_std:
             y = (y - fitted.target_mean) / fitted.target_std
         return y.astype(np.float32)
@@ -162,7 +182,9 @@ def encode_target(fitted: FittedPipeline, s: pl.Series) -> np.ndarray:
 
 def decode_regression(fitted: FittedPipeline, y: np.ndarray) -> np.ndarray:
     if fitted.target_mean is not None and fitted.target_std:
-        return y * fitted.target_std + fitted.target_mean
+        y = y * fitted.target_std + fitted.target_mean
+    if fitted.target_log:
+        y = np.expm1(y)
     return y
 
 
@@ -328,6 +350,38 @@ def fit_image_stats(fitted: FittedPipeline, images: list[np.ndarray]) -> FittedP
             "image_std": [float(v) or 1.0 for v in stacked.std(0)],
         }
     )
+
+
+def vision_task_input(fitted: FittedPipeline) -> tuple[tuple[int, int], str] | None:
+    """Detección, segmentación y OCR: tamaño (alto, ancho) y modo de color de la entrada.
+
+    None para las demás tareas (usan `image_transforms`).
+    """
+    task = fitted.spec.target.task if fitted.spec.target else None
+    if task is TaskType.OCR:
+        img = fitted.spec.image or ImageSpec(size=32)
+        return (img.size, img.width or img.size * 4), "L"
+    if task in (TaskType.OBJECT_DETECTION, TaskType.SEGMENTATION):
+        img = fitted.spec.image or ImageSpec()
+        return (img.size, img.size), "RGB"
+    return None
+
+
+def vision_task_array(
+    fitted: FittedPipeline, img: Any, size: tuple[int, int], mode: str
+) -> np.ndarray:
+    """Imagen `PIL` redimensionada a `size` (alto, ancho) y normalizada, CHW float32.
+
+    Es la entrada de detección, segmentación y OCR tanto al entrenar como al servir.
+    """
+    im = img.convert(mode).resize((size[1], size[0]))
+    x = np.asarray(im, dtype=np.float32) / 255.0
+    x = x[None] if x.ndim == 2 else x.transpose(2, 0, 1)
+    c = x.shape[0]
+    mean = np.asarray((fitted.image_mean or [0.5] * c)[:c], dtype=np.float32).reshape(c, 1, 1)
+    std = np.asarray((fitted.image_std or [0.25] * c)[:c], dtype=np.float32).reshape(c, 1, 1)
+    out: np.ndarray = ((x - mean) / std).astype(np.float32)
+    return out
 
 
 def image_transforms(fitted: FittedPipeline, *, train: bool) -> Any:

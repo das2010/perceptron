@@ -104,14 +104,27 @@ def predict_texts(run_id: str, body: PlaygroundTexts, ctx: Ctx) -> PlaygroundRes
     return _predict(run_id, ctx, lambda m: m.predict_texts(body.texts))
 
 
+@router.post("/runs/{run_id}/predict/series", operation_id="predictSeries")
+def predict_series(run_id: str, body: PlaygroundRows, ctx: Ctx) -> PlaygroundResult:
+    """Playground (RF-EXP-02): historia reciente de una o más series (forecasting, anomalías).
+
+    Las filas llevan las columnas del entrenamiento: tiempo, serie (si hay), target y
+    covariables. Devuelve una predicción por serie.
+    """
+    return _predict(run_id, ctx, lambda m: m.predict_series(body.rows))
+
+
 AUDIO_SUFFIXES = (".wav", ".flac", ".ogg", ".mp3")
+# Historia máxima de un CSV para series (un archivo enorme no entra en la memoria del playground).
+SERIES_FILE_ROWS = 100_000
 
 
 @router.post("/runs/{run_id}/predict/file", operation_id="predictFile")
 async def predict_file(
     run_id: str, ctx: Ctx, file: Annotated[UploadFile, File()]
 ) -> PlaygroundResult:
-    """Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV."""
+    """Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV
+    (filas de tabla o, en series, la historia reciente)."""
     import csv
     import io
     import tempfile
@@ -124,6 +137,13 @@ async def predict_file(
         if model.kind == "tabular":
             rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))
             return model.predict_rows(rows[:1000])
+        if model.kind == "sequence":
+            rows = list(csv.DictReader(io.StringIO(data.decode("utf-8-sig"))))
+            if len(rows) > SERIES_FILE_ROWS:
+                raise ValidationError(
+                    f"el CSV tiene {len(rows)} filas; el máximo para series es {SERIES_FILE_ROWS}"
+                )
+            return model.predict_series(rows)
         if model.kind == "tokens":
             text = data.decode("utf-8-sig", errors="replace")
             lines = [line.strip() for line in text.splitlines() if line.strip()]

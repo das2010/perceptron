@@ -7,6 +7,13 @@ you step by step to a validated model. No machine-learning knowledge needed.
 
 1. **Describe the problem.** On **Home**, write what you want to achieve, for example “I have a
    sales spreadsheet and want to estimate how much we will sell”. Click **Start**.
+   - **Already have the data?** Attach it with the clip: one or more spreadsheets (CSV, Excel,
+     Parquet), or a zip with photos, recordings or texts sorted into folders.
+   - **What it suggests:** the assistant reads them and tells you what it can learn, for
+     example “Predict ‘churned’” or “Forecast ‘units’ for each product”.
+   - **Several spreadsheets:** if they share the same columns, it stacks them. If they are
+     related by a column, like customers and their purchases, it joins them.
+   - **How to choose:** pick the goal that fits, or tell it in your own words.
 2. **Answer the questions.** The assistant asks one thing at a time, with examples: what data you
    have, what you want to get, which error is worse, what result is good enough. Answer by typing
    or with the control below. In **What I understood** you can correct anything. When everything
@@ -28,12 +35,15 @@ you step by step to a validated model. No machine-learning knowledge needed.
 
 ## Which cases it solves
 
-- Tables: choose a category, estimate a number or discover a formula.
-- Images, texts and audio: choose a category.
+- **Spreadsheets:** pick one of several answers, estimate a number, discover a formula, forecast
+  the next values of something you measure over time (sales, consumption, wear) or spot unusual
+  moments in measurements (even without marked cases).
+- **Photos:** say what kind each one is, locate where the objects are, mark the exact area (for
+  example the damaged part) or read a text (a label, a serial number).
+- **Texts and recordings:** pick one of several answers.
 
-For anything else (series forecasting, rare cases, locating objects in a photo, data without the
-correct answer) the assistant explains why and takes you to the **advanced wizard** or to
-**Labeling**.
+If your case does not fit as is, the assistant suggests an equivalent way to frame it. For
+example, grouping into ranges a number you want to estimate from photos.
 
 ## Advanced options
 

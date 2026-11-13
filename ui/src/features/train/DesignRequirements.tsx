@@ -3,11 +3,14 @@
  * caso (p. ej. «red preentrenada» con pocas imágenes), cuál propuesta lo cumple mejor y un
  * aviso si se elige otra. La recomendación nunca bloquea.
  */
-import { AlertTriangle, Check, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { AlertTriangle, Check, Sigma, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui";
+import { useProjectId } from "@/features/projects/ProjectLayout";
 import type { ArchProposals, Schemas } from "@/lib/api/hooks";
+import { formatNumber } from "@/lib/format";
 
 type Requirements = Schemas["DesignRequirements"];
 type Assessment = Schemas["DesignAssessment"];
@@ -18,9 +21,12 @@ export function RequirementsPanel({
 }: {
   requirements?: Requirements | null | undefined;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const projectId = useProjectId();
   const items = requirements?.items ?? [];
   if (items.length === 0) return null;
+  const scenario = (requirements?.scenario ?? {}) as Record<string, unknown>;
+  const fit = Math.max(Number(scenario.r2_curved ?? 0), Number(scenario.r2_linear ?? 0));
   return (
     <section
       aria-label={t("design.title")}
@@ -41,6 +47,21 @@ export function RequirementsPanel({
           </li>
         ))}
       </ul>
+      {scenario.deterministic === true && (
+        <p role="note" className="mt-3 flex items-start gap-2 rounded-pt border border-brand p-3">
+          <Sigma className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>
+            {t("design.formulaHint", { pct: formatNumber(fit * 100, i18n.language, 3) })}{" "}
+            <Link
+              to="/projects/$projectId/experiments"
+              params={{ projectId }}
+              className="font-semibold underline"
+            >
+              {t("design.formulaLink")}
+            </Link>
+          </span>
+        </p>
+      )}
     </section>
   );
 }

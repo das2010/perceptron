@@ -20,6 +20,7 @@ from perceptron.data.pipeline.pipeline import (
     image_transforms,
     transform_tabular,
     transform_text,
+    vision_task_array,
 )
 from perceptron.data.view import DatasetView, Purpose
 from perceptron.domain.enums import Modality, TaskType
@@ -246,13 +247,8 @@ class AudioDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
 
 
 def _to_tensor(img: Any, fitted: FittedPipeline, size: tuple[int, int], mode: str) -> torch.Tensor:
-    im = img.convert(mode).resize((size[1], size[0]))
-    x = torch.from_numpy(np.asarray(im, dtype=np.float32) / 255.0)
-    x = x.unsqueeze(0) if x.ndim == 2 else x.permute(2, 0, 1)
-    c = x.shape[0]
-    mean = torch.tensor((fitted.image_mean or [0.5] * c)[:c]).view(c, 1, 1)
-    std = torch.tensor((fitted.image_std or [0.25] * c)[:c]).view(c, 1, 1)
-    return (x - mean) / std
+    # La misma función que usa el runtime de inferencia: sin desvío entre entrenar y servir.
+    return torch.from_numpy(vision_task_array(fitted, img, size, mode))
 
 
 class DetectionDataset(Dataset[tuple[torch.Tensor, dict[str, torch.Tensor]]]):

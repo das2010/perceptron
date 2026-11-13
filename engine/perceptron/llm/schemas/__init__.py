@@ -85,6 +85,7 @@ ActionKind = Literal[
     "fewer_epochs",
     "rebalance",
     "more_data",
+    "try_formula",
     "none",
 ]
 

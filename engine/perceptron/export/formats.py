@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import traceback
 from enum import StrEnum
 from importlib import metadata
@@ -21,6 +22,7 @@ from pydantic import BaseModel, Field
 from torch.utils.data import DataLoader
 
 from perceptron.data.view import DatasetView
+from perceptron.domain.enums import TaskType
 from perceptron.domain.models import utcnow
 from perceptron.evaluation.evaluate import signature
 from perceptron.training.data import make_dataset
@@ -155,11 +157,17 @@ def _batch_dynamic(n_inputs: int) -> tuple[dict[int, Any], ...]:
 def sample_inputs(
     trained: TrainedModel, dataset_dir: Path, n: int = SAMPLE_BATCH
 ) -> tuple[torch.Tensor, ...]:
-    """Un batch real de validación (sin el target) para trazar y verificar."""
+    """Un batch real de validación (solo las entradas del modelo) para trazar y verificar.
+
+    Tabular recibe `x_num` y `x_cat`; el resto de los modelos, un único tensor (el primero
+    del batch). Lo demás son targets o datos para la evaluación: en series, el target, la
+    escala y el nivel; en OCR, los ids y largos del texto; en detección, las cajas.
+    """
     ds = make_dataset(DatasetView(dataset_dir), trained.pipeline, "val", train=False)
     loader = DataLoader(ds, batch_size=n, shuffle=False, collate_fn=getattr(ds, "collate_fn", None))
-    *inputs, _ = next(iter(loader))
-    return tuple(t for t in inputs if isinstance(t, torch.Tensor))
+    batch = next(iter(loader))
+    count = 2 if trained.spec.input.kind == "tabular" else 1
+    return tuple(t for t in batch[:count] if isinstance(t, torch.Tensor))
 
 
 def _input_names(trained: TrainedModel, count: int) -> list[str]:
@@ -282,6 +290,52 @@ def _torchscript(
     return _artifact(path, "torchscript", _verify(ref, got, TOL_FP32), legacy=True)
 
 
+def _evaluation_details(run_dir: Path) -> dict[str, Any]:
+    from perceptron.evaluation.evaluate import EVALUATION_DIR, EVALUATION_FILE
+
+    path = run_dir / EVALUATION_DIR / EVALUATION_FILE
+    if not path.is_file():
+        return {}
+    details: dict[str, Any] = json.loads(path.read_text(encoding="utf-8")).get("details") or {}
+    return details
+
+
+def _anomaly_threshold(trained: TrainedModel, run_dir: Path, dataset_dir: Path) -> float | None:
+    """El umbral calibrado en validación: el de la evaluación o, si no se evaluó, se calibra."""
+    calibration = _evaluation_details(run_dir).get("calibration") or {}
+    threshold = calibration.get("threshold")
+    if threshold is None:
+        from perceptron.data.view import Purpose
+        from perceptron.tasks import get_adapter
+
+        # Igual que la evaluación: todas las ventanas de validación (no solo las normales).
+        val = make_dataset(
+            DatasetView(dataset_dir),
+            trained.pipeline,
+            "val",
+            train=False,
+            purpose=Purpose.FINAL_EVALUATION,
+        )
+        loader = DataLoader(val, batch_size=256, shuffle=False)
+        threshold = get_adapter(trained.task).calibrate(trained.model, loader, trained.spec)[
+            "threshold"
+        ]
+    value = float(threshold)
+    return value if math.isfinite(value) else None
+
+
+def _serving_outputs(trained: TrainedModel, run_dir: Path, dataset_dir: Path) -> dict[str, Any]:
+    """Lo que el runtime necesita para interpretar la salida (umbrales de la evaluación)."""
+    from perceptron.serving.runtime import DEFAULT_SCORE_THRESHOLD
+
+    if trained.task is TaskType.ANOMALY_DETECTION:
+        return {"threshold": _anomaly_threshold(trained, run_dir, dataset_dir)}
+    if trained.task is TaskType.OBJECT_DETECTION:
+        score = _evaluation_details(run_dir).get("score_threshold", DEFAULT_SCORE_THRESHOLD)
+        return {"score_threshold": float(score)}
+    return {}
+
+
 def export_run(run_dir: Path, dataset_dir: Path, request: ExportRequest) -> ExportReport:
     """Exporta el modelo del run en los formatos pedidos y verifica cada uno."""
     trained = load_trained(run_dir)
@@ -314,6 +368,7 @@ def export_run(run_dir: Path, dataset_dir: Path, request: ExportRequest) -> Expo
         "run_id": run_id,
         "perceptron_version": _version(),
     }
+    sig["outputs"].update(_serving_outputs(trained, run_dir, dataset_dir))
     (out_dir / "pipeline.json").write_text(trained.pipeline.model_dump_json(indent=2), "utf-8")
     report = ExportReport(
         run_id=run_id,

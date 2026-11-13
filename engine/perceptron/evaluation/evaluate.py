@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader
 from perceptron.archspec.schema import ArchSpec
 from perceptron.catalog.registry import CODE_BLOCK
 from perceptron.data.pipeline.pipeline import FittedPipeline
+from perceptron.data.series import history_columns
 from perceptron.data.view import DatasetView, Purpose
 from perceptron.domain.enums import ModelStage, TaskType
 from perceptron.domain.models import ModelVersion
@@ -119,6 +120,17 @@ def signature(spec: ArchSpec, fp: FittedPipeline) -> dict[str, Any]:
     else:
         inp.update(
             shape=spec.input.shape, channels=spec.input.shape[0] if spec.input.shape else None
+        )
+    if spec.input.kind == "sequence" and fp.spec.series is not None:
+        # Series: la historia reciente se pasa con las mismas columnas que en el entrenamiento.
+        cfg = fp.spec.series.config
+        inp.update(
+            columns=history_columns(cfg),
+            time_column=cfg.time_column,
+            series_id=cfg.series_id,
+            lookback=cfg.lookback,
+            horizon=cfg.horizon,
+            freq_seconds=cfg.freq_seconds,
         )
     out: dict[str, Any] = {"task": spec.task.type.value}
     if fp.classes is not None:

@@ -1274,6 +1274,20 @@
         "title": "Body_predictFile",
         "type": "object"
       },
+      "Body_predictJourneySeries": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_predictJourneySeries",
+        "type": "object"
+      },
       "Body_uploadSource": {
         "properties": {
           "files": {
@@ -2293,6 +2307,37 @@
           "code"
         ],
         "title": "CodeResponse",
+        "type": "object"
+      },
+      "ColumnInfo": {
+        "properties": {
+          "distinct": {
+            "title": "Distinct",
+            "type": "integer"
+          },
+          "filled": {
+            "description": "Fracción de filas con dato",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Filled",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "distinct",
+          "filled"
+        ],
+        "title": "ColumnInfo",
         "type": "object"
       },
       "ColumnProfile": {
@@ -4983,7 +5028,7 @@
                   "type": "string"
                 },
                 "maxItems": 100,
-                "minItems": 2,
+                "minItems": 1,
                 "type": "array"
               },
               {
@@ -5048,6 +5093,20 @@
             ],
             "title": "Grouped"
           },
+          "horizon": {
+            "anyOf": [
+              {
+                "maximum": 500.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pronóstico: cuántos valores hacia adelante",
+            "title": "Horizon"
+          },
           "input_names": {
             "anyOf": [
               {
@@ -5107,6 +5166,9 @@
                   "rule",
                   "forecast",
                   "anomaly",
+                  "locate",
+                  "segment",
+                  "read_text",
                   "other"
                 ],
                 "type": "string"
@@ -5488,6 +5550,84 @@
         "title": "FeedbackResult",
         "type": "object"
       },
+      "FileInfo": {
+        "description": "Lo que se leyó de un archivo o carpeta, sin valores individuales.",
+        "properties": {
+          "classes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Carpeta → cantidad",
+            "title": "Classes",
+            "type": "object"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ColumnInfo"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Fotos, grabaciones o textos",
+            "title": "Files"
+          },
+          "kind": {
+            "enum": [
+              "table",
+              "images",
+              "audio",
+              "text",
+              "segment",
+              "read_text",
+              "locate",
+              "unknown"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows"
+          }
+        },
+        "required": [
+          "name",
+          "kind"
+        ],
+        "title": "FileInfo",
+        "type": "object"
+      },
       "GPUInfo": {
         "properties": {
           "backend": {
@@ -5582,6 +5722,77 @@
           "features"
         ],
         "title": "GlobalExplanation",
+        "type": "object"
+      },
+      "GoalProposal": {
+        "description": "Un objetivo posible para la red, con los hechos del caso que implica.",
+        "properties": {
+          "combine": {
+            "anyOf": [
+              {
+                "enum": [
+                  "stack",
+                  "join"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Combine"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/Facts"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "keys": {
+            "description": "Columna de unión de cada parte",
+            "items": {
+              "type": "string"
+            },
+            "title": "Keys",
+            "type": "array"
+          },
+          "parts": {
+            "description": "Planillas usadas (rutas relativas); la primera manda",
+            "items": {
+              "type": "string"
+            },
+            "title": "Parts",
+            "type": "array"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Columna con el resultado (tablas)",
+            "title": "Target"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "detail",
+          "facts"
+        ],
+        "title": "GoalProposal",
         "type": "object"
       },
       "GroupMetrics": {
@@ -6197,7 +6408,8 @@
                 "enum": [
                   "design",
                   "pipeline",
-                  "data"
+                  "data",
+                  "formula"
                 ],
                 "type": "string"
               },
@@ -6336,15 +6548,52 @@
             "title": "Fields",
             "type": "array"
           },
+          "history": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Series: cuántos valores recientes hacen falta por serie",
+            "title": "History"
+          },
+          "horizon": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pronóstico: valores hacia adelante",
+            "title": "Horizon"
+          },
           "kind": {
             "enum": [
               "fields",
               "image",
               "audio",
-              "text"
+              "text",
+              "series"
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "task": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Qué devuelve el modelo (TaskType)",
+            "title": "Task"
           }
         },
         "required": [
@@ -6705,6 +6954,12 @@
             ],
             "title": "Contract"
           },
+          "data_ready": {
+            "default": false,
+            "description": "Los datos llegaron antes de confirmar: se revisan al confirmar",
+            "title": "Data Ready",
+            "type": "boolean"
+          },
           "data_summary": {
             "anyOf": [
               {
@@ -6753,6 +7008,14 @@
           "facts": {
             "$ref": "#/components/schemas/Facts"
           },
+          "files": {
+            "description": "Lo que se leyó de los archivos, sin valores",
+            "items": {
+              "$ref": "#/components/schemas/FileInfo"
+            },
+            "title": "Files",
+            "type": "array"
+          },
           "form": {
             "anyOf": [
               {
@@ -6762,6 +7025,26 @@
                 "type": "null"
               }
             ]
+          },
+          "goal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Objetivo elegido",
+            "title": "Goal Id"
+          },
+          "goals": {
+            "description": "Objetivos posibles según los archivos",
+            "items": {
+              "$ref": "#/components/schemas/GoalProposal"
+            },
+            "title": "Goals",
+            "type": "array"
           },
           "guide": {
             "anyOf": [
@@ -6783,6 +7066,15 @@
               }
             ],
             "title": "Job Id"
+          },
+          "language": {
+            "default": "es",
+            "enum": [
+              "es",
+              "en"
+            ],
+            "title": "Language",
+            "type": "string"
           },
           "llm_failed": {
             "default": false,
@@ -6986,6 +7278,8 @@
           "action": {
             "enum": [
               "message",
+              "files",
+              "choose",
               "confirm",
               "prepare",
               "train",
@@ -7005,6 +7299,19 @@
                 "type": "null"
               }
             ]
+          },
+          "goal_id": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Objetivo elegido",
+            "title": "Goal Id"
           },
           "language": {
             "default": "es",
@@ -12067,6 +12374,28 @@
         "title": "SeriesConfig",
         "type": "object"
       },
+      "SeriesForecast": {
+        "properties": {
+          "predictions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Predictions",
+            "type": "array"
+          },
+          "task": {
+            "title": "Task",
+            "type": "string"
+          }
+        },
+        "required": [
+          "predictions",
+          "task"
+        ],
+        "title": "SeriesForecast",
+        "type": "object"
+      },
       "SeriesProfile": {
         "description": "RF-PRF-04 (solo agregados).",
         "properties": {
@@ -13218,6 +13547,7 @@
               "fewer_epochs",
               "rebalance",
               "more_data",
+              "try_formula",
               "none"
             ],
             "title": "Kind",
@@ -13782,6 +14112,18 @@
             ],
             "description": "Clases fijas (detección/segmentación)",
             "title": "Classes"
+          },
+          "log": {
+            "default": false,
+            "description": "Regresión: se entrena con log(1 + y) (objetivo positivo que abarca varios órdenes de magnitud: el error pasa a ser relativo). Se deshace al predecir.",
+            "title": "Log",
+            "type": "boolean"
+          },
+          "log_suggested": {
+            "default": false,
+            "description": "La preparación sugiere `log` para este objetivo; queda apagado hasta que el usuario lo active.",
+            "title": "Log Suggested",
+            "type": "boolean"
           },
           "name": {
             "title": "Name",
@@ -14552,6 +14894,67 @@
       },
       "Turn": {
         "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Acción que ofrece el asistente (se acepta con un clic)",
+            "title": "Action"
+          },
+          "chat": {
+            "default": false,
+            "description": "Pregunta libre y su respuesta, fuera de los pasos del recorrido",
+            "title": "Chat",
+            "type": "boolean"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "enum": [
+                  "data_kind",
+                  "problem",
+                  "prediction",
+                  "labels_available",
+                  "classes",
+                  "error_costs",
+                  "positive_class",
+                  "extrapolate",
+                  "grouped",
+                  "success_target",
+                  "target_name",
+                  "input_names",
+                  "horizon"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dato que pregunta el asistente",
+            "title": "Field"
+          },
+          "goals": {
+            "description": "Objetivos propuestos (ids de `Journey.goals`)",
+            "items": {
+              "type": "string"
+            },
+            "title": "Goals",
+            "type": "array"
+          },
+          "options": {
+            "description": "Respuestas rápidas sugeridas",
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
           "role": {
             "enum": [
               "user",
@@ -14559,6 +14962,26 @@
             ],
             "title": "Role",
             "type": "string"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "enum": [
+                  "case",
+                  "data",
+                  "review",
+                  "training",
+                  "validate",
+                  "use"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Etapa del recorrido en que se dijo",
+            "title": "Step"
           },
           "text": {
             "title": "Text",
@@ -21244,6 +21667,59 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/journey/predict/series": {
+      "post": {
+        "description": "La historia reciente (CSV o Excel con las mismas columnas que los datos): el pronóstico\nde los próximos valores o los momentos raros, por serie.",
+        "operationId": "predictJourneySeries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predictJourneySeries"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeriesForecast"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict Journey Series",
+        "tags": [
+          "journey"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/journey/validate": {
       "post": {
         "description": "Un caso nuevo (fila o texto) con su resultado real: se predice sin el real y se compara.",
@@ -24089,7 +24565,7 @@
     },
     "/api/v1/runs/{run_id}/predict/file": {
       "post": {
-        "description": "Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV.",
+        "description": "Playground: una imagen, un audio, un texto (.txt: una muestra por línea) o un CSV\n(filas de tabla o, en series, la historia reciente).",
         "operationId": "predictFile",
         "parameters": [
           {
@@ -24135,6 +24611,59 @@
           }
         },
         "summary": "Predict File",
+        "tags": [
+          "export"
+        ]
+      }
+    },
+    "/api/v1/runs/{run_id}/predict/series": {
+      "post": {
+        "description": "Playground (RF-EXP-02): historia reciente de una o más series (forecasting, anomalías).\n\nLas filas llevan las columnas del entrenamiento: tiempo, serie (si hay), target y\ncovariables. Devuelve una predicción por serie.",
+        "operationId": "predictSeries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlaygroundRows"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaygroundResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Predict Series",
         "tags": [
           "export"
         ]
